@@ -1,0 +1,14 @@
+server:
+  port: 5022
+
+network-store-server:
+  base-uri: http://localhost:8080
+
+actions-server:
+  base-uri: http://localhost:5021
+
+securityAnalysisFactoryClass: com.rte_france.powsybl.hades2.Hades2SecurityAnalysisFactory
+
+logging:
+  level:
+    ROOT: INFO

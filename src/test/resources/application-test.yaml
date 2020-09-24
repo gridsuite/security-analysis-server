@@ -1,0 +1,14 @@
+server:
+  port: 5022
+
+network-store-server:
+  base-uri: http://localhost:8080
+
+actions-server:
+  base-uri: http://localhost:5021
+
+securityAnalysisFactoryClass: org.gridsuite.actions.server.MockSecurityAnalysisFactory
+
+logging:
+  level:
+    ROOT: INFO
