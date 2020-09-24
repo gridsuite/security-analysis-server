@@ -35,7 +35,7 @@ public class SecurityAnalysisController {
         this.service = service;
     }
 
-    @PutMapping(value = "/networks/{networkUuid}/run", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/networks/{networkUuid}/run", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     @ApiOperation(value = "run a security analysis on a network", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The security analysis has been performed")})
     public ResponseEntity<SecurityAnalysisResult> run(@ApiParam(value = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
