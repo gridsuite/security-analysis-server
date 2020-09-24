@@ -10,7 +10,6 @@ import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
-import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -60,7 +59,7 @@ public class SecurityAnalysisControllerTest {
     public void setUp() {
         MockitoAnnotations.initMocks(this);
 
-        Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
+        Network network = EurostagTutorialExample1Factory.create();
         given(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).willReturn(network);
 
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID))

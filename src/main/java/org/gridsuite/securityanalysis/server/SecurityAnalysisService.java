@@ -15,6 +15,7 @@ import com.powsybl.contingency.Contingency;
 import com.powsybl.iidm.mergingview.MergingView;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
+import com.powsybl.iidm.xml.NetworkXml;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.security.SecurityAnalysis;
@@ -111,6 +112,9 @@ public class SecurityAnalysisService {
         List<Contingency> contingencies = contingencyListNames.stream()
                 .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, networkUuid).stream())
                 .collect(Collectors.toList());
+
+        // FIXME workaround for bus/breaker view impl not yet implemented in network store
+        network = NetworkXml.copy(network);
 
         SecurityAnalysis securityAnalysis = getSecurityAnalysisFactory().create(network, LocalComputationManager.getDefault(), 0);
         return securityAnalysis.run(VariantManagerConstants.INITIAL_VARIANT_ID, parameters, n -> contingencies).join();
