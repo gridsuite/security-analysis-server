@@ -46,7 +46,7 @@ public class ActionsService {
     public List<Contingency> getContingencyList(String name, UUID networkUuid) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(networkUuid);
-        ResponseEntity<List<Contingency>> response = restTemplate.exchange(ACTIONS_API_VERSION + "/contingency-lists/{name}/export?networkUuuid={networkUuuid}",
+        ResponseEntity<List<Contingency>> response = restTemplate.exchange(ACTIONS_API_VERSION + "/contingency-lists/{name}/export?networkUuid={networkUuuid}",
                                                                            HttpMethod.GET,
                                                                            null,
                                                                            new ParameterizedTypeReference<>() { },
