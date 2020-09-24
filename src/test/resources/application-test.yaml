@@ -7,7 +7,7 @@ network-store-server:
 actions-server:
   base-uri: http://localhost:5021
 
-securityAnalysisFactoryClass: org.gridsuite.actions.server.MockSecurityAnalysisFactory
+securityAnalysisFactoryClass: org.gridsuite.securityanalysis.server.MockSecurityAnalysisFactory
 
 logging:
   level:

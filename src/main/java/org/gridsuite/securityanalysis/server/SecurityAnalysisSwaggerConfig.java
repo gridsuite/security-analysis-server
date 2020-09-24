@@ -4,7 +4,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.gridsuite.actions.server;
+package org.gridsuite.securityanalysis.server;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
@@ -37,8 +37,8 @@ public class SecurityAnalysisSwaggerConfig {
     // Describe your apis
     private ApiInfo apiInfo() {
         return new ApiInfoBuilder()
-                .title("Actions API")
-                .description("This is the documentation of the actions REST API")
+                .title("Security analysis API")
+                .description("This is the documentation of the security analysis REST API")
                 .build();
     }
 
