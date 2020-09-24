@@ -7,9 +7,6 @@
 package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.commons.PowsyblException;
-import com.powsybl.commons.exceptions.UncheckedClassNotFoundException;
-import com.powsybl.commons.exceptions.UncheckedIllegalAccessException;
-import com.powsybl.commons.exceptions.UncheckedInstantiationException;
 import com.powsybl.computation.local.LocalComputationManager;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.iidm.mergingview.MergingView;
@@ -61,13 +58,7 @@ public class SecurityAnalysisService {
     private SecurityAnalysisFactory getSecurityAnalysisFactory() {
         try {
             return (SecurityAnalysisFactory) Class.forName(securityAnalysisFactoryClass).getDeclaredConstructor().newInstance();
-        } catch (ClassNotFoundException e) {
-            throw new UncheckedClassNotFoundException(e);
-        } catch (IllegalAccessException e) {
-            throw new UncheckedIllegalAccessException(e);
-        } catch (InstantiationException e) {
-            throw new UncheckedInstantiationException(e);
-        } catch (NoSuchMethodException | InvocationTargetException e) {
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
             throw new PowsyblException(e);
         }
     }
