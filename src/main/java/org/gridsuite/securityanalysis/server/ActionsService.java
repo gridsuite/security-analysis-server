@@ -9,15 +9,10 @@ package org.gridsuite.securityanalysis.server;
 import com.powsybl.contingency.Contingency;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.util.DefaultUriBuilderFactory;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Objects;
@@ -29,32 +24,30 @@ import java.util.UUID;
 @Service
 public class ActionsService {
 
-    private static final String ACTIONS_API_VERSION = "v1";
+    static final String ACTIONS_API_VERSION = "v1";
 
-    private final RestTemplate restTemplate;
+    private final WebClient webClient;
 
     @Autowired
-    public ActionsService(RestTemplateBuilder builder,
+    public ActionsService(WebClient.Builder builder,
                           @Value("${backing-services.actions-server.base-uri:http://actions-server/}") String baseUri) {
-        this.restTemplate = Objects.requireNonNull(builder).uriTemplateHandler(new DefaultUriBuilderFactory(baseUri)).build();
+        webClient = builder.baseUrl(baseUri)
+                .build();
     }
 
-    public ActionsService(RestTemplate restTemplate) {
-        this.restTemplate = Objects.requireNonNull(restTemplate);
+    public ActionsService(WebClient webClient) {
+        this.webClient = Objects.requireNonNull(webClient);
     }
 
-    public List<Contingency> getContingencyList(String name, UUID networkUuid) {
+    public Mono<List<Contingency>> getContingencyList(String name, UUID networkUuid) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(networkUuid);
-        ResponseEntity<List<Contingency>> response = restTemplate.exchange(ACTIONS_API_VERSION + "/contingency-lists/{name}/export?networkUuid={networkUuuid}",
-                                                                           HttpMethod.GET,
-                                                                           null,
-                                                                           new ParameterizedTypeReference<>() { },
-                                                                           name,
-                                                                           networkUuid.toString());
-        if (response.getStatusCode() != HttpStatus.OK) {
-            throw new ResponseStatusException(response.getStatusCode(), "Fail to get contingency list '" + name + "'");
-        }
-        return response.getBody();
+        return webClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path(ACTIONS_API_VERSION + "/contingency-lists/{name}/export")
+                        .queryParam("networkUuid", networkUuid.toString())
+                        .build(name))
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<>() { });
     }
 }
