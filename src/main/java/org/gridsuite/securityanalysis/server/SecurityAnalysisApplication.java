@@ -6,12 +6,8 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import com.fasterxml.jackson.databind.Module;
-import com.powsybl.contingency.json.ContingencyJsonModule;
-import com.powsybl.security.json.SecurityAnalysisJsonModule;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Bean;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -22,15 +18,5 @@ public class SecurityAnalysisApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(SecurityAnalysisApplication.class, args);
-    }
-
-    @Bean
-    public Module contingencyModule() {
-        return new ContingencyJsonModule();
-    }
-
-    @Bean
-    public Module securityAnalysisModule() {
-        return new SecurityAnalysisJsonModule();
     }
 }
