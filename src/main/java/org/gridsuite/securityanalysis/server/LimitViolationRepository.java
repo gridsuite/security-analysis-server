@@ -6,11 +6,13 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.powsybl.security.LimitViolationType;
 import org.springframework.data.cassandra.repository.ReactiveCassandraRepository;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -20,6 +22,8 @@ import java.util.UUID;
 public interface LimitViolationRepository extends ReactiveCassandraRepository<LimitViolationEntity, UUID> {
 
     Flux<LimitViolationEntity> findByResultUuid(UUID resultUuid);
+
+    Flux<LimitViolationEntity> findByResultUuidAndLimitTypeIn(UUID resultUuid, Set<LimitViolationType> limitTypes);
 
     Mono<Void> deleteByResultUuid(UUID resultUuid);
 }

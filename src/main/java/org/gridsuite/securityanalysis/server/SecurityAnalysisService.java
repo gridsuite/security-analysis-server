@@ -137,7 +137,7 @@ public class SecurityAnalysisService {
     }
 
     private static LimitViolationEntity toEntity(UUID resultUuid, String contingencyId, LimitViolation limitViolation) {
-        return new LimitViolationEntity(resultUuid, contingencyId, limitViolation.getSubjectId(), limitViolation.getLimitType(),
+        return new LimitViolationEntity(resultUuid, limitViolation.getLimitType(), contingencyId, limitViolation.getSubjectId(),
                 limitViolation.getSubjectName(), limitViolation.getLimit(), limitViolation.getLimitName(),
                 limitViolation.getAcceptableDuration(), limitViolation.getLimitReduction(), limitViolation.getValue(),
                 limitViolation.getSide());
@@ -225,12 +225,14 @@ public class SecurityAnalysisService {
                 .flatMap(this::save);
     }
 
-    public Mono<SecurityAnalysisResult> getResult(UUID resultUuid) {
+    public Mono<SecurityAnalysisResult> getResult(UUID resultUuid, Set<LimitViolationType> limitTypes) {
         Objects.requireNonNull(resultUuid);
+        Objects.requireNonNull(limitTypes);
 
         Mono<Map<String, Boolean>> computationsStatusesMono = computationStatusRepository.findByResultUuid(resultUuid)
                 .collectMap(ComputationStatusEntity::getContingencyId, SecurityAnalysisService::fromEntity);
-        Mono<Map<String, Collection<LimitViolation>>> limitViolationsMono = limitViolationRepository.findByResultUuid(resultUuid)
+        Mono<Map<String, Collection<LimitViolation>>> limitViolationsMono
+                = (limitTypes.isEmpty() ? limitViolationRepository.findByResultUuid(resultUuid) : limitViolationRepository.findByResultUuidAndLimitTypeIn(resultUuid, limitTypes))
                 .collectMultimap(LimitViolationEntity::getContingencyId, SecurityAnalysisService::fromEntity);
         Mono<List<Contingency>> contingenciesMono = contingencyRepository.findByResultUuid(resultUuid)
                 .map(SecurityAnalysisService::fromEntity)

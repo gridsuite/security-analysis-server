@@ -7,9 +7,9 @@ CREATE TABLE sa.computationStatus (
 
 CREATE TABLE sa.limitViolation (
     resultUuid uuid,
+    limitType text,
     contingencyId text,
     subjectId text,
-    limitType text,
     subjectName text,
     limit_ double,
     limitName text,
@@ -17,7 +17,7 @@ CREATE TABLE sa.limitViolation (
     limitReduction float,
     value double,
     side text,
-    PRIMARY KEY (resultUuid, contingencyId, subjectId, limitType)
+    PRIMARY KEY (resultUuid, limitType, contingencyId, subjectId)
 );
 
 CREATE TABLE sa.contingency (

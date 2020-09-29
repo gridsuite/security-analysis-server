@@ -6,6 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.security.SecurityAnalysisResult;
 import io.swagger.annotations.*;
@@ -17,7 +18,9 @@ import reactor.core.publisher.Mono;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -73,8 +76,11 @@ public class SecurityAnalysisController {
     @GetMapping(value = "/results/{resultUuid}", produces = APPLICATION_JSON_VALUE)
     @ApiOperation(value = "Get a security analysis result from the database", produces = APPLICATION_JSON_VALUE)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The security analysis result")})
-    public Mono<ResponseEntity<SecurityAnalysisResult>> getResult(@ApiParam(value = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
-        Mono<SecurityAnalysisResult> result = service.getResult(resultUuid);
+    public Mono<ResponseEntity<SecurityAnalysisResult>> getResult(@ApiParam(value = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                                                  @ApiParam(value = "Limit type") @RequestParam(name = "limitType", required = false) List<String> limitTypes) {
+        Set<LimitViolationType> limitTypeSet = limitTypes != null ? limitTypes.stream().map(LimitViolationType::valueOf).collect(Collectors.toSet())
+                                                                  : Collections.emptySet();
+        Mono<SecurityAnalysisResult> result = service.getResult(resultUuid, limitTypeSet);
         return result.map(r -> ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(r))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
     }

@@ -30,7 +30,7 @@ public class MockSecurityAnalysisFactory implements SecurityAnalysisFactory {
                                                            new Contingency("l2", new BranchContingency("l2")));
 
     static final LimitViolation LIMIT_VIOLATION_1 = new LimitViolation("l3", LimitViolationType.CURRENT, "", 20 * 60, 10, 1, 11, Branch.Side.ONE);
-    static final LimitViolation LIMIT_VIOLATION_2 = new LimitViolation("l4", LimitViolationType.CURRENT, "", 20 * 60, 23, 1, 27, Branch.Side.TWO);
+    static final LimitViolation LIMIT_VIOLATION_2 = new LimitViolation("vl1", LimitViolationType.HIGH_VOLTAGE, "", 0, 400, 1, 410, null);
 
     static final SecurityAnalysisResult RESULT
             = new SecurityAnalysisResult(new LimitViolationsResult(true, List.of(LIMIT_VIOLATION_1)),

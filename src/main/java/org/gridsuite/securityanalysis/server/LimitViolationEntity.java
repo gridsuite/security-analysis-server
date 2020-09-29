@@ -31,14 +31,14 @@ public class LimitViolationEntity implements Serializable {
     @PrimaryKeyColumn(name = "resultUuid", ordinal = 0, type = PrimaryKeyType.PARTITIONED)
     private UUID resultUuid;
 
-    @PrimaryKeyColumn(name = "contingencyId", ordinal = 1, type = PrimaryKeyType.CLUSTERED)
+    @PrimaryKeyColumn(name = "limitType", ordinal = 1, type = PrimaryKeyType.CLUSTERED)
+    private LimitViolationType limitType;
+
+    @PrimaryKeyColumn(name = "contingencyId", ordinal = 2, type = PrimaryKeyType.CLUSTERED)
     private String contingencyId;
 
-    @PrimaryKeyColumn(name = "subjectId", ordinal = 2, type = PrimaryKeyType.CLUSTERED)
+    @PrimaryKeyColumn(name = "subjectId", ordinal = 3, type = PrimaryKeyType.CLUSTERED)
     private String subjectId;
-
-    @PrimaryKeyColumn(name = "limitType", ordinal = 3, type = PrimaryKeyType.CLUSTERED)
-    private LimitViolationType limitType;
 
     @Column("subjectName")
     private String subjectName;
