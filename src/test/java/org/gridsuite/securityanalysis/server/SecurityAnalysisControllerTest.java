@@ -17,6 +17,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -42,12 +43,14 @@ import static org.mockito.BDDMockito.given;
 @ContextHierarchy({@ContextConfiguration(classes = {SecurityAnalysisApplication.class, SecurityAnalysisService.class})})
 @ActiveProfiles("test")
 @TestPropertySource(locations = "classpath:application-test.yaml")
-public class SecurityAnalysisControllerTest {
+public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSetup {
 
     private static final UUID NETWORK_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e4");
     private static final UUID OTHER_NETWORK_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e5");
+    private static final UUID RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5d");
+    private static final UUID OTHER_RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5a");
 
-    private static final String EXPECTED_JSON = "{\"version\":\"1.0\",\"preContingencyResult\":{\"computationOk\":true,\"limitViolations\":[],\"actionsTaken\":[]},\"postContingencyResults\":[{\"contingency\":{\"id\":\"l1\",\"elements\":[{\"id\":\"l1\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[],\"actionsTaken\":[]}},{\"contingency\":{\"id\":\"l2\",\"elements\":[{\"id\":\"l2\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[],\"actionsTaken\":[]}}]}";
+    private static final String EXPECTED_JSON = "{\"version\":\"1.0\",\"preContingencyResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"l3\",\"limitType\":\"CURRENT\",\"acceptableDuration\":1200,\"limit\":10.0,\"limitReduction\":1.0,\"value\":11.0,\"side\":\"ONE\"}],\"actionsTaken\":[]},\"postContingencyResults\":[{\"contingency\":{\"id\":\"l1\",\"elements\":[{\"id\":\"l1\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"l4\",\"limitType\":\"CURRENT\",\"acceptableDuration\":1200,\"limit\":23.0,\"limitReduction\":1.0,\"value\":27.0,\"side\":\"TWO\"}],\"actionsTaken\":[]}},{\"contingency\":{\"id\":\"l2\",\"elements\":[{\"id\":\"l2\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"l4\",\"limitType\":\"CURRENT\",\"acceptableDuration\":1200,\"limit\":23.0,\"limitReduction\":1.0,\"value\":27.0,\"side\":\"TWO\"}],\"actionsTaken\":[]}}]}";
 
     @Autowired
     private WebTestClient webTestClient;
@@ -57,6 +60,9 @@ public class SecurityAnalysisControllerTest {
 
     @MockBean
     private ActionsService actionsService;
+
+    @SpyBean
+    private SecurityAnalysisService securityAnalysisService;
 
     @Before
     public void setUp() {
@@ -70,10 +76,12 @@ public class SecurityAnalysisControllerTest {
 
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID))
                 .willReturn(Mono.just(MockSecurityAnalysisFactory.CONTINGENCIES));
+
+        given(securityAnalysisService.generateResultUuid()).willReturn(RESULT_UUID);
     }
 
     @Test
-    public void test() {
+    public void runTest() {
         webTestClient.post()
                 .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME)
                 .exchange()
@@ -84,7 +92,41 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void testWithMergingView() {
+    public void runAndSaveTest() {
+        webTestClient.post()
+                .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(UUID.class)
+                .isEqualTo(RESULT_UUID);
+
+        webTestClient.get()
+                .uri("/" + VERSION + "/results/" + RESULT_UUID)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(String.class)
+                .isEqualTo(EXPECTED_JSON);
+
+        webTestClient.get()
+                .uri("/" + VERSION + "/results/" + OTHER_RESULT_UUID)
+                .exchange()
+                .expectStatus().isNotFound();
+
+        webTestClient.delete()
+                .uri("/" + VERSION + "/results/" + RESULT_UUID)
+                .exchange()
+                .expectStatus().isOk();
+
+        webTestClient.get()
+                .uri("/" + VERSION + "/results/" + RESULT_UUID)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    public void mergingViewTest() {
         webTestClient.post()
                 .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME + "&networkUuid=" + OTHER_NETWORK_UUID)
                 .exchange()

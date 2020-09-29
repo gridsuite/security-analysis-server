@@ -10,11 +10,11 @@ import com.powsybl.computation.ComputationManager;
 import com.powsybl.contingency.BranchContingency;
 import com.powsybl.contingency.ContingenciesProvider;
 import com.powsybl.contingency.Contingency;
+import com.powsybl.iidm.network.Branch;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.security.*;
 import com.powsybl.security.interceptors.SecurityAnalysisInterceptor;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -29,9 +29,12 @@ public class MockSecurityAnalysisFactory implements SecurityAnalysisFactory {
     static final List<Contingency> CONTINGENCIES = List.of(new Contingency("l1", new BranchContingency("l1")),
                                                            new Contingency("l2", new BranchContingency("l2")));
 
+    static final LimitViolation LIMIT_VIOLATION_1 = new LimitViolation("l3", LimitViolationType.CURRENT, "", 20 * 60, 10, 1, 11, Branch.Side.ONE);
+    static final LimitViolation LIMIT_VIOLATION_2 = new LimitViolation("l4", LimitViolationType.CURRENT, "", 20 * 60, 23, 1, 27, Branch.Side.TWO);
+
     static final SecurityAnalysisResult RESULT
-            = new SecurityAnalysisResult(new LimitViolationsResult(true, Collections.emptyList()),
-                                         CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency, true, Collections.emptyList()))
+            = new SecurityAnalysisResult(new LimitViolationsResult(true, List.of(LIMIT_VIOLATION_1)),
+                                         CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency, true, List.of(LIMIT_VIOLATION_2)))
                                                                  .collect(Collectors.toList()));
 
     @Override

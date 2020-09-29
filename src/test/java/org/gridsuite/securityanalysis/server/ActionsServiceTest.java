@@ -41,7 +41,7 @@ import static org.junit.Assert.assertEquals;
 @ContextHierarchy({@ContextConfiguration(classes = {SecurityAnalysisApplication.class, ActionsService.class})})
 @ActiveProfiles("test")
 @TestPropertySource(locations = "classpath:application-test.yaml")
-public class ActionsServiceTest {
+public class ActionsServiceTest extends AbstractEmbeddedCassandraSetup {
 
     private static final String NETWORK_UUID = "7928181c-7977-4592-ba19-88027e4254e4";
 

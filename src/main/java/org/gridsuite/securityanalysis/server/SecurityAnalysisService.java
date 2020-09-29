@@ -8,17 +8,17 @@ package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.computation.local.LocalComputationManager;
+import com.powsybl.contingency.BranchContingency;
 import com.powsybl.contingency.Contingency;
+import com.powsybl.contingency.ContingencyElement;
+import com.powsybl.contingency.GeneratorContingency;
 import com.powsybl.iidm.mergingview.MergingView;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.xml.NetworkXml;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
-import com.powsybl.security.SecurityAnalysis;
-import com.powsybl.security.SecurityAnalysisFactory;
-import com.powsybl.security.SecurityAnalysisParameters;
-import com.powsybl.security.SecurityAnalysisResult;
+import com.powsybl.security.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,15 +27,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Hooks;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -50,12 +49,23 @@ public class SecurityAnalysisService {
 
     private ActionsService actionsService;
 
+    private ComputationStatusRepository computationStatusRepository;
+
+    private ContingencyRepository contingencyRepository;
+
+    private LimitViolationRepository limitViolationRepository;
+
     @Value("${securityAnalysisFactoryClass}")
     private String securityAnalysisFactoryClass;
 
-    public SecurityAnalysisService(NetworkStoreService networkStoreService, ActionsService actionsService) {
+    public SecurityAnalysisService(NetworkStoreService networkStoreService, ActionsService actionsService,
+                                   ComputationStatusRepository computationStatusRepository, ContingencyRepository contingencyRepository,
+                                   LimitViolationRepository limitViolationRepository) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
+        this.computationStatusRepository = Objects.requireNonNull(computationStatusRepository);
+        this.contingencyRepository = Objects.requireNonNull(contingencyRepository);
+        this.limitViolationRepository = Objects.requireNonNull(limitViolationRepository);
     }
 
     private SecurityAnalysisFactory getSecurityAnalysisFactory() {
@@ -124,5 +134,136 @@ public class SecurityAnalysisService {
                     CompletableFuture<SecurityAnalysisResult> result = securityAnalysis.run(VariantManagerConstants.INITIAL_VARIANT_ID, parameters, n -> tuple.getT2());
                     return Mono.fromCompletionStage(result);
                 });
+    }
+
+    private static LimitViolationEntity toEntity(UUID resultUuid, String contingencyId, LimitViolation limitViolation) {
+        return new LimitViolationEntity(resultUuid, contingencyId, limitViolation.getSubjectId(), limitViolation.getLimitType(),
+                limitViolation.getSubjectName(), limitViolation.getLimit(), limitViolation.getLimitName(),
+                limitViolation.getAcceptableDuration(), limitViolation.getLimitReduction(), limitViolation.getValue(),
+                limitViolation.getSide());
+    }
+
+    private static LimitViolation fromEntity(LimitViolationEntity entity) {
+        return new LimitViolation(entity.getSubjectId(), entity.getLimitType(), entity.getLimitName(), entity.getAcceptableDuration(),
+                entity.getLimit(), entity.getLimitReduction(), entity.getValue(), entity.getSide());
+    }
+
+    private static ComputationStatusEntity toEntity(UUID resultUuid, Contingency contingency, boolean ok) {
+        return new ComputationStatusEntity(resultUuid, contingency != null ? contingency.getId() : "", ok);
+    }
+
+    private static boolean fromEntity(ComputationStatusEntity entity) {
+        return entity.isOk();
+    }
+
+    private static List<LimitViolationEntity> toEntity(UUID resultUuid, Contingency contingency, List<LimitViolation> limitViolations) {
+        return limitViolations
+                .stream()
+                .map(limitViolation -> toEntity(resultUuid, contingency != null ? contingency.getId() : "", limitViolation))
+                .collect(Collectors.toList());
+    }
+
+    private static ContingencyEntity toEntity(UUID resultUuid, Contingency contingency) {
+        List<String> branchIds = new ArrayList<>();
+        List<String> generatorIds = new ArrayList<>();
+        for (ContingencyElement element : contingency.getElements()) {
+            switch (element.getType()) {
+                case BRANCH:
+                    branchIds.add(element.getId());
+                    break;
+                case GENERATOR:
+                    generatorIds.add(element.getId());
+                    break;
+                default:
+                    throw new IllegalStateException("Element type yet support: " + element.getType());
+            }
+        }
+        return new ContingencyEntity(resultUuid, contingency.getId(), branchIds, generatorIds);
+    }
+
+    private static Contingency fromEntity(ContingencyEntity entity) {
+        Stream<ContingencyElement> branchStream = entity.getBranchIds() != null
+                ? entity.getBranchIds().stream().map(BranchContingency::new)
+                : Stream.empty();
+        Stream<ContingencyElement> generatorStream = entity.getGeneratorIds() != null
+                ? entity.getGeneratorIds().stream().map(GeneratorContingency::new)
+                : Stream.empty();
+        return new Contingency(entity.getContingencyId(), Stream.concat(branchStream, generatorStream).collect(Collectors.toList()));
+    }
+
+    private Mono<Void> save(UUID resultUuid, Contingency contingency, LimitViolationsResult limitViolationsResult) {
+        return computationStatusRepository.insert(toEntity(resultUuid, contingency, limitViolationsResult.isComputationOk()))
+                .flatMapMany(ignore -> limitViolationRepository.insert(toEntity(resultUuid, contingency, limitViolationsResult.getLimitViolations())))
+                .then();
+    }
+
+    UUID generateResultUuid() {
+        return UUID.randomUUID();
+    }
+
+    private Mono<UUID> save(SecurityAnalysisResult result) {
+        Objects.requireNonNull(result);
+        Hooks.onOperatorDebug();
+
+        UUID resultUuid = generateResultUuid();
+
+        Mono<Void> preContingencyInsert = save(resultUuid, null, result.getPreContingencyResult());
+
+        Mono<Void> postContingencyInsert = Flux.fromIterable(result.getPostContingencyResults())
+                .flatMap(postContingencyResult -> save(resultUuid, postContingencyResult.getContingency(), postContingencyResult.getLimitViolationsResult())
+                        .then(contingencyRepository.insert(toEntity(resultUuid, postContingencyResult.getContingency()))))
+                .then();
+
+        return preContingencyInsert
+                .then(postContingencyInsert)
+                .thenReturn(resultUuid);
+    }
+
+    public Mono<UUID> runAndSave(UUID networkUuid, List<UUID> otherNetworksUuid, List<String> contingencyListNames,
+                                 SecurityAnalysisParameters parameters) {
+        return run(networkUuid, otherNetworksUuid, contingencyListNames, parameters)
+                .flatMap(this::save);
+    }
+
+    public Mono<SecurityAnalysisResult> getResult(UUID resultUuid) {
+        Objects.requireNonNull(resultUuid);
+
+        Mono<Map<String, Boolean>> computationsStatusesMono = computationStatusRepository.findByResultUuid(resultUuid)
+                .collectMap(ComputationStatusEntity::getContingencyId, SecurityAnalysisService::fromEntity);
+        Mono<Map<String, Collection<LimitViolation>>> limitViolationsMono = limitViolationRepository.findByResultUuid(resultUuid)
+                .collectMultimap(LimitViolationEntity::getContingencyId, SecurityAnalysisService::fromEntity);
+        Mono<List<Contingency>> contingenciesMono = contingencyRepository.findByResultUuid(resultUuid)
+                .map(SecurityAnalysisService::fromEntity)
+                .collectList();
+
+        return Mono.zip(computationsStatusesMono, limitViolationsMono, contingenciesMono)
+                .flatMap(tuple -> {
+                    Map<String, Boolean> computationsStatuses = tuple.getT1();
+                    Map<String, Collection<LimitViolation>> limitViolations = tuple.getT2();
+                    List<Contingency> contingencies = tuple.getT3();
+
+                    if (computationsStatuses.isEmpty()) {
+                        return Mono.empty();
+                    }
+
+                    LimitViolationsResult preContingencyResult = new LimitViolationsResult(computationsStatuses.get(""),
+                            new ArrayList<>(limitViolations.getOrDefault("", Collections.emptyList())));
+
+                    List<PostContingencyResult> postContingencyResults = contingencies.stream()
+                            .map(contingency -> new PostContingencyResult(contingency,
+                                    computationsStatuses.get(contingency.getId()),
+                                    new ArrayList<>(limitViolations.getOrDefault(contingency.getId(), Collections.emptyList()))))
+                            .collect(Collectors.toList());
+
+                    return Mono.just(new SecurityAnalysisResult(preContingencyResult, postContingencyResults));
+                });
+    }
+
+    public Mono<Void> deleteResult(UUID resultUuid) {
+        Objects.requireNonNull(resultUuid);
+        Mono<Void> v1 = computationStatusRepository.deleteByResultUuid(resultUuid);
+        Mono<Void> v2 = limitViolationRepository.deleteByResultUuid(resultUuid);
+        Mono<Void> v3 = contingencyRepository.deleteByResultUuid(resultUuid);
+        return Flux.concat(v1, v2, v3).then();
     }
 }

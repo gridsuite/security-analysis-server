@@ -36,16 +36,54 @@ public class SecurityAnalysisController {
         this.service = service;
     }
 
+    private static List<UUID> getNonNullOtherNetworkUuids(List<UUID> otherNetworkUuids) {
+        return otherNetworkUuids != null ? otherNetworkUuids : Collections.emptyList();
+    }
+
+    private static SecurityAnalysisParameters getNonNullParameters(SecurityAnalysisParameters parameters) {
+        return parameters != null ? parameters : new SecurityAnalysisParameters();
+    }
+
     @PostMapping(value = "/networks/{networkUuid}/run", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
-    @ApiOperation(value = "run a security analysis on a network", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+    @ApiOperation(value = "Run a security analysis on a network", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The security analysis has been performed")})
     public ResponseEntity<Mono<SecurityAnalysisResult>> run(@ApiParam(value = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
                                                             @ApiParam(value = "Other networks UUID (to merge with main one))") @RequestParam(name = "networkUuid", required = false) List<UUID> otherNetworkUuids,
                                                             @ApiParam(value = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
                                                             @RequestBody(required = false) SecurityAnalysisParameters parameters) {
-        SecurityAnalysisParameters nonNullParameters = parameters != null ? parameters : new SecurityAnalysisParameters();
-        List<UUID> nonNullOtherNetworkUuids = otherNetworkUuids != null ? otherNetworkUuids : Collections.emptyList();
+        SecurityAnalysisParameters nonNullParameters = getNonNullParameters(parameters);
+        List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
         Mono<SecurityAnalysisResult> result = service.run(networkUuid, nonNullOtherNetworkUuids, contigencyListNames, nonNullParameters);
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
+    }
+
+    @PostMapping(value = "/networks/{networkUuid}/run-and-save", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+    @ApiOperation(value = "Run a security analysis on a network and save results in the database", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "The security analysis has been performed and results have been save to database")})
+    public ResponseEntity<Mono<UUID>> runAndSave(@ApiParam(value = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
+                                                 @ApiParam(value = "Other networks UUID (to merge with main one))") @RequestParam(name = "networkUuid", required = false) List<UUID> otherNetworkUuids,
+                                                 @ApiParam(value = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
+                                                 @RequestBody(required = false) SecurityAnalysisParameters parameters) {
+        SecurityAnalysisParameters nonNullParameters = getNonNullParameters(parameters);
+        List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
+        Mono<UUID> resultUuid = service.runAndSave(networkUuid, nonNullOtherNetworkUuids, contigencyListNames, nonNullParameters);
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(resultUuid);
+    }
+
+    @GetMapping(value = "/results/{resultUuid}", produces = APPLICATION_JSON_VALUE)
+    @ApiOperation(value = "Get a security analysis result from the database", produces = APPLICATION_JSON_VALUE)
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "The security analysis result")})
+    public Mono<ResponseEntity<SecurityAnalysisResult>> getResult(@ApiParam(value = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        Mono<SecurityAnalysisResult> result = service.getResult(resultUuid);
+        return result.map(r -> ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(r))
+                .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping(value = "/results/{resultUuid}", produces = APPLICATION_JSON_VALUE)
+    @ApiOperation(value = "Delete a security analysis result from the database", produces = APPLICATION_JSON_VALUE)
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "The security analysis result has been deleted")})
+    public ResponseEntity<Mono<Void>> deleteResult(@ApiParam(value = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        Mono<Void> result = service.deleteResult(resultUuid);
+        return ResponseEntity.ok().body(result);
     }
 }
