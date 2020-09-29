@@ -268,4 +268,11 @@ public class SecurityAnalysisService {
         Mono<Void> v3 = contingencyRepository.deleteByResultUuid(resultUuid);
         return Flux.concat(v1, v2, v3).then();
     }
+
+    public Mono<Void> deleteResults() {
+        Mono<Void> v1 = computationStatusRepository.deleteAll();
+        Mono<Void> v2 = limitViolationRepository.deleteAll();
+        Mono<Void> v3 = contingencyRepository.deleteAll();
+        return Flux.concat(v1, v2, v3).then();
+    }
 }

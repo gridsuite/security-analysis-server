@@ -92,4 +92,12 @@ public class SecurityAnalysisController {
         Mono<Void> result = service.deleteResult(resultUuid);
         return ResponseEntity.ok().body(result);
     }
+
+    @DeleteMapping(value = "/results", produces = APPLICATION_JSON_VALUE)
+    @ApiOperation(value = "Delete all security analysis results from the database", produces = APPLICATION_JSON_VALUE)
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "All security analysis results have been deleted")})
+    public ResponseEntity<Mono<Void>> deleteResults() {
+        Mono<Void> result = service.deleteResults();
+        return ResponseEntity.ok().body(result);
+    }
 }

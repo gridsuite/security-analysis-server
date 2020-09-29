@@ -111,6 +111,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectBody(String.class)
                 .isEqualTo(EXPECTED_JSON);
 
+        // test limit type filtering
         webTestClient.get()
                 .uri("/" + VERSION + "/results/" + RESULT_UUID + "?limitType=CURRENT")
                 .exchange()
@@ -119,13 +120,36 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectBody(String.class)
                 .isEqualTo(EXPECTED_FILTERED_JSON);
 
+        // should throw not found if result does not exist
         webTestClient.get()
                 .uri("/" + VERSION + "/results/" + OTHER_RESULT_UUID)
                 .exchange()
                 .expectStatus().isNotFound();
 
+        // test one result deletion
         webTestClient.delete()
                 .uri("/" + VERSION + "/results/" + RESULT_UUID)
+                .exchange()
+                .expectStatus().isOk();
+
+        webTestClient.get()
+                .uri("/" + VERSION + "/results/" + RESULT_UUID)
+                .exchange()
+                .expectStatus().isNotFound();
+    }
+
+    @Test
+    public void deleteResultsTest() {
+        webTestClient.post()
+                .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(UUID.class)
+                .isEqualTo(RESULT_UUID);
+
+        webTestClient.delete()
+                .uri("/" + VERSION + "/results")
                 .exchange()
                 .expectStatus().isOk();
 
