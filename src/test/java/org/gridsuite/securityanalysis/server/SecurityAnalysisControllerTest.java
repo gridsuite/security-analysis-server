@@ -18,7 +18,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.cloud.stream.binder.test.InputDestination;
+import org.springframework.cloud.stream.binder.test.OutputDestination;
+import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.http.MediaType;
+import org.springframework.messaging.Message;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.ContextHierarchy;
@@ -28,6 +32,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import reactor.core.publisher.Mono;
 
+import javax.inject.Inject;
 import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
@@ -40,7 +45,10 @@ import static org.mockito.BDDMockito.given;
 @RunWith(SpringRunner.class)
 @AutoConfigureWebTestClient
 @EnableWebFlux
-@ContextHierarchy({@ContextConfiguration(classes = {SecurityAnalysisApplication.class, SecurityAnalysisService.class})})
+@ContextHierarchy({@ContextConfiguration(classes = {SecurityAnalysisApplication.class,
+        SecurityAnalysisService.class,
+        SecurityAnalysisWorkerService.class,
+        TestChannelBinderConfiguration.class})})
 @ActiveProfiles("test")
 @TestPropertySource(locations = "classpath:application-test.yaml")
 public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSetup {
@@ -55,6 +63,12 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     private static final String EXPECTED_FILTERED_JSON = "{\"version\":\"1.0\",\"preContingencyResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"l3\",\"limitType\":\"CURRENT\",\"acceptableDuration\":1200,\"limit\":10.0,\"limitReduction\":1.0,\"value\":11.0,\"side\":\"ONE\"}],\"actionsTaken\":[]},\"postContingencyResults\":[{\"contingency\":{\"id\":\"l1\",\"elements\":[{\"id\":\"l1\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[],\"actionsTaken\":[]}},{\"contingency\":{\"id\":\"l2\",\"elements\":[{\"id\":\"l2\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[],\"actionsTaken\":[]}}]}";
 
     @Autowired
+    private InputDestination input;
+
+    @Autowired
+    private OutputDestination output;
+
+    @Autowired
     private WebTestClient webTestClient;
 
     @MockBean
@@ -65,6 +79,9 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
 
     @SpyBean
     private SecurityAnalysisService securityAnalysisService;
+
+    @Autowired
+    private SecurityAnalysisWorkerService securityAnalysisWorkerService;
 
     @Before
     public void setUp() {
@@ -102,6 +119,8 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody(UUID.class)
                 .isEqualTo(RESULT_UUID);
+
+        Message<byte[]> message = output.receive(1000);
 
         webTestClient.get()
                 .uri("/" + VERSION + "/results/" + RESULT_UUID)

@@ -1,3 +1,18 @@
+spring:
+  rabbitmq:
+    addresses: localhost
+    port: 5672
+
+  cloud:
+    function:
+      definition: consumeRun;publishRun
+    stream:
+      bindings:
+        consumeRun-in-0:
+          destination: sa.run
+        publishRun-out-0:
+          destination: sa.run
+
 server:
   port: 5023
 

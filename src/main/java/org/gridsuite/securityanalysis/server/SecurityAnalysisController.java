@@ -6,6 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.security.SecurityAnalysisResult;
@@ -13,6 +14,7 @@ import io.swagger.annotations.*;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
@@ -30,13 +32,16 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RestController
 @RequestMapping(value = "/" + SecurityAnalysisApi.API_VERSION)
 @Api(value = "Security analysis server")
-@ComponentScan(basePackageClasses = SecurityAnalysisService.class)
+@ComponentScan(basePackageClasses = {SecurityAnalysisService.class, NetworkStoreService.class})
 public class SecurityAnalysisController {
 
     private final SecurityAnalysisService service;
 
-    public SecurityAnalysisController(SecurityAnalysisService service) {
+    private final SecurityAnalysisWorkerService workerService;
+
+    public SecurityAnalysisController(SecurityAnalysisService service, SecurityAnalysisWorkerService workerService) {
         this.service = service;
+        this.workerService = workerService;
     }
 
     private static List<UUID> getNonNullOtherNetworkUuids(List<UUID> otherNetworkUuids) {
@@ -56,7 +61,7 @@ public class SecurityAnalysisController {
                                                             @RequestBody(required = false) SecurityAnalysisParameters parameters) {
         SecurityAnalysisParameters nonNullParameters = getNonNullParameters(parameters);
         List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
-        Mono<SecurityAnalysisResult> result = service.run(networkUuid, nonNullOtherNetworkUuids, contigencyListNames, nonNullParameters);
+        Mono<SecurityAnalysisResult> result = workerService.run(new SecurityAnalysisRunContext(networkUuid, nonNullOtherNetworkUuids, contigencyListNames, nonNullParameters));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
     }
 
@@ -69,7 +74,7 @@ public class SecurityAnalysisController {
                                                  @RequestBody(required = false) SecurityAnalysisParameters parameters) {
         SecurityAnalysisParameters nonNullParameters = getNonNullParameters(parameters);
         List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
-        Mono<UUID> resultUuid = service.runAndSave(networkUuid, nonNullOtherNetworkUuids, contigencyListNames, nonNullParameters);
+        Mono<UUID> resultUuid = service.runAndSave(new SecurityAnalysisRunContext(networkUuid, nonNullOtherNetworkUuids, contigencyListNames, nonNullParameters));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(resultUuid);
     }
 

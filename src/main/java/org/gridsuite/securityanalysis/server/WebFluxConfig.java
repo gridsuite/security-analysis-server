@@ -8,7 +8,9 @@ package org.gridsuite.securityanalysis.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.contingency.json.ContingencyJsonModule;
+import com.powsybl.loadflow.json.LoadFlowParametersJsonModule;
 import com.powsybl.security.json.SecurityAnalysisJsonModule;
+import com.powsybl.security.json.SecurityAnalysisParametersJsonModule;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.codec.ServerCodecConfigurer;
@@ -35,6 +37,8 @@ public class WebFluxConfig implements WebFluxConfigurer {
         var objectMapper = Jackson2ObjectMapperBuilder.json().build();
         objectMapper.registerModule(new ContingencyJsonModule());
         objectMapper.registerModule(new SecurityAnalysisJsonModule());
+        objectMapper.registerModule(new LoadFlowParametersJsonModule());
+        objectMapper.registerModule(new SecurityAnalysisParametersJsonModule());
         return objectMapper;
     }
 }
