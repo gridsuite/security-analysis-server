@@ -23,7 +23,6 @@ import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.Message;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.ContextHierarchy;
 import org.springframework.test.context.TestPropertySource;
@@ -32,7 +31,6 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import reactor.core.publisher.Mono;
 
-import javax.inject.Inject;
 import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
@@ -49,8 +47,7 @@ import static org.mockito.BDDMockito.given;
         SecurityAnalysisService.class,
         SecurityAnalysisWorkerService.class,
         TestChannelBinderConfiguration.class})})
-@ActiveProfiles("test")
-@TestPropertySource(locations = "classpath:application-test.yaml")
+@TestPropertySource(locations = "classpath:application.yaml")
 public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSetup {
 
     private static final UUID NETWORK_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e4");
@@ -83,6 +80,9 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     @Autowired
     private SecurityAnalysisWorkerService securityAnalysisWorkerService;
 
+    @Autowired
+    private SecurityAnalysisConfig config;
+
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
@@ -97,6 +97,8 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .willReturn(Mono.just(MockSecurityAnalysisFactory.CONTINGENCIES));
 
         given(securityAnalysisService.generateResultUuid()).willReturn(RESULT_UUID);
+
+        config.setSecurityAnalysisFactoryClass(MockSecurityAnalysisFactory.class.getName());
     }
 
     @Test
