@@ -9,6 +9,7 @@ package org.gridsuite.securityanalysis.server;
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.security.SecurityAnalysisFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
@@ -18,6 +19,7 @@ import java.util.Objects;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @Service
+@PropertySource("classpath:application.yaml")
 public class SecurityAnalysisConfig {
 
     @Value("${securityAnalysisFactoryClass}")

@@ -18,10 +18,8 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.ContextHierarchy;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -39,8 +37,6 @@ import static org.junit.Assert.assertEquals;
 @RunWith(SpringRunner.class)
 @EnableWebFlux
 @ContextHierarchy({@ContextConfiguration(classes = {SecurityAnalysisApplication.class, ActionsService.class})})
-@ActiveProfiles("test")
-@TestPropertySource(locations = "classpath:application-test.yaml")
 public class ActionsServiceTest extends AbstractEmbeddedCassandraSetup {
 
     private static final String NETWORK_UUID = "7928181c-7977-4592-ba19-88027e4254e4";

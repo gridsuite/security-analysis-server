@@ -14,6 +14,8 @@ import com.powsybl.iidm.network.Branch;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.security.*;
 import com.powsybl.security.interceptors.SecurityAnalysisInterceptor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -23,6 +25,8 @@ import java.util.stream.Collectors;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 public class MockSecurityAnalysisFactory implements SecurityAnalysisFactory {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MockSecurityAnalysisFactory.class);
 
     static final String CONTINGENCY_LIST_NAME = "list1";
 
@@ -51,6 +55,7 @@ public class MockSecurityAnalysisFactory implements SecurityAnalysisFactory {
 
             @Override
             public CompletableFuture<SecurityAnalysisResult> run(String s, SecurityAnalysisParameters securityAnalysisParameters, ContingenciesProvider contingenciesProvider) {
+                LOGGER.info("Run security analysis mock");
                 return CompletableFuture.completedFuture(RESULT);
             }
         };

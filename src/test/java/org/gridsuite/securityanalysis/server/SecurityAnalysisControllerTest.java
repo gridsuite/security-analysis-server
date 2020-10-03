@@ -16,6 +16,7 @@ import org.junit.runner.RunWith;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.cloud.stream.binder.test.InputDestination;
@@ -25,7 +26,6 @@ import org.springframework.http.MediaType;
 import org.springframework.messaging.Message;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.ContextHierarchy;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.config.EnableWebFlux;
@@ -35,6 +35,7 @@ import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.MockSecurityAnalysisFactory.CONTINGENCY_LIST_NAME;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
 
 /**
@@ -43,11 +44,8 @@ import static org.mockito.BDDMockito.given;
 @RunWith(SpringRunner.class)
 @AutoConfigureWebTestClient
 @EnableWebFlux
-@ContextHierarchy({@ContextConfiguration(classes = {SecurityAnalysisApplication.class,
-        SecurityAnalysisService.class,
-        SecurityAnalysisWorkerService.class,
-        TestChannelBinderConfiguration.class})})
-@TestPropertySource(locations = "classpath:application.yaml")
+@SpringBootTest
+@ContextHierarchy({@ContextConfiguration(classes = {SecurityAnalysisApplication.class, TestChannelBinderConfiguration.class})})
 public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSetup {
 
     private static final UUID NETWORK_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e4");
@@ -122,7 +120,8 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectBody(UUID.class)
                 .isEqualTo(RESULT_UUID);
 
-        Message<byte[]> message = output.receive(1000);
+        Message<byte[]> resultMessage = output.receive(1000, "sa.result.destination");
+        assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
 
         webTestClient.get()
                 .uri("/" + VERSION + "/results/" + RESULT_UUID)
@@ -168,6 +167,8 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody(UUID.class)
                 .isEqualTo(RESULT_UUID);
+
+        output.receive(1000, "sa.result.destination");
 
         webTestClient.delete()
                 .uri("/" + VERSION + "/results")

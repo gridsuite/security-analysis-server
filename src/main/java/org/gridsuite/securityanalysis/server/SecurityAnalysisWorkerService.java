@@ -21,7 +21,6 @@ import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.security.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
@@ -34,7 +33,6 @@ import reactor.util.function.Tuple2;
 import reactor.util.function.Tuples;
 
 import java.io.UncheckedIOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -66,10 +64,12 @@ public class SecurityAnalysisWorkerService {
 
     private SecurityAnalysisConfig config;
 
+    private SecurityAnalysisResultPublisher resultPublisher;
+
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService,
                                          ComputationStatusRepository computationStatusRepository, ContingencyRepository contingencyRepository,
                                          LimitViolationRepository limitViolationRepository, ObjectMapper objectMapper,
-                                         SecurityAnalysisConfig config) {
+                                         SecurityAnalysisConfig config, SecurityAnalysisResultPublisher resultPublisher) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.computationStatusRepository = Objects.requireNonNull(computationStatusRepository);
@@ -77,6 +77,7 @@ public class SecurityAnalysisWorkerService {
         this.limitViolationRepository = Objects.requireNonNull(limitViolationRepository);
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.config = Objects.requireNonNull(config);
+        this.resultPublisher = Objects.requireNonNull(resultPublisher);
     }
 
     private static String sanitizeParam(String param) {
@@ -212,7 +213,7 @@ public class SecurityAnalysisWorkerService {
                 .then();
     }
 
-    private Mono<Void> save(SecurityAnalysisResult result, UUID resultUuid) {
+    Mono<Void> save(SecurityAnalysisResult result, UUID resultUuid) {
         Objects.requireNonNull(result);
         Objects.requireNonNull(resultUuid);
 
@@ -235,7 +236,8 @@ public class SecurityAnalysisWorkerService {
                     UUID resultUuid = tuple.getT1();
                     SecurityAnalysisRunContext context = tuple.getT2();
                     return run(context)
-                            .flatMap(result -> save(result, resultUuid));
+                            .flatMap(result -> save(result, resultUuid))
+                            .doOnSuccess(unused -> resultPublisher.publish(resultUuid));
                 })
                 .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable))
                 .subscribe();

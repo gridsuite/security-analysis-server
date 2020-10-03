@@ -6,8 +6,6 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.contingency.BranchContingency;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.contingency.ContingencyElement;
@@ -15,18 +13,11 @@ import com.powsybl.contingency.GeneratorContingency;
 import com.powsybl.security.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Bean;
-import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.io.UncheckedIOException;
 import java.util.*;
-import java.util.function.Supplier;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -38,31 +29,20 @@ public class SecurityAnalysisService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisService.class);
 
-    private static final String CATEGORY_BROKER_OUTPUT = SecurityAnalysisService.class.getName()
-            + ".output-broker-messages";
-
     private ComputationStatusRepository computationStatusRepository;
 
     private ContingencyRepository contingencyRepository;
 
     private LimitViolationRepository limitViolationRepository;
 
-    private ObjectMapper objectMapper;
+    private SecurityAnalysisRunPublisher runPublisher;
 
     public SecurityAnalysisService(ComputationStatusRepository computationStatusRepository, ContingencyRepository contingencyRepository,
-                                   LimitViolationRepository limitViolationRepository,
-                                   ObjectMapper objectMapper) {
+                                   LimitViolationRepository limitViolationRepository, SecurityAnalysisRunPublisher runPublisher) {
         this.computationStatusRepository = Objects.requireNonNull(computationStatusRepository);
         this.contingencyRepository = Objects.requireNonNull(contingencyRepository);
         this.limitViolationRepository = Objects.requireNonNull(limitViolationRepository);
-        this.objectMapper = Objects.requireNonNull(objectMapper);
-    }
-
-    private final EmitterProcessor<Message<String>> runMessagePublisher = EmitterProcessor.create();
-
-    @Bean
-    public Supplier<Flux<Message<String>>> publishRun() {
-        return () -> runMessagePublisher.log(CATEGORY_BROKER_OUTPUT, Level.FINE);
+        this.runPublisher = Objects.requireNonNull(runPublisher);
     }
 
     public UUID generateResultUuid() {
@@ -72,23 +52,7 @@ public class SecurityAnalysisService {
     public Mono<UUID> runAndSave(SecurityAnalysisRunContext context) {
         Objects.requireNonNull(context);
         UUID resultUuid = generateResultUuid();
-        String parametersJson;
-        try {
-            parametersJson = objectMapper.writeValueAsString(context.getParameters());
-        } catch (JsonProcessingException e) {
-            throw new UncheckedIOException(e);
-        }
-        try {
-            runMessagePublisher.onNext(MessageBuilder
-                    .withPayload(parametersJson)
-                    .setHeader("resultUuid", resultUuid)
-                    .setHeader("networkUuid", context.getNetworkUuid())
-                    .setHeader("otherNetworkUuids", context.getOtherNetworkUuids().stream().map(UUID::toString).collect(Collectors.joining(",")))
-                    .setHeader("contingencyListNames", String.join(",", context.getContingencyListNames()))
-                    .build());
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        runPublisher.publish(resultUuid, context);
         return Mono.just(resultUuid);
     }
 
@@ -144,7 +108,8 @@ public class SecurityAnalysisService {
                             .collect(Collectors.toList());
 
                     return Mono.just(new SecurityAnalysisResult(preContingencyResult, postContingencyResults));
-                });
+                })
+                .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable));
     }
 
     public Mono<Void> deleteResult(UUID resultUuid) {
@@ -152,13 +117,17 @@ public class SecurityAnalysisService {
         Mono<Void> v1 = computationStatusRepository.deleteByResultUuid(resultUuid);
         Mono<Void> v2 = limitViolationRepository.deleteByResultUuid(resultUuid);
         Mono<Void> v3 = contingencyRepository.deleteByResultUuid(resultUuid);
-        return Flux.concat(v1, v2, v3).then();
+        return Flux.concat(v1, v2, v3)
+                .then()
+                .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable));
     }
 
     public Mono<Void> deleteResults() {
         Mono<Void> v1 = computationStatusRepository.deleteAll();
         Mono<Void> v2 = limitViolationRepository.deleteAll();
         Mono<Void> v3 = contingencyRepository.deleteAll();
-        return Flux.concat(v1, v2, v3).then();
+        return Flux.concat(v1, v2, v3)
+                .then()
+                .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable));
     }
 }
