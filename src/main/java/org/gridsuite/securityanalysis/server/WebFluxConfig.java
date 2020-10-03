@@ -27,18 +27,22 @@ public class WebFluxConfig implements WebFluxConfigurer {
 
     @Override
     public void configureHttpMessageCodecs(ServerCodecConfigurer configurer) {
-        var objectMapper = initObjectMapper();
+        var objectMapper = objectMapper();
         configurer.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(objectMapper));
         configurer.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper));
     }
 
-    @Bean
-    public ObjectMapper initObjectMapper() {
+    public static ObjectMapper createObjectMapper() {
         var objectMapper = Jackson2ObjectMapperBuilder.json().build();
         objectMapper.registerModule(new ContingencyJsonModule());
         objectMapper.registerModule(new SecurityAnalysisJsonModule());
         objectMapper.registerModule(new LoadFlowParametersJsonModule());
         objectMapper.registerModule(new SecurityAnalysisParametersJsonModule());
         return objectMapper;
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        return createObjectMapper();
     }
 }

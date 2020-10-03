@@ -15,13 +15,14 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.ContextHierarchy;
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.json.Jackson2JsonDecoder;
+import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.web.reactive.config.EnableWebFlux;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
@@ -35,9 +36,7 @@ import static org.junit.Assert.assertEquals;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @RunWith(SpringRunner.class)
-@EnableWebFlux
-@ContextHierarchy({@ContextConfiguration(classes = {SecurityAnalysisApplication.class, ActionsService.class})})
-public class ActionsServiceTest extends AbstractEmbeddedCassandraSetup {
+public class ActionsServiceTest {
 
     private static final String NETWORK_UUID = "7928181c-7977-4592-ba19-88027e4254e4";
 
@@ -45,11 +44,22 @@ public class ActionsServiceTest extends AbstractEmbeddedCassandraSetup {
 
     private static final Contingency CONTINGENCY = new Contingency("c1", new BranchContingency("b1"));
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = WebFluxConfig.createObjectMapper();
 
-    @Autowired
     private WebClient.Builder webClientBuilder;
+
+    @Before
+    public void setUp() {
+        webClientBuilder = WebClient.builder();
+        ExchangeStrategies strategies = ExchangeStrategies
+                .builder()
+                .codecs(clientDefaultCodecsConfigurer -> {
+                    clientDefaultCodecsConfigurer.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(objectMapper, MediaType.APPLICATION_JSON));
+                    clientDefaultCodecsConfigurer.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper, MediaType.APPLICATION_JSON));
+
+                }).build();
+        webClientBuilder.exchangeStrategies(strategies);
+    }
 
     @Test
     public void test() throws IOException {
