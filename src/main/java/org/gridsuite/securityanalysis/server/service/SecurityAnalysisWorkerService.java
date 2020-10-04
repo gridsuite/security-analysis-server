@@ -6,7 +6,6 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.computation.local.LocalComputationManager;
@@ -18,23 +17,25 @@ import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.xml.NetworkXml;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
-import com.powsybl.security.*;
+import com.powsybl.security.LimitViolation;
+import com.powsybl.security.LimitViolationsResult;
+import com.powsybl.security.SecurityAnalysis;
+import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.repository.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.util.function.Tuple2;
-import reactor.util.function.Tuples;
 
-import java.io.UncheckedIOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -115,41 +116,6 @@ public class SecurityAnalysisWorkerService {
                         return mergingView;
                     });
         }
-    }
-
-    private static List<String> splitHeader(MessageHeaders headers, String name) {
-        String header = (String) headers.get(name);
-        if (header == null || header.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return Arrays.asList(header.split(","));
-    }
-
-    private static String getHeader(MessageHeaders headers, String name) {
-        String header = (String) headers.get(name);
-        if (header == null) {
-            throw new PowsyblException("Header '" + name + "' not found");
-        }
-        return header;
-    }
-
-    public Tuple2<UUID, SecurityAnalysisRunContext> parseMessage(Message<String> message) {
-        MessageHeaders headers = message.getHeaders();
-        UUID resultUuid = UUID.fromString(getHeader(headers, "resultUuid"));
-        UUID networkUuid = UUID.fromString(getHeader(headers, "networkUuid"));
-        List<UUID> otherNetworkUuids = splitHeader(headers, "otherNetworkUuids")
-                .stream()
-                .map(UUID::fromString)
-                .collect(Collectors.toList());
-        List<String> contingencyListNames = splitHeader(headers, "contingencyListNames");
-        SecurityAnalysisParameters parameters;
-        try {
-            parameters = objectMapper.readValue(message.getPayload(), SecurityAnalysisParameters.class);
-        } catch (JsonProcessingException e) {
-            throw new UncheckedIOException(e);
-        }
-        SecurityAnalysisRunContext context = new SecurityAnalysisRunContext(networkUuid, otherNetworkUuids, contingencyListNames, parameters);
-        return Tuples.of(resultUuid, context);
     }
 
     public Mono<SecurityAnalysisResult> run(SecurityAnalysisRunContext context) {
@@ -233,14 +199,12 @@ public class SecurityAnalysisWorkerService {
     public Consumer<Flux<Message<String>>> consumeRun() {
         return f -> f.log(CATEGORY_BROKER_INPUT, Level.FINE)
                 .flatMap(message -> {
-                    Tuple2<UUID, SecurityAnalysisRunContext> tuple = parseMessage(message);
-                    UUID resultUuid = tuple.getT1();
-                    SecurityAnalysisRunContext context = tuple.getT2();
-                    return run(context)
-                            .flatMap(result -> save(result, resultUuid))
+                    SecurityAnalysisResultContext resultContext = SecurityAnalysisResultContext.fromMessage(message, objectMapper);
+                    return run(resultContext.getRunContext())
+                            .flatMap(result -> save(result, resultContext.getResultUuid()))
                             .doOnSuccess(unused -> {
-                                resultPublisherService.publish(resultUuid);
-                                LOGGER.info("Security analysis complete (resultUuid='{}')", resultUuid);
+                                resultPublisherService.publish(resultContext.getResultUuid());
+                                LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
                             });
                 })
                 .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable))

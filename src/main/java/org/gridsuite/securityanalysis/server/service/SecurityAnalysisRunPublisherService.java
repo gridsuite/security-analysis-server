@@ -6,21 +6,16 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
 
-import java.io.UncheckedIOException;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.logging.Level;
-import java.util.stream.Collectors;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -44,19 +39,8 @@ public class SecurityAnalysisRunPublisherService {
         return () -> runMessagePublisher.log(CATEGORY_BROKER_OUTPUT, Level.FINE);
     }
 
-    public void publish(UUID resultUuid, SecurityAnalysisRunContext context) {
-        String parametersJson;
-        try {
-            parametersJson = objectMapper.writeValueAsString(context.getParameters());
-        } catch (JsonProcessingException e) {
-            throw new UncheckedIOException(e);
-        }
-        runMessagePublisher.onNext(MessageBuilder
-                .withPayload(parametersJson)
-                .setHeader("resultUuid", resultUuid.toString())
-                .setHeader("networkUuid", context.getNetworkUuid().toString())
-                .setHeader("otherNetworkUuids", context.getOtherNetworkUuids().stream().map(UUID::toString).collect(Collectors.joining(",")))
-                .setHeader("contingencyListNames", String.join(",", context.getContingencyListNames()))
-                .build());
+    public void publish(SecurityAnalysisResultContext resultContext) {
+        Objects.requireNonNull(resultContext);
+        runMessagePublisher.onNext(resultContext.toMessage(objectMapper));
     }
 }

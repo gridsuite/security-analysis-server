@@ -50,10 +50,10 @@ public class SecurityAnalysisService {
         return UUID.randomUUID();
     }
 
-    public Mono<UUID> runAndSave(SecurityAnalysisRunContext context) {
-        Objects.requireNonNull(context);
+    public Mono<UUID> runAndSave(SecurityAnalysisRunContext runContext) {
+        Objects.requireNonNull(runContext);
         UUID resultUuid = generateResultUuid();
-        runPublisherService.publish(resultUuid, context);
+        runPublisherService.publish(new SecurityAnalysisResultContext(resultUuid, runContext));
         return Mono.just(resultUuid);
     }
 
