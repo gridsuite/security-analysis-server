@@ -136,7 +136,7 @@ public class SecurityAnalysisWorkerService {
                     return run(resultContext.getRunContext())
                             .flatMap(result -> resultRepository.insert(resultContext.getResultUuid(), result))
                             .doOnSuccess(unused -> {
-                                resultPublisherService.publish(resultContext.getResultUuid());
+                                resultPublisherService.publish(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver());
                                 LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
                             });
                 })

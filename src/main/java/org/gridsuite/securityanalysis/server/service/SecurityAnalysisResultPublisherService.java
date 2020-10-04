@@ -33,10 +33,11 @@ public class SecurityAnalysisResultPublisherService {
         return () -> resultMessagePublisher.log(CATEGORY_BROKER_OUTPUT, Level.FINE);
     }
 
-    public void publish(UUID resultUuid) {
+    public void publish(UUID resultUuid, String receiver) {
         resultMessagePublisher.onNext(MessageBuilder
                 .withPayload("")
                 .setHeader("resultUuid", resultUuid.toString())
+                .setHeader("receiver", receiver)
                 .build());
     }
 }

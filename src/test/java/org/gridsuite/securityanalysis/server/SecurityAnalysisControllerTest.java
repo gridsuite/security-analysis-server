@@ -116,7 +116,8 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     @Test
     public void runAndSaveTest() {
         webTestClient.post()
-                .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME)
+                .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
+                        + "&receiver=me")
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -125,6 +126,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
 
         Message<byte[]> resultMessage = output.receive(1000, "sa.result.destination");
         assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
+        assertEquals("me", resultMessage.getHeaders().get("receiver"));
 
         webTestClient.get()
                 .uri("/" + VERSION + "/results/" + RESULT_UUID)

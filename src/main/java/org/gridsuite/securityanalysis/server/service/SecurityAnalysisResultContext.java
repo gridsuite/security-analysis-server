@@ -48,7 +48,7 @@ public class SecurityAnalysisResultContext {
         return Arrays.asList(header.split(","));
     }
 
-    private static String getHeader(MessageHeaders headers, String name) {
+    private static String getNonNullHeader(MessageHeaders headers, String name) {
         String header = (String) headers.get(name);
         if (header == null) {
             throw new PowsyblException("Header '" + name + "' not found");
@@ -59,20 +59,21 @@ public class SecurityAnalysisResultContext {
     public static SecurityAnalysisResultContext fromMessage(Message<String> message, ObjectMapper objectMapper) {
         Objects.requireNonNull(message);
         MessageHeaders headers = message.getHeaders();
-        UUID resultUuid = UUID.fromString(getHeader(headers, "resultUuid"));
-        UUID networkUuid = UUID.fromString(getHeader(headers, "networkUuid"));
+        UUID resultUuid = UUID.fromString(getNonNullHeader(headers, "resultUuid"));
+        UUID networkUuid = UUID.fromString(getNonNullHeader(headers, "networkUuid"));
         List<UUID> otherNetworkUuids = getHeaderList(headers, "otherNetworkUuids")
                 .stream()
                 .map(UUID::fromString)
                 .collect(Collectors.toList());
         List<String> contingencyListNames = getHeaderList(headers, "contingencyListNames");
+        String receiver = (String) headers.get("receiver");
         SecurityAnalysisParameters parameters;
         try {
             parameters = objectMapper.readValue(message.getPayload(), SecurityAnalysisParameters.class);
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }
-        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, otherNetworkUuids, contingencyListNames, parameters);
+        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, otherNetworkUuids, contingencyListNames, receiver, parameters);
         return new SecurityAnalysisResultContext(resultUuid, runContext);
     }
 
@@ -88,6 +89,7 @@ public class SecurityAnalysisResultContext {
                 .setHeader("networkUuid", runContext.getNetworkUuid().toString())
                 .setHeader("otherNetworkUuids", runContext.getOtherNetworkUuids().stream().map(UUID::toString).collect(Collectors.joining(",")))
                 .setHeader("contingencyListNames", String.join(",", runContext.getContingencyListNames()))
+                .setHeader("receiver", runContext.getReceiver())
                 .build();
     }
 }
