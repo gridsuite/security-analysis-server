@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Configuration;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @Configuration
-public class SecurityAnalysisSwaggerConfig {
+public class OpenApiConfig {
 
     @Bean
     public OpenAPI springShopOpenAPI() {

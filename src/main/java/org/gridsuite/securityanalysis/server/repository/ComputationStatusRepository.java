@@ -4,7 +4,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.gridsuite.securityanalysis.server;
+package org.gridsuite.securityanalysis.server.repository;
 
 import org.springframework.data.cassandra.repository.ReactiveCassandraRepository;
 import org.springframework.stereotype.Repository;
@@ -17,9 +17,9 @@ import java.util.UUID;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @Repository
-public interface ContingencyRepository extends ReactiveCassandraRepository<ContingencyEntity, UUID> {
+public interface ComputationStatusRepository extends ReactiveCassandraRepository<ComputationStatusEntity, UUID> {
 
-    Flux<ContingencyEntity> findByResultUuid(UUID resultUuid);
+    Flux<ComputationStatusEntity> findByResultUuid(UUID resultUuid);
 
     Mono<Void> deleteByResultUuid(UUID resultUuid);
 }
