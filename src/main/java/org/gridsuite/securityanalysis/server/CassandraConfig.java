@@ -20,7 +20,7 @@ import org.springframework.data.cassandra.repository.config.EnableCassandraRepos
 @Configuration
 @PropertySource(value = {"classpath:cassandra.properties"})
 @PropertySource(value = {"file:/config/cassandra.properties"}, ignoreResourceNotFound = true)
-@EnableCassandraRepositories(basePackageClasses = {LimitViolationRepository.class})
+@EnableCassandraRepositories
 public class CassandraConfig extends AbstractCassandraConfiguration {
 
     static final String KEYSPACE_NAME = "sa";

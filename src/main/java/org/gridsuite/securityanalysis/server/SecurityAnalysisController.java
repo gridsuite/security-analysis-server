@@ -6,7 +6,6 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.security.SecurityAnalysisResult;
@@ -17,7 +16,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,7 +35,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RestController
 @RequestMapping(value = "/" + SecurityAnalysisApi.API_VERSION)
 @Tag(name = "Security analysis server")
-@ComponentScan(basePackageClasses = {SecurityAnalysisService.class, NetworkStoreService.class})
 public class SecurityAnalysisController {
 
     private final SecurityAnalysisService service;
