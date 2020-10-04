@@ -26,18 +26,19 @@ public class SecurityAnalysisService {
 
     private SecurityAnalysisRunPublisherService runPublisherService;
 
-    public SecurityAnalysisService(SecurityAnalysisResultRepository resultRepository, SecurityAnalysisRunPublisherService runPublisherService) {
+    private UuidGeneratorService uuidGeneratorService;
+
+    public SecurityAnalysisService(SecurityAnalysisResultRepository resultRepository,
+                                   SecurityAnalysisRunPublisherService runPublisherService,
+                                   UuidGeneratorService uuidGeneratorService) {
         this.resultRepository = Objects.requireNonNull(resultRepository);
         this.runPublisherService = Objects.requireNonNull(runPublisherService);
+        this.uuidGeneratorService = Objects.requireNonNull(uuidGeneratorService);
     }
 
-    public UUID generateResultUuid() {
-        return UUID.randomUUID();
-    }
-
-    public Mono<UUID> runAndSave(SecurityAnalysisRunContext runContext) {
+    public Mono<UUID> runAndSaveResult(SecurityAnalysisRunContext runContext) {
         Objects.requireNonNull(runContext);
-        UUID resultUuid = generateResultUuid();
+        UUID resultUuid = uuidGeneratorService.generate();
         runPublisherService.publish(new SecurityAnalysisResultContext(resultUuid, runContext));
         return Mono.just(resultUuid);
     }

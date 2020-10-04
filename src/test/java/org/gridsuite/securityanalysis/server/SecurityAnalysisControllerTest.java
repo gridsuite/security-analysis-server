@@ -11,9 +11,9 @@ import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
+import org.gridsuite.securityanalysis.server.service.UuidGeneratorService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisConfigService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisService;
-import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -22,8 +22,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.http.MediaType;
@@ -62,9 +60,6 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     private static final String EXPECTED_FILTERED_JSON = "{\"version\":\"1.0\",\"preContingencyResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"l3\",\"limitType\":\"CURRENT\",\"acceptableDuration\":1200,\"limit\":10.0,\"limitReduction\":1.0,\"value\":11.0,\"side\":\"ONE\"}],\"actionsTaken\":[]},\"postContingencyResults\":[{\"contingency\":{\"id\":\"l1\",\"elements\":[{\"id\":\"l1\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[],\"actionsTaken\":[]}},{\"contingency\":{\"id\":\"l2\",\"elements\":[{\"id\":\"l2\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[],\"actionsTaken\":[]}}]}";
 
     @Autowired
-    private InputDestination input;
-
-    @Autowired
     private OutputDestination output;
 
     @Autowired
@@ -76,31 +71,35 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     @MockBean
     private ActionsService actionsService;
 
-    @SpyBean
+    @MockBean
+    private UuidGeneratorService uuidGeneratorService;
+
+    @Autowired
     private SecurityAnalysisService securityAnalysisService;
 
     @Autowired
-    private SecurityAnalysisWorkerService securityAnalysisWorkerService;
-
-    @Autowired
-    private SecurityAnalysisConfigService config;
+    private SecurityAnalysisConfigService configService;
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
 
+        // network store service mocking
         Network network = EurostagTutorialExample1Factory.create();
         given(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).willReturn(network);
 
         Network otherNetwork = Network.create("other", "test");
         given(networkStoreService.getNetwork(OTHER_NETWORK_UUID, PreloadingStrategy.COLLECTION)).willReturn(otherNetwork);
 
+        // action service mocking
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID))
                 .willReturn(Mono.just(SecurityAnalysisFactoryMock.CONTINGENCIES));
 
-        given(securityAnalysisService.generateResultUuid()).willReturn(RESULT_UUID);
+        // UUID service mocking to always generate the same result UUID
+        given(uuidGeneratorService.generate()).willReturn(RESULT_UUID);
 
-        config.setSecurityAnalysisFactoryClass(SecurityAnalysisFactoryMock.class.getName());
+        // mock the powsybl security analysis service
+        configService.setSecurityAnalysisFactoryClass(SecurityAnalysisFactoryMock.class.getName());
     }
 
     @Test
