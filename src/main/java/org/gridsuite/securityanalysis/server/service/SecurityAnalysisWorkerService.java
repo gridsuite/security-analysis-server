@@ -10,18 +10,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.computation.local.LocalComputationManager;
 import com.powsybl.contingency.Contingency;
-import com.powsybl.contingency.ContingencyElement;
 import com.powsybl.iidm.mergingview.MergingView;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.xml.NetworkXml;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
-import com.powsybl.security.LimitViolation;
-import com.powsybl.security.LimitViolationsResult;
 import com.powsybl.security.SecurityAnalysis;
 import com.powsybl.security.SecurityAnalysisResult;
-import org.gridsuite.securityanalysis.server.repository.*;
+import org.gridsuite.securityanalysis.server.repository.SecurityAnalysisResultRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -56,11 +53,7 @@ public class SecurityAnalysisWorkerService {
 
     private ActionsService actionsService;
 
-    private ComputationStatusRepository computationStatusRepository;
-
-    private ContingencyRepository contingencyRepository;
-
-    private LimitViolationRepository limitViolationRepository;
+    private SecurityAnalysisResultRepository resultRepository;
 
     private ObjectMapper objectMapper;
 
@@ -69,14 +62,11 @@ public class SecurityAnalysisWorkerService {
     private SecurityAnalysisResultPublisherService resultPublisherService;
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService,
-                                         ComputationStatusRepository computationStatusRepository, ContingencyRepository contingencyRepository,
-                                         LimitViolationRepository limitViolationRepository, ObjectMapper objectMapper,
+                                         SecurityAnalysisResultRepository resultRepository, ObjectMapper objectMapper,
                                          SecurityAnalysisConfigService configService, SecurityAnalysisResultPublisherService resultPublisherService) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
-        this.computationStatusRepository = Objects.requireNonNull(computationStatusRepository);
-        this.contingencyRepository = Objects.requireNonNull(contingencyRepository);
-        this.limitViolationRepository = Objects.requireNonNull(limitViolationRepository);
+        this.resultRepository = Objects.requireNonNull(resultRepository);
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.configService = Objects.requireNonNull(configService);
         this.resultPublisherService = Objects.requireNonNull(resultPublisherService);
@@ -138,70 +128,13 @@ public class SecurityAnalysisWorkerService {
                 });
     }
 
-    private static LimitViolationEntity toEntity(UUID resultUuid, String contingencyId, LimitViolation limitViolation) {
-        return new LimitViolationEntity(resultUuid, limitViolation.getLimitType(), contingencyId, limitViolation.getSubjectId(),
-                limitViolation.getSubjectName(), limitViolation.getLimit(), limitViolation.getLimitName(),
-                limitViolation.getAcceptableDuration(), limitViolation.getLimitReduction(), limitViolation.getValue(),
-                limitViolation.getSide());
-    }
-
-    private static ComputationStatusEntity toEntity(UUID resultUuid, Contingency contingency, boolean ok) {
-        return new ComputationStatusEntity(resultUuid, contingency != null ? contingency.getId() : "", ok);
-    }
-
-    private static List<LimitViolationEntity> toEntity(UUID resultUuid, Contingency contingency, List<LimitViolation> limitViolations) {
-        return limitViolations
-                .stream()
-                .map(limitViolation -> toEntity(resultUuid, contingency != null ? contingency.getId() : "", limitViolation))
-                .collect(Collectors.toList());
-    }
-
-    private static ContingencyEntity toEntity(UUID resultUuid, Contingency contingency) {
-        List<String> branchIds = new ArrayList<>();
-        List<String> generatorIds = new ArrayList<>();
-        for (ContingencyElement element : contingency.getElements()) {
-            switch (element.getType()) {
-                case BRANCH:
-                    branchIds.add(element.getId());
-                    break;
-                case GENERATOR:
-                    generatorIds.add(element.getId());
-                    break;
-                default:
-                    throw new IllegalStateException("Element type yet support: " + element.getType());
-            }
-        }
-        return new ContingencyEntity(resultUuid, contingency.getId(), branchIds, generatorIds);
-    }
-
-    private Mono<Void> save(UUID resultUuid, Contingency contingency, LimitViolationsResult limitViolationsResult) {
-        return computationStatusRepository.insert(toEntity(resultUuid, contingency, limitViolationsResult.isComputationOk()))
-                .flatMapMany(ignore -> limitViolationRepository.insert(toEntity(resultUuid, contingency, limitViolationsResult.getLimitViolations())))
-                .then();
-    }
-
-    Mono<Void> save(SecurityAnalysisResult result, UUID resultUuid) {
-        Objects.requireNonNull(result);
-        Objects.requireNonNull(resultUuid);
-
-        Mono<Void> preContingencyInsert = save(resultUuid, null, result.getPreContingencyResult());
-
-        Mono<Void> postContingencyInsert = Flux.fromIterable(result.getPostContingencyResults())
-                .flatMap(postContingencyResult -> save(resultUuid, postContingencyResult.getContingency(), postContingencyResult.getLimitViolationsResult())
-                        .then(contingencyRepository.insert(toEntity(resultUuid, postContingencyResult.getContingency()))))
-                .then();
-
-        return preContingencyInsert
-                .then(postContingencyInsert);
-    }
-
     @Bean
     public Consumer<Flux<Message<String>>> consumeRun() {
         return f -> f.log(CATEGORY_BROKER_INPUT, Level.FINE)
                 .flatMap(message -> {
                     SecurityAnalysisResultContext resultContext = SecurityAnalysisResultContext.fromMessage(message, objectMapper);
                     return run(resultContext.getRunContext())
-                            .flatMap(result -> save(result, resultContext.getResultUuid()))
+                            .flatMap(result -> resultRepository.insert(resultContext.getResultUuid(), result))
                             .doOnSuccess(unused -> {
                                 resultPublisherService.publish(resultContext.getResultUuid());
                                 LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
