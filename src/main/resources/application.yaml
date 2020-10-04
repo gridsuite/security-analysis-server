@@ -16,6 +16,10 @@ spring:
         publishResult-out-0:
           destination: sa.result
 
+springdoc:
+  swagger-ui:
+    path: swagger-ui.html
+
 server:
   port: 5023
 

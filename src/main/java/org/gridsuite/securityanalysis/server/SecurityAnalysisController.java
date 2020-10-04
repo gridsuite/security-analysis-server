@@ -10,7 +10,13 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.security.SecurityAnalysisResult;
-import io.swagger.annotations.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,7 +36,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
  */
 @RestController
 @RequestMapping(value = "/" + SecurityAnalysisApi.API_VERSION)
-@Api(value = "Security analysis server")
+@Tag(name = "Security analysis server")
 @ComponentScan(basePackageClasses = {SecurityAnalysisService.class, NetworkStoreService.class})
 public class SecurityAnalysisController {
 
@@ -52,11 +58,14 @@ public class SecurityAnalysisController {
     }
 
     @PostMapping(value = "/networks/{networkUuid}/run", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
-    @ApiOperation(value = "Run a security analysis on a network", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "The security analysis has been performed")})
-    public ResponseEntity<Mono<SecurityAnalysisResult>> run(@ApiParam(value = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
-                                                            @ApiParam(value = "Other networks UUID (to merge with main one))") @RequestParam(name = "networkUuid", required = false) List<UUID> otherNetworkUuids,
-                                                            @ApiParam(value = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
+    @Operation(summary = "Run a security analysis on a network")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200",
+                                        description = "The security analysis has been performed",
+                                        content = {@Content(mediaType = APPLICATION_JSON_VALUE,
+                                                            schema = @Schema(implementation = SecurityAnalysisResult.class))})})
+    public ResponseEntity<Mono<SecurityAnalysisResult>> run(@Parameter(description = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
+                                                            @Parameter(description = "Other networks UUID (to merge with main one))") @RequestParam(name = "networkUuid", required = false) List<UUID> otherNetworkUuids,
+                                                            @Parameter(description = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
                                                             @RequestBody(required = false) SecurityAnalysisParameters parameters) {
         SecurityAnalysisParameters nonNullParameters = getNonNullParameters(parameters);
         List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
@@ -65,11 +74,14 @@ public class SecurityAnalysisController {
     }
 
     @PostMapping(value = "/networks/{networkUuid}/run-and-save", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
-    @ApiOperation(value = "Run a security analysis on a network and save results in the database", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "The security analysis has been performed and results have been save to database")})
-    public ResponseEntity<Mono<UUID>> runAndSave(@ApiParam(value = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
-                                                 @ApiParam(value = "Other networks UUID (to merge with main one))") @RequestParam(name = "networkUuid", required = false) List<UUID> otherNetworkUuids,
-                                                 @ApiParam(value = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
+    @Operation(summary = "Run a security analysis on a network and save results in the database")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200",
+                                        description = "The security analysis has been performed and results have been save to database",
+                                        content = {@Content(mediaType = APPLICATION_JSON_VALUE,
+                                                            schema = @Schema(implementation = SecurityAnalysisResult.class))})})
+    public ResponseEntity<Mono<UUID>> runAndSave(@Parameter(description = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
+                                                 @Parameter(description = "Other networks UUID (to merge with main one))") @RequestParam(name = "networkUuid", required = false) List<UUID> otherNetworkUuids,
+                                                 @Parameter(description = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
                                                  @RequestBody(required = false) SecurityAnalysisParameters parameters) {
         SecurityAnalysisParameters nonNullParameters = getNonNullParameters(parameters);
         List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
@@ -78,10 +90,10 @@ public class SecurityAnalysisController {
     }
 
     @GetMapping(value = "/results/{resultUuid}", produces = APPLICATION_JSON_VALUE)
-    @ApiOperation(value = "Get a security analysis result from the database", produces = APPLICATION_JSON_VALUE)
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "The security analysis result")})
-    public Mono<ResponseEntity<SecurityAnalysisResult>> getResult(@ApiParam(value = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
-                                                                  @ApiParam(value = "Limit type") @RequestParam(name = "limitType", required = false) List<String> limitTypes) {
+    @Operation(summary = "Get a security analysis result from the database")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result")})
+    public Mono<ResponseEntity<SecurityAnalysisResult>> getResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                                                  @Parameter(description = "Limit type") @RequestParam(name = "limitType", required = false) List<String> limitTypes) {
         Set<LimitViolationType> limitTypeSet = limitTypes != null ? limitTypes.stream().map(LimitViolationType::valueOf).collect(Collectors.toSet())
                                                                   : Collections.emptySet();
         Mono<SecurityAnalysisResult> result = service.getResult(resultUuid, limitTypeSet);
@@ -90,16 +102,16 @@ public class SecurityAnalysisController {
     }
 
     @DeleteMapping(value = "/results/{resultUuid}", produces = APPLICATION_JSON_VALUE)
-    @ApiOperation(value = "Delete a security analysis result from the database", produces = APPLICATION_JSON_VALUE)
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "The security analysis result has been deleted")})
-    public ResponseEntity<Mono<Void>> deleteResult(@ApiParam(value = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+    @Operation(summary = "Delete a security analysis result from the database")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result has been deleted")})
+    public ResponseEntity<Mono<Void>> deleteResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
         Mono<Void> result = service.deleteResult(resultUuid);
         return ResponseEntity.ok().body(result);
     }
 
     @DeleteMapping(value = "/results", produces = APPLICATION_JSON_VALUE)
-    @ApiOperation(value = "Delete all security analysis results from the database", produces = APPLICATION_JSON_VALUE)
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "All security analysis results have been deleted")})
+    @Operation(summary = "Delete all security analysis results from the database")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "All security analysis results have been deleted")})
     public ResponseEntity<Mono<Void>> deleteResults() {
         Mono<Void> result = service.deleteResults();
         return ResponseEntity.ok().body(result);

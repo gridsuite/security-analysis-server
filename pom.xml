@@ -49,9 +49,9 @@
         <jaxb-runtime.version>2.4.0-b180830.0438</jaxb-runtime.version>
         <jib.from.image>gridsuite/java-hades2</jib.from.image>
         <mock.web.server.version>4.6.0</mock.web.server.version>
+        <openapi.version>1.4.8</openapi.version>
         <powsybl-core-rte.version>2.13.0</powsybl-core-rte.version>
         <gridsuite-dependencies.version>1</gridsuite-dependencies.version>
-        <springfox.version>3.0.0</springfox.version>
     </properties>
 
     <build>
@@ -151,16 +151,6 @@
             <artifactId>reactor-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-swagger2</artifactId>
-            <version>${springfox.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-spring-webflux</artifactId>
-            <version>${springfox.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-stream</artifactId>
         </dependency>
@@ -172,6 +162,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-webflux-ui</artifactId>
+            <version>${openapi.version}</version>
+        </dependency>
 
         <!-- Runtime dependencies -->
         <dependency>
@@ -182,12 +177,6 @@
         <dependency>
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-iidm-impl</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.springfox</groupId>
-            <artifactId>springfox-swagger-ui</artifactId>
-            <version>${springfox.version}</version>
             <scope>runtime</scope>
         </dependency>
         <dependency>
