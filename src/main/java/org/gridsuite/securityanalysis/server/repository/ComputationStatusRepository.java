@@ -21,5 +21,7 @@ public interface ComputationStatusRepository extends ReactiveCassandraRepository
 
     Flux<ComputationStatusEntity> findByResultUuid(UUID resultUuid);
 
+    Flux<ComputationStatusEntity> findByResultUuidAndContingencyId(UUID resultUuid, String contingencyId);
+
     Mono<Void> deleteByResultUuid(UUID resultUuid);
 }

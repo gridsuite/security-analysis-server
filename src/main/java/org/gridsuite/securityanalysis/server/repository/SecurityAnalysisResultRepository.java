@@ -98,10 +98,8 @@ public class SecurityAnalysisResultRepository {
         return new ContingencyEntity(resultUuid, contingency.getId(), branchIds, generatorIds);
     }
 
-    public Mono<SecurityAnalysisResult> find(UUID resultUuid, Set<LimitViolationType> limitTypes) {
-        Objects.requireNonNull(resultUuid);
-        Objects.requireNonNull(limitTypes);
-
+    private Mono<SecurityAnalysisResult> createResultMono(UUID resultUuid, Set<LimitViolationType> limitTypes) {
+        // load all rows related to this result UUID
         Mono<Map<String, Boolean>> computationsStatusesMono = computationStatusRepository.findByResultUuid(resultUuid)
                 .collectMap(ComputationStatusEntity::getContingencyId, SecurityAnalysisResultRepository::fromEntity);
         Mono<Map<String, Collection<LimitViolation>>> limitViolationsMono
@@ -111,6 +109,7 @@ public class SecurityAnalysisResultRepository {
                 .map(SecurityAnalysisResultRepository::fromEntity)
                 .collectList();
 
+        // and then rebuild security analysis data structure
         return Mono.zip(computationsStatusesMono, limitViolationsMono, contingenciesMono)
                 .flatMap(tuple -> {
                     Map<String, Boolean> computationsStatuses = tuple.getT1();
@@ -131,7 +130,17 @@ public class SecurityAnalysisResultRepository {
                             .collect(Collectors.toList());
 
                     return Mono.just(new SecurityAnalysisResult(preContingencyResult, postContingencyResults));
-                })
+                });
+    }
+
+    public Mono<SecurityAnalysisResult> find(UUID resultUuid, Set<LimitViolationType> limitTypes) {
+        Objects.requireNonNull(resultUuid);
+        Objects.requireNonNull(limitTypes);
+
+        // !!! we can just check if result is available by looking at pre computation status because it is written last
+        // see insert method comment, so this mono is empty if result has not been found or not fully written
+        return computationStatusRepository.findByResultUuidAndContingencyId(resultUuid, "")
+                .then(createResultMono(resultUuid, limitTypes))
                 .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable));
     }
 
@@ -152,8 +161,9 @@ public class SecurityAnalysisResultRepository {
                         .then(contingencyRepository.insert(toEntity(resultUuid, postContingencyResult.getContingency()))))
                 .then();
 
-        return preContingencyInsert
-                .then(postContingencyInsert);
+        // !!! save pre-contingency result last so we can rely on it to known if full result is available
+        return postContingencyInsert
+                .then(preContingencyInsert);
     }
 
     public Mono<Void> delete(UUID resultUuid) {
