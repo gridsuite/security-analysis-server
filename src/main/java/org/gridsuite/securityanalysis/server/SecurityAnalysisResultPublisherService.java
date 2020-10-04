@@ -21,9 +21,9 @@ import java.util.logging.Level;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @Service
-public class SecurityAnalysisResultPublisher {
+public class SecurityAnalysisResultPublisherService {
 
-    private static final String CATEGORY_BROKER_OUTPUT = SecurityAnalysisResultPublisher.class.getName()
+    private static final String CATEGORY_BROKER_OUTPUT = SecurityAnalysisResultPublisherService.class.getName()
             + ".output-broker-messages";
 
     private final EmitterProcessor<Message<String>> resultMessagePublisher = EmitterProcessor.create();

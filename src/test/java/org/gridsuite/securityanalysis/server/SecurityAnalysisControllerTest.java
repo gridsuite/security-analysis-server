@@ -34,7 +34,7 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
-import static org.gridsuite.securityanalysis.server.MockSecurityAnalysisFactory.CONTINGENCY_LIST_NAME;
+import static org.gridsuite.securityanalysis.server.SecurityAnalysisFactoryMock.CONTINGENCY_LIST_NAME;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
 
@@ -79,7 +79,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     private SecurityAnalysisWorkerService securityAnalysisWorkerService;
 
     @Autowired
-    private SecurityAnalysisConfig config;
+    private SecurityAnalysisConfigService config;
 
     @Before
     public void setUp() {
@@ -92,11 +92,11 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
         given(networkStoreService.getNetwork(OTHER_NETWORK_UUID, PreloadingStrategy.COLLECTION)).willReturn(otherNetwork);
 
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID))
-                .willReturn(Mono.just(MockSecurityAnalysisFactory.CONTINGENCIES));
+                .willReturn(Mono.just(SecurityAnalysisFactoryMock.CONTINGENCIES));
 
         given(securityAnalysisService.generateResultUuid()).willReturn(RESULT_UUID);
 
-        config.setSecurityAnalysisFactoryClass(MockSecurityAnalysisFactory.class.getName());
+        config.setSecurityAnalysisFactoryClass(SecurityAnalysisFactoryMock.class.getName());
     }
 
     @Test

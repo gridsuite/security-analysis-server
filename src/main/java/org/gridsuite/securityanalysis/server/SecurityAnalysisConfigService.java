@@ -20,7 +20,7 @@ import java.util.Objects;
  */
 @Service
 @PropertySource("classpath:application.yaml")
-public class SecurityAnalysisConfig {
+public class SecurityAnalysisConfigService {
 
     @Value("${securityAnalysisFactoryClass}")
     private String securityAnalysisFactoryClass;

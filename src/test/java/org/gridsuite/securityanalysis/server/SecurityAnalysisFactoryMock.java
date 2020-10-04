@@ -24,9 +24,9 @@ import java.util.stream.Collectors;
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
-public class MockSecurityAnalysisFactory implements SecurityAnalysisFactory {
+public class SecurityAnalysisFactoryMock implements SecurityAnalysisFactory {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(MockSecurityAnalysisFactory.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisFactoryMock.class);
 
     static final String CONTINGENCY_LIST_NAME = "list1";
 

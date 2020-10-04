@@ -62,14 +62,14 @@ public class SecurityAnalysisWorkerService {
 
     private ObjectMapper objectMapper;
 
-    private SecurityAnalysisConfig config;
+    private SecurityAnalysisConfigService config;
 
-    private SecurityAnalysisResultPublisher resultPublisher;
+    private SecurityAnalysisResultPublisherService resultPublisher;
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService,
                                          ComputationStatusRepository computationStatusRepository, ContingencyRepository contingencyRepository,
                                          LimitViolationRepository limitViolationRepository, ObjectMapper objectMapper,
-                                         SecurityAnalysisConfig config, SecurityAnalysisResultPublisher resultPublisher) {
+                                         SecurityAnalysisConfigService config, SecurityAnalysisResultPublisherService resultPublisher) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.computationStatusRepository = Objects.requireNonNull(computationStatusRepository);

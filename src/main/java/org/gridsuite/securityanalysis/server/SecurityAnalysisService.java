@@ -35,10 +35,10 @@ public class SecurityAnalysisService {
 
     private LimitViolationRepository limitViolationRepository;
 
-    private SecurityAnalysisRunPublisher runPublisher;
+    private SecurityAnalysisRunPublisherService runPublisher;
 
     public SecurityAnalysisService(ComputationStatusRepository computationStatusRepository, ContingencyRepository contingencyRepository,
-                                   LimitViolationRepository limitViolationRepository, SecurityAnalysisRunPublisher runPublisher) {
+                                   LimitViolationRepository limitViolationRepository, SecurityAnalysisRunPublisherService runPublisher) {
         this.computationStatusRepository = Objects.requireNonNull(computationStatusRepository);
         this.contingencyRepository = Objects.requireNonNull(contingencyRepository);
         this.limitViolationRepository = Objects.requireNonNull(limitViolationRepository);

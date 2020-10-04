@@ -26,16 +26,16 @@ import java.util.stream.Collectors;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @Service
-public class SecurityAnalysisRunPublisher {
+public class SecurityAnalysisRunPublisherService {
 
-    private static final String CATEGORY_BROKER_OUTPUT = SecurityAnalysisRunPublisher.class.getName()
+    private static final String CATEGORY_BROKER_OUTPUT = SecurityAnalysisRunPublisherService.class.getName()
             + ".output-broker-messages";
 
     private ObjectMapper objectMapper;
 
     private final EmitterProcessor<Message<String>> runMessagePublisher = EmitterProcessor.create();
 
-    public SecurityAnalysisRunPublisher(ObjectMapper objectMapper) {
+    public SecurityAnalysisRunPublisherService(ObjectMapper objectMapper) {
         this.objectMapper = Objects.requireNonNull(objectMapper);
     }
 
