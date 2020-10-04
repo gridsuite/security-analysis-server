@@ -63,22 +63,22 @@ public class SecurityAnalysisWorkerService {
 
     private ObjectMapper objectMapper;
 
-    private SecurityAnalysisConfigService config;
+    private SecurityAnalysisConfigService configService;
 
-    private SecurityAnalysisResultPublisherService resultPublisher;
+    private SecurityAnalysisResultPublisherService resultPublisherService;
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService,
                                          ComputationStatusRepository computationStatusRepository, ContingencyRepository contingencyRepository,
                                          LimitViolationRepository limitViolationRepository, ObjectMapper objectMapper,
-                                         SecurityAnalysisConfigService config, SecurityAnalysisResultPublisherService resultPublisher) {
+                                         SecurityAnalysisConfigService configService, SecurityAnalysisResultPublisherService resultPublisherService) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.computationStatusRepository = Objects.requireNonNull(computationStatusRepository);
         this.contingencyRepository = Objects.requireNonNull(contingencyRepository);
         this.limitViolationRepository = Objects.requireNonNull(limitViolationRepository);
         this.objectMapper = Objects.requireNonNull(objectMapper);
-        this.config = Objects.requireNonNull(config);
-        this.resultPublisher = Objects.requireNonNull(resultPublisher);
+        this.configService = Objects.requireNonNull(configService);
+        this.resultPublisherService = Objects.requireNonNull(resultPublisherService);
     }
 
     private static String sanitizeParam(String param) {
@@ -166,7 +166,7 @@ public class SecurityAnalysisWorkerService {
 
         return Mono.zip(network, contingencies)
                 .flatMap(tuple -> {
-                    SecurityAnalysis securityAnalysis = config.getSecurityAnalysisFactory().create(tuple.getT1(), LocalComputationManager.getDefault(), 0);
+                    SecurityAnalysis securityAnalysis = configService.getSecurityAnalysisFactory().create(tuple.getT1(), LocalComputationManager.getDefault(), 0);
                     CompletableFuture<SecurityAnalysisResult> result = securityAnalysis.run(VariantManagerConstants.INITIAL_VARIANT_ID, context.getParameters(), n -> tuple.getT2());
                     return Mono.fromCompletionStage(result);
                 });
@@ -238,7 +238,10 @@ public class SecurityAnalysisWorkerService {
                     SecurityAnalysisRunContext context = tuple.getT2();
                     return run(context)
                             .flatMap(result -> save(result, resultUuid))
-                            .doOnSuccess(unused -> resultPublisher.publish(resultUuid));
+                            .doOnSuccess(unused -> {
+                                resultPublisherService.publish(resultUuid);
+                                LOGGER.info("Security analysis complete (resultUuid='{}')", resultUuid);
+                            });
                 })
                 .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable))
                 .subscribe();

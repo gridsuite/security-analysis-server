@@ -36,14 +36,14 @@ public class SecurityAnalysisService {
 
     private LimitViolationRepository limitViolationRepository;
 
-    private SecurityAnalysisRunPublisherService runPublisher;
+    private SecurityAnalysisRunPublisherService runPublisherService;
 
     public SecurityAnalysisService(ComputationStatusRepository computationStatusRepository, ContingencyRepository contingencyRepository,
-                                   LimitViolationRepository limitViolationRepository, SecurityAnalysisRunPublisherService runPublisher) {
+                                   LimitViolationRepository limitViolationRepository, SecurityAnalysisRunPublisherService runPublisherService) {
         this.computationStatusRepository = Objects.requireNonNull(computationStatusRepository);
         this.contingencyRepository = Objects.requireNonNull(contingencyRepository);
         this.limitViolationRepository = Objects.requireNonNull(limitViolationRepository);
-        this.runPublisher = Objects.requireNonNull(runPublisher);
+        this.runPublisherService = Objects.requireNonNull(runPublisherService);
     }
 
     public UUID generateResultUuid() {
@@ -53,7 +53,7 @@ public class SecurityAnalysisService {
     public Mono<UUID> runAndSave(SecurityAnalysisRunContext context) {
         Objects.requireNonNull(context);
         UUID resultUuid = generateResultUuid();
-        runPublisher.publish(resultUuid, context);
+        runPublisherService.publish(resultUuid, context);
         return Mono.just(resultUuid);
     }
 
