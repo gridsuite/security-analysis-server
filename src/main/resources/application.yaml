@@ -1,0 +1,36 @@
+spring:
+  rabbitmq:
+    addresses: localhost
+    port: 5672
+
+  cloud:
+    function:
+      definition: consumeRun;publishRun;publishResult
+    stream:
+      bindings:
+        consumeRun-in-0:
+          destination: sa.run
+          group: saGroup
+        publishRun-out-0:
+          destination: sa.run
+        publishResult-out-0:
+          destination: sa.result
+
+springdoc:
+  swagger-ui:
+    path: swagger-ui.html
+
+server:
+  port: 5023
+
+network-store-server:
+  base-uri: http://localhost:8080
+
+actions-server:
+  base-uri: http://localhost:5022
+
+securityAnalysisFactoryClass: com.rte_france.powsybl.hades2.Hades2SecurityAnalysisFactory
+
+logging:
+  level:
+    ROOT: INFO
