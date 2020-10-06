@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -84,7 +85,8 @@ public class SecurityAnalysisWorkerService {
             } catch (PowsyblException e) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Network '" + networkUuid + "' not found");
             }
-        });
+        })
+        .subscribeOn(Schedulers.boundedElastic());
     }
 
     private Mono<Network> getNetwork(UUID networkUuid, List<UUID> otherNetworkUuids) {
