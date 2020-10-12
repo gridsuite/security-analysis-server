@@ -119,8 +119,9 @@ public class SecurityAnalysisWorkerService {
                 .map(NetworkXml::copy); // FIXME workaround for bus/breaker view impl not yet implemented in network store
 
         Mono<List<Contingency>> contingencies = Flux.fromIterable(context.getContingencyListNames())
-                .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid()))
-                .single();
+                .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid())
+                        .flatMapMany(Flux::fromIterable))
+                .collectList();
 
         return Mono.zip(network, contingencies)
                 .flatMap(tuple -> {

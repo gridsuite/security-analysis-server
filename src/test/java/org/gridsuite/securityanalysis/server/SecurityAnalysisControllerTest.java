@@ -36,7 +36,7 @@ import reactor.core.publisher.Mono;
 import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisFactoryMock.CONTINGENCY_LIST_NAME;
+import static org.gridsuite.securityanalysis.server.SecurityAnalysisFactoryMock.*;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
 
@@ -93,6 +93,8 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
 
         // action service mocking
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID))
+                .willReturn(Mono.just(SecurityAnalysisFactoryMock.CONTINGENCIES));
+        given(actionsService.getContingencyList(CONTINGENCY_LIST2_NAME, NETWORK_UUID))
                 .willReturn(Mono.just(SecurityAnalysisFactoryMock.CONTINGENCIES));
 
         // UUID service mocking to always generate the same result UUID
@@ -161,6 +163,18 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .uri("/" + VERSION + "/results/" + RESULT_UUID)
                 .exchange()
                 .expectStatus().isNotFound();
+    }
+
+    @Test
+    public void runWithTwoLists() {
+        webTestClient.post()
+                .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME +
+                        "&contingencyListName=" + CONTINGENCY_LIST2_NAME)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(String.class)
+                .isEqualTo(EXPECTED_JSON);
     }
 
     @Test
