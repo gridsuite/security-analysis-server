@@ -65,4 +65,4 @@ jobs:
         uses: gridsuite/broadcast-event@master
         with:
           token: ${{ secrets.REPO_ACCESS_TOKEN }}
-          event-type: security-analysis_server_updated
+          event-type: security_analysis_server_updated
