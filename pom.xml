@@ -49,7 +49,7 @@
         <jaxb-runtime.version>2.4.0-b180830.0438</jaxb-runtime.version>
         <jib.from.image>gridsuite/java-hades2</jib.from.image>
         <mock.web.server.version>4.6.0</mock.web.server.version>
-        <gridsuite-dependencies.version>2</gridsuite-dependencies.version>
+        <gridsuite-dependencies.version>3</gridsuite-dependencies.version>
     </properties>
 
     <build>
