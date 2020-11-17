@@ -9,6 +9,7 @@ package org.gridsuite.securityanalysis.server;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.security.SecurityAnalysisResult;
+import io.swagger.annotations.ApiParam;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -116,6 +117,23 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "All security analysis results have been deleted")})
     public ResponseEntity<Mono<Void>> deleteResults() {
         Mono<Void> result = service.deleteResults();
+        return ResponseEntity.ok().body(result);
+    }
+
+    @GetMapping(value = "/status/{resultUuid}", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get the security analysis status from the database")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis status")})
+    public ResponseEntity<Mono<String>> getStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        Mono<String> result = service.getStatus(resultUuid);
+        return ResponseEntity.ok().body(result);
+    }
+
+    @PutMapping(value = "/status/{resultUuid}", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Set the security analysis status from the database")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis status has been set")})
+    public ResponseEntity<Mono<Void>> setStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                                @ApiParam(value = "status") @RequestParam(name = "status", required = true) String status) {
+        Mono<Void> result = service.setStatus(resultUuid, status);
         return ResponseEntity.ok().body(result);
     }
 }

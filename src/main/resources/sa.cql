@@ -27,3 +27,10 @@ CREATE TABLE sa.contingency (
     generatorIds list<text>,
     PRIMARY KEY (resultUuid, contingencyId)
 );
+
+CREATE TABLE sa.globalStatus (
+    resultUuid uuid,
+    status text,
+    PRIMARY KEY (resultUuid)
+);
+

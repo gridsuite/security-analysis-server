@@ -54,4 +54,12 @@ public class SecurityAnalysisService {
     public Mono<Void> deleteResults() {
         return resultRepository.deleteAll();
     }
+
+    public Mono<String> getStatus(UUID resultUuid) {
+        return resultRepository.findStatus(resultUuid);
+    }
+
+    public Mono<Void> setStatus(UUID resultUuid, String status) {
+        return resultRepository.insertStatus(resultUuid, status);
+    }
 }

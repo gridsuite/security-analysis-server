@@ -35,12 +35,16 @@ public class SecurityAnalysisResultRepository {
 
     private LimitViolationRepository limitViolationRepository;
 
+    private GlobalStatusRepository globalStatusRepository;
+
     public SecurityAnalysisResultRepository(ComputationStatusRepository computationStatusRepository,
                                             ContingencyRepository contingencyRepository,
-                                            LimitViolationRepository limitViolationRepository) {
+                                            LimitViolationRepository limitViolationRepository,
+                                            GlobalStatusRepository globalStatusRepository) {
         this.computationStatusRepository = computationStatusRepository;
         this.contingencyRepository = contingencyRepository;
         this.limitViolationRepository = limitViolationRepository;
+        this.globalStatusRepository = globalStatusRepository;
     }
 
     private static LimitViolation fromEntity(LimitViolationEntity entity) {
@@ -171,7 +175,8 @@ public class SecurityAnalysisResultRepository {
         Mono<Void> v1 = computationStatusRepository.deleteByResultUuid(resultUuid);
         Mono<Void> v2 = limitViolationRepository.deleteByResultUuid(resultUuid);
         Mono<Void> v3 = contingencyRepository.deleteByResultUuid(resultUuid);
-        return Flux.concat(v1, v2, v3)
+        Mono<Void> v4 = globalStatusRepository.deleteByResultUuid(resultUuid);
+        return Flux.concat(v1, v2, v3, v4)
                 .then()
                 .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable));
     }
@@ -180,8 +185,24 @@ public class SecurityAnalysisResultRepository {
         Mono<Void> v1 = computationStatusRepository.deleteAll();
         Mono<Void> v2 = limitViolationRepository.deleteAll();
         Mono<Void> v3 = contingencyRepository.deleteAll();
-        return Flux.concat(v1, v2, v3)
+        Mono<Void> v4 = globalStatusRepository.deleteAll();
+        return Flux.concat(v1, v2, v3, v4)
                 .then()
                 .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable));
+    }
+
+    public Mono<String> findStatus(UUID resultUuid) {
+        Objects.requireNonNull(resultUuid);
+        return globalStatusRepository.findByResultUuid(resultUuid).map(GlobalStatusEntity::getStatus);
+    }
+
+    private static GlobalStatusEntity toEntity(UUID resultUuid, String status) {
+        return new GlobalStatusEntity(resultUuid, status);
+    }
+
+    public Mono<Void> insertStatus(UUID resultUuid, String status) {
+        Objects.requireNonNull(resultUuid);
+        return globalStatusRepository.insert(toEntity(resultUuid, status))
+                .then();
     }
 }
