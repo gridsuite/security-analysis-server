@@ -10,8 +10,6 @@ import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repository.SecurityAnalysisResultRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -24,9 +22,6 @@ import java.util.UUID;
  */
 @Service
 public class SecurityAnalysisService {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisService.class);
-
     private SecurityAnalysisResultRepository resultRepository;
 
     private SecurityAnalysisRunPublisherService runPublisherService;
@@ -67,13 +62,10 @@ public class SecurityAnalysisService {
     }
 
     public Mono<String> getStatus(UUID resultUuid) {
-        Mono<String> result = resultRepository.findStatus(resultUuid);
-        result.subscribe(s -> LOGGER.info("************ SecurityAnalysisService.getStatus : resultUuid=" + resultUuid + " status=" + s + " *************"));
-        return result;
+        return resultRepository.findStatus(resultUuid);
     }
 
     public Mono<Void> setStatus(UUID resultUuid, String status) {
-        LOGGER.info("************ SecurityAnalysisService.setStatus : resultUuid=" + resultUuid + " status=" + status + " *************");
         return resultRepository.insertStatus(resultUuid, status);
     }
 }

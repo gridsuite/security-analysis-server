@@ -20,8 +20,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisRunContext;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -42,9 +40,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RequestMapping(value = "/" + SecurityAnalysisApi.API_VERSION)
 @Tag(name = "Security analysis server")
 public class SecurityAnalysisController {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisController.class);
-
     private final SecurityAnalysisService service;
 
     private final SecurityAnalysisWorkerService workerService;
@@ -128,9 +123,7 @@ public class SecurityAnalysisController {
     @Operation(summary = "Get the security analysis status from the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis status")})
     public ResponseEntity<Mono<String>> getStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
-        LOGGER.info("************************** SecurityAnalysisController.getStatus : uuid = " + resultUuid.toString());
         Mono<String> result = service.getStatus(resultUuid);
-        result.subscribe(s -> LOGGER.info("************ SecurityAnalysisController.getStatus : resultUuid=" + resultUuid.toString() + " status=" + s + " *************"));
         return ResponseEntity.ok().body(result);
     }
 
