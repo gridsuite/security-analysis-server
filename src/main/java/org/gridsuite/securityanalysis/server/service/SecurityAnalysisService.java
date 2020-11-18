@@ -46,10 +46,12 @@ public class SecurityAnalysisService {
         UUID resultUuid = uuidGeneratorService.generate();
 
         // update status to running status
-        setStatus(resultUuid, SecurityAnalysisStatus.RUNNING.name());
-
-        runPublisherService.publish(new SecurityAnalysisResultContext(resultUuid, runContext));
-        return Mono.just(resultUuid);
+        return setStatus(resultUuid, SecurityAnalysisStatus.RUNNING.name()).then(
+                Mono.defer(() -> {
+                    runPublisherService.publish(new SecurityAnalysisResultContext(resultUuid, runContext));
+                    return Mono.just(resultUuid);
+                })
+        );
     }
 
     public Mono<SecurityAnalysisResult> getResult(UUID resultUuid, Set<LimitViolationType> limitTypes) {
@@ -72,6 +74,6 @@ public class SecurityAnalysisService {
 
     public Mono<Void> setStatus(UUID resultUuid, String status) {
         LOGGER.info("************ SecurityAnalysisService.setStatus : resultUuid=" + resultUuid + " status=" + status + " *************");
-        return resultRepository.insertStatus(resultUuid, status).then();
+        return resultRepository.insertStatus(resultUuid, status);
     }
 }
