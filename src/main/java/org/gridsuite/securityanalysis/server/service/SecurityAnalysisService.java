@@ -8,7 +8,10 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repository.SecurityAnalysisResultRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -21,6 +24,8 @@ import java.util.UUID;
  */
 @Service
 public class SecurityAnalysisService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisService.class);
 
     private SecurityAnalysisResultRepository resultRepository;
 
@@ -39,6 +44,10 @@ public class SecurityAnalysisService {
     public Mono<UUID> runAndSaveResult(SecurityAnalysisRunContext runContext) {
         Objects.requireNonNull(runContext);
         UUID resultUuid = uuidGeneratorService.generate();
+
+        // update status to running status
+        setStatus(resultUuid, SecurityAnalysisStatus.RUNNING.name());
+
         runPublisherService.publish(new SecurityAnalysisResultContext(resultUuid, runContext));
         return Mono.just(resultUuid);
     }
@@ -56,10 +65,13 @@ public class SecurityAnalysisService {
     }
 
     public Mono<String> getStatus(UUID resultUuid) {
-        return resultRepository.findStatus(resultUuid);
+        Mono<String> result = resultRepository.findStatus(resultUuid);
+        result.subscribe(s -> LOGGER.info("************ SecurityAnalysisService.getStatus : resultUuid=" + resultUuid + " status=" + s + " *************"));
+        return result;
     }
 
     public Mono<Void> setStatus(UUID resultUuid, String status) {
-        return resultRepository.insertStatus(resultUuid, status);
+        LOGGER.info("************ SecurityAnalysisService.setStatus : resultUuid=" + resultUuid + " status=" + status + " *************");
+        return resultRepository.insertStatus(resultUuid, status).then();
     }
 }
