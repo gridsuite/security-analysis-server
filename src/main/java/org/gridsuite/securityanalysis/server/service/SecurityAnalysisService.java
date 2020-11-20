@@ -42,11 +42,9 @@ public class SecurityAnalysisService {
 
         // update status to running status
         return setStatus(resultUuid, SecurityAnalysisStatus.RUNNING.name()).then(
-                Mono.defer(() -> {
-                    runPublisherService.publish(new SecurityAnalysisResultContext(resultUuid, runContext));
-                    return Mono.just(resultUuid);
-                })
-        );
+                Mono.fromRunnable(() ->
+                        runPublisherService.publish(new SecurityAnalysisResultContext(resultUuid, runContext)))
+                .thenReturn(resultUuid));
     }
 
     public Mono<SecurityAnalysisResult> getResult(UUID resultUuid, Set<LimitViolationType> limitTypes) {
