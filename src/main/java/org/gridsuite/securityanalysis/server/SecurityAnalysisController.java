@@ -119,7 +119,7 @@ public class SecurityAnalysisController {
         return ResponseEntity.ok().body(result);
     }
 
-    @GetMapping(value = "/status/{resultUuid}", produces = APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/results/{resultUuid}/status", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get the security analysis status from the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis status")})
     public ResponseEntity<Mono<String>> getStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
@@ -127,7 +127,7 @@ public class SecurityAnalysisController {
         return ResponseEntity.ok().body(result);
     }
 
-    @PutMapping(value = "/status/{resultUuid}", produces = APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/results/{resultUuid}/status", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Set the security analysis status from the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis status has been set")})
     public ResponseEntity<Mono<Void>> setStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,

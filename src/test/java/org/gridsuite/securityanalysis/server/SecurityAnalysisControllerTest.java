@@ -214,19 +214,19 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     @Test
     public void testStatus() {
         webTestClient.get()
-                .uri("/" + VERSION + "/status/" + RESULT_UUID)
+                .uri("/" + VERSION + "/results/" + RESULT_UUID + "/status")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class)
                 .isEqualTo(null);
 
         webTestClient.put()
-                .uri("/" + VERSION + "/status/" + RESULT_UUID + "?status=RUNNING")
+                .uri("/" + VERSION + "/results/" + RESULT_UUID + "/status?status=RUNNING")
                 .exchange()
                 .expectStatus().isOk();
 
         webTestClient.get()
-                .uri("/" + VERSION + "/status/" + RESULT_UUID)
+                .uri("/" + VERSION + "/results/" + RESULT_UUID + "/status")
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class)
