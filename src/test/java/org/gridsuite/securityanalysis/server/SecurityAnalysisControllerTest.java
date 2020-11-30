@@ -221,7 +221,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .isEqualTo(null);
 
         webTestClient.put()
-                .uri("/" + VERSION + "/results/" + RESULT_UUID + "/status?status=RUNNING")
+                .uri("/" + VERSION + "/results/" + RESULT_UUID + "/invalidateStatus")
                 .exchange()
                 .expectStatus().isOk();
 
@@ -230,6 +230,6 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class)
-                .isEqualTo("RUNNING");
+                .isEqualTo("NOT_DONE");
     }
 }

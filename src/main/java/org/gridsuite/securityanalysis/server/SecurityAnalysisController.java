@@ -9,7 +9,6 @@ package org.gridsuite.securityanalysis.server;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.security.SecurityAnalysisResult;
-import io.swagger.annotations.ApiParam;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -17,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisRunContext;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
@@ -127,12 +127,11 @@ public class SecurityAnalysisController {
         return ResponseEntity.ok().body(result);
     }
 
-    @PutMapping(value = "/results/{resultUuid}/status", produces = APPLICATION_JSON_VALUE)
-    @Operation(summary = "Set the security analysis status from the database")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis status has been set")})
-    public ResponseEntity<Mono<Void>> setStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
-                                                @ApiParam(value = "status") @RequestParam(name = "status", required = true) String status) {
-        Mono<Void> result = service.setStatus(resultUuid, status);
+    @PutMapping(value = "/results/{resultUuid}/invalidateStatus", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Invalidate the security analysis status from the database")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis status has been invalidated")})
+    public ResponseEntity<Mono<Void>> invalidateStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        Mono<Void> result = service.setStatus(resultUuid, SecurityAnalysisStatus.NOT_DONE.name());
         return ResponseEntity.ok().body(result);
     }
 }

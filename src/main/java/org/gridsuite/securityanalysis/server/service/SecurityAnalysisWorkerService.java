@@ -18,6 +18,7 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.security.SecurityAnalysis;
 import com.powsybl.security.SecurityAnalysisResult;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repository.SecurityAnalysisResultRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -138,7 +139,8 @@ public class SecurityAnalysisWorkerService {
                     SecurityAnalysisResultContext resultContext = SecurityAnalysisResultContext.fromMessage(message, objectMapper);
 
                     return run(resultContext.getRunContext())
-                            .flatMap(result -> resultRepository.insert(resultContext.getResultUuid(), result))
+                            .flatMap(result -> resultRepository.insert(resultContext.getResultUuid(), result)
+                                    .then(resultRepository.insertStatus(resultContext.getResultUuid(), SecurityAnalysisStatus.COMPLETED.name())))
                             .doOnSuccess(unused -> {
                                 resultPublisherService.publish(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver());
                                 LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
