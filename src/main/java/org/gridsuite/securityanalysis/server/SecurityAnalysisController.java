@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisRunContext;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
@@ -39,7 +40,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @RequestMapping(value = "/" + SecurityAnalysisApi.API_VERSION)
 @Tag(name = "Security analysis server")
 public class SecurityAnalysisController {
-
     private final SecurityAnalysisService service;
 
     private final SecurityAnalysisWorkerService workerService;
@@ -116,6 +116,22 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "All security analysis results have been deleted")})
     public ResponseEntity<Mono<Void>> deleteResults() {
         Mono<Void> result = service.deleteResults();
+        return ResponseEntity.ok().body(result);
+    }
+
+    @GetMapping(value = "/results/{resultUuid}/status", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get the security analysis status from the database")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis status")})
+    public ResponseEntity<Mono<String>> getStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        Mono<String> result = service.getStatus(resultUuid);
+        return ResponseEntity.ok().body(result);
+    }
+
+    @PutMapping(value = "/results/{resultUuid}/invalidate-status", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Invalidate the security analysis status from the database")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis status has been invalidated")})
+    public ResponseEntity<Mono<Void>> invalidateStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        Mono<Void> result = service.setStatus(resultUuid, SecurityAnalysisStatus.NOT_DONE.name());
         return ResponseEntity.ok().body(result);
     }
 }

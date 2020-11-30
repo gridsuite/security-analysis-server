@@ -8,6 +8,7 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repository.SecurityAnalysisResultRepository;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -21,7 +22,6 @@ import java.util.UUID;
  */
 @Service
 public class SecurityAnalysisService {
-
     private SecurityAnalysisResultRepository resultRepository;
 
     private SecurityAnalysisRunPublisherService runPublisherService;
@@ -39,8 +39,12 @@ public class SecurityAnalysisService {
     public Mono<UUID> runAndSaveResult(SecurityAnalysisRunContext runContext) {
         Objects.requireNonNull(runContext);
         UUID resultUuid = uuidGeneratorService.generate();
-        runPublisherService.publish(new SecurityAnalysisResultContext(resultUuid, runContext));
-        return Mono.just(resultUuid);
+
+        // update status to running status
+        return setStatus(resultUuid, SecurityAnalysisStatus.RUNNING.name()).then(
+                Mono.fromRunnable(() ->
+                        runPublisherService.publish(new SecurityAnalysisResultContext(resultUuid, runContext)))
+                .thenReturn(resultUuid));
     }
 
     public Mono<SecurityAnalysisResult> getResult(UUID resultUuid, Set<LimitViolationType> limitTypes) {
@@ -53,5 +57,13 @@ public class SecurityAnalysisService {
 
     public Mono<Void> deleteResults() {
         return resultRepository.deleteAll();
+    }
+
+    public Mono<String> getStatus(UUID resultUuid) {
+        return resultRepository.findStatus(resultUuid);
+    }
+
+    public Mono<Void> setStatus(UUID resultUuid, String status) {
+        return resultRepository.insertStatus(resultUuid, status);
     }
 }

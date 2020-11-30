@@ -210,4 +210,26 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectBody(String.class)
                 .isEqualTo(EXPECTED_JSON);
     }
+
+    @Test
+    public void testStatus() {
+        webTestClient.get()
+                .uri("/" + VERSION + "/results/" + RESULT_UUID + "/status")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .isEqualTo(null);
+
+        webTestClient.put()
+                .uri("/" + VERSION + "/results/" + RESULT_UUID + "/invalidate-status")
+                .exchange()
+                .expectStatus().isOk();
+
+        webTestClient.get()
+                .uri("/" + VERSION + "/results/" + RESULT_UUID + "/status")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(String.class)
+                .isEqualTo("NOT_DONE");
+    }
 }

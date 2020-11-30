@@ -30,7 +30,7 @@ public class ActionsService {
 
     @Autowired
     public ActionsService(WebClient.Builder builder,
-                          @Value("${backing-services.actions-server.base-uri:http://actions-server/}") String baseUri) {
+                          @Value("${actions-server.base-uri:http://actions-server/}") String baseUri) {
         webClient = builder.baseUrl(baseUri)
                 .build();
     }
