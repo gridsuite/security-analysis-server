@@ -221,7 +221,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .isEqualTo(null);
 
         webTestClient.put()
-                .uri("/" + VERSION + "/results/" + RESULT_UUID + "/invalidateStatus")
+                .uri("/" + VERSION + "/results/" + RESULT_UUID + "/invalidate-status")
                 .exchange()
                 .expectStatus().isOk();
 

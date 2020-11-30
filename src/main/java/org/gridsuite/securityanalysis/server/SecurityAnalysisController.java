@@ -127,7 +127,7 @@ public class SecurityAnalysisController {
         return ResponseEntity.ok().body(result);
     }
 
-    @PutMapping(value = "/results/{resultUuid}/invalidateStatus", produces = APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/results/{resultUuid}/invalidate-status", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Invalidate the security analysis status from the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis status has been invalidated")})
     public ResponseEntity<Mono<Void>> invalidateStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
