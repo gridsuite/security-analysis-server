@@ -13,7 +13,6 @@ import com.powsybl.contingency.Contingency;
 import com.powsybl.iidm.mergingview.MergingView;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
-import com.powsybl.iidm.xml.NetworkXml;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.security.SecurityAnalysis;
@@ -87,7 +86,7 @@ public class SecurityAnalysisWorkerService {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Network '" + networkUuid + "' not found");
             }
         })
-        .subscribeOn(Schedulers.boundedElastic());
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     private Mono<Network> getNetwork(UUID networkUuid, List<UUID> otherNetworkUuids) {
@@ -116,8 +115,7 @@ public class SecurityAnalysisWorkerService {
 
         LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(SecurityAnalysisWorkerService::sanitizeParam).collect(Collectors.toList()));
 
-        Mono<Network> network = getNetwork(context.getNetworkUuid(), context.getOtherNetworkUuids())
-                .map(NetworkXml::copy); // FIXME workaround for bus/breaker view impl not yet implemented in network store
+        Mono<Network> network = getNetwork(context.getNetworkUuid(), context.getOtherNetworkUuids());
 
         Mono<List<Contingency>> contingencies = Flux.fromIterable(context.getContingencyListNames())
                 .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid())
