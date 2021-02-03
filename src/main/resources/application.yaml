@@ -5,7 +5,7 @@ spring:
 
   cloud:
     function:
-      definition: consumeRun;publishRun;publishResult
+      definition: consumeRun;publishRun;publishResult;consumeCancel;publishCancel;publishStopped
     stream:
       bindings:
         consumeRun-in-0:
@@ -15,6 +15,12 @@ spring:
           destination: sa.run
         publishResult-out-0:
           destination: sa.result
+        consumeCancel-in-0:
+            destination: sa.cancel
+        publishCancel-out-0:
+            destination: sa.cancel
+        publishStopped-out-0:
+          destination: sa.stopped
 
 springdoc:
   swagger-ui:

@@ -19,6 +19,7 @@ import java.util.UUID;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
+ * @author Franck Lecuyer <franck.lecuyer at rte-france.com>
  */
 @Service
 public class SecurityAnalysisService {
@@ -26,13 +27,17 @@ public class SecurityAnalysisService {
 
     private SecurityAnalysisRunPublisherService runPublisherService;
 
+    private SecurityAnalysisCancelPublisherService cancelPublisherService;
+
     private UuidGeneratorService uuidGeneratorService;
 
     public SecurityAnalysisService(SecurityAnalysisResultRepository resultRepository,
                                    SecurityAnalysisRunPublisherService runPublisherService,
+                                   SecurityAnalysisCancelPublisherService cancelPublisherService,
                                    UuidGeneratorService uuidGeneratorService) {
         this.resultRepository = Objects.requireNonNull(resultRepository);
         this.runPublisherService = Objects.requireNonNull(runPublisherService);
+        this.cancelPublisherService = Objects.requireNonNull(cancelPublisherService);
         this.uuidGeneratorService = Objects.requireNonNull(uuidGeneratorService);
     }
 
@@ -65,5 +70,10 @@ public class SecurityAnalysisService {
 
     public Mono<Void> setStatus(UUID resultUuid, String status) {
         return resultRepository.insertStatus(resultUuid, status);
+    }
+
+    public Mono<Void> stop(UUID resultUuid, String receiver) {
+        return Mono.fromRunnable(() ->
+                cancelPublisherService.publish(new SecurityAnalysisCancelContext(resultUuid, receiver))).then();
     }
 }
