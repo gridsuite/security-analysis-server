@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -197,7 +198,11 @@ public class SecurityAnalysisWorkerService {
                     }
                     return Mono.empty();
                 })
-                .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable))
+                .doOnError(throwable -> {
+                    if (!(throwable instanceof CancellationException)) {
+                        LOGGER.error(throwable.toString(), throwable);
+                    }
+                })
                 .subscribe();
     }
 }
