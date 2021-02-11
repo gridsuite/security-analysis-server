@@ -70,7 +70,7 @@ public class SecurityAnalysisController {
                                                             @RequestBody(required = false) SecurityAnalysisParameters parameters) {
         SecurityAnalysisParameters nonNullParameters = getNonNullParameters(parameters);
         List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
-        Mono<SecurityAnalysisResult> result = workerService.run(new SecurityAnalysisRunContext(networkUuid, nonNullOtherNetworkUuids, contigencyListNames, null, nonNullParameters), null);
+        Mono<SecurityAnalysisResult> result = workerService.run(new SecurityAnalysisRunContext(networkUuid, nonNullOtherNetworkUuids, contigencyListNames, null, nonNullParameters));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
     }
 
