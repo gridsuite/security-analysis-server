@@ -7,6 +7,7 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Sets;
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.computation.local.LocalComputationManager;
 import com.powsybl.contingency.Contingency;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -70,6 +72,8 @@ public class SecurityAnalysisWorkerService {
     private Map<UUID, CompletableFuture<SecurityAnalysisResult>> futures = new ConcurrentHashMap<>();
 
     private Map<UUID, SecurityAnalysisCancelContext> cancelComputationRequests = new ConcurrentHashMap<>();
+
+    private Set<UUID> runRequests = Sets.newConcurrentHashSet();
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService,
                                          SecurityAnalysisResultRepository resultRepository, ObjectMapper objectMapper,
@@ -129,10 +133,6 @@ public class SecurityAnalysisWorkerService {
     private Mono<SecurityAnalysisResult> run(SecurityAnalysisRunContext context, UUID resultUuid) {
         Objects.requireNonNull(context);
 
-        if (resultUuid != null && cancelComputationRequests.get(resultUuid) != null) {
-            return Mono.empty();
-        }
-
         LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(SecurityAnalysisWorkerService::sanitizeParam).collect(Collectors.toList()));
 
         Mono<Network> network = getNetwork(context.getNetworkUuid(), context.getOtherNetworkUuids());
@@ -149,14 +149,21 @@ public class SecurityAnalysisWorkerService {
                     if (resultUuid != null) {
                         futures.put(resultUuid, future);
                     }
-                    return Mono.fromCompletionStage(future);
+                    if (resultUuid != null && cancelComputationRequests.get(resultUuid) != null) {
+                        return Mono.empty();
+                    } else {
+                        return Mono.fromCompletionStage(future);
+                    }
                 });
     }
 
     @Bean
     public Consumer<Message<String>> consumeRun() {
         return message -> {
+
             SecurityAnalysisResultContext resultContext = SecurityAnalysisResultContext.fromMessage(message, objectMapper);
+            runRequests.add(resultContext.getResultUuid());
+
             run(resultContext.getRunContext(), resultContext.getResultUuid())
                     .flatMap(result -> resultRepository.insert(resultContext.getResultUuid(), result)
                             .then(resultRepository.insertStatus(resultContext.getResultUuid(), SecurityAnalysisStatus.COMPLETED.name()))
@@ -179,6 +186,7 @@ public class SecurityAnalysisWorkerService {
                     .doFinally(s -> {
                         futures.remove(resultContext.getResultUuid());
                         cancelComputationRequests.remove(resultContext.getResultUuid());
+                        runRequests.remove(resultContext.getResultUuid());
                     })
                     .subscribe();
         };
@@ -188,6 +196,10 @@ public class SecurityAnalysisWorkerService {
     public Consumer<Message<String>> consumeCancel() {
         return message -> {
             SecurityAnalysisCancelContext cancelContext = SecurityAnalysisCancelContext.fromMessage(message);
+
+            if (runRequests.contains(cancelContext.getResultUuid())) {
+                cancelComputationRequests.put(cancelContext.getResultUuid(), cancelContext);
+            }
 
             // find the completableFuture associated with result uuid
             CompletableFuture<SecurityAnalysisResult> future = futures.get(cancelContext.getResultUuid());
@@ -201,8 +213,6 @@ public class SecurityAnalysisWorkerService {
                         })
                         .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable))
                         .subscribe();
-            } else {
-                cancelComputationRequests.put(cancelContext.getResultUuid(), cancelContext);
             }
         };
     }
