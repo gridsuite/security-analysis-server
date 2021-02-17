@@ -232,4 +232,26 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectBody(String.class)
                 .isEqualTo("NOT_DONE");
     }
+
+    @Test
+    public void stopTest() {
+        webTestClient.post()
+                .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
+                        + "&receiver=me")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(UUID.class)
+                .isEqualTo(RESULT_UUID);
+
+        webTestClient.put()
+                .uri("/" + VERSION + "/results/" + RESULT_UUID + "/stop"
+                        + "?receiver=me")
+                .exchange()
+                .expectStatus().isOk();
+
+        Message<byte[]> cancelMessage = output.receive(1000, "sa.cancel.destination");
+        assertEquals(RESULT_UUID.toString(), cancelMessage.getHeaders().get("resultUuid"));
+        assertEquals("me", cancelMessage.getHeaders().get("receiver"));
+    }
 }

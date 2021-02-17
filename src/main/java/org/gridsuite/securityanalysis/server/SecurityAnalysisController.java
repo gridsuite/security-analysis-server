@@ -35,6 +35,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
+ * @author Franck Lecuyer <franck.lecuyer at rte-france.com>
  */
 @RestController
 @RequestMapping(value = "/" + SecurityAnalysisApi.API_VERSION)
@@ -132,6 +133,15 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis status has been invalidated")})
     public ResponseEntity<Mono<Void>> invalidateStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
         Mono<Void> result = service.setStatus(resultUuid, SecurityAnalysisStatus.NOT_DONE.name());
+        return ResponseEntity.ok().body(result);
+    }
+
+    @PutMapping(value = "/results/{resultUuid}/stop", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Stop a security analysis computation")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis has been stopped")})
+    public ResponseEntity<Mono<Void>> stop(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                           @Parameter(description = "Result receiver") @RequestParam(name = "receiver", required = false) String receiver) {
+        Mono<Void> result = service.stop(resultUuid, receiver);
         return ResponseEntity.ok().body(result);
     }
 }
