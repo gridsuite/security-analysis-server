@@ -186,7 +186,11 @@ public class SecurityAnalysisWorkerService {
                                 runRequests.remove(resultContext.getResultUuid());
                             });
                 })
-                .onErrorContinue((t, r) -> LOGGER.error("Exception in consumeRun", t))
+                .onErrorContinue((t, r) -> {
+                    if (!(t instanceof CancellationException)) {
+                        LOGGER.error("Exception in consumeRun", t);
+                    }
+                })
                 .subscribe();
     }
 
