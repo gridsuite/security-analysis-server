@@ -74,6 +74,6 @@ public class SecurityAnalysisService {
 
     public Mono<Void> stop(UUID resultUuid, String receiver) {
         return Mono.fromRunnable(() ->
-                cancelPublisherService.publish(new SecurityAnalysisCancelContext(resultUuid, receiver))).then();
+                cancelPublisherService.publish(new SecurityAnalysisCancelContext(resultUuid, receiver)));
     }
 }

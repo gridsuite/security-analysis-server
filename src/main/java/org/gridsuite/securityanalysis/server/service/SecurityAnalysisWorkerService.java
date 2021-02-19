@@ -41,6 +41,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -144,76 +145,75 @@ public class SecurityAnalysisWorkerService {
 
         return Mono.zip(network, contingencies)
                 .flatMap(tuple -> {
-                    SecurityAnalysis securityAnalysis = configService.getSecurityAnalysisFactory().create(tuple.getT1(), LocalComputationManager.getDefault(), 0);
-                    CompletableFuture<SecurityAnalysisResult> future = securityAnalysis.run(VariantManagerConstants.INITIAL_VARIANT_ID, context.getParameters(), n -> tuple.getT2());
-                    if (resultUuid != null) {
-                        futures.put(resultUuid, future);
-                    }
                     if (resultUuid != null && cancelComputationRequests.get(resultUuid) != null) {
                         return Mono.empty();
                     } else {
+                        SecurityAnalysis securityAnalysis = configService.getSecurityAnalysisFactory().create(tuple.getT1(), LocalComputationManager.getDefault(), 0);
+                        CompletableFuture<SecurityAnalysisResult> future = securityAnalysis.run(VariantManagerConstants.INITIAL_VARIANT_ID, context.getParameters(), n -> tuple.getT2());
+                        if (resultUuid != null) {
+                            futures.put(resultUuid, future);
+                        }
                         return Mono.fromCompletionStage(future);
                     }
                 });
     }
 
     @Bean
-    public Consumer<Message<String>> consumeRun() {
-        return message -> {
+    public Consumer<Flux<Message<String>>> consumeRun() {
+        return f -> f.log(CATEGORY_BROKER_INPUT, Level.FINE)
+                .flatMap(message -> {
+                    SecurityAnalysisResultContext resultContext = SecurityAnalysisResultContext.fromMessage(message, objectMapper);
+                    runRequests.add(resultContext.getResultUuid());
 
-            SecurityAnalysisResultContext resultContext = SecurityAnalysisResultContext.fromMessage(message, objectMapper);
-            runRequests.add(resultContext.getResultUuid());
-
-            run(resultContext.getRunContext(), resultContext.getResultUuid())
-                    .flatMap(result -> resultRepository.insert(resultContext.getResultUuid(), result)
-                            .then(resultRepository.insertStatus(resultContext.getResultUuid(), SecurityAnalysisStatus.COMPLETED.name()))
-                            .then(Mono.just(result)))
-                    .doOnSuccess(result -> {
-                        if (result != null) {  // result available
-                            resultPublisherService.publish(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver());
-                            LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
-                        } else {  // result not available : stop computation request
-                            if (cancelComputationRequests.get(resultContext.getResultUuid()) != null) {
-                                stoppedPublisherService.publish(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
-                            }
-                        }
-                    })
-                    .doOnError(throwable -> {
-                        if (!(throwable instanceof CancellationException)) {
-                            LOGGER.error(throwable.toString(), throwable);
-                        }
-                    })
-                    .doFinally(s -> {
-                        futures.remove(resultContext.getResultUuid());
-                        cancelComputationRequests.remove(resultContext.getResultUuid());
-                        runRequests.remove(resultContext.getResultUuid());
-                    })
-                    .subscribe();
-        };
+                    return run(resultContext.getRunContext(), resultContext.getResultUuid())
+                            .flatMap(result -> resultRepository.insert(resultContext.getResultUuid(), result)
+                                    .then(resultRepository.insertStatus(resultContext.getResultUuid(), SecurityAnalysisStatus.COMPLETED.name()))
+                                    .then(Mono.just(result)))
+                            .doOnSuccess(result -> {
+                                if (result != null) {  // result available
+                                    resultPublisherService.publish(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver());
+                                    LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
+                                }
+                            })
+                            .doFinally(s -> {
+                                futures.remove(resultContext.getResultUuid());
+                                cancelComputationRequests.remove(resultContext.getResultUuid());
+                                runRequests.remove(resultContext.getResultUuid());
+                            })
+                            .doOnError(throwable -> {
+                                if (!(throwable instanceof CancellationException)) {
+                                    LOGGER.error("Exception in consumeRun", throwable);
+                                }
+                            });
+                })
+                .onErrorContinue((t, r) -> LOGGER.error("Exception in consumeRun", t))
+                .subscribe();
     }
 
     @Bean
-    public Consumer<Message<String>> consumeCancel() {
-        return message -> {
-            SecurityAnalysisCancelContext cancelContext = SecurityAnalysisCancelContext.fromMessage(message);
+    public Consumer<Flux<Message<String>>> consumeCancel() {
+        return f -> f.log(CATEGORY_BROKER_INPUT, Level.FINE)
+                .flatMap(message -> {
+                    SecurityAnalysisCancelContext cancelContext = SecurityAnalysisCancelContext.fromMessage(message);
 
-            if (runRequests.contains(cancelContext.getResultUuid())) {
-                cancelComputationRequests.put(cancelContext.getResultUuid(), cancelContext);
-            }
+                    if (runRequests.contains(cancelContext.getResultUuid())) {
+                        cancelComputationRequests.put(cancelContext.getResultUuid(), cancelContext);
+                    }
 
-            // find the completableFuture associated with result uuid
-            CompletableFuture<SecurityAnalysisResult> future = futures.get(cancelContext.getResultUuid());
-            if (future != null) {
-                future.cancel(true);  // cancel computation in progress
+                    // find the completableFuture associated with result uuid
+                    CompletableFuture<SecurityAnalysisResult> future = futures.get(cancelContext.getResultUuid());
+                    if (future != null) {
+                        future.cancel(true);  // cancel computation in progress
 
-                resultRepository.delete(cancelContext.getResultUuid())
-                        .doOnSuccess(unused -> {
-                            stoppedPublisherService.publish(cancelContext.getResultUuid(), cancelContext.getReceiver());
-                            LOGGER.info("Security analysis stopped (resultUuid='{}')", cancelContext.getResultUuid());
-                        })
-                        .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable))
-                        .subscribe();
-            }
-        };
+                        return resultRepository.delete(cancelContext.getResultUuid())
+                                .doOnSuccess(unused -> {
+                                    stoppedPublisherService.publish(cancelContext.getResultUuid(), cancelContext.getReceiver());
+                                    LOGGER.info("Security analysis stopped (resultUuid='{}')", cancelContext.getResultUuid());
+                                });
+                    }
+                    return Mono.empty();
+                })
+                .onErrorContinue((t, r) -> LOGGER.error("Exception in consumeCancel", t))
+                .subscribe();
     }
 }
