@@ -179,14 +179,13 @@ public class SecurityAnalysisWorkerService {
                                 futures.remove(resultContext.getResultUuid());
                                 cancelComputationRequests.remove(resultContext.getResultUuid());
                                 runRequests.remove(resultContext.getResultUuid());
-                            })
-                            .doOnError(throwable -> {
-                                if (!(throwable instanceof CancellationException)) {
-                                    LOGGER.error("Exception in consumeRun", throwable);
-                                }
                             });
                 })
-                .onErrorContinue((t, r) -> LOGGER.error("Exception in consumeRun", t))
+                .onErrorContinue((t, r) -> {
+                    if (!(t instanceof CancellationException)) {
+                        LOGGER.error("Exception in consumeRun", t);
+                    }
+                })
                 .subscribe();
     }
 
