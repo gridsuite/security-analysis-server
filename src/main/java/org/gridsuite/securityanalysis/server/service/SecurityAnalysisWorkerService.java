@@ -104,13 +104,19 @@ public class SecurityAnalysisWorkerService {
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
-    private Mono<Network> getNetwork(UUID networkUuid, List<UUID> otherNetworkUuids) {
+    private Mono<Network> getNetwork(UUID networkUuid, List<UUID> otherNetworkUuids, UUID resultUuid) {
         Mono<Network> network = getNetwork(networkUuid);
         if (otherNetworkUuids.isEmpty()) {
             return network;
         } else {
             Mono<List<Network>> otherNetworks = Flux.fromIterable(otherNetworkUuids)
-                    .flatMap(this::getNetwork)
+                    .flatMap(uuid -> {
+                        if (resultUuid != null && cancelComputationRequests.get(resultUuid) != null) {
+                            return Mono.empty();
+                        } else {
+                            return getNetwork(uuid);
+                        }
+                    })
                     .collectList();
             return Mono.zip(network, otherNetworks)
                     .map(t -> {
@@ -134,7 +140,19 @@ public class SecurityAnalysisWorkerService {
 
         LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(SecurityAnalysisWorkerService::sanitizeParam).collect(Collectors.toList()));
 
-        Mono<Network> network = getNetwork(context.getNetworkUuid(), context.getOtherNetworkUuids());
+        if (resultUuid != null && cancelComputationRequests.get(resultUuid) != null) {
+            return Mono.empty();
+        }
+
+        LOGGER.info("Loading networks");
+
+        Mono<Network> network = getNetwork(context.getNetworkUuid(), context.getOtherNetworkUuids(), resultUuid);
+
+        if (resultUuid != null && cancelComputationRequests.get(resultUuid) != null) {
+            return Mono.empty();
+        }
+
+        LOGGER.info("Loading contingencies");
 
         Mono<List<Contingency>> contingencies = Flux.fromIterable(context.getContingencyListNames())
                 .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid()))
@@ -150,6 +168,7 @@ public class SecurityAnalysisWorkerService {
                         if (resultUuid != null) {
                             futures.put(resultUuid, future);
                         }
+                        LOGGER.info("Starting security analysis computation");
                         return Mono.fromCompletionStage(future);
                     }
                 });
@@ -170,6 +189,11 @@ public class SecurityAnalysisWorkerService {
                                 if (result != null) {  // result available
                                     resultPublisherService.publish(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver());
                                     LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
+                                } else {  // result not available : stop computation request
+                                    if (cancelComputationRequests.get(resultContext.getResultUuid()) != null) {
+                                        stoppedPublisherService.publish(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
+                                        LOGGER.info("Security analysis stopped (resultUuid='{}')", resultContext.getResultUuid());
+                                    }
                                 }
                             })
                             .onErrorResume(throwable -> {
