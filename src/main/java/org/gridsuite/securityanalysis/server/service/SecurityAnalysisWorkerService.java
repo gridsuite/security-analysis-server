@@ -138,9 +138,8 @@ public class SecurityAnalysisWorkerService {
         Mono<Network> network = getNetwork(context.getNetworkUuid(), context.getOtherNetworkUuids());
 
         Mono<List<Contingency>> contingencies = Flux.fromIterable(context.getContingencyListNames())
-                .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid())
-                        .flatMapMany(Flux::fromIterable))
-                .collectList();
+                .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid()))
+                        .collectList();
 
         return Mono.zip(network, contingencies)
                 .flatMap(tuple -> {
@@ -178,10 +177,12 @@ public class SecurityAnalysisWorkerService {
                             }
                         }
                     })
-                    .doOnError(throwable -> {
+                    .onErrorResume(throwable -> {
                         if (!(throwable instanceof CancellationException)) {
                             LOGGER.error(throwable.toString(), throwable);
                         }
+                        stoppedPublisherService.publish(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver());
+                        return resultRepository.delete(resultContext.getResultUuid()).then(Mono.empty());
                     })
                     .doFinally(s -> {
                         futures.remove(resultContext.getResultUuid());
