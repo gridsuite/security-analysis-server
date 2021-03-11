@@ -172,10 +172,13 @@ public class SecurityAnalysisWorkerService {
                             }
                         }
                     })
-                    .doOnError(throwable -> {
+                    .onErrorResume(throwable -> {
                         if (!(throwable instanceof CancellationException)) {
                             LOGGER.error(throwable.toString(), throwable);
+                            stoppedPublisherService.publish(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver());
+                            return resultRepository.delete(resultContext.getResultUuid()).then(Mono.empty());
                         }
+                        return Mono.empty();
                     })
                     .doFinally(s -> {
                         futures.remove(resultContext.getResultUuid());

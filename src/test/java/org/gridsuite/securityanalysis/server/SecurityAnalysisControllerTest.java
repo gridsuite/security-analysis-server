@@ -12,7 +12,6 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisConfigService;
-import org.gridsuite.securityanalysis.server.service.SecurityAnalysisService;
 import org.gridsuite.securityanalysis.server.service.UuidGeneratorService;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,7 +23,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
-import org.springframework.core.io.buffer.DataBufferLimitException;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.Message;
 import org.springframework.test.context.ContextConfiguration;
@@ -77,9 +75,6 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     private UuidGeneratorService uuidGeneratorService;
 
     @Autowired
-    private SecurityAnalysisService securityAnalysisService;
-
-    @Autowired
     private SecurityAnalysisConfigService configService;
 
     @Before
@@ -99,7 +94,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
         given(actionsService.getContingencyList(CONTINGENCY_LIST2_NAME, NETWORK_UUID))
                 .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES));
         given(actionsService.getContingencyList(CONTINGENCY_LIST_ERROR_NAME, NETWORK_UUID))
-                .willReturn(Flux.error(new DataBufferLimitException("Exceeded limit on max bytes to buffer : 262144")));
+                .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES).thenMany(Flux.error(new RuntimeException("Error message test"))));
 
         // UUID service mocking to always generate the same result UUID
         given(uuidGeneratorService.generate()).willReturn(RESULT_UUID);
@@ -109,7 +104,6 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
 
         // purge messages
         while (output.receive(1000) != null) {
-            output.receive(1000);
         }
     }
 
