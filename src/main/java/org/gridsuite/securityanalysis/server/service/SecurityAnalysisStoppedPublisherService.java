@@ -23,6 +23,9 @@ import java.util.logging.Level;
 @Service
 public class SecurityAnalysisStoppedPublisherService {
 
+    public static final String CANCEL_MESSAGE = "Security analysis has canceled";
+    public static final String FAIL_MESSAGE = "Security analysis has failed";
+
     private static final String CATEGORY_BROKER_OUTPUT = SecurityAnalysisStoppedPublisherService.class.getName()
             + ".output-broker-messages";
 
@@ -33,11 +36,20 @@ public class SecurityAnalysisStoppedPublisherService {
         return () -> stoppedMessagePublisher.log(CATEGORY_BROKER_OUTPUT, Level.FINE);
     }
 
-    public void publish(UUID resultUuid, String receiver) {
+    public void publishCancel(UUID resultUuid, String receiver) {
+        publish(resultUuid, receiver, CANCEL_MESSAGE);
+    }
+
+    public void publishFail(UUID resultUuid, String receiver, String causeMessage) {
+        publish(resultUuid, receiver, FAIL_MESSAGE + " : " + causeMessage);
+    }
+
+    public void publish(UUID resultUuid, String receiver, String stopMessage) {
         stoppedMessagePublisher.onNext(MessageBuilder
                 .withPayload("")
                 .setHeader("resultUuid", resultUuid.toString())
                 .setHeader("receiver", receiver)
+                .setHeader("message", stopMessage)
                 .build());
     }
 }

@@ -12,7 +12,6 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisConfigService;
-import org.gridsuite.securityanalysis.server.service.SecurityAnalysisService;
 import org.gridsuite.securityanalysis.server.service.UuidGeneratorService;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,7 +36,10 @@ import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisFactoryMock.*;
+import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.CANCEL_MESSAGE;
+import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.FAIL_MESSAGE;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.BDDMockito.given;
 
 /**
@@ -59,6 +61,8 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
 
     private static final String EXPECTED_FILTERED_JSON = "{\"version\":\"1.0\",\"preContingencyResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"l3\",\"limitType\":\"CURRENT\",\"acceptableDuration\":1200,\"limit\":10.0,\"limitReduction\":1.0,\"value\":11.0,\"side\":\"ONE\"}],\"actionsTaken\":[]},\"postContingencyResults\":[{\"contingency\":{\"id\":\"l1\",\"elements\":[{\"id\":\"l1\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[],\"actionsTaken\":[]}},{\"contingency\":{\"id\":\"l2\",\"elements\":[{\"id\":\"l2\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[],\"actionsTaken\":[]}}]}";
 
+    private static final String ERROR_MESSAGE = "Error message test";
+
     @Autowired
     private OutputDestination output;
 
@@ -73,9 +77,6 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
 
     @MockBean
     private UuidGeneratorService uuidGeneratorService;
-
-    @Autowired
-    private SecurityAnalysisService securityAnalysisService;
 
     @Autowired
     private SecurityAnalysisConfigService configService;
@@ -96,12 +97,18 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES));
         given(actionsService.getContingencyList(CONTINGENCY_LIST2_NAME, NETWORK_UUID))
                 .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES));
+        given(actionsService.getContingencyList(CONTINGENCY_LIST_ERROR_NAME, NETWORK_UUID))
+                .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES).thenMany(Flux.error(new RuntimeException(ERROR_MESSAGE))));
 
         // UUID service mocking to always generate the same result UUID
         given(uuidGeneratorService.generate()).willReturn(RESULT_UUID);
 
         // mock the powsybl security analysis service
         configService.setSecurityAnalysisFactoryClass(SecurityAnalysisFactoryMock.class.getName());
+
+        // purge messages
+        while (output.receive(1000) != null) {
+        }
     }
 
     @Test
@@ -244,14 +251,59 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectBody(UUID.class)
                 .isEqualTo(RESULT_UUID);
 
+        Message<byte[]> message = output.receive(1000, "sa.run.destination");
+        assertEquals(NETWORK_UUID.toString(), message.getHeaders().get("networkUuid"));
+        assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
+        assertEquals(CONTINGENCY_LIST_NAME, message.getHeaders().get("contingencyListNames"));
+        assertEquals("me", message.getHeaders().get("receiver"));
+
         webTestClient.put()
                 .uri("/" + VERSION + "/results/" + RESULT_UUID + "/stop"
                         + "?receiver=me")
                 .exchange()
                 .expectStatus().isOk();
 
-        Message<byte[]> cancelMessage = output.receive(1000, "sa.cancel.destination");
-        assertEquals(RESULT_UUID.toString(), cancelMessage.getHeaders().get("resultUuid"));
-        assertEquals("me", cancelMessage.getHeaders().get("receiver"));
+        message = output.receive(1000, "sa.cancel.destination");
+        assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
+        assertEquals("me", message.getHeaders().get("receiver"));
+
+        message = output.receive(1000, "sa.stopped.destination");
+        assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
+        assertEquals("me", message.getHeaders().get("receiver"));
+        assertEquals(CANCEL_MESSAGE, message.getHeaders().get("message"));
+
+        assertNull(output.receive(1000));
+    }
+
+    @Test
+    public void runTestWithError() {
+        webTestClient.post()
+                .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_ERROR_NAME
+                        + "&receiver=me")
+                .exchange()
+                .expectStatus().isOk()  // Because fully asynchronous (just publish a message)
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(UUID.class)
+                .isEqualTo(RESULT_UUID);
+
+        Message<byte[]> message = output.receive(1000, "sa.run.destination");
+        assertEquals(NETWORK_UUID.toString(), message.getHeaders().get("networkUuid"));
+        assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
+        assertEquals(CONTINGENCY_LIST_ERROR_NAME, message.getHeaders().get("contingencyListNames"));
+        assertEquals("me", message.getHeaders().get("receiver"));
+
+        // Message stopped has been sent
+        message = output.receive(1000, "sa.stopped.destination");
+        assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
+        assertEquals("me", message.getHeaders().get("receiver"));
+        assertEquals(FAIL_MESSAGE + " : " + ERROR_MESSAGE, message.getHeaders().get("message"));
+
+        assertNull(output.receive(1000));
+
+        // No result
+        webTestClient.get()
+                .uri("/" + VERSION + "/results/" + RESULT_UUID)
+                .exchange()
+                .expectStatus().isNotFound();
     }
 }

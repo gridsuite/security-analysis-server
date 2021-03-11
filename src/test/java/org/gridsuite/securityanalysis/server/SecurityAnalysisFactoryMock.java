@@ -30,6 +30,7 @@ public class SecurityAnalysisFactoryMock implements SecurityAnalysisFactory {
 
     static final String CONTINGENCY_LIST_NAME = "list1";
     static final String CONTINGENCY_LIST2_NAME = "list2";
+    static final String CONTINGENCY_LIST_ERROR_NAME = "listError";
 
     static final List<Contingency> CONTINGENCIES = List.of(new Contingency("l1", new BranchContingency("l1")),
                                                            new Contingency("l2", new BranchContingency("l2")));
