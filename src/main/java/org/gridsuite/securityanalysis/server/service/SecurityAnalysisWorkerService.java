@@ -38,6 +38,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.CANCEL_MESSAGE;
+import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.FAIL_MESSAGE;
+
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  * @author Franck Lecuyer <franck.lecuyer at rte-france.com>
@@ -168,14 +171,14 @@ public class SecurityAnalysisWorkerService {
                             LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
                         } else {  // result not available : stop computation request
                             if (cancelComputationRequests.get(resultContext.getResultUuid()) != null) {
-                                stoppedPublisherService.publish(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
+                                stoppedPublisherService.publishCancel(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
                             }
                         }
                     })
                     .onErrorResume(throwable -> {
                         if (!(throwable instanceof CancellationException)) {
-                            LOGGER.error(throwable.toString(), throwable);
-                            stoppedPublisherService.publish(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver());
+                            LOGGER.error(FAIL_MESSAGE, throwable);
+                            stoppedPublisherService.publishFail(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver(), throwable.getMessage());
                             return resultRepository.delete(resultContext.getResultUuid()).then(Mono.empty());
                         }
                         return Mono.empty();
@@ -205,8 +208,8 @@ public class SecurityAnalysisWorkerService {
 
                 resultRepository.delete(cancelContext.getResultUuid())
                         .doOnSuccess(unused -> {
-                            stoppedPublisherService.publish(cancelContext.getResultUuid(), cancelContext.getReceiver());
-                            LOGGER.info("Security analysis stopped (resultUuid='{}')", cancelContext.getResultUuid());
+                            stoppedPublisherService.publishCancel(cancelContext.getResultUuid(), cancelContext.getReceiver());
+                            LOGGER.info(CANCEL_MESSAGE + " (resultUuid='{}')", cancelContext.getResultUuid());
                         })
                         .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable))
                         .subscribe();
