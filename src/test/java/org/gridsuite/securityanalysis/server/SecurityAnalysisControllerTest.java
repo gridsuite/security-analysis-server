@@ -11,9 +11,9 @@ import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
-import org.gridsuite.securityanalysis.server.service.UuidGeneratorService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisConfigService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisService;
+import org.gridsuite.securityanalysis.server.service.UuidGeneratorService;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,7 +31,7 @@ import org.springframework.test.context.ContextHierarchy;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.config.EnableWebFlux;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 
 import java.util.UUID;
 
@@ -93,9 +93,9 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
 
         // action service mocking
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID))
-                .willReturn(Mono.just(SecurityAnalysisFactoryMock.CONTINGENCIES));
+                .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES));
         given(actionsService.getContingencyList(CONTINGENCY_LIST2_NAME, NETWORK_UUID))
-                .willReturn(Mono.just(SecurityAnalysisFactoryMock.CONTINGENCIES));
+                .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES));
 
         // UUID service mocking to always generate the same result UUID
         given(uuidGeneratorService.generate()).willReturn(RESULT_UUID);

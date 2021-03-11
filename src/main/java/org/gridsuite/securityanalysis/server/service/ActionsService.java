@@ -12,9 +12,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -39,7 +38,7 @@ public class ActionsService {
         this.webClient = Objects.requireNonNull(webClient);
     }
 
-    public Mono<List<Contingency>> getContingencyList(String name, UUID networkUuid) {
+    public Flux<Contingency> getContingencyList(String name, UUID networkUuid) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(networkUuid);
         return webClient.get()
@@ -48,6 +47,7 @@ public class ActionsService {
                         .queryParam("networkUuid", networkUuid.toString())
                         .build(name))
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<>() { });
+                .bodyToFlux(new ParameterizedTypeReference<>() {
+                });
     }
 }
