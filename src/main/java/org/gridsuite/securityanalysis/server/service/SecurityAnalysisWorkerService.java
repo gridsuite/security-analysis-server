@@ -31,12 +31,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -139,7 +134,7 @@ public class SecurityAnalysisWorkerService {
 
         Mono<List<Contingency>> contingencies = Flux.fromIterable(context.getContingencyListNames())
                 .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid()))
-                        .collectList();
+                .collectList();
 
         return Mono.zip(network, contingencies)
                 .flatMap(tuple -> {
@@ -177,12 +172,10 @@ public class SecurityAnalysisWorkerService {
                             }
                         }
                     })
-                    .onErrorResume(throwable -> {
+                    .doOnError(throwable -> {
                         if (!(throwable instanceof CancellationException)) {
                             LOGGER.error(throwable.toString(), throwable);
                         }
-                        stoppedPublisherService.publish(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver());
-                        return resultRepository.delete(resultContext.getResultUuid()).then(Mono.empty());
                     })
                     .doFinally(s -> {
                         futures.remove(resultContext.getResultUuid());

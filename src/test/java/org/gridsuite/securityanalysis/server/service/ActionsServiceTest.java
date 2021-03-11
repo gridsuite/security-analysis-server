@@ -15,7 +15,6 @@ import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.gridsuite.securityanalysis.server.WebFluxConfig;
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -94,7 +93,6 @@ public class ActionsServiceTest {
         String veryLargeJsonExpected = objectMapper.writeValueAsString(createVeryLargeList());
 
         final Dispatcher dispatcher = new Dispatcher() {
-            @NotNull
             @Override
             public MockResponse dispatch(RecordedRequest request) {
                 String requestPath = Objects.requireNonNull(request.getPath());
