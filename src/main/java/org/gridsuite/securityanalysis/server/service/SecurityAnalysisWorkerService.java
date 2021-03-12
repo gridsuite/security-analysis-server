@@ -191,7 +191,7 @@ public class SecurityAnalysisWorkerService {
                                     LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
                                 } else {  // result not available : stop computation request
                                     if (cancelComputationRequests.get(resultContext.getResultUuid()) != null) {
-                                        stoppedPublisherService.publish(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
+                                        stoppedPublisherService.publishCancel(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
                                         LOGGER.info("Security analysis stopped (resultUuid='{}')", resultContext.getResultUuid());
                                     }
                                 }
@@ -209,11 +209,6 @@ public class SecurityAnalysisWorkerService {
                                 cancelComputationRequests.remove(resultContext.getResultUuid());
                                 runRequests.remove(resultContext.getResultUuid());
                             });
-                })
-                .onErrorContinue((t, r) -> {
-                    if (!(t instanceof CancellationException)) {
-                        LOGGER.error("Exception in consumeRun", t);
-                    }
                 })
                 .subscribe();
     }
