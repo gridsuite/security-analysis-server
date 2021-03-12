@@ -23,7 +23,7 @@ import java.util.logging.Level;
 @Service
 public class SecurityAnalysisStoppedPublisherService {
 
-    public static final String CANCEL_MESSAGE = "Security analysis has canceled";
+    public static final String CANCEL_MESSAGE = "Security analysis was canceled";
     public static final String FAIL_MESSAGE = "Security analysis has failed";
 
     private static final String CATEGORY_BROKER_OUTPUT = SecurityAnalysisStoppedPublisherService.class.getName()
