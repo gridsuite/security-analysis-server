@@ -104,30 +104,24 @@ public class SecurityAnalysisWorkerService {
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
-    private Mono<Network> getNetwork(UUID networkUuid, List<UUID> otherNetworkUuids, UUID resultUuid) {
+    private Mono<Network> getNetwork(UUID networkUuid, List<UUID> otherNetworkUuids) {
         Mono<Network> network = getNetwork(networkUuid);
         if (otherNetworkUuids.isEmpty()) {
             return network;
         } else {
             Mono<List<Network>> otherNetworks = Flux.fromIterable(otherNetworkUuids)
-                    .flatMap(uuid -> {
-                        if (resultUuid != null && cancelComputationRequests.get(resultUuid) != null) {
-                            return Mono.empty();
-                        } else {
-                            return getNetwork(uuid);
-                        }
-                    })
-                    .collectList();
+                .flatMap(this::getNetwork)
+                .collectList();
             return Mono.zip(network, otherNetworks)
-                    .map(t -> {
-                        // creation of the merging view
-                        List<Network> networks = new ArrayList<>();
-                        networks.add(t.getT1());
-                        networks.addAll(t.getT2());
-                        MergingView mergingView = MergingView.create("merge", "iidm");
-                        mergingView.merge(networks.toArray(new Network[0]));
-                        return mergingView;
-                    });
+                .map(t -> {
+                    // creation of the merging view
+                    List<Network> networks = new ArrayList<>();
+                    networks.add(t.getT1());
+                    networks.addAll(t.getT2());
+                    MergingView mergingView = MergingView.create("merge", "iidm");
+                    mergingView.merge(networks.toArray(new Network[0]));
+                    return mergingView;
+                });
         }
     }
 
@@ -138,24 +132,20 @@ public class SecurityAnalysisWorkerService {
     private Mono<SecurityAnalysisResult> run(SecurityAnalysisRunContext context, UUID resultUuid) {
         Objects.requireNonNull(context);
 
-        LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(SecurityAnalysisWorkerService::sanitizeParam).collect(Collectors.toList()));
-
         if (resultUuid != null && cancelComputationRequests.get(resultUuid) != null) {
             return Mono.empty();
         }
 
-        LOGGER.info("Loading networks");
-
-        Mono<Network> network = getNetwork(context.getNetworkUuid(), context.getOtherNetworkUuids(), resultUuid);
-
-        if (resultUuid != null && cancelComputationRequests.get(resultUuid) != null) {
-            return Mono.empty();
-        }
-
-        LOGGER.info("Loading contingencies");
+        Mono<Network> network = getNetwork(context.getNetworkUuid(), context.getOtherNetworkUuids()).map(uuid -> {
+            LOGGER.info("Loading network");
+            return uuid;
+        });
 
         Mono<List<Contingency>> contingencies = Flux.fromIterable(context.getContingencyListNames())
-                .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid()))
+                .flatMap(contingencyListName -> {
+                    LOGGER.info("Loading contingencies");
+                    return actionsService.getContingencyList(contingencyListName, context.getNetworkUuid());
+                })
                 .collectList();
 
         return Mono.zip(network, contingencies)
@@ -163,12 +153,12 @@ public class SecurityAnalysisWorkerService {
                     if (resultUuid != null && cancelComputationRequests.get(resultUuid) != null) {
                         return Mono.empty();
                     } else {
+                        LOGGER.info("Starting security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(SecurityAnalysisWorkerService::sanitizeParam).collect(Collectors.toList()));
                         SecurityAnalysis securityAnalysis = configService.getSecurityAnalysisFactory().create(tuple.getT1(), LocalComputationManager.getDefault(), 0);
                         CompletableFuture<SecurityAnalysisResult> future = securityAnalysis.run(VariantManagerConstants.INITIAL_VARIANT_ID, context.getParameters(), n -> tuple.getT2());
                         if (resultUuid != null) {
                             futures.put(resultUuid, future);
                         }
-                        LOGGER.info("Starting security analysis computation");
                         return Mono.fromCompletionStage(future);
                     }
                 });
