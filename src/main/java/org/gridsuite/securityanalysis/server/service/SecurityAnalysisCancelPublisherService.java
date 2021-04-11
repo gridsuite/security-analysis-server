@@ -11,8 +11,10 @@ import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Sinks;
 
 import java.util.Objects;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 
@@ -25,15 +27,21 @@ public class SecurityAnalysisCancelPublisherService {
     private static final String CATEGORY_BROKER_OUTPUT = SecurityAnalysisCancelPublisherService.class.getName()
             + ".output-broker-messages";
 
-    private final EmitterProcessor<Message<String>> cancelMessagePublisher = EmitterProcessor.create();
+    //private final EmitterProcessor<Message<String>> cancelMessagePublisher = EmitterProcessor.create();
+
+    private final Sinks.Many cancelMessagePublisher = Sinks.many().multicast().onBackpressureBuffer();
+
 
     @Bean
     public Supplier<Flux<Message<String>>> publishCancel() {
-        return () -> cancelMessagePublisher.log(CATEGORY_BROKER_OUTPUT, Level.FINE);
+        return () -> cancelMessagePublisher.asFlux().log(CATEGORY_BROKER_OUTPUT, Level.FINE);
     }
 
     public void publish(SecurityAnalysisCancelContext cancelContext) {
         Objects.requireNonNull(cancelContext);
-        cancelMessagePublisher.onNext(cancelContext.toMessage());
+        while (cancelMessagePublisher.tryEmitNext(cancelContext.toMessage()).isFailure()) {
+            LockSupport.parkNanos(10);
+        }
+        //cancelMessagePublisher.onNext(cancelContext.toMessage());
     }
 }

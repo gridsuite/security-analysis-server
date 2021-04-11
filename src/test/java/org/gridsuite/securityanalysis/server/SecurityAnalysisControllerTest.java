@@ -133,7 +133,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectBody(UUID.class)
                 .isEqualTo(RESULT_UUID);
 
-        Message<byte[]> resultMessage = output.receive(1000, "sa.result.destination");
+        Message<byte[]> resultMessage = output.receive(1000, "sa.result");
         assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
         assertEquals("me", resultMessage.getHeaders().get("receiver"));
 
@@ -194,7 +194,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectBody(UUID.class)
                 .isEqualTo(RESULT_UUID);
 
-        output.receive(1000, "sa.result.destination");
+        Message<byte[]> message = output.receive(1000, "sa.result");
 
         webTestClient.delete()
                 .uri("/" + VERSION + "/results")
