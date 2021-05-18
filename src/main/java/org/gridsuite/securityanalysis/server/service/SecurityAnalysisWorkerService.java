@@ -16,13 +16,12 @@ import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
-import com.powsybl.openloadflow.sa.OpenSecurityAnalysisFactory;
 import com.powsybl.security.SecurityAnalysis;
 import com.powsybl.security.SecurityAnalysisFactory;
 import com.powsybl.security.SecurityAnalysisResult;
-import com.rte_france.powsybl.hades2.Hades2SecurityAnalysisFactory;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repository.SecurityAnalysisResultRepository;
+import org.gridsuite.securityanalysis.server.util.SecurityAnalysisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -75,7 +74,7 @@ public class SecurityAnalysisWorkerService {
 
     private Set<UUID> runRequests = Sets.newConcurrentHashSet();
 
-    private Function<String, SecurityAnalysisFactory> securityAnalysisFactorySupplier = providerName -> SecurityAnalysisWorkerService.getSecurityAnalysisFactory(providerName);
+    private Function<String, SecurityAnalysisFactory> securityAnalysisFactorySupplier = SecurityAnalysisUtil::getFactory;
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService,
                                          SecurityAnalysisResultRepository resultRepository, ObjectMapper objectMapper,
@@ -87,21 +86,6 @@ public class SecurityAnalysisWorkerService {
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.resultPublisherService = Objects.requireNonNull(resultPublisherService);
         this.stoppedPublisherService = Objects.requireNonNull(stoppedPublisherService);
-    }
-
-    public static SecurityAnalysisFactory getSecurityAnalysisFactory(String providerName) {
-        if (providerName != null) {
-            switch (providerName) {
-                case "Hades2":
-                    return new Hades2SecurityAnalysisFactory();
-                case "OpenLoadFlow":
-                    return new OpenSecurityAnalysisFactory();
-                default:
-                    throw new PowsyblException("Security analysis provider not found: " + providerName);
-            }
-        } else {
-            return new OpenSecurityAnalysisFactory(); // open load flow by default
-        }
     }
 
     public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysisFactory> securityAnalysisFactorySupplier) {
