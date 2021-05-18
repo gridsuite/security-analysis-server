@@ -25,14 +25,17 @@ public class SecurityAnalysisRunContext {
 
     private final String receiver;
 
+    private final String providerName;
+
     private final SecurityAnalysisParameters parameters;
 
     public SecurityAnalysisRunContext(UUID networkUuid, List<UUID> otherNetworkUuids, List<String> contingencyListNames,
-                                      String receiver, SecurityAnalysisParameters parameters) {
+                                      String receiver, String providerName, SecurityAnalysisParameters parameters) {
         this.networkUuid = Objects.requireNonNull(networkUuid);
         this.otherNetworkUuids = Objects.requireNonNull(otherNetworkUuids);
         this.contingencyListNames = Objects.requireNonNull(contingencyListNames);
         this.receiver = receiver;
+        this.providerName = providerName;
         this.parameters = Objects.requireNonNull(parameters);
     }
 
@@ -50,6 +53,10 @@ public class SecurityAnalysisRunContext {
 
     public String getReceiver() {
         return receiver;
+    }
+
+    public String getProviderName() {
+        return providerName;
     }
 
     public SecurityAnalysisParameters getParameters() {

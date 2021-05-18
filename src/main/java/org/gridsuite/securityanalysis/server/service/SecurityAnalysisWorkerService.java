@@ -16,8 +16,11 @@ import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
+import com.powsybl.openloadflow.sa.OpenSecurityAnalysisFactory;
 import com.powsybl.security.SecurityAnalysis;
+import com.powsybl.security.SecurityAnalysisFactory;
 import com.powsybl.security.SecurityAnalysisResult;
+import com.rte_france.powsybl.hades2.Hades2SecurityAnalysisFactory;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repository.SecurityAnalysisResultRepository;
 import org.slf4j.Logger;
@@ -36,6 +39,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.CANCEL_MESSAGE;
@@ -61,8 +65,6 @@ public class SecurityAnalysisWorkerService {
 
     private ObjectMapper objectMapper;
 
-    private SecurityAnalysisConfigService configService;
-
     private SecurityAnalysisResultPublisherService resultPublisherService;
 
     private SecurityAnalysisStoppedPublisherService stoppedPublisherService;
@@ -73,18 +75,37 @@ public class SecurityAnalysisWorkerService {
 
     private Set<UUID> runRequests = Sets.newConcurrentHashSet();
 
+    private Function<String, SecurityAnalysisFactory> securityAnalysisFactorySupplier = providerName -> SecurityAnalysisWorkerService.getSecurityAnalysisFactory(providerName);
+
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService,
                                          SecurityAnalysisResultRepository resultRepository, ObjectMapper objectMapper,
-                                         SecurityAnalysisConfigService configService,
                                          SecurityAnalysisResultPublisherService resultPublisherService,
                                          SecurityAnalysisStoppedPublisherService stoppedPublisherService) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.resultRepository = Objects.requireNonNull(resultRepository);
         this.objectMapper = Objects.requireNonNull(objectMapper);
-        this.configService = Objects.requireNonNull(configService);
         this.resultPublisherService = Objects.requireNonNull(resultPublisherService);
         this.stoppedPublisherService = Objects.requireNonNull(stoppedPublisherService);
+    }
+
+    public static SecurityAnalysisFactory getSecurityAnalysisFactory(String providerName) {
+        if (providerName != null) {
+            switch (providerName) {
+                case "Hades2":
+                    return new Hades2SecurityAnalysisFactory();
+                case "OpenLoadFlow":
+                    return new OpenSecurityAnalysisFactory();
+                default:
+                    throw new PowsyblException("Security analysis provider not found: " + providerName);
+            }
+        } else {
+            return new OpenSecurityAnalysisFactory(); // open load flow by default
+        }
+    }
+
+    public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysisFactory> securityAnalysisFactorySupplier) {
+        this.securityAnalysisFactorySupplier = Objects.requireNonNull(securityAnalysisFactorySupplier);
     }
 
     private static String sanitizeParam(String param) {
@@ -141,7 +162,8 @@ public class SecurityAnalysisWorkerService {
 
         return Mono.zip(network, contingencies)
                 .flatMap(tuple -> {
-                    SecurityAnalysis securityAnalysis = configService.getSecurityAnalysisFactory().create(tuple.getT1(), LocalComputationManager.getDefault(), 0);
+                    SecurityAnalysisFactory securityAnalysisFactory = securityAnalysisFactorySupplier.apply(context.getProviderName());
+                    SecurityAnalysis securityAnalysis = securityAnalysisFactory.create(tuple.getT1(), LocalComputationManager.getDefault(), 0);
                     CompletableFuture<SecurityAnalysisResult> future = securityAnalysis.run(VariantManagerConstants.INITIAL_VARIANT_ID, context.getParameters(), n -> tuple.getT2());
                     if (resultUuid != null) {
                         futures.put(resultUuid, future);
