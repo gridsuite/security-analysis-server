@@ -157,7 +157,6 @@ public class SecurityAnalysisWorkerService {
     @Bean
     public Consumer<Message<String>> consumeRun() {
         return message -> {
-
             SecurityAnalysisResultContext resultContext = SecurityAnalysisResultContext.fromMessage(message, objectMapper);
             runRequests.add(resultContext.getResultUuid());
 

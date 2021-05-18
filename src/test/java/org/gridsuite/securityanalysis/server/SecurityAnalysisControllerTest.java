@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.http.MediaType;
@@ -67,6 +68,9 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     private OutputDestination output;
 
     @Autowired
+    private InputDestination input;
+
+    @Autowired
     private WebTestClient webTestClient;
 
     @MockBean
@@ -107,7 +111,14 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
         configService.setSecurityAnalysisFactoryClass(SecurityAnalysisFactoryMock.class.getName());
 
         // purge messages
-        while (output.receive(1000) != null) {
+        while (output.receive(1000, "sa.result") != null) {
+        }
+        // purge messages
+        while (output.receive(1000, "sa.run") != null) {
+        }
+        while (output.receive(1000, "sa.cancel") != null) {
+        }
+        while (output.receive(1000, "sa.stopped") != null) {
         }
     }
 
@@ -123,7 +134,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     }
 
     @Test
-    public void runAndSaveTest() {
+    public void runAndSaveTest() throws InterruptedException {
         webTestClient.post()
                 .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
                         + "&receiver=me")
@@ -133,7 +144,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectBody(UUID.class)
                 .isEqualTo(RESULT_UUID);
 
-        Message<byte[]> resultMessage = output.receive(1000, "sa.result.destination");
+        Message<byte[]> resultMessage = output.receive(1000, "sa.result");
         assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
         assertEquals("me", resultMessage.getHeaders().get("receiver"));
 
@@ -194,7 +205,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectBody(UUID.class)
                 .isEqualTo(RESULT_UUID);
 
-        output.receive(1000, "sa.result.destination");
+        output.receive(1000, "sa.result");
 
         webTestClient.delete()
                 .uri("/" + VERSION + "/results")
@@ -250,8 +261,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody(UUID.class)
                 .isEqualTo(RESULT_UUID);
-
-        Message<byte[]> message = output.receive(1000, "sa.run.destination");
+        Message<byte[]> message = output.receive(1000, "sa.run");
         assertEquals(NETWORK_UUID.toString(), message.getHeaders().get("networkUuid"));
         assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
         assertEquals(CONTINGENCY_LIST_NAME, message.getHeaders().get("contingencyListNames"));
@@ -263,11 +273,11 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .exchange()
                 .expectStatus().isOk();
 
-        message = output.receive(1000, "sa.cancel.destination");
+        message = output.receive(1000, "sa.cancel");
         assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
         assertEquals("me", message.getHeaders().get("receiver"));
 
-        message = output.receive(1000, "sa.stopped.destination");
+        message = output.receive(1000, "sa.stopped");
         assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
         assertEquals("me", message.getHeaders().get("receiver"));
         assertEquals(CANCEL_MESSAGE, message.getHeaders().get("message"));
@@ -286,17 +296,17 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectBody(UUID.class)
                 .isEqualTo(RESULT_UUID);
 
-        Message<byte[]> message = output.receive(1000, "sa.run.destination");
-        assertEquals(NETWORK_UUID.toString(), message.getHeaders().get("networkUuid"));
-        assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
-        assertEquals(CONTINGENCY_LIST_ERROR_NAME, message.getHeaders().get("contingencyListNames"));
-        assertEquals("me", message.getHeaders().get("receiver"));
+        Message<byte[]> runMessage = output.receive(1000, "sa.run");
+        assertEquals(NETWORK_UUID.toString(), runMessage.getHeaders().get("networkUuid"));
+        assertEquals(RESULT_UUID.toString(), runMessage.getHeaders().get("resultUuid"));
+        assertEquals(CONTINGENCY_LIST_ERROR_NAME, runMessage.getHeaders().get("contingencyListNames"));
+        assertEquals("me", runMessage.getHeaders().get("receiver"));
 
         // Message stopped has been sent
-        message = output.receive(1000, "sa.stopped.destination");
-        assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
-        assertEquals("me", message.getHeaders().get("receiver"));
-        assertEquals(FAIL_MESSAGE + " : " + ERROR_MESSAGE, message.getHeaders().get("message"));
+        Message<byte[]> cancelMessage = output.receive(1000, "sa.stopped");
+        assertEquals(RESULT_UUID.toString(), cancelMessage.getHeaders().get("resultUuid"));
+        assertEquals("me", cancelMessage.getHeaders().get("receiver"));
+        assertEquals(FAIL_MESSAGE + " : " + ERROR_MESSAGE, cancelMessage.getHeaders().get("message"));
 
         assertNull(output.receive(1000));
 

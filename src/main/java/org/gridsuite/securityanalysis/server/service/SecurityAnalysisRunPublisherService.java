@@ -10,10 +10,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.EmitterProcessor;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Sinks;
 
 import java.util.Objects;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 
@@ -28,7 +29,7 @@ public class SecurityAnalysisRunPublisherService {
 
     private ObjectMapper objectMapper;
 
-    private final EmitterProcessor<Message<String>> runMessagePublisher = EmitterProcessor.create();
+    private final Sinks.Many<Message<String>> runMessagePublisher = Sinks.many().multicast().onBackpressureBuffer();
 
     public SecurityAnalysisRunPublisherService(ObjectMapper objectMapper) {
         this.objectMapper = Objects.requireNonNull(objectMapper);
@@ -36,11 +37,12 @@ public class SecurityAnalysisRunPublisherService {
 
     @Bean
     public Supplier<Flux<Message<String>>> publishRun() {
-        return () -> runMessagePublisher.log(CATEGORY_BROKER_OUTPUT, Level.FINE);
+        return () -> runMessagePublisher.asFlux().log(CATEGORY_BROKER_OUTPUT, Level.FINE);
     }
 
     public void publish(SecurityAnalysisResultContext resultContext) {
-        Objects.requireNonNull(resultContext);
-        runMessagePublisher.onNext(resultContext.toMessage(objectMapper));
+        while (runMessagePublisher.tryEmitNext(resultContext.toMessage(objectMapper)).isFailure()) {
+            LockSupport.parkNanos(10);
+        }
     }
 }
