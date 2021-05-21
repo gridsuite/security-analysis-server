@@ -146,7 +146,7 @@ public class SecurityAnalysisWorkerService {
 
         return Mono.zip(network, contingencies)
                 .flatMap(tuple -> {
-                    SecurityAnalysisFactory securityAnalysisFactory = securityAnalysisFactorySupplier.apply(context.getProviderName());
+                    SecurityAnalysisFactory securityAnalysisFactory = securityAnalysisFactorySupplier.apply(context.getProvider());
                     SecurityAnalysis securityAnalysis = securityAnalysisFactory.create(tuple.getT1(), LocalComputationManager.getDefault(), 0);
                     CompletableFuture<SecurityAnalysisResult> future = securityAnalysis.run(VariantManagerConstants.INITIAL_VARIANT_ID, context.getParameters(), n -> tuple.getT2());
                     if (resultUuid != null) {

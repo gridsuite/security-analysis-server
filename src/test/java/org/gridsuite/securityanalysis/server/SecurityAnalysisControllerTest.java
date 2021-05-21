@@ -105,7 +105,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
         given(uuidGeneratorService.generate()).willReturn(RESULT_UUID);
 
         // mock the powsybl security analysis
-        workerService.setSecurityAnalysisFactorySupplier(providerName -> new SecurityAnalysisFactoryMock());
+        workerService.setSecurityAnalysisFactorySupplier(provider -> new SecurityAnalysisFactoryMock());
 
         // purge messages
         while (output.receive(1000) != null) {

@@ -19,15 +19,15 @@ public final class SecurityAnalysisUtil {
     private SecurityAnalysisUtil() {
     }
 
-    public static SecurityAnalysisFactory getFactory(String providerName) {
-        if (providerName != null) {
-            switch (providerName) {
+    public static SecurityAnalysisFactory getFactory(String provider) {
+        if (provider != null) {
+            switch (provider) {
                 case "Hades2":
                     return new Hades2SecurityAnalysisFactory();
                 case "OpenLoadFlow":
                     return new OpenSecurityAnalysisFactory();
                 default:
-                    throw new PowsyblException("Security analysis provider not found: " + providerName);
+                    throw new PowsyblException("Security analysis provider not found: " + provider);
             }
         } else {
             return new OpenSecurityAnalysisFactory(); // open load flow by default
