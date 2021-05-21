@@ -89,6 +89,7 @@ public class SecurityAnalysisResultRepository {
         List<String> generatorIds = new ArrayList<>();
         for (ContingencyElement element : contingency.getElements()) {
             switch (element.getType()) {
+                case LINE:
                 case BRANCH:
                     branchIds.add(element.getId());
                     break;
