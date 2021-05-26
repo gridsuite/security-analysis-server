@@ -15,7 +15,7 @@
     <parent>
         <groupId>com.powsybl</groupId>
         <artifactId>powsybl-parent-ws</artifactId>
-        <version>3</version>
+        <version>4</version>
         <relativePath/>
     </parent>
 
@@ -48,7 +48,7 @@
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
         <jaxb-runtime.version>2.4.0-b180830.0438</jaxb-runtime.version>
         <jib.from.image>gridsuite/java-hades2</jib.from.image>
-        <gridsuite-dependencies.version>4</gridsuite-dependencies.version>
+        <gridsuite-dependencies.version>6</gridsuite-dependencies.version>
     </properties>
 
     <build>
