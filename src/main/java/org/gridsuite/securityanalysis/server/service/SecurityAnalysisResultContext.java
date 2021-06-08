@@ -67,13 +67,14 @@ public class SecurityAnalysisResultContext {
                 .collect(Collectors.toList());
         List<String> contingencyListNames = getHeaderList(headers, "contingencyListNames");
         String receiver = (String) headers.get("receiver");
+        String provider = (String) headers.get("provider");
         SecurityAnalysisParameters parameters;
         try {
             parameters = objectMapper.readValue(message.getPayload(), SecurityAnalysisParameters.class);
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }
-        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, otherNetworkUuids, contingencyListNames, receiver, parameters);
+        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, otherNetworkUuids, contingencyListNames, receiver, provider, parameters);
         return new SecurityAnalysisResultContext(resultUuid, runContext);
     }
 
@@ -90,6 +91,7 @@ public class SecurityAnalysisResultContext {
                 .setHeader("otherNetworkUuids", runContext.getOtherNetworkUuids().stream().map(UUID::toString).collect(Collectors.joining(",")))
                 .setHeader("contingencyListNames", String.join(",", runContext.getContingencyListNames()))
                 .setHeader("receiver", runContext.getReceiver())
+                .setHeader("provider", runContext.getProvider())
                 .build();
     }
 }

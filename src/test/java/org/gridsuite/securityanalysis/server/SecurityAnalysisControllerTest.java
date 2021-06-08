@@ -11,7 +11,7 @@ import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
-import org.gridsuite.securityanalysis.server.service.SecurityAnalysisConfigService;
+import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.gridsuite.securityanalysis.server.service.UuidGeneratorService;
 import org.junit.Before;
 import org.junit.Test;
@@ -21,6 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.http.MediaType;
@@ -78,8 +79,8 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     @MockBean
     private UuidGeneratorService uuidGeneratorService;
 
-    @Autowired
-    private SecurityAnalysisConfigService configService;
+    @SpyBean
+    private SecurityAnalysisWorkerService workerService;
 
     @Before
     public void setUp() {
@@ -103,8 +104,8 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
         // UUID service mocking to always generate the same result UUID
         given(uuidGeneratorService.generate()).willReturn(RESULT_UUID);
 
-        // mock the powsybl security analysis service
-        configService.setSecurityAnalysisFactoryClass(SecurityAnalysisFactoryMock.class.getName());
+        // mock the powsybl security analysis
+        workerService.setSecurityAnalysisFactorySupplier(provider -> new SecurityAnalysisFactoryMock());
 
         // purge messages
         while (output.receive(1000) != null) {
