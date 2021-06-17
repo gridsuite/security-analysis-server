@@ -6,17 +6,12 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.messaging.Message;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Sinks;
 
 import java.util.UUID;
-import java.util.concurrent.locks.LockSupport;
-import java.util.function.Supplier;
-import java.util.logging.Level;
 
 /**
  * @author Franck Lecuyer <franck.lecuyer at rte-france.com>
@@ -27,15 +22,8 @@ public class SecurityAnalysisStoppedPublisherService {
     public static final String CANCEL_MESSAGE = "Security analysis was canceled";
     public static final String FAIL_MESSAGE = "Security analysis has failed";
 
-    private static final String CATEGORY_BROKER_OUTPUT = SecurityAnalysisStoppedPublisherService.class.getName()
-            + ".output-broker-messages";
-
-    private final Sinks.Many<Message<String>> stoppedMessagePublisher = Sinks.many().multicast().onBackpressureBuffer();
-
-    @Bean
-    public Supplier<Flux<Message<String>>> publishStopped() {
-        return () -> stoppedMessagePublisher.asFlux().log(CATEGORY_BROKER_OUTPUT, Level.FINE);
-    }
+    @Autowired
+    private StreamBridge stoppedMessagePublisher;
 
     public void publishCancel(UUID resultUuid, String receiver) {
         publish(resultUuid, receiver, CANCEL_MESSAGE);
@@ -46,13 +34,11 @@ public class SecurityAnalysisStoppedPublisherService {
     }
 
     public void publish(UUID resultUuid, String receiver, String stopMessage) {
-        while (stoppedMessagePublisher.tryEmitNext(MessageBuilder
+        stoppedMessagePublisher.send("publishStopped-out-0", MessageBuilder
                 .withPayload("")
                 .setHeader("resultUuid", resultUuid.toString())
                 .setHeader("receiver", receiver)
                 .setHeader("message", stopMessage)
-                .build()).isFailure()) {
-            LockSupport.parkNanos(10);
-        }
+                .build());
     }
 }

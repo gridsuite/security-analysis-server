@@ -22,9 +22,12 @@ import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repository.SecurityAnalysisResultRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
@@ -50,9 +53,6 @@ public class SecurityAnalysisWorkerService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisWorkerService.class);
 
-    private static final String CATEGORY_BROKER_INPUT = SecurityAnalysisWorkerService.class.getName()
-            + ".input-broker-messages";
-
     private NetworkStoreService networkStoreService;
 
     private ActionsService actionsService;
@@ -63,8 +63,6 @@ public class SecurityAnalysisWorkerService {
 
     private SecurityAnalysisConfigService configService;
 
-    private SecurityAnalysisResultPublisherService resultPublisherService;
-
     private SecurityAnalysisStoppedPublisherService stoppedPublisherService;
 
     private Map<UUID, CompletableFuture<SecurityAnalysisResult>> futures = new ConcurrentHashMap<>();
@@ -73,17 +71,18 @@ public class SecurityAnalysisWorkerService {
 
     private Set<UUID> runRequests = Sets.newConcurrentHashSet();
 
+    @Autowired
+    private StreamBridge resultMessagePublisher;
+
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService,
                                          SecurityAnalysisResultRepository resultRepository, ObjectMapper objectMapper,
                                          SecurityAnalysisConfigService configService,
-                                         SecurityAnalysisResultPublisherService resultPublisherService,
                                          SecurityAnalysisStoppedPublisherService stoppedPublisherService) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.resultRepository = Objects.requireNonNull(resultRepository);
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.configService = Objects.requireNonNull(configService);
-        this.resultPublisherService = Objects.requireNonNull(resultPublisherService);
         this.stoppedPublisherService = Objects.requireNonNull(stoppedPublisherService);
     }
 
@@ -166,7 +165,11 @@ public class SecurityAnalysisWorkerService {
                             .then(Mono.just(result)))
                     .doOnSuccess(result -> {
                         if (result != null) {  // result available
-                            resultPublisherService.publish(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver());
+                            resultMessagePublisher.send("publishResult-out-0", MessageBuilder
+                                            .withPayload("")
+                                            .setHeader("resultUuid", resultContext.getResultUuid().toString())
+                                            .setHeader("receiver", resultContext.getRunContext().getReceiver())
+                                            .build());
                             LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
                         } else {  // result not available : stop computation request
                             if (cancelComputationRequests.get(resultContext.getResultUuid()) != null) {
