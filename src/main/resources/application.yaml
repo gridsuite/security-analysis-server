@@ -5,7 +5,7 @@ spring:
 
   cloud:
     function:
-      definition: consumeRun;publishRun;publishResult;consumeCancel;publishCancel;publishStopped
+      definition: consumeRun;consumeCancel
     stream:
       bindings:
         consumeRun-in-0:
