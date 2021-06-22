@@ -33,9 +33,13 @@ public class SecurityAnalysisService {
 
     private ObjectMapper objectMapper;
 
-    private static final String CATEGORY_BROKER_OUTPUT = SecurityAnalysisService.class.getName() + ".output-broker-messages";
+    private static final String CANCEL_CATEGORY_BROKER_OUTPUT = SecurityAnalysisService.class.getName() + ".output-broker-messages.cancel";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CATEGORY_BROKER_OUTPUT);
+    private static final String RUN_CATEGORY_BROKER_OUTPUT = SecurityAnalysisService.class.getName() + ".output-broker-messages.run";
+
+    private static final Logger RUN_MESSAGE_LOGGER = LoggerFactory.getLogger(RUN_CATEGORY_BROKER_OUTPUT);
+
+    private static final Logger CANCEL_MESSAGE_LOGGER = LoggerFactory.getLogger(CANCEL_CATEGORY_BROKER_OUTPUT);
 
     @Autowired
     private StreamBridge cancelMessagePublisher;
@@ -57,7 +61,7 @@ public class SecurityAnalysisService {
         // update status to running status
         return setStatus(resultUuid, SecurityAnalysisStatus.RUNNING.name()).then(
                 Mono.fromRunnable(() ->
-                        sendMessage(new SecurityAnalysisResultContext(resultUuid, runContext).toMessage(objectMapper), "publishRun-out-0", runMessagePublisher))
+                        sendRunMessage(new SecurityAnalysisResultContext(resultUuid, runContext).toMessage(objectMapper)))
                 .thenReturn(resultUuid));
     }
 
@@ -83,11 +87,16 @@ public class SecurityAnalysisService {
 
     public Mono<Void> stop(UUID resultUuid, String receiver) {
         return Mono.fromRunnable(() ->
-                sendMessage(new SecurityAnalysisCancelContext(resultUuid, receiver).toMessage(), "publishCancel-out-0", cancelMessagePublisher)).then();
+                sendCancelMessage(new SecurityAnalysisCancelContext(resultUuid, receiver).toMessage())).then();
     }
 
-    private void sendMessage(Message<String> message, String binding, StreamBridge publisher) {
-        LOGGER.debug("Sending message : {}", message);
-        publisher.send(binding, message);
+    private void sendRunMessage(Message<String> message) {
+        RUN_MESSAGE_LOGGER.debug("Sending message : {}", message);
+        runMessagePublisher.send("publishRun-out-0", message);
+    }
+
+    private void sendCancelMessage(Message<String> message) {
+        CANCEL_MESSAGE_LOGGER.debug("Sending message : {}", message);
+        cancelMessagePublisher.send("publishCancel-out-0", message);
     }
 }
