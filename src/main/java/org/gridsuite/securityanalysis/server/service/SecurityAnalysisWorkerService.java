@@ -17,9 +17,11 @@ import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.security.SecurityAnalysis;
+import com.powsybl.security.SecurityAnalysisFactory;
 import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repository.SecurityAnalysisResultRepository;
+import org.gridsuite.securityanalysis.server.util.SecurityAnalysisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,6 +41,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.CANCEL_MESSAGE;
@@ -65,7 +68,7 @@ public class SecurityAnalysisWorkerService {
 
     private ObjectMapper objectMapper;
 
-    private SecurityAnalysisConfigService configService;
+    private SecurityAnalysisResultPublisherService resultPublisherService;
 
     private SecurityAnalysisStoppedPublisherService stoppedPublisherService;
 
@@ -75,19 +78,26 @@ public class SecurityAnalysisWorkerService {
 
     private Set<UUID> runRequests = Sets.newConcurrentHashSet();
 
-    @Autowired
     private StreamBridge resultMessagePublisher;
-
+  
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService,
                                          SecurityAnalysisResultRepository resultRepository, ObjectMapper objectMapper,
-                                         SecurityAnalysisConfigService configService,
+                                         SecurityAnalysisResultPublisherService resultPublisherService,
                                          SecurityAnalysisStoppedPublisherService stoppedPublisherService) {
+    
+
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.resultRepository = Objects.requireNonNull(resultRepository);
         this.objectMapper = Objects.requireNonNull(objectMapper);
-        this.configService = Objects.requireNonNull(configService);
+        this.resultPublisherService = Objects.requireNonNull(resultPublisherService);
         this.stoppedPublisherService = Objects.requireNonNull(stoppedPublisherService);
+    }
+  
+  private Function<String, SecurityAnalysisFactory> securityAnalysisFactorySupplier = SecurityAnalysisUtil::getFactory;
+
+    public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysisFactory> securityAnalysisFactorySupplier) {
+        this.securityAnalysisFactorySupplier = Objects.requireNonNull(securityAnalysisFactorySupplier);
     }
 
     private static String sanitizeParam(String param) {
@@ -144,7 +154,8 @@ public class SecurityAnalysisWorkerService {
 
         return Mono.zip(network, contingencies)
                 .flatMap(tuple -> {
-                    SecurityAnalysis securityAnalysis = configService.getSecurityAnalysisFactory().create(tuple.getT1(), LocalComputationManager.getDefault(), 0);
+                    SecurityAnalysisFactory securityAnalysisFactory = securityAnalysisFactorySupplier.apply(context.getProvider());
+                    SecurityAnalysis securityAnalysis = securityAnalysisFactory.create(tuple.getT1(), LocalComputationManager.getDefault(), 0);
                     CompletableFuture<SecurityAnalysisResult> future = securityAnalysis.run(VariantManagerConstants.INITIAL_VARIANT_ID, context.getParameters(), n -> tuple.getT2());
                     if (resultUuid != null) {
                         futures.put(resultUuid, future);

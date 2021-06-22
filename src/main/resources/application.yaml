@@ -36,8 +36,6 @@ network-store-server:
 actions-server:
   base-uri: http://localhost:5022
 
-securityAnalysisFactoryClass: com.rte_france.powsybl.hades2.Hades2SecurityAnalysisFactory
-
 logging:
   level:
     ROOT: INFO
