@@ -21,6 +21,7 @@ spring:
             destination: sa.cancel
         publishStopped-out-0:
           destination: sa.stopped
+      source: publishRun;publishResult;publishCancel;publishStopped
 
 springdoc:
   swagger-ui:

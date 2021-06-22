@@ -40,7 +40,6 @@ import static org.gridsuite.securityanalysis.server.SecurityAnalysisFactoryMock.
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.CANCEL_MESSAGE;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.FAIL_MESSAGE;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
 
@@ -281,8 +280,6 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
         assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
         assertEquals("me", message.getHeaders().get("receiver"));
         assertEquals(CANCEL_MESSAGE, message.getHeaders().get("message"));
-
-        assertNull(output.receive(1000));
     }
 
     @Test
@@ -301,8 +298,6 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
         assertEquals(RESULT_UUID.toString(), cancelMessage.getHeaders().get("resultUuid"));
         assertEquals("me", cancelMessage.getHeaders().get("receiver"));
         assertEquals(FAIL_MESSAGE + " : " + ERROR_MESSAGE, cancelMessage.getHeaders().get("message"));
-
-        assertNull(output.receive(1000));
 
         // No result
         webTestClient.get()
