@@ -24,6 +24,7 @@ import org.gridsuite.securityanalysis.server.repository.SecurityAnalysisResultRe
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
@@ -75,6 +76,7 @@ public class SecurityAnalysisWorkerService {
 
     private Set<UUID> runRequests = Sets.newConcurrentHashSet();
 
+    @Autowired
     private StreamBridge resultMessagePublisher;
 
     private Function<String, SecurityAnalysisFactory> securityAnalysisFactorySupplier = SecurityAnalysisUtil::getFactory;
