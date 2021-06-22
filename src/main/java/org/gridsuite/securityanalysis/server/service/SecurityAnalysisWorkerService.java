@@ -24,7 +24,6 @@ import org.gridsuite.securityanalysis.server.repository.SecurityAnalysisResultRe
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
@@ -68,8 +67,6 @@ public class SecurityAnalysisWorkerService {
 
     private ObjectMapper objectMapper;
 
-    private SecurityAnalysisResultPublisherService resultPublisherService;
-
     private SecurityAnalysisStoppedPublisherService stoppedPublisherService;
 
     private Map<UUID, CompletableFuture<SecurityAnalysisResult>> futures = new ConcurrentHashMap<>();
@@ -79,22 +76,18 @@ public class SecurityAnalysisWorkerService {
     private Set<UUID> runRequests = Sets.newConcurrentHashSet();
 
     private StreamBridge resultMessagePublisher;
-  
+
+    private Function<String, SecurityAnalysisFactory> securityAnalysisFactorySupplier = SecurityAnalysisUtil::getFactory;
+
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService,
                                          SecurityAnalysisResultRepository resultRepository, ObjectMapper objectMapper,
-                                         SecurityAnalysisResultPublisherService resultPublisherService,
                                          SecurityAnalysisStoppedPublisherService stoppedPublisherService) {
-    
-
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.resultRepository = Objects.requireNonNull(resultRepository);
         this.objectMapper = Objects.requireNonNull(objectMapper);
-        this.resultPublisherService = Objects.requireNonNull(resultPublisherService);
         this.stoppedPublisherService = Objects.requireNonNull(stoppedPublisherService);
     }
-  
-  private Function<String, SecurityAnalysisFactory> securityAnalysisFactorySupplier = SecurityAnalysisUtil::getFactory;
 
     public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysisFactory> securityAnalysisFactorySupplier) {
         this.securityAnalysisFactorySupplier = Objects.requireNonNull(securityAnalysisFactorySupplier);
