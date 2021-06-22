@@ -11,8 +11,11 @@ import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repository.SecurityAnalysisResultRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.function.StreamBridge;
+import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -29,6 +32,10 @@ public class SecurityAnalysisService {
     private UuidGeneratorService uuidGeneratorService;
 
     private ObjectMapper objectMapper;
+
+    private static final String CATEGORY_BROKER_OUTPUT = SecurityAnalysisService.class.getName() + ".output-broker-messages";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(CATEGORY_BROKER_OUTPUT);
 
     @Autowired
     private StreamBridge cancelMessagePublisher;
@@ -50,7 +57,7 @@ public class SecurityAnalysisService {
         // update status to running status
         return setStatus(resultUuid, SecurityAnalysisStatus.RUNNING.name()).then(
                 Mono.fromRunnable(() ->
-                        runMessagePublisher.send("publishRun-out-0", new SecurityAnalysisResultContext(resultUuid, runContext).toMessage(objectMapper)))
+                        sendMessage(new SecurityAnalysisResultContext(resultUuid, runContext).toMessage(objectMapper), "publishRun-out-0", runMessagePublisher))
                 .thenReturn(resultUuid));
     }
 
@@ -76,6 +83,11 @@ public class SecurityAnalysisService {
 
     public Mono<Void> stop(UUID resultUuid, String receiver) {
         return Mono.fromRunnable(() ->
-                cancelMessagePublisher.send("publishCancel-out-0", new SecurityAnalysisCancelContext(resultUuid, receiver).toMessage())).then();
+                sendMessage(new SecurityAnalysisCancelContext(resultUuid, receiver).toMessage(), "publishCancel-out-0", cancelMessagePublisher)).then();
+    }
+
+    private void sendMessage(Message<String> message, String binding, StreamBridge publisher) {
+        LOGGER.debug("Sending message : {}", message);
+        publisher.send(binding, message);
     }
 }
