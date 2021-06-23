@@ -42,10 +42,7 @@ public class SecurityAnalysisService {
     private static final Logger CANCEL_MESSAGE_LOGGER = LoggerFactory.getLogger(CANCEL_CATEGORY_BROKER_OUTPUT);
 
     @Autowired
-    private StreamBridge cancelMessagePublisher;
-
-    @Autowired
-    private StreamBridge runMessagePublisher;
+    private StreamBridge publisher;
 
     public SecurityAnalysisService(SecurityAnalysisResultRepository resultRepository,
                                    UuidGeneratorService uuidGeneratorService, ObjectMapper objectMapper) {
@@ -92,11 +89,11 @@ public class SecurityAnalysisService {
 
     private void sendRunMessage(Message<String> message) {
         RUN_MESSAGE_LOGGER.debug("Sending message : {}", message);
-        runMessagePublisher.send("publishRun-out-0", message);
+        publisher.send("publishRun-out-0", message);
     }
 
     private void sendCancelMessage(Message<String> message) {
         CANCEL_MESSAGE_LOGGER.debug("Sending message : {}", message);
-        cancelMessagePublisher.send("publishCancel-out-0", message);
+        publisher.send("publishCancel-out-0", message);
     }
 }
