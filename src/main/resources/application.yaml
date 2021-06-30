@@ -29,6 +29,7 @@ springdoc:
 
 server:
   port: 5023
+  forward-headers-strategy: framework
 
 network-store-server:
   base-uri: http://localhost:8080
