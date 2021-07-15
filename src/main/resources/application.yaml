@@ -5,7 +5,7 @@ spring:
 
   cloud:
     function:
-      definition: consumeRun;publishRun;publishResult;consumeCancel;publishCancel;publishStopped
+      definition: consumeRun;consumeCancel
     stream:
       bindings:
         consumeRun-in-0:
@@ -21,6 +21,7 @@ spring:
             destination: sa.cancel
         publishStopped-out-0:
           destination: sa.stopped
+      source: publishRun;publishResult;publishCancel;publishStopped
 
 springdoc:
   swagger-ui:
@@ -28,6 +29,7 @@ springdoc:
 
 server:
   port: 5023
+  forward-headers-strategy: framework
 
 network-store-server:
   base-uri: http://localhost:8080

@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.data.cassandra.config.AbstractCassandraConfiguration;
-import org.springframework.data.cassandra.config.CassandraClusterFactoryBean;
+import org.springframework.data.cassandra.config.CqlSessionFactoryBean;
 import org.springframework.data.cassandra.repository.config.EnableCassandraRepositories;
 
 /**
@@ -31,10 +31,12 @@ public class CassandraConfig extends AbstractCassandraConfiguration {
     }
 
     @Bean
-    public CassandraClusterFactoryBean cluster(Environment env) {
-        CassandraClusterFactoryBean clusterFactory = new CassandraClusterFactoryBean();
-        clusterFactory.setContactPoints(env.getRequiredProperty("cassandra.contact-points"));
-        clusterFactory.setPort(Integer.parseInt(env.getRequiredProperty("cassandra.port")));
-        return clusterFactory;
+    public CqlSessionFactoryBean cassandraSession(Environment env) {
+        var session = new CqlSessionFactoryBean();
+        session.setContactPoints(env.getRequiredProperty("cassandra.contact-points"));
+        session.setPort(Integer.parseInt(env.getRequiredProperty("cassandra.port")));
+        session.setLocalDatacenter(env.getRequiredProperty("cassandra.datacenter"));
+        session.setKeyspaceName(getKeyspaceName());
+        return session;
     }
 }

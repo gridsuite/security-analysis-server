@@ -17,6 +17,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.MockitoAnnotations;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,8 +41,8 @@ import static org.gridsuite.securityanalysis.server.SecurityAnalysisFactoryMock.
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.CANCEL_MESSAGE;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.FAIL_MESSAGE;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -55,6 +56,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
 
     private static final UUID NETWORK_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e4");
     private static final UUID OTHER_NETWORK_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e5");
+    private static final UUID NETWORK_STOP_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e6");
     private static final UUID RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5d");
     private static final UUID OTHER_RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5a");
 
@@ -93,10 +95,20 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
         Network otherNetwork = Network.create("other", "test");
         given(networkStoreService.getNetwork(OTHER_NETWORK_UUID, PreloadingStrategy.COLLECTION)).willReturn(otherNetwork);
 
+        when(networkStoreService.getNetwork(NETWORK_STOP_UUID, PreloadingStrategy.COLLECTION)).thenAnswer((Answer) invocation -> {
+            //Needed so the stop call doesn't arrive too late
+            Thread.sleep(2000);
+            return Network.create("other", "test");
+        });
+
         // action service mocking
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID))
                 .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES));
         given(actionsService.getContingencyList(CONTINGENCY_LIST2_NAME, NETWORK_UUID))
+                .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES));
+        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_STOP_UUID))
+                .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES));
+        given(actionsService.getContingencyList(CONTINGENCY_LIST2_NAME, NETWORK_STOP_UUID))
                 .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES));
         given(actionsService.getContingencyList(CONTINGENCY_LIST_ERROR_NAME, NETWORK_UUID))
                 .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES).thenMany(Flux.error(new RuntimeException(ERROR_MESSAGE))));
@@ -108,7 +120,14 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
         workerService.setSecurityAnalysisFactorySupplier(provider -> new SecurityAnalysisFactoryMock());
 
         // purge messages
-        while (output.receive(1000) != null) {
+        while (output.receive(1000, "sa.result") != null) {
+        }
+        // purge messages
+        while (output.receive(1000, "sa.run") != null) {
+        }
+        while (output.receive(1000, "sa.cancel") != null) {
+        }
+        while (output.receive(1000, "sa.stopped") != null) {
         }
     }
 
@@ -124,7 +143,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     }
 
     @Test
-    public void runAndSaveTest() {
+    public void runAndSaveTest() throws InterruptedException {
         webTestClient.post()
                 .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
                         + "&receiver=me")
@@ -134,7 +153,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectBody(UUID.class)
                 .isEqualTo(RESULT_UUID);
 
-        Message<byte[]> resultMessage = output.receive(1000, "sa.result.destination");
+        Message<byte[]> resultMessage = output.receive(1000, "sa.result");
         assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
         assertEquals("me", resultMessage.getHeaders().get("receiver"));
 
@@ -195,7 +214,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectBody(UUID.class)
                 .isEqualTo(RESULT_UUID);
 
-        output.receive(1000, "sa.result.destination");
+        output.receive(1000, "sa.result");
 
         webTestClient.delete()
                 .uri("/" + VERSION + "/results")
@@ -244,7 +263,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     @Test
     public void stopTest() {
         webTestClient.post()
-                .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
+                .uri("/" + VERSION + "/networks/" + NETWORK_STOP_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
                         + "&receiver=me")
                 .exchange()
                 .expectStatus().isOk()
@@ -252,28 +271,16 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectBody(UUID.class)
                 .isEqualTo(RESULT_UUID);
 
-        Message<byte[]> message = output.receive(1000, "sa.run.destination");
-        assertEquals(NETWORK_UUID.toString(), message.getHeaders().get("networkUuid"));
-        assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
-        assertEquals(CONTINGENCY_LIST_NAME, message.getHeaders().get("contingencyListNames"));
-        assertEquals("me", message.getHeaders().get("receiver"));
-
         webTestClient.put()
                 .uri("/" + VERSION + "/results/" + RESULT_UUID + "/stop"
                         + "?receiver=me")
                 .exchange()
                 .expectStatus().isOk();
 
-        message = output.receive(1000, "sa.cancel.destination");
-        assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
-        assertEquals("me", message.getHeaders().get("receiver"));
-
-        message = output.receive(1000, "sa.stopped.destination");
+        Message<byte[]> message = output.receive(3000, "sa.stopped");
         assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
         assertEquals("me", message.getHeaders().get("receiver"));
         assertEquals(CANCEL_MESSAGE, message.getHeaders().get("message"));
-
-        assertNull(output.receive(1000));
     }
 
     @Test
@@ -287,19 +294,11 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
                 .expectBody(UUID.class)
                 .isEqualTo(RESULT_UUID);
 
-        Message<byte[]> message = output.receive(1000, "sa.run.destination");
-        assertEquals(NETWORK_UUID.toString(), message.getHeaders().get("networkUuid"));
-        assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
-        assertEquals(CONTINGENCY_LIST_ERROR_NAME, message.getHeaders().get("contingencyListNames"));
-        assertEquals("me", message.getHeaders().get("receiver"));
-
         // Message stopped has been sent
-        message = output.receive(1000, "sa.stopped.destination");
-        assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
-        assertEquals("me", message.getHeaders().get("receiver"));
-        assertEquals(FAIL_MESSAGE + " : " + ERROR_MESSAGE, message.getHeaders().get("message"));
-
-        assertNull(output.receive(1000));
+        Message<byte[]> cancelMessage = output.receive(1000, "sa.stopped");
+        assertEquals(RESULT_UUID.toString(), cancelMessage.getHeaders().get("resultUuid"));
+        assertEquals("me", cancelMessage.getHeaders().get("receiver"));
+        assertEquals(FAIL_MESSAGE + " : " + ERROR_MESSAGE, cancelMessage.getHeaders().get("message"));
 
         // No result
         webTestClient.get()
