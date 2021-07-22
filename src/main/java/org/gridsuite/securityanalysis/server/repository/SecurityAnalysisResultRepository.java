@@ -11,6 +11,7 @@ import com.powsybl.contingency.Contingency;
 import com.powsybl.contingency.ContingencyElement;
 import com.powsybl.contingency.GeneratorContingency;
 import com.powsybl.security.*;
+import com.powsybl.security.results.PostContingencyResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
@@ -159,7 +160,7 @@ public class SecurityAnalysisResultRepository {
         Objects.requireNonNull(resultUuid);
         Objects.requireNonNull(result);
 
-        Mono<Void> preContingencyInsert = save(resultUuid, null, result.getPreContingencyResult());
+        Mono<Void> preContingencyInsert = save(resultUuid, null, result.getPreContingencyResult().getLimitViolationsResult());
 
         Mono<Void> postContingencyInsert = Flux.fromIterable(result.getPostContingencyResults())
                 .flatMap(postContingencyResult -> save(resultUuid, postContingencyResult.getContingency(), postContingencyResult.getLimitViolationsResult())

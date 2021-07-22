@@ -7,8 +7,6 @@
 package org.gridsuite.securityanalysis.server.util;
 
 import com.powsybl.commons.PowsyblException;
-import com.powsybl.openloadflow.sa.OpenSecurityAnalysisFactory;
-import com.rte_france.powsybl.hades2.Hades2SecurityAnalysisFactory;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -20,10 +18,10 @@ public class SecurityAnalysisUtilTest {
 
     @Test
     public void test() {
-        assertTrue(SecurityAnalysisUtil.getFactory("OpenLoadFlow") instanceof OpenSecurityAnalysisFactory);
-        assertTrue(SecurityAnalysisUtil.getFactory("Hades2") instanceof Hades2SecurityAnalysisFactory);
-        assertTrue(SecurityAnalysisUtil.getFactory(null) instanceof OpenSecurityAnalysisFactory);
-        PowsyblException e = assertThrows(PowsyblException.class, () -> SecurityAnalysisUtil.getFactory("XXX"));
-        assertEquals("Security analysis provider not found: XXX", e.getMessage());
+        assertEquals(SecurityAnalysisUtil.getRunner("OpenSecurityAnalysis").getName(), "OpenSecurityAnalysis");
+        assertEquals(SecurityAnalysisUtil.getRunner("Hades2").getName(), "Hades2");
+        assertEquals(SecurityAnalysisUtil.getRunner(null).getName(), "OpenSecurityAnalysis");
+        PowsyblException e = assertThrows(PowsyblException.class, () -> SecurityAnalysisUtil.getRunner("XXX"));
+        assertEquals("SecurityAnalysisProvider 'XXX' not found", e.getMessage());
     }
 }
