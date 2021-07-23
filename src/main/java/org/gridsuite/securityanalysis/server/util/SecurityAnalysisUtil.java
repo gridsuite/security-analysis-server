@@ -6,10 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.util;
 
-import com.powsybl.commons.PowsyblException;
-import com.powsybl.openloadflow.sa.OpenSecurityAnalysisFactory;
-import com.powsybl.security.SecurityAnalysisFactory;
-import com.rte_france.powsybl.hades2.Hades2SecurityAnalysisFactory;
+import com.powsybl.security.SecurityAnalysis;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -19,18 +16,11 @@ public final class SecurityAnalysisUtil {
     private SecurityAnalysisUtil() {
     }
 
-    public static SecurityAnalysisFactory getFactory(String provider) {
+    public static SecurityAnalysis.Runner getRunner(String provider) {
         if (provider != null) {
-            switch (provider) {
-                case "Hades2":
-                    return new Hades2SecurityAnalysisFactory();
-                case "OpenLoadFlow":
-                    return new OpenSecurityAnalysisFactory();
-                default:
-                    throw new PowsyblException("Security analysis provider not found: " + provider);
-            }
+            return SecurityAnalysis.find(provider);
         } else {
-            return new OpenSecurityAnalysisFactory(); // open load flow by default
+            return SecurityAnalysis.find("OpenSecurityAnalysis"); // open load flow by default
         }
     }
 }

@@ -16,8 +16,10 @@ import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
+import com.powsybl.security.LimitViolationFilter;
 import com.powsybl.security.SecurityAnalysis;
-import com.powsybl.security.SecurityAnalysisFactory;
+import com.powsybl.security.SecurityAnalysisReport;
+import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repository.SecurityAnalysisResultRepository;
@@ -79,7 +81,7 @@ public class SecurityAnalysisWorkerService {
     @Autowired
     private StreamBridge resultMessagePublisher;
 
-    private Function<String, SecurityAnalysisFactory> securityAnalysisFactorySupplier = SecurityAnalysisUtil::getFactory;
+    private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier = SecurityAnalysisUtil::getRunner;
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService,
                                          SecurityAnalysisResultRepository resultRepository, ObjectMapper objectMapper,
@@ -91,7 +93,7 @@ public class SecurityAnalysisWorkerService {
         this.stoppedPublisherService = Objects.requireNonNull(stoppedPublisherService);
     }
 
-    public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysisFactory> securityAnalysisFactorySupplier) {
+    public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier) {
         this.securityAnalysisFactorySupplier = Objects.requireNonNull(securityAnalysisFactorySupplier);
     }
 
@@ -149,9 +151,12 @@ public class SecurityAnalysisWorkerService {
 
         return Mono.zip(network, contingencies)
                 .flatMap(tuple -> {
-                    SecurityAnalysisFactory securityAnalysisFactory = securityAnalysisFactorySupplier.apply(context.getProvider());
-                    SecurityAnalysis securityAnalysis = securityAnalysisFactory.create(tuple.getT1(), LocalComputationManager.getDefault(), 0);
-                    CompletableFuture<SecurityAnalysisResult> future = securityAnalysis.run(VariantManagerConstants.INITIAL_VARIANT_ID, context.getParameters(), n -> tuple.getT2());
+                    SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
+                    CompletableFuture<SecurityAnalysisResult> future = securityAnalysisRunner.runAsync(
+                        tuple.getT1(), VariantManagerConstants.INITIAL_VARIANT_ID, new DefaultLimitViolationDetector(),
+                        LimitViolationFilter.load(), LocalComputationManager.getDefault(),
+                        context.getParameters(), n -> tuple.getT2(), Collections.emptyList(), Collections.emptyList()
+                    ).thenApply(SecurityAnalysisReport::getResult);
                     if (resultUuid != null) {
                         futures.put(resultUuid, future);
                     }

@@ -10,6 +10,9 @@ import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
+import com.powsybl.security.SecurityAnalysis;
+import com.powsybl.security.SecurityAnalysisProvider;
+
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.gridsuite.securityanalysis.server.service.UuidGeneratorService;
@@ -34,10 +37,11 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import reactor.core.publisher.Flux;
 
+import java.lang.reflect.Constructor;
 import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisFactoryMock.*;
+import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.CANCEL_MESSAGE;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.FAIL_MESSAGE;
 import static org.junit.Assert.assertEquals;
@@ -60,9 +64,9 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     private static final UUID RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5d");
     private static final UUID OTHER_RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5a");
 
-    private static final String EXPECTED_JSON = "{\"version\":\"1.0\",\"preContingencyResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"l3\",\"limitType\":\"CURRENT\",\"acceptableDuration\":1200,\"limit\":10.0,\"limitReduction\":1.0,\"value\":11.0,\"side\":\"ONE\"}],\"actionsTaken\":[]},\"postContingencyResults\":[{\"contingency\":{\"id\":\"l1\",\"elements\":[{\"id\":\"l1\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"vl1\",\"limitType\":\"HIGH_VOLTAGE\",\"acceptableDuration\":0,\"limit\":400.0,\"limitReduction\":1.0,\"value\":410.0}],\"actionsTaken\":[]}},{\"contingency\":{\"id\":\"l2\",\"elements\":[{\"id\":\"l2\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"vl1\",\"limitType\":\"HIGH_VOLTAGE\",\"acceptableDuration\":0,\"limit\":400.0,\"limitReduction\":1.0,\"value\":410.0}],\"actionsTaken\":[]}}]}";
+    private static final String EXPECTED_JSON = "{\"version\":\"1.1\",\"preContingencyResult\":{\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"l3\",\"limitType\":\"CURRENT\",\"acceptableDuration\":1200,\"limit\":10.0,\"limitReduction\":1.0,\"value\":11.0,\"side\":\"ONE\"}],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]},\"postContingencyResults\":[{\"contingency\":{\"id\":\"l1\",\"elements\":[{\"id\":\"l1\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"vl1\",\"limitType\":\"HIGH_VOLTAGE\",\"acceptableDuration\":0,\"limit\":400.0,\"limitReduction\":1.0,\"value\":410.0}],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]},{\"contingency\":{\"id\":\"l2\",\"elements\":[{\"id\":\"l2\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"vl1\",\"limitType\":\"HIGH_VOLTAGE\",\"acceptableDuration\":0,\"limit\":400.0,\"limitReduction\":1.0,\"value\":410.0}],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]}]}";
 
-    private static final String EXPECTED_FILTERED_JSON = "{\"version\":\"1.0\",\"preContingencyResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"l3\",\"limitType\":\"CURRENT\",\"acceptableDuration\":1200,\"limit\":10.0,\"limitReduction\":1.0,\"value\":11.0,\"side\":\"ONE\"}],\"actionsTaken\":[]},\"postContingencyResults\":[{\"contingency\":{\"id\":\"l1\",\"elements\":[{\"id\":\"l1\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[],\"actionsTaken\":[]}},{\"contingency\":{\"id\":\"l2\",\"elements\":[{\"id\":\"l2\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[],\"actionsTaken\":[]}}]}";
+    private static final String EXPECTED_FILTERED_JSON = "{\"version\":\"1.1\",\"preContingencyResult\":{\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"l3\",\"limitType\":\"CURRENT\",\"acceptableDuration\":1200,\"limit\":10.0,\"limitReduction\":1.0,\"value\":11.0,\"side\":\"ONE\"}],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]},\"postContingencyResults\":[{\"contingency\":{\"id\":\"l1\",\"elements\":[{\"id\":\"l1\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]},{\"contingency\":{\"id\":\"l2\",\"elements\":[{\"id\":\"l2\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]}]}";
 
     private static final String ERROR_MESSAGE = "Error message test";
 
@@ -85,7 +89,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     private SecurityAnalysisWorkerService workerService;
 
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
 
         // network store service mocking
@@ -103,21 +107,25 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
 
         // action service mocking
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID))
-                .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES));
+                .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES));
         given(actionsService.getContingencyList(CONTINGENCY_LIST2_NAME, NETWORK_UUID))
-                .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES));
+                .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES));
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_STOP_UUID))
-                .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES));
+                .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES));
         given(actionsService.getContingencyList(CONTINGENCY_LIST2_NAME, NETWORK_STOP_UUID))
-                .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES));
+                .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES));
         given(actionsService.getContingencyList(CONTINGENCY_LIST_ERROR_NAME, NETWORK_UUID))
-                .willReturn(Flux.fromIterable(SecurityAnalysisFactoryMock.CONTINGENCIES).thenMany(Flux.error(new RuntimeException(ERROR_MESSAGE))));
+                .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES).thenMany(Flux.error(new RuntimeException(ERROR_MESSAGE))));
 
         // UUID service mocking to always generate the same result UUID
         given(uuidGeneratorService.generate()).willReturn(RESULT_UUID);
 
+        // SecurityAnalysis.Runner constructor is private..
+        Constructor<SecurityAnalysis.Runner> constructor = SecurityAnalysis.Runner.class.getDeclaredConstructor(SecurityAnalysisProvider.class);
+        constructor.setAccessible(true);
+        SecurityAnalysis.Runner runner = constructor.newInstance(new SecurityAnalysisProviderMock());
         // mock the powsybl security analysis
-        workerService.setSecurityAnalysisFactorySupplier(provider -> new SecurityAnalysisFactoryMock());
+        workerService.setSecurityAnalysisFactorySupplier(provider -> runner);
 
         // purge messages
         while (output.receive(1000, "sa.result") != null) {
