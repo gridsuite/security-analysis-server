@@ -23,10 +23,6 @@ spring:
           destination: sa.stopped
       source: publishRun;publishResult;publishCancel;publishStopped
 
-springdoc:
-  swagger-ui:
-    path: swagger-ui.html
-
 server:
   port: 5023
   forward-headers-strategy: framework
