@@ -49,6 +49,7 @@
         <jaxb-runtime.version>2.4.0-b180830.0438</jaxb-runtime.version>
         <jib.from.image>gridsuite/java-hades2</jib.from.image>
         <gridsuite-dependencies.version>10</gridsuite-dependencies.version>
+        <jib.container.environment>SPRING_PROFILES_ACTIVE=default</jib.container.environment>
     </properties>
 
     <build>
