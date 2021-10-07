@@ -1,6 +1,9 @@
 spring:
+  profiles:
+    active: default,local
+
   rabbitmq:
-    addresses: localhost
+    addresses: rabbitmq
     port: 5672
 
   cloud:
@@ -24,14 +27,7 @@ spring:
       source: publishRun;publishResult;publishCancel;publishStopped
 
 server:
-  port: 5023
   forward-headers-strategy: framework
-
-network-store-server:
-  base-uri: http://localhost:8080
-
-actions-server:
-  base-uri: http://localhost:5022
 
 logging:
   level:
