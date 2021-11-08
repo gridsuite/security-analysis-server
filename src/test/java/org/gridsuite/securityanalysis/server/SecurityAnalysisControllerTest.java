@@ -7,6 +7,7 @@
 package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.iidm.network.Network;
+import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
@@ -59,10 +60,13 @@ import static org.mockito.Mockito.when;
 public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSetup {
 
     private static final UUID NETWORK_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e4");
-    private static final UUID OTHER_NETWORK_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e5");
     private static final UUID NETWORK_STOP_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e6");
     private static final UUID RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5d");
     private static final UUID OTHER_RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5a");
+    private static final String VARIANT_1_ID = "variant_1";
+    private static final String VARIANT_2_ID = "variant_2";
+    private static final UUID NETWORK_FOR_MERGING_VIEW_UUID = UUID.fromString("11111111-7977-4592-ba19-88027e4254e4");
+    private static final UUID OTHER_NETWORK_FOR_MERGING_VIEW_UUID = UUID.fromString("22222222-7977-4592-ba19-88027e4254e4");
 
     private static final String EXPECTED_JSON = "{\"version\":\"1.1\",\"preContingencyResult\":{\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"l3\",\"limitType\":\"CURRENT\",\"acceptableDuration\":1200,\"limit\":10.0,\"limitReduction\":1.0,\"value\":11.0,\"side\":\"ONE\"}],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]},\"postContingencyResults\":[{\"contingency\":{\"id\":\"l1\",\"elements\":[{\"id\":\"l1\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"vl1\",\"limitType\":\"HIGH_VOLTAGE\",\"acceptableDuration\":0,\"limit\":400.0,\"limitReduction\":1.0,\"value\":410.0}],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]},{\"contingency\":{\"id\":\"l2\",\"elements\":[{\"id\":\"l2\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"vl1\",\"limitType\":\"HIGH_VOLTAGE\",\"acceptableDuration\":0,\"limit\":400.0,\"limitReduction\":1.0,\"value\":410.0}],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]}]}";
 
@@ -94,28 +98,44 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
 
         // network store service mocking
         Network network = EurostagTutorialExample1Factory.create();
+        network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_1_ID);
+        network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_2_ID);
+
         given(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).willReturn(network);
 
-        Network otherNetwork = Network.create("other", "test");
-        given(networkStoreService.getNetwork(OTHER_NETWORK_UUID, PreloadingStrategy.COLLECTION)).willReturn(otherNetwork);
+        Network networkForMergingView = Network.create("mergingView", "test");
+        given(networkStoreService.getNetwork(NETWORK_FOR_MERGING_VIEW_UUID, PreloadingStrategy.COLLECTION)).willReturn(networkForMergingView);
+
+        Network otherNetworkForMergingView = Network.create("other", "test 2");
+        given(networkStoreService.getNetwork(OTHER_NETWORK_FOR_MERGING_VIEW_UUID, PreloadingStrategy.COLLECTION)).willReturn(otherNetworkForMergingView);
 
         when(networkStoreService.getNetwork(NETWORK_STOP_UUID, PreloadingStrategy.COLLECTION)).thenAnswer((Answer) invocation -> {
             //Needed so the stop call doesn't arrive too late
             Thread.sleep(2000);
-            return Network.create("other", "test");
+            Network network1 = Network.create("other", "test");
+            network1.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_2_ID);
+            return network1;
         });
 
         // action service mocking
-        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID))
+        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID, VARIANT_1_ID))
                 .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES));
-        given(actionsService.getContingencyList(CONTINGENCY_LIST2_NAME, NETWORK_UUID))
+        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID, VARIANT_2_ID))
+            .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES));
+        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID, null))
+            .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES));
+        given(actionsService.getContingencyList(CONTINGENCY_LIST2_NAME, NETWORK_UUID, VARIANT_1_ID))
                 .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES));
-        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_STOP_UUID))
+        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_STOP_UUID, VARIANT_2_ID))
                 .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES));
-        given(actionsService.getContingencyList(CONTINGENCY_LIST2_NAME, NETWORK_STOP_UUID))
+        given(actionsService.getContingencyList(CONTINGENCY_LIST2_NAME, NETWORK_STOP_UUID, VARIANT_2_ID))
                 .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES));
-        given(actionsService.getContingencyList(CONTINGENCY_LIST_ERROR_NAME, NETWORK_UUID))
+        given(actionsService.getContingencyList(CONTINGENCY_LIST_ERROR_NAME, NETWORK_UUID, VARIANT_1_ID))
                 .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES).thenMany(Flux.error(new RuntimeException(ERROR_MESSAGE))));
+        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_FOR_MERGING_VIEW_UUID, null))
+            .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES));
+        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, OTHER_NETWORK_FOR_MERGING_VIEW_UUID, null))
+            .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES));
 
         // UUID service mocking to always generate the same result UUID
         given(uuidGeneratorService.generate()).willReturn(RESULT_UUID);
@@ -141,20 +161,30 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
 
     @Test
     public void runTest() {
+        // run with specific variant
         webTestClient.post()
-                .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME)
+                .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME + "&variantId=" + VARIANT_1_ID)
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody(String.class)
                 .isEqualTo(EXPECTED_JSON);
+
+        // run with implicit initial variant
+        webTestClient.post()
+            .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME)
+            .exchange()
+            .expectStatus().isOk()
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody(String.class)
+            .isEqualTo(EXPECTED_JSON);
     }
 
     @Test
     public void runAndSaveTest() throws InterruptedException {
         webTestClient.post()
                 .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
-                        + "&receiver=me")
+                        + "&receiver=me&variantId=" + VARIANT_2_ID)
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -204,7 +234,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     public void runWithTwoLists() {
         webTestClient.post()
                 .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME +
-                        "&contingencyListName=" + CONTINGENCY_LIST2_NAME)
+                        "&contingencyListName=" + CONTINGENCY_LIST2_NAME + "&variantId=" + VARIANT_1_ID)
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -238,7 +268,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     @Test
     public void mergingViewTest() {
         webTestClient.post()
-                .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME + "&networkUuid=" + OTHER_NETWORK_UUID)
+                .uri("/" + VERSION + "/networks/" + NETWORK_FOR_MERGING_VIEW_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME + "&networkUuid=" + OTHER_NETWORK_FOR_MERGING_VIEW_UUID)
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -272,7 +302,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     public void stopTest() {
         webTestClient.post()
                 .uri("/" + VERSION + "/networks/" + NETWORK_STOP_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
-                        + "&receiver=me")
+                        + "&receiver=me&variantId=" + VARIANT_2_ID)
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -295,7 +325,7 @@ public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSet
     public void runTestWithError() {
         webTestClient.post()
                 .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_ERROR_NAME
-                        + "&receiver=me")
+                        + "&receiver=me&variantId=" + VARIANT_1_ID)
                 .exchange()
                 .expectStatus().isOk()  // Because fully asynchronous (just publish a message)
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)

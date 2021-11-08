@@ -101,25 +101,29 @@ public class SecurityAnalysisWorkerService {
         return param != null ? param.replaceAll("[\n|\r|\t]", "_") : null;
     }
 
-    private Mono<Network> getNetwork(UUID networkUuid) {
+    private Mono<Network> getNetwork(UUID networkUuid, String variantId) {
         // FIXME to re-implement when network store service will be reactive
         return Mono.fromCallable(() -> {
             try {
-                return networkStoreService.getNetwork(networkUuid, PreloadingStrategy.COLLECTION);
+                Network network = networkStoreService.getNetwork(networkUuid, PreloadingStrategy.COLLECTION);
+                if (variantId != null) {
+                    network.getVariantManager().setWorkingVariant(variantId);
+                }
+                return network;
             } catch (PowsyblException e) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Network '" + networkUuid + "' not found");
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
             }
         })
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
-    private Mono<Network> getNetwork(UUID networkUuid, List<UUID> otherNetworkUuids) {
-        Mono<Network> network = getNetwork(networkUuid);
+    private Mono<Network> getNetwork(UUID networkUuid, String variantId, List<UUID> otherNetworkUuids) {
+        Mono<Network> network = getNetwork(networkUuid, variantId);
         if (otherNetworkUuids.isEmpty()) {
             return network;
         } else {
             Mono<List<Network>> otherNetworks = Flux.fromIterable(otherNetworkUuids)
-                    .flatMap(this::getNetwork)
+                    .flatMap(uuid -> getNetwork(uuid, variantId))
                     .collectList();
             return Mono.zip(network, otherNetworks)
                     .map(t -> {
@@ -143,17 +147,19 @@ public class SecurityAnalysisWorkerService {
 
         LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(SecurityAnalysisWorkerService::sanitizeParam).collect(Collectors.toList()));
 
-        Mono<Network> network = getNetwork(context.getNetworkUuid(), context.getOtherNetworkUuids());
+        Mono<Network> network = getNetwork(context.getNetworkUuid(), context.getVariantId(), context.getOtherNetworkUuids());
 
         Mono<List<Contingency>> contingencies = Flux.fromIterable(context.getContingencyListNames())
-                .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid()))
+                .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid(), context.getVariantId()))
                 .collectList();
+
+        String variantId = context.getVariantId() != null ? context.getVariantId() : VariantManagerConstants.INITIAL_VARIANT_ID;
 
         return Mono.zip(network, contingencies)
                 .flatMap(tuple -> {
                     SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
                     CompletableFuture<SecurityAnalysisResult> future = securityAnalysisRunner.runAsync(
-                        tuple.getT1(), VariantManagerConstants.INITIAL_VARIANT_ID, new DefaultLimitViolationDetector(),
+                        tuple.getT1(), variantId, new DefaultLimitViolationDetector(),
                         LimitViolationFilter.load(), LocalComputationManager.getDefault(),
                         context.getParameters(), n -> tuple.getT2(), Collections.emptyList(), Collections.emptyList()
                     ).thenApply(SecurityAnalysisReport::getResult);
