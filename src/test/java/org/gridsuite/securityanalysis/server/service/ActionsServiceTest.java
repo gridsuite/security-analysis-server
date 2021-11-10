@@ -55,6 +55,8 @@ public class ActionsServiceTest {
 
     private static final Contingency CONTINGENCY = new Contingency("c1", new BranchContingency("b1"));
 
+    private static final Contingency CONTINGENCY_VARIANT = new Contingency("c2", new BranchContingency("b2"));
+
     private final ObjectMapper objectMapper = WebFluxConfig.createObjectMapper();
 
     private WebClient.Builder webClientBuilder;
@@ -93,6 +95,7 @@ public class ActionsServiceTest {
 
         String jsonExpected = objectMapper.writeValueAsString(List.of(CONTINGENCY));
         String veryLargeJsonExpected = objectMapper.writeValueAsString(createVeryLargeList());
+        String jsonVariantExpected = objectMapper.writeValueAsString(List.of(CONTINGENCY_VARIANT));
 
         final Dispatcher dispatcher = new Dispatcher() {
             @Override
@@ -100,9 +103,14 @@ public class ActionsServiceTest {
                 String requestPath = Objects.requireNonNull(request.getPath());
                 if (requestPath.equals(String.format("/v1/contingency-lists/%s/export?networkUuid=%s&variantId=%s", LIST_NAME, NETWORK_UUID, VARIANT_ID))) {
                     return new MockResponse().setResponseCode(HttpStatus.OK.value())
-                            .setBody(jsonExpected)
+                            .setBody(jsonVariantExpected)
                             .addHeader("Content-Type", "application/json; charset=utf-8");
-                } else if (requestPath.equals(String.format("/v1/contingency-lists/%s/export?networkUuid=%s&variantId=%s", VERY_LARGE_LIST_NAME, NETWORK_UUID, VARIANT_ID))) {
+                } else if (requestPath.equals(String.format("/v1/contingency-lists/%s/export?networkUuid=%s", LIST_NAME, NETWORK_UUID))) {
+                    return new MockResponse().setResponseCode(HttpStatus.OK.value())
+                        .setBody(jsonExpected)
+                        .addHeader("Content-Type", "application/json; charset=utf-8");
+                } else if (requestPath.equals(String.format("/v1/contingency-lists/%s/export?networkUuid=%s&variantId=%s", VERY_LARGE_LIST_NAME, NETWORK_UUID, VARIANT_ID))
+                           || requestPath.equals(String.format("/v1/contingency-lists/%s/export?networkUuid=%s", VERY_LARGE_LIST_NAME, NETWORK_UUID))) {
                     return new MockResponse().setResponseCode(HttpStatus.OK.value())
                             .setBody(veryLargeJsonExpected)
                             .addHeader("Content-Type", "application/json; charset=utf-8");
@@ -126,14 +134,18 @@ public class ActionsServiceTest {
 
     @Test
     public void test() {
-        List<Contingency> list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID).collectList().block();
+        List<Contingency> list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), null).collectList().block();
         assertEquals(List.of(CONTINGENCY), list);
+        list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID).collectList().block();
+        assertEquals(List.of(CONTINGENCY_VARIANT), list);
     }
 
     @Test
     public void testVeryLargeList() {
         // DataBufferLimitException should not be thrown with this message : "Exceeded limit on max bytes to buffer : DATA_BUFFER_LIMIT"
-        List<Contingency> list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID).collectList().block();
+        List<Contingency> list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), null).collectList().block();
+        assertEquals(createVeryLargeList(), list);
+        list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID).collectList().block();
         assertEquals(createVeryLargeList(), list);
     }
 }

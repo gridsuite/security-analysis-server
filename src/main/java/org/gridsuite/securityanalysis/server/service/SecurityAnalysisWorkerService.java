@@ -101,15 +101,11 @@ public class SecurityAnalysisWorkerService {
         return param != null ? param.replaceAll("[\n|\r|\t]", "_") : null;
     }
 
-    private Mono<Network> getNetwork(UUID networkUuid, String variantId) {
+    private Mono<Network> getNetwork(UUID networkUuid) {
         // FIXME to re-implement when network store service will be reactive
         return Mono.fromCallable(() -> {
             try {
-                Network network = networkStoreService.getNetwork(networkUuid, PreloadingStrategy.COLLECTION);
-                if (variantId != null) {
-                    network.getVariantManager().setWorkingVariant(variantId);
-                }
-                return network;
+                return networkStoreService.getNetwork(networkUuid, PreloadingStrategy.COLLECTION);
             } catch (PowsyblException e) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
             }
@@ -117,13 +113,13 @@ public class SecurityAnalysisWorkerService {
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
-    private Mono<Network> getNetwork(UUID networkUuid, String variantId, List<UUID> otherNetworkUuids) {
-        Mono<Network> network = getNetwork(networkUuid, variantId);
+    private Mono<Network> getNetwork(UUID networkUuid, List<UUID> otherNetworkUuids) {
+        Mono<Network> network = getNetwork(networkUuid);
         if (otherNetworkUuids.isEmpty()) {
             return network;
         } else {
             Mono<List<Network>> otherNetworks = Flux.fromIterable(otherNetworkUuids)
-                    .flatMap(uuid -> getNetwork(uuid, variantId))
+                    .flatMap(uuid -> getNetwork(uuid))
                     .collectList();
             return Mono.zip(network, otherNetworks)
                     .map(t -> {
@@ -147,7 +143,7 @@ public class SecurityAnalysisWorkerService {
 
         LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(SecurityAnalysisWorkerService::sanitizeParam).collect(Collectors.toList()));
 
-        Mono<Network> network = getNetwork(context.getNetworkUuid(), context.getVariantId(), context.getOtherNetworkUuids());
+        Mono<Network> network = getNetwork(context.getNetworkUuid(), context.getOtherNetworkUuids());
 
         Mono<List<Contingency>> contingencies = Flux.fromIterable(context.getContingencyListNames())
                 .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid(), context.getVariantId()))
