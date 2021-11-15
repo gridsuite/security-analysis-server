@@ -65,13 +65,14 @@ public class SecurityAnalysisController {
                                         content = {@Content(mediaType = APPLICATION_JSON_VALUE,
                                                             schema = @Schema(implementation = SecurityAnalysisResult.class))})})
     public ResponseEntity<Mono<SecurityAnalysisResult>> run(@Parameter(description = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
+                                                            @Parameter(description = "Variant Id") @RequestParam(name = "variantId", required = false) String variantId,
                                                             @Parameter(description = "Other networks UUID (to merge with main one))") @RequestParam(name = "networkUuid", required = false) List<UUID> otherNetworkUuids,
                                                             @Parameter(description = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
                                                             @Parameter(description = "Provider") @RequestParam(name = "provider", required = false) String provider,
                                                             @RequestBody(required = false) SecurityAnalysisParameters parameters) {
         SecurityAnalysisParameters nonNullParameters = getNonNullParameters(parameters);
         List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
-        Mono<SecurityAnalysisResult> result = workerService.run(new SecurityAnalysisRunContext(networkUuid, nonNullOtherNetworkUuids, contigencyListNames, null, provider, nonNullParameters));
+        Mono<SecurityAnalysisResult> result = workerService.run(new SecurityAnalysisRunContext(networkUuid, variantId, nonNullOtherNetworkUuids, contigencyListNames, null, provider, nonNullParameters));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
     }
 
@@ -82,6 +83,7 @@ public class SecurityAnalysisController {
                                         content = {@Content(mediaType = APPLICATION_JSON_VALUE,
                                                             schema = @Schema(implementation = SecurityAnalysisResult.class))})})
     public ResponseEntity<Mono<UUID>> runAndSave(@Parameter(description = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
+                                                 @Parameter(description = "Variant Id") @RequestParam(name = "variantId", required = false) String variantId,
                                                  @Parameter(description = "Other networks UUID (to merge with main one))") @RequestParam(name = "networkUuid", required = false) List<UUID> otherNetworkUuids,
                                                  @Parameter(description = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
                                                  @Parameter(description = "Result receiver") @RequestParam(name = "receiver", required = false) String receiver,
@@ -89,7 +91,7 @@ public class SecurityAnalysisController {
                                                  @RequestBody(required = false) SecurityAnalysisParameters parameters) {
         SecurityAnalysisParameters nonNullParameters = getNonNullParameters(parameters);
         List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
-        Mono<UUID> resultUuid = service.runAndSaveResult(new SecurityAnalysisRunContext(networkUuid, nonNullOtherNetworkUuids, contigencyListNames, receiver, provider, nonNullParameters));
+        Mono<UUID> resultUuid = service.runAndSaveResult(new SecurityAnalysisRunContext(networkUuid, variantId, nonNullOtherNetworkUuids, contigencyListNames, receiver, provider, nonNullParameters));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(resultUuid);
     }
 
