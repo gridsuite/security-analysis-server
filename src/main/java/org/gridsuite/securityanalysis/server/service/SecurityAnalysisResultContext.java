@@ -61,6 +61,7 @@ public class SecurityAnalysisResultContext {
         MessageHeaders headers = message.getHeaders();
         UUID resultUuid = UUID.fromString(getNonNullHeader(headers, "resultUuid"));
         UUID networkUuid = UUID.fromString(getNonNullHeader(headers, "networkUuid"));
+        String variantId = (String) headers.get("variantId");
         List<UUID> otherNetworkUuids = getHeaderList(headers, "otherNetworkUuids")
                 .stream()
                 .map(UUID::fromString)
@@ -74,7 +75,7 @@ public class SecurityAnalysisResultContext {
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }
-        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, otherNetworkUuids, contingencyListNames, receiver, provider, parameters);
+        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, variantId, otherNetworkUuids, contingencyListNames, receiver, provider, parameters);
         return new SecurityAnalysisResultContext(resultUuid, runContext);
     }
 
@@ -88,6 +89,7 @@ public class SecurityAnalysisResultContext {
         return MessageBuilder.withPayload(parametersJson)
                 .setHeader("resultUuid", resultUuid.toString())
                 .setHeader("networkUuid", runContext.getNetworkUuid().toString())
+                .setHeader("variantId", runContext.getVariantId())
                 .setHeader("otherNetworkUuids", runContext.getOtherNetworkUuids().stream().map(UUID::toString).collect(Collectors.joining(",")))
                 .setHeader("contingencyListNames", String.join(",", runContext.getContingencyListNames()))
                 .setHeader("receiver", runContext.getReceiver())

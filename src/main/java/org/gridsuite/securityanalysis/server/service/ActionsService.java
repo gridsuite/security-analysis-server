@@ -15,6 +15,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -38,14 +39,15 @@ public class ActionsService {
         this.webClient = Objects.requireNonNull(webClient);
     }
 
-    public Flux<Contingency> getContingencyList(String name, UUID networkUuid) {
+    public Flux<Contingency> getContingencyList(String name, UUID networkUuid, String variantId) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(networkUuid);
         return webClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path(ACTIONS_API_VERSION + "/contingency-lists/{name}/export")
-                        .queryParam("networkUuid", networkUuid.toString())
-                        .build(name))
+                    .path(ACTIONS_API_VERSION + "/contingency-lists/{name}/export")
+                    .queryParam("networkUuid", networkUuid.toString())
+                    .queryParamIfPresent("variantId", Optional.ofNullable(variantId))
+                    .build(name))
                 .retrieve()
                 .bodyToFlux(new ParameterizedTypeReference<>() {
                 });

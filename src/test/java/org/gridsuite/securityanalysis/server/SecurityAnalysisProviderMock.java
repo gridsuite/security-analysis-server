@@ -34,18 +34,32 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     static final String CONTINGENCY_LIST_NAME = "list1";
     static final String CONTINGENCY_LIST2_NAME = "list2";
     static final String CONTINGENCY_LIST_ERROR_NAME = "listError";
+    static final String CONTINGENCY_LIST_NAME_VARIANT = "listVariant";
 
     static final List<Contingency> CONTINGENCIES = List.of(new Contingency("l1", new BranchContingency("l1")),
                                                            new Contingency("l2", new BranchContingency("l2")));
+    static final List<Contingency> CONTINGENCIES_VARIANT = List.of(new Contingency("l3", new BranchContingency("l3")),
+        new Contingency("l4", new BranchContingency("l4")));
 
     static final LimitViolation LIMIT_VIOLATION_1 = new LimitViolation("l3", LimitViolationType.CURRENT, "", 20 * 60, 10, 1, 11, Branch.Side.ONE);
     static final LimitViolation LIMIT_VIOLATION_2 = new LimitViolation("vl1", LimitViolationType.HIGH_VOLTAGE, "", 0, 400, 1, 410, null);
+    static final LimitViolation LIMIT_VIOLATION_3 = new LimitViolation("l6", LimitViolationType.CURRENT, "", 20 * 60, 10, 1, 11, Branch.Side.ONE);
+    static final LimitViolation LIMIT_VIOLATION_4 = new LimitViolation("vl7", LimitViolationType.HIGH_VOLTAGE, "", 0, 400, 1, 410, null);
 
     static final SecurityAnalysisResult RESULT = new SecurityAnalysisResult(new LimitViolationsResult(true, List.of(LIMIT_VIOLATION_1)),
             CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency, true, List.of(LIMIT_VIOLATION_2)))
             .collect(Collectors.toList()));
 
+    static final SecurityAnalysisResult RESULT_VARIANT = new SecurityAnalysisResult(new LimitViolationsResult(true, List.of(LIMIT_VIOLATION_3)),
+        CONTINGENCIES_VARIANT.stream().map(contingency -> new PostContingencyResult(contingency, true, List.of(LIMIT_VIOLATION_4)))
+            .collect(Collectors.toList()));
+
     static final SecurityAnalysisReport REPORT = new SecurityAnalysisReport(RESULT);
+    static final SecurityAnalysisReport REPORT_VARIANT = new SecurityAnalysisReport(RESULT_VARIANT);
+
+    static final String VARIANT_1_ID = "variant_1";
+    static final String VARIANT_2_ID = "variant_2";
+    static final String VARIANT_3_ID = "variant_3";
 
     public CompletableFuture<SecurityAnalysisReport> run(Network network,
             String workingVariantId,
@@ -57,7 +71,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
             List<SecurityAnalysisInterceptor> interceptors,
             List<StateMonitor> monitors) {
         LOGGER.info("Run security analysis mock");
-        return CompletableFuture.completedFuture(REPORT);
+        return CompletableFuture.completedFuture(workingVariantId.equals(VARIANT_3_ID) ? REPORT_VARIANT : REPORT);
     }
 
     @Override

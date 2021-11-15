@@ -107,7 +107,7 @@ public class SecurityAnalysisWorkerService {
             try {
                 return networkStoreService.getNetwork(networkUuid, PreloadingStrategy.COLLECTION);
             } catch (PowsyblException e) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Network '" + networkUuid + "' not found");
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, e.getMessage());
             }
         })
                 .subscribeOn(Schedulers.boundedElastic());
@@ -119,7 +119,7 @@ public class SecurityAnalysisWorkerService {
             return network;
         } else {
             Mono<List<Network>> otherNetworks = Flux.fromIterable(otherNetworkUuids)
-                    .flatMap(this::getNetwork)
+                    .flatMap(uuid -> getNetwork(uuid))
                     .collectList();
             return Mono.zip(network, otherNetworks)
                     .map(t -> {
@@ -146,14 +146,16 @@ public class SecurityAnalysisWorkerService {
         Mono<Network> network = getNetwork(context.getNetworkUuid(), context.getOtherNetworkUuids());
 
         Mono<List<Contingency>> contingencies = Flux.fromIterable(context.getContingencyListNames())
-                .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid()))
+                .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid(), context.getVariantId()))
                 .collectList();
+
+        String variantId = context.getVariantId() != null ? context.getVariantId() : VariantManagerConstants.INITIAL_VARIANT_ID;
 
         return Mono.zip(network, contingencies)
                 .flatMap(tuple -> {
                     SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
                     CompletableFuture<SecurityAnalysisResult> future = securityAnalysisRunner.runAsync(
-                        tuple.getT1(), VariantManagerConstants.INITIAL_VARIANT_ID, new DefaultLimitViolationDetector(),
+                        tuple.getT1(), variantId, new DefaultLimitViolationDetector(),
                         LimitViolationFilter.load(), LocalComputationManager.getDefault(),
                         context.getParameters(), n -> tuple.getT2(), Collections.emptyList(), Collections.emptyList()
                     ).thenApply(SecurityAnalysisReport::getResult);

@@ -19,6 +19,8 @@ public class SecurityAnalysisRunContext {
 
     private final UUID networkUuid;
 
+    private final String variantId;
+
     private final List<UUID> otherNetworkUuids;
 
     private final List<String> contingencyListNames;
@@ -29,9 +31,10 @@ public class SecurityAnalysisRunContext {
 
     private final SecurityAnalysisParameters parameters;
 
-    public SecurityAnalysisRunContext(UUID networkUuid, List<UUID> otherNetworkUuids, List<String> contingencyListNames,
+    public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<UUID> otherNetworkUuids, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParameters parameters) {
         this.networkUuid = Objects.requireNonNull(networkUuid);
+        this.variantId = variantId;
         this.otherNetworkUuids = Objects.requireNonNull(otherNetworkUuids);
         this.contingencyListNames = Objects.requireNonNull(contingencyListNames);
         this.receiver = receiver;
@@ -41,6 +44,10 @@ public class SecurityAnalysisRunContext {
 
     public UUID getNetworkUuid() {
         return networkUuid;
+    }
+
+    public String getVariantId() {
+        return variantId;
     }
 
     public List<UUID> getOtherNetworkUuids() {
