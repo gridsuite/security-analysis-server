@@ -21,6 +21,7 @@ import com.powsybl.security.SecurityAnalysis;
 import com.powsybl.security.SecurityAnalysisReport;
 import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.security.SecurityAnalysisResult;
+import com.powsybl.ws.commons.LogUtils;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repository.SecurityAnalysisResultRepository;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisUtil;
@@ -97,10 +98,6 @@ public class SecurityAnalysisWorkerService {
         this.securityAnalysisFactorySupplier = Objects.requireNonNull(securityAnalysisFactorySupplier);
     }
 
-    private static String sanitizeParam(String param) {
-        return param != null ? param.replaceAll("[\n|\r|\t]", "_") : null;
-    }
-
     private Mono<Network> getNetwork(UUID networkUuid) {
         // FIXME to re-implement when network store service will be reactive
         return Mono.fromCallable(() -> {
@@ -141,7 +138,7 @@ public class SecurityAnalysisWorkerService {
     private Mono<SecurityAnalysisResult> run(SecurityAnalysisRunContext context, UUID resultUuid) {
         Objects.requireNonNull(context);
 
-        LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(SecurityAnalysisWorkerService::sanitizeParam).collect(Collectors.toList()));
+        LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(LogUtils::sanitizeParam).collect(Collectors.toList()));
 
         Mono<Network> network = getNetwork(context.getNetworkUuid(), context.getOtherNetworkUuids());
 

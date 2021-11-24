@@ -1,10 +1,6 @@
 spring:
-  profiles:
-    active: default,local
-
-  rabbitmq:
-    addresses: rabbitmq
-    port: 5672
+  application:
+    name: security-analysis-server
 
   cloud:
     function:
@@ -25,9 +21,6 @@ spring:
         publishStopped-out-0:
           destination: sa.stopped
       source: publishRun;publishResult;publishCancel;publishStopped
-
-server:
-  forward-headers-strategy: framework
 
 logging:
   level:
