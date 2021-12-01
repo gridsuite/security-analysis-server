@@ -8,18 +8,18 @@ spring:
     stream:
       bindings:
         consumeRun-in-0:
-          destination: sa.run
+          destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.run
           group: saGroup
         publishRun-out-0:
-          destination: sa.run
+          destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.run
         publishResult-out-0:
-          destination: sa.result
+          destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.result
         consumeCancel-in-0:
-            destination: sa.cancel
+            destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.cancel
         publishCancel-out-0:
-            destination: sa.cancel
+            destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.cancel
         publishStopped-out-0:
-          destination: sa.stopped
+          destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.stopped
       source: publishRun;publishResult;publishCancel;publishStopped
 
 logging:
