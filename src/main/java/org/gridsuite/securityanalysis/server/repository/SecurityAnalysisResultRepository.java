@@ -202,9 +202,9 @@ public class SecurityAnalysisResultRepository {
         return new GlobalStatusEntity(resultUuid, status);
     }
 
-    public Mono<Void> insertStatus(UUID resultUuid, String status) {
-        Objects.requireNonNull(resultUuid);
-        return globalStatusRepository.insert(toEntity(resultUuid, status))
+    public Mono<Void> insertStatus(List<UUID> resultUuids, String status) {
+        Objects.requireNonNull(resultUuids);
+        return globalStatusRepository.insert(resultUuids.stream().map(uuid -> toEntity(uuid, status)).collect(Collectors.toList()))
                 .then();
     }
 }
