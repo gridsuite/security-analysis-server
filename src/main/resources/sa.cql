@@ -1,11 +1,11 @@
-CREATE TABLE sa.computationStatus (
+CREATE TABLE computationStatus (
     resultUuid uuid,
     contingencyId text,
     ok boolean,
     PRIMARY KEY (resultUuid, contingencyId)
 );
 
-CREATE TABLE sa.limitViolation (
+CREATE TABLE limitViolation (
     resultUuid uuid,
     limitType text,
     contingencyId text,
@@ -20,7 +20,7 @@ CREATE TABLE sa.limitViolation (
     PRIMARY KEY (resultUuid, limitType, contingencyId, subjectId)
 );
 
-CREATE TABLE sa.contingency (
+CREATE TABLE contingency (
     resultUuid uuid,
     contingencyId text,
     branchIds list<text>,
@@ -28,7 +28,7 @@ CREATE TABLE sa.contingency (
     PRIMARY KEY (resultUuid, contingencyId)
 );
 
-CREATE TABLE sa.globalStatus (
+CREATE TABLE globalStatus (
     resultUuid uuid,
     status text,
     PRIMARY KEY (resultUuid)
