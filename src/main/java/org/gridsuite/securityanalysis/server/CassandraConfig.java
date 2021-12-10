@@ -13,6 +13,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.data.cassandra.config.AbstractCassandraConfiguration;
 import org.springframework.data.cassandra.config.CqlSessionFactoryBean;
 import org.springframework.data.cassandra.repository.config.EnableCassandraRepositories;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -23,11 +24,12 @@ import org.springframework.data.cassandra.repository.config.EnableCassandraRepos
 @EnableCassandraRepositories
 public class CassandraConfig extends AbstractCassandraConfiguration {
 
-    static final String KEYSPACE_NAME = "sa";
+    @Value("${powsybl-ws.cassandra.keyspace.prefix:}${cassandra-keyspace:sa}")
+    private String keyspaceName;
 
     @Override
     protected String getKeyspaceName() {
-        return KEYSPACE_NAME;
+        return keyspaceName;
     }
 
     @Bean
