@@ -132,12 +132,11 @@ public class SecurityAnalysisController {
         return ResponseEntity.ok().body(result);
     }
 
-    @PutMapping(value = "/results/{resultUuid}/invalidate-status", produces = APPLICATION_JSON_VALUE)
+    @PutMapping(value = "/results/invalidate-status", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Invalidate the security analysis status from the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis status has been invalidated")})
-    public ResponseEntity<Mono<Void>> invalidateStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
-        Mono<Void> result = service.setStatus(resultUuid, SecurityAnalysisStatus.NOT_DONE.name());
-        return ResponseEntity.ok().body(result);
+    public ResponseEntity<Mono<Void>> invalidateStatus(@Parameter(description = "Result uuids") @RequestParam(name = "resultUuid") List<UUID> resultUuids) {
+        return ResponseEntity.ok().body(service.setStatus(resultUuids, SecurityAnalysisStatus.NOT_DONE.name()));
     }
 
     @PutMapping(value = "/results/{resultUuid}/stop", produces = APPLICATION_JSON_VALUE)

@@ -56,7 +56,7 @@ public class SecurityAnalysisService {
         var resultUuid = uuidGeneratorService.generate();
 
         // update status to running status
-        return setStatus(resultUuid, SecurityAnalysisStatus.RUNNING.name()).then(
+        return setStatus(List.of(resultUuid), SecurityAnalysisStatus.RUNNING.name()).then(
                 Mono.fromRunnable(() ->
                         sendRunMessage(new SecurityAnalysisResultContext(resultUuid, runContext).toMessage(objectMapper)))
                 .thenReturn(resultUuid));
@@ -78,8 +78,8 @@ public class SecurityAnalysisService {
         return resultRepository.findStatus(resultUuid);
     }
 
-    public Mono<Void> setStatus(UUID resultUuid, String status) {
-        return resultRepository.insertStatus(resultUuid, status);
+    public Mono<Void> setStatus(List<UUID> resultUuids, String status) {
+        return resultRepository.insertStatus(resultUuids, status);
     }
 
     public Mono<Void> stop(UUID resultUuid, String receiver) {
