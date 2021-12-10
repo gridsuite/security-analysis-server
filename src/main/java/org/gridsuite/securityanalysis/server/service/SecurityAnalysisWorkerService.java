@@ -175,7 +175,7 @@ public class SecurityAnalysisWorkerService {
 
             run(resultContext.getRunContext(), resultContext.getResultUuid())
                     .flatMap(result -> resultRepository.insert(resultContext.getResultUuid(), result)
-                            .then(resultRepository.insertStatus(resultContext.getResultUuid(), SecurityAnalysisStatus.COMPLETED.name()))
+                            .then(resultRepository.insertStatus(List.of(resultContext.getResultUuid()), SecurityAnalysisStatus.COMPLETED.name()))
                             .then(Mono.just(result)))
                     .doOnSuccess(result -> {
                         if (result != null) {  // result available
