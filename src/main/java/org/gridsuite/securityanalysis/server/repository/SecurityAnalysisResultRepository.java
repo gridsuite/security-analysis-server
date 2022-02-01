@@ -106,12 +106,15 @@ public class SecurityAnalysisResultRepository {
 
     private Mono<SecurityAnalysisResult> createResultMono(UUID resultUuid, Set<LimitViolationType> limitTypes) {
         // load all rows related to this result UUID
-        Mono<Map<String, Boolean>> computationsStatusesMono = computationStatusRepository.findByResultUuid(resultUuid)
+        Mono<Map<String, Boolean>> computationsStatusesMono;
+        computationsStatusesMono = Flux.fromIterable(computationStatusRepository.findByResultUuid(resultUuid))
                 .collectMap(ComputationStatusEntity::getContingencyId, SecurityAnalysisResultRepository::fromEntity);
-        Mono<Map<String, Collection<LimitViolation>>> limitViolationsMono
-                = (limitTypes.isEmpty() ? limitViolationRepository.findByResultUuid(resultUuid) : limitViolationRepository.findByResultUuidAndLimitTypeIn(resultUuid, limitTypes))
-                .collectMultimap(LimitViolationEntity::getContingencyId, SecurityAnalysisResultRepository::fromEntity);
-        Mono<List<Contingency>> contingenciesMono = contingencyRepository.findByResultUuid(resultUuid)
+        Mono<Map<String, Collection<LimitViolation>>> limitViolationsMono;
+        limitViolationsMono = Flux.fromIterable(limitTypes.isEmpty()
+                ? limitViolationRepository.findByResultUuid(resultUuid)
+                : limitViolationRepository.findByResultUuidAndLimitTypeIn(resultUuid, limitTypes))
+            .collectMultimap(LimitViolationEntity::getContingencyId, SecurityAnalysisResultRepository::fromEntity);
+        Mono<List<Contingency>> contingenciesMono = Flux.fromIterable(contingencyRepository.findByResultUuid(resultUuid))
                 .map(SecurityAnalysisResultRepository::fromEntity)
                 .collectList();
 
@@ -145,15 +148,17 @@ public class SecurityAnalysisResultRepository {
 
         // !!! we can just check if result is available by looking at pre computation status because it is written last
         // see insert method comment, so this mono is empty if result has not been found or not fully written
-        return computationStatusRepository.findByResultUuidAndContingencyId(resultUuid, "")
+        return Flux.fromIterable(computationStatusRepository.findByResultUuidAndContingencyId(resultUuid, ""))
                 .then(createResultMono(resultUuid, limitTypes))
                 .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable));
     }
 
     private Mono<Void> save(UUID resultUuid, Contingency contingency, LimitViolationsResult limitViolationsResult) {
-        return computationStatusRepository.insert(toEntity(resultUuid, contingency, limitViolationsResult.isComputationOk()))
-                .flatMapMany(ignore -> limitViolationRepository.insert(toEntity(resultUuid, contingency, limitViolationsResult.getLimitViolations())))
-                .then();
+        return Mono.fromCallable(
+            () -> computationStatusRepository.save(toEntity(resultUuid, contingency, limitViolationsResult.isComputationOk())))
+            .flatMapMany(ignore -> Mono.fromCallable(()
+                -> limitViolationRepository.saveAll(toEntity(resultUuid, contingency, limitViolationsResult.getLimitViolations())))
+            ).then();
     }
 
     public Mono<Void> insert(UUID resultUuid, SecurityAnalysisResult result) {
@@ -163,9 +168,11 @@ public class SecurityAnalysisResultRepository {
         Mono<Void> preContingencyInsert = save(resultUuid, null, result.getPreContingencyResult().getLimitViolationsResult());
 
         Mono<Void> postContingencyInsert = Flux.fromIterable(result.getPostContingencyResults())
-                .flatMap(postContingencyResult -> save(resultUuid, postContingencyResult.getContingency(), postContingencyResult.getLimitViolationsResult())
-                        .then(contingencyRepository.insert(toEntity(resultUuid, postContingencyResult.getContingency()))))
-                .then();
+            .flatMap(postContingencyResult
+                -> save(resultUuid, postContingencyResult.getContingency(), postContingencyResult.getLimitViolationsResult())
+                .then(Mono.fromCallable(
+                    () -> contingencyRepository.save(toEntity(resultUuid, postContingencyResult.getContingency())))))
+            .then();
 
         // !!! save pre-contingency result last so we can rely on it to known if full result is available
         return postContingencyInsert
@@ -174,28 +181,26 @@ public class SecurityAnalysisResultRepository {
 
     public Mono<Void> delete(UUID resultUuid) {
         Objects.requireNonNull(resultUuid);
-        Mono<Void> v1 = computationStatusRepository.deleteByResultUuid(resultUuid);
-        Mono<Void> v2 = limitViolationRepository.deleteByResultUuid(resultUuid);
-        Mono<Void> v3 = contingencyRepository.deleteByResultUuid(resultUuid);
-        Mono<Void> v4 = globalStatusRepository.deleteByResultUuid(resultUuid);
-        return Flux.concat(v1, v2, v3, v4)
-                .then()
-                .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable));
+        return Mono.fromRunnable(() -> {
+            computationStatusRepository.deleteByResultUuid(resultUuid);
+            limitViolationRepository.deleteByResultUuid(resultUuid);
+            contingencyRepository.deleteByResultUuid(resultUuid);
+            globalStatusRepository.deleteByResultUuid(resultUuid);
+        }).doOnError(throwable -> LOGGER.error(throwable.toString(), throwable)).then();
     }
 
     public Mono<Void> deleteAll() {
-        Mono<Void> v1 = computationStatusRepository.deleteAll();
-        Mono<Void> v2 = limitViolationRepository.deleteAll();
-        Mono<Void> v3 = contingencyRepository.deleteAll();
-        Mono<Void> v4 = globalStatusRepository.deleteAll();
-        return Flux.concat(v1, v2, v3, v4)
-                .then()
-                .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable));
+        return Mono.fromRunnable(() -> {
+            computationStatusRepository.deleteAll();
+            limitViolationRepository.deleteAll();
+            contingencyRepository.deleteAll();
+            globalStatusRepository.deleteAll();
+        }).doOnError(throwable -> LOGGER.error(throwable.toString(), throwable)).then();
     }
 
     public Mono<String> findStatus(UUID resultUuid) {
         Objects.requireNonNull(resultUuid);
-        return globalStatusRepository.findByResultUuid(resultUuid).map(GlobalStatusEntity::getStatus);
+        return Mono.fromCallable(() -> globalStatusRepository.findByResultUuid(resultUuid).getStatus());
     }
 
     private static GlobalStatusEntity toEntity(UUID resultUuid, String status) {
@@ -204,7 +209,6 @@ public class SecurityAnalysisResultRepository {
 
     public Mono<Void> insertStatus(List<UUID> resultUuids, String status) {
         Objects.requireNonNull(resultUuids);
-        return globalStatusRepository.insert(resultUuids.stream().map(uuid -> toEntity(uuid, status)).collect(Collectors.toList()))
-                .then();
+        return Mono.fromRunnable(() -> globalStatusRepository.saveAll(resultUuids.stream().map(uuid -> toEntity(uuid, status)).collect(Collectors.toList()))).then();
     }
 }

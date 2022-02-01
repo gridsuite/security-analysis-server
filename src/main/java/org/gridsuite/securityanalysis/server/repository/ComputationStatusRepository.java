@@ -6,22 +6,24 @@
  */
 package org.gridsuite.securityanalysis.server.repository;
 
-import org.springframework.data.cassandra.repository.ReactiveCassandraRepository;
-import org.springframework.stereotype.Repository;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
+import java.util.List;
 import java.util.UUID;
+
+import javax.transaction.Transactional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @Repository
-public interface ComputationStatusRepository extends ReactiveCassandraRepository<ComputationStatusEntity, UUID> {
+public interface ComputationStatusRepository extends JpaRepository<ComputationStatusEntity, UUID> {
 
-    Flux<ComputationStatusEntity> findByResultUuid(UUID resultUuid);
+    List<ComputationStatusEntity> findByResultUuid(UUID resultUuid);
 
-    Flux<ComputationStatusEntity> findByResultUuidAndContingencyId(UUID resultUuid, String contingencyId);
+    List<ComputationStatusEntity> findByResultUuidAndContingencyId(UUID resultUuid, String contingencyId);
 
-    Mono<Void> deleteByResultUuid(UUID resultUuid);
+    @Transactional
+    void deleteByResultUuid(UUID resultUuid);
 }

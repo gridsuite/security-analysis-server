@@ -6,16 +6,16 @@
  */
 package org.gridsuite.securityanalysis.server.repository;
 
+import java.util.UUID;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.data.cassandra.core.cql.PrimaryKeyType;
-import org.springframework.data.cassandra.core.mapping.Column;
-import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
-import org.springframework.data.cassandra.core.mapping.Table;
-
-import java.io.Serializable;
-import java.util.UUID;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -23,15 +23,15 @@ import java.util.UUID;
 @Getter
 @Setter
 @AllArgsConstructor
-@Table("computationStatus")
-public class ComputationStatusEntity implements Serializable {
+@NoArgsConstructor
+@Entity
+@Table(name = "computationStatus")
+public class ComputationStatusEntity {
 
-    @PrimaryKeyColumn(name = "resultUuid", type = PrimaryKeyType.PARTITIONED)
+    @Id
     private UUID resultUuid;
 
-    @PrimaryKeyColumn(name = "contingencyId", type = PrimaryKeyType.CLUSTERED)
     private String contingencyId;
 
-    @Column("ok")
     private boolean ok;
 }

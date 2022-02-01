@@ -6,18 +6,17 @@
  */
 package org.gridsuite.securityanalysis.server.repository;
 
-import org.springframework.data.cassandra.repository.ReactiveCassandraRepository;
-import org.springframework.stereotype.Repository;
-import reactor.core.publisher.Mono;
-
 import java.util.UUID;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 /**
  * @author Franck Lecuyer <franck.lecuyer at rte-france.com>
  */
 @Repository
-public interface GlobalStatusRepository extends ReactiveCassandraRepository<GlobalStatusEntity, UUID> {
-    Mono<GlobalStatusEntity> findByResultUuid(UUID resultUuid);
+public interface GlobalStatusRepository extends JpaRepository<GlobalStatusEntity, UUID> {
+    GlobalStatusEntity findByResultUuid(UUID resultUuid);
 
-    Mono<Void> deleteByResultUuid(UUID resultUuid);
+    void deleteByResultUuid(UUID resultUuid);
 }

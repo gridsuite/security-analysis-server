@@ -6,14 +6,18 @@
  */
 package org.gridsuite.securityanalysis.server.repository;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.data.cassandra.core.mapping.PrimaryKey;
-import org.springframework.data.cassandra.core.mapping.Table;
+import java.util.UUID;
 
 import java.io.Serializable;
-import java.util.UUID;
+
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * @author Franck Lecuyer <franck.lecuyer at rte-france.com>
@@ -21,10 +25,12 @@ import java.util.UUID;
 @Getter
 @Setter
 @AllArgsConstructor
-@Table("globalStatus")
+@NoArgsConstructor
+@Entity
+@Table(name = "globalStatus")
 public class GlobalStatusEntity implements Serializable {
 
-    @PrimaryKey
+    @Id
     private UUID resultUuid;
 
     private String status;

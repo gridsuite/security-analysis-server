@@ -25,3 +25,5 @@ spring:
 logging:
   level:
     ROOT: INFO
+
+dbName: sa

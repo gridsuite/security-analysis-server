@@ -58,7 +58,7 @@ import static org.mockito.Mockito.when;
 @EnableWebFlux
 @SpringBootTest
 @ContextHierarchy({@ContextConfiguration(classes = {SecurityAnalysisApplication.class, TestChannelBinderConfiguration.class})})
-public class SecurityAnalysisControllerTest extends AbstractEmbeddedCassandraSetup {
+public class SecurityAnalysisControllerTest {
 
     private static final UUID NETWORK_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e4");
     private static final UUID NETWORK_STOP_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e6");
