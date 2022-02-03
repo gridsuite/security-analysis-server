@@ -10,9 +10,12 @@ import java.util.UUID;
 
 import java.io.Serializable;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
+import javax.persistence.IdClass;
 import javax.persistence.Table;
 
 import com.powsybl.iidm.network.Branch;
@@ -30,21 +33,33 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@IdClass(LimitationViolationId.class)
 @Table(name = "limitViolation")
 public class LimitViolationEntity implements Serializable {
+
+    //@EmbeddedId
+    //private LimitationViolationId id;
+    //
+    //public String getContingencyId() {
+    //    return id.getContingencyId();
+    //}
 
     @Id
     private UUID resultUuid;
 
-    @Enumerated
+    @Id
+    @Enumerated(EnumType.STRING)
     private LimitViolationType limitType;
 
+    @Id
     private String contingencyId;
 
+    @Id
     private String subjectId;
 
     private String subjectName;
 
+    @Column(name = "limitValue")
     private double limit;
 
     private String limitName;
@@ -53,8 +68,9 @@ public class LimitViolationEntity implements Serializable {
 
     private float limitReduction;
 
+    @Column(name = "offendingValue")
     private double value;
 
-    @Enumerated
+    @Enumerated(EnumType.STRING)
     private Branch.Side side;
 }

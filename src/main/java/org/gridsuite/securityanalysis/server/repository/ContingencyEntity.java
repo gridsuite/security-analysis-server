@@ -6,19 +6,21 @@
  */
 package org.gridsuite.securityanalysis.server.repository;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
+
+import java.io.Serializable;
 
 import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.IdClass;
 import javax.persistence.Table;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -29,11 +31,13 @@ import javax.persistence.Table;
 @NoArgsConstructor
 @Entity
 @Table(name = "contingency")
+@IdClass(ContingencyId.class)
 public class ContingencyEntity implements Serializable {
 
     @Id
     private UUID resultUuid;
 
+    @Id
     private String contingencyId;
 
     @ElementCollection

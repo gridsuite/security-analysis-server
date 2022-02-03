@@ -12,9 +12,13 @@ import com.powsybl.contingency.ContingencyElement;
 import com.powsybl.contingency.GeneratorContingency;
 import com.powsybl.security.*;
 import com.powsybl.security.results.PostContingencyResult;
+
+import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -75,6 +79,7 @@ public class SecurityAnalysisResultRepository {
     }
 
     private static ComputationStatusEntity toEntity(UUID resultUuid, Contingency contingency, boolean ok) {
+        System.err.println("toEntity " + (contingency == null ? "NULL" :  contingency.getId()));
         return new ComputationStatusEntity(resultUuid, contingency != null ? contingency.getId() : "", ok);
     }
 
@@ -107,14 +112,31 @@ public class SecurityAnalysisResultRepository {
     private Mono<SecurityAnalysisResult> createResultMono(UUID resultUuid, Set<LimitViolationType> limitTypes) {
         // load all rows related to this result UUID
         Mono<Map<String, Boolean>> computationsStatusesMono;
-        computationsStatusesMono = Flux.fromIterable(computationStatusRepository.findByResultUuid(resultUuid))
+        List<ComputationStatusEntity> statusEntities = computationStatusRepository.findByResultUuid(resultUuid);
+        Hibernate.initialize(statusEntities);
+
+        computationsStatusesMono = Flux.fromIterable(statusEntities)
                 .collectMap(ComputationStatusEntity::getContingencyId, SecurityAnalysisResultRepository::fromEntity);
         Mono<Map<String, Collection<LimitViolation>>> limitViolationsMono;
-        limitViolationsMono = Flux.fromIterable(limitTypes.isEmpty()
-                ? limitViolationRepository.findByResultUuid(resultUuid)
-                : limitViolationRepository.findByResultUuidAndLimitTypeIn(resultUuid, limitTypes))
+        List<LimitViolationEntity> limitViolationEntities = limitTypes.isEmpty()
+            ? limitViolationRepository.findByResultUuid(resultUuid)
+            : limitViolationRepository.findByResultUuidAndLimitTypeIn(resultUuid, limitTypes);
+        Hibernate.initialize(limitViolationEntities);
+
+        limitViolationsMono = Flux.fromIterable(limitViolationEntities)
             .collectMultimap(LimitViolationEntity::getContingencyId, SecurityAnalysisResultRepository::fromEntity);
-        Mono<List<Contingency>> contingenciesMono = Flux.fromIterable(contingencyRepository.findByResultUuid(resultUuid))
+        List<ContingencyEntity> contingencyEntities = contingencyRepository.findByResultUuid(resultUuid);
+        Hibernate.initialize(contingencyEntities);
+        contingencyEntities.forEach(entity -> {
+            Hibernate.initialize(entity.getBranchIds());
+            Hibernate.initialize(entity.getGeneratorIds());
+            System.out.println("ctg " + entity.getContingencyId());
+            System.out.println("res " + entity.getResultUuid());
+            System.out.println("Branches " + String.join(", ", entity.getBranchIds()));
+            System.out.println("Generators" + String.join(", ", entity.getGeneratorIds()));
+        });
+
+        Mono<List<Contingency>> contingenciesMono = Flux.fromIterable(contingencyEntities)
                 .map(SecurityAnalysisResultRepository::fromEntity)
                 .collectList();
 
@@ -132,16 +154,20 @@ public class SecurityAnalysisResultRepository {
                     LimitViolationsResult preContingencyResult = new LimitViolationsResult(computationsStatuses.get(""),
                             new ArrayList<>(limitViolations.getOrDefault("", Collections.emptyList())));
 
-                    List<PostContingencyResult> postContingencyResults = contingencies.stream()
-                            .map(contingency -> new PostContingencyResult(contingency,
-                                    computationsStatuses.get(contingency.getId()),
-                                    new ArrayList<>(limitViolations.getOrDefault(contingency.getId(), Collections.emptyList()))))
+                    List<PostContingencyResult> postContingencyResults = contingencies.stream()//.filter(Objects::nonNull)
+                            .map(contingency -> {
+                                System.err.println(contingency == null ? "null" :  "id:" + contingency.getId() + " / " + computationsStatuses.size());
+                                return new PostContingencyResult(contingency,
+                                        computationsStatuses.get(contingency.getId()),
+                                        new ArrayList<>(limitViolations.getOrDefault(contingency.getId(), Collections.emptyList())));
+                            })
                             .collect(Collectors.toList());
 
                     return Mono.just(new SecurityAnalysisResult(preContingencyResult, postContingencyResults));
                 });
     }
 
+    @Transactional(readOnly = true)
     public Mono<SecurityAnalysisResult> find(UUID resultUuid, Set<LimitViolationType> limitTypes) {
         Objects.requireNonNull(resultUuid);
         Objects.requireNonNull(limitTypes);
@@ -154,6 +180,13 @@ public class SecurityAnalysisResultRepository {
     }
 
     private Mono<Void> save(UUID resultUuid, Contingency contingency, LimitViolationsResult limitViolationsResult) {
+        if (contingency == null) {
+            System.err.println("null contingency");
+        } else {
+            System.out.println("ctg " + contingency.getId());
+            System.out.println("Branches " + contingency.getElements().stream().map(ce -> "" + ce.getType() + " " + ce.getId())
+                .collect(Collectors.joining(", ")));
+        }
         return Mono.fromCallable(
             () -> computationStatusRepository.save(toEntity(resultUuid, contingency, limitViolationsResult.isComputationOk())))
             .flatMapMany(ignore -> Mono.fromCallable(()
@@ -161,6 +194,7 @@ public class SecurityAnalysisResultRepository {
             ).then();
     }
 
+    //@Transactional
     public Mono<Void> insert(UUID resultUuid, SecurityAnalysisResult result) {
         Objects.requireNonNull(resultUuid);
         Objects.requireNonNull(result);
