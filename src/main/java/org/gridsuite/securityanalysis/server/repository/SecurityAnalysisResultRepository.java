@@ -16,6 +16,8 @@ import com.powsybl.security.results.PostContingencyResult;
 import org.hibernate.Hibernate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +44,10 @@ public class SecurityAnalysisResultRepository {
 
     private GlobalStatusRepository globalStatusRepository;
 
+    @Lazy
+    @Autowired
+    private SecurityAnalysisResultRepository self;
+
     public SecurityAnalysisResultRepository(ComputationStatusRepository computationStatusRepository,
                                             ContingencyRepository contingencyRepository,
                                             LimitViolationRepository limitViolationRepository,
@@ -58,6 +64,7 @@ public class SecurityAnalysisResultRepository {
     }
 
     private static boolean fromEntity(ComputationStatusEntity entity) {
+        System.err.println("fromEntity resUuid:" + entity.getResultUuid() + ", ctgId:" + entity.getContingencyId() + ", ok:" + entity.isOk());
         return entity.isOk();
     }
 
@@ -79,7 +86,7 @@ public class SecurityAnalysisResultRepository {
     }
 
     private static ComputationStatusEntity toEntity(UUID resultUuid, Contingency contingency, boolean ok) {
-        System.err.println("toEntity " + (contingency == null ? "NULL" :  contingency.getId()));
+        System.err.println("toEntity resUuid:" + resultUuid + "ctgId:" + (contingency == null ? "NULL" :  contingency.getId()) + ", ok:" + ok);
         return new ComputationStatusEntity(resultUuid, contingency != null ? contingency.getId() : "", ok);
     }
 
@@ -157,9 +164,11 @@ public class SecurityAnalysisResultRepository {
                     List<PostContingencyResult> postContingencyResults = contingencies.stream()//.filter(Objects::nonNull)
                             .map(contingency -> {
                                 System.err.println(contingency == null ? "null" :  "id:" + contingency.getId() + " / " + computationsStatuses.size());
-                                return new PostContingencyResult(contingency,
-                                        computationsStatuses.get(contingency.getId()),
-                                        new ArrayList<>(limitViolations.getOrDefault(contingency.getId(), Collections.emptyList())));
+                                Boolean computationOk = computationsStatuses.get(contingency.getId());
+                                ArrayList<LimitViolation> limitViolations1 = new ArrayList<>(
+                                    limitViolations.getOrDefault(contingency.getId(), Collections.emptyList()));
+                                return new PostContingencyResult(contingency, computationOk != null && computationOk,
+                                    limitViolations1);
                             })
                             .collect(Collectors.toList());
 
@@ -188,7 +197,13 @@ public class SecurityAnalysisResultRepository {
                 .collect(Collectors.joining(", ")));
         }
         return Mono.fromCallable(
-            () -> computationStatusRepository.save(toEntity(resultUuid, contingency, limitViolationsResult.isComputationOk())))
+            () -> {
+                ComputationStatusEntity entity = toEntity(resultUuid, contingency, limitViolationsResult.isComputationOk());
+                System.err.println("resUuid:" + entity.getResultUuid() + ", ctgId:" + entity.getContingencyId() + ", ok:" + entity.isOk());
+                ComputationStatusEntity saved = computationStatusRepository.save(entity);
+                System.err.println("#saved:" + computationStatusRepository.findAll().size());
+                return saved;
+            })
             .flatMapMany(ignore -> Mono.fromCallable(()
                 -> limitViolationRepository.saveAll(toEntity(resultUuid, contingency, limitViolationsResult.getLimitViolations())))
             ).then();
@@ -216,25 +231,41 @@ public class SecurityAnalysisResultRepository {
     public Mono<Void> delete(UUID resultUuid) {
         Objects.requireNonNull(resultUuid);
         return Mono.fromRunnable(() -> {
-            computationStatusRepository.deleteByResultUuid(resultUuid);
-            limitViolationRepository.deleteByResultUuid(resultUuid);
-            contingencyRepository.deleteByResultUuid(resultUuid);
-            globalStatusRepository.deleteByResultUuid(resultUuid);
+            self.doDelete(resultUuid);
         }).doOnError(throwable -> LOGGER.error(throwable.toString(), throwable)).then();
+    }
+
+    @Transactional
+    public void doDelete(UUID resultUuid) {
+        computationStatusRepository.deleteByResultUuid(resultUuid);
+        limitViolationRepository.deleteByResultUuid(resultUuid);
+        contingencyRepository.deleteByResultUuid(resultUuid);
+        globalStatusRepository.deleteByResultUuid(resultUuid);
     }
 
     public Mono<Void> deleteAll() {
         return Mono.fromRunnable(() -> {
-            computationStatusRepository.deleteAll();
-            limitViolationRepository.deleteAll();
-            contingencyRepository.deleteAll();
-            globalStatusRepository.deleteAll();
+            self.doDeleteAll();
         }).doOnError(throwable -> LOGGER.error(throwable.toString(), throwable)).then();
+    }
+
+    @Transactional
+    public void doDeleteAll() {
+        computationStatusRepository.deleteAll();
+        limitViolationRepository.deleteAll();
+        contingencyRepository.deleteAll();
+        globalStatusRepository.deleteAll();
     }
 
     public Mono<String> findStatus(UUID resultUuid) {
         Objects.requireNonNull(resultUuid);
-        return Mono.fromCallable(() -> globalStatusRepository.findByResultUuid(resultUuid).getStatus());
+        return Mono.fromCallable(() -> self.doFindStatus(resultUuid));
+    }
+
+    @Transactional(readOnly = true)
+    public String doFindStatus(UUID resultUuid) {
+        GlobalStatusEntity byResultUuid = globalStatusRepository.findByResultUuid(resultUuid);
+        return byResultUuid == null ? null : byResultUuid.getStatus();
     }
 
     private static GlobalStatusEntity toEntity(UUID resultUuid, String status) {
@@ -243,6 +274,13 @@ public class SecurityAnalysisResultRepository {
 
     public Mono<Void> insertStatus(List<UUID> resultUuids, String status) {
         Objects.requireNonNull(resultUuids);
-        return Mono.fromRunnable(() -> globalStatusRepository.saveAll(resultUuids.stream().map(uuid -> toEntity(uuid, status)).collect(Collectors.toList()))).then();
+        return Mono.fromRunnable(() -> self.doInsertStatus(resultUuids, status)).then();
     }
+
+    @Transactional
+    public List<GlobalStatusEntity> doInsertStatus(List<UUID> resultUuids, String status) {
+        return globalStatusRepository.saveAll(resultUuids.stream()
+            .map(uuid -> toEntity(uuid, status)).collect(Collectors.toList()));
+    }
+
 }

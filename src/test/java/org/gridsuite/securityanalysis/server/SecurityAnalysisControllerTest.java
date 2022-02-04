@@ -18,6 +18,7 @@ import com.powsybl.security.SecurityAnalysisProvider;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.gridsuite.securityanalysis.server.service.UuidGeneratorService;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -161,6 +162,14 @@ public class SecurityAnalysisControllerTest {
         }
         while (output.receive(1000, "sa.stopped") != null) {
         }
+    }
+
+    // added for testStatus can return null, after runTest
+    @After
+    public void tearDown() {
+        webTestClient.delete().uri("/" + VERSION + "/results")
+            .exchange()
+            .expectStatus().isOk();
     }
 
     @Test
