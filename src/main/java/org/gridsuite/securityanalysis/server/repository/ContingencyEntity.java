@@ -12,6 +12,7 @@ import java.util.UUID;
 import java.io.Serializable;
 
 import javax.persistence.ElementCollection;
+import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.IdClass;
@@ -20,19 +21,28 @@ import javax.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
 @Table(name = "contingency")
-@IdClass(ContingencyId.class)
+@IdClass(ContingencyEntity.ID.class)
 public class ContingencyEntity implements Serializable {
+
+    @NoArgsConstructor
+    @Getter
+    @Embeddable
+    static class ID implements Serializable {
+        @Id
+        private UUID resultUuid;
+
+        @Id
+        private String contingencyId;
+    }
 
     @Id
     private UUID resultUuid;
@@ -45,4 +55,5 @@ public class ContingencyEntity implements Serializable {
 
     @ElementCollection
     private List<String> generatorIds;
+
 }

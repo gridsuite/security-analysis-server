@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.io.Serializable;
 
 import javax.persistence.Column;
+import javax.persistence.Embeddable;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -23,19 +24,35 @@ import com.powsybl.security.LimitViolationType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@IdClass(LimitationViolationId.class)
+@IdClass(LimitViolationEntity.ID.class)
 @Table(name = "limitViolation")
 public class LimitViolationEntity implements Serializable {
+
+    /**
+     * @author Laurent Garnier <laurent.garnier at rte-france.com>
+     */
+    @NoArgsConstructor
+    @Getter
+    @Embeddable
+    public static class ID implements Serializable {
+
+        private UUID resultUuid;
+
+        @Enumerated(EnumType.STRING)
+        private LimitViolationType limitType;
+
+        private String contingencyId;
+
+        private String subjectId;
+    }
 
     @Id
     private UUID resultUuid;

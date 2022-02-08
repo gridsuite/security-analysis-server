@@ -17,16 +17,13 @@ import javax.persistence.IdClass;
 import javax.persistence.Table;
 
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
@@ -35,9 +32,7 @@ import lombok.Setter;
 public class ComputationStatusEntity implements Serializable {
 
     @NoArgsConstructor
-    @AllArgsConstructor
     @Getter
-    @EqualsAndHashCode
     @Embeddable
     public static class ID implements Serializable {
         private UUID resultUuid;
