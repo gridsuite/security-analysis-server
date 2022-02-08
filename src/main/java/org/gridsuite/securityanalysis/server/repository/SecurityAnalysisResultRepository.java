@@ -155,7 +155,7 @@ public class SecurityAnalysisResultRepository {
                     LimitViolationsResult preContingencyResult = new LimitViolationsResult(computationsStatuses.get(""),
                             new ArrayList<>(limitViolations.getOrDefault("", Collections.emptyList())));
 
-                    List<PostContingencyResult> postContingencyResults = contingencies.stream()//.filter(Objects::nonNull)
+                    List<PostContingencyResult> postContingencyResults = contingencies.stream()
                             .map(contingency -> {
                                 Boolean computationOk = computationsStatuses.get(contingency.getId());
                                 ArrayList<LimitViolation> limitViolations1 = new ArrayList<>(

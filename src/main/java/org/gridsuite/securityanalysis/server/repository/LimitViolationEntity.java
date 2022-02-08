@@ -37,13 +37,6 @@ import lombok.Setter;
 @Table(name = "limitViolation")
 public class LimitViolationEntity implements Serializable {
 
-    //@EmbeddedId
-    //private LimitationViolationId id;
-    //
-    //public String getContingencyId() {
-    //    return id.getContingencyId();
-    //}
-
     @Id
     private UUID resultUuid;
 
