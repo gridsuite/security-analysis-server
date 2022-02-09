@@ -23,8 +23,6 @@ import org.gridsuite.securityanalysis.server.entities.ComputationStatusEntity;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.GlobalStatusEntity;
 import org.gridsuite.securityanalysis.server.entities.LimitViolationEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,8 +41,6 @@ import com.powsybl.security.results.PostContingencyResult;
  */
 @Repository
 public class SecurityAnalysisResultRepository {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisResultRepository.class);
 
     private ComputationStatusRepository computationStatusRepository;
 
@@ -193,7 +189,6 @@ public class SecurityAnalysisResultRepository {
         limitViolationRepository.saveAll(toEntity(resultUuid, null, limitViolationsResult.getLimitViolations()));
     }
 
-    @Transactional
     public void insertStatus(List<UUID> resultUuids, String status) {
         Objects.requireNonNull(resultUuids);
         globalStatusRepository.saveAll(resultUuids.stream()

@@ -47,7 +47,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-//import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.CANCEL_MESSAGE;
+import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.CANCEL_MESSAGE;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.FAIL_MESSAGE;
 
 /**
@@ -225,6 +225,8 @@ public class SecurityAnalysisWorkerService {
                 future.cancel(true);  // cancel computation in progress
 
                 resultRepository.delete(cancelContext.getResultUuid());
+                stoppedPublisherService.publishCancel(cancelContext.getResultUuid(), cancelContext.getReceiver());
+                LOGGER.info(CANCEL_MESSAGE + " (resultUuid='{}')", cancelContext.getResultUuid());
             }
         };
     }

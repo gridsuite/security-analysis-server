@@ -42,7 +42,7 @@ public class LimitViolationEntity implements Serializable {
     @NoArgsConstructor
     @Getter
     @Embeddable
-    public static class ID implements Serializable {
+    static class ID implements Serializable {
 
         private UUID resultUuid;
 

@@ -34,7 +34,7 @@ public class ComputationStatusEntity implements Serializable {
     @NoArgsConstructor
     @Getter
     @Embeddable
-    public static class ID implements Serializable {
+    static class ID implements Serializable {
         private UUID resultUuid;
 
         private String contingencyId;
