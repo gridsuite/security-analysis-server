@@ -23,7 +23,7 @@ import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.ws.commons.LogUtils;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
-import org.gridsuite.securityanalysis.server.repository.SecurityAnalysisResultRepository;
+import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,7 +47,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.CANCEL_MESSAGE;
+//import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.CANCEL_MESSAGE;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.FAIL_MESSAGE;
 
 /**
@@ -174,8 +174,8 @@ public class SecurityAnalysisWorkerService {
             runRequests.add(resultContext.getResultUuid());
 
             run(resultContext.getRunContext(), resultContext.getResultUuid())
-                    .flatMap(result -> resultRepository.insert(resultContext.getResultUuid(), result)
-                            .then(resultRepository.insertStatus(List.of(resultContext.getResultUuid()), SecurityAnalysisStatus.COMPLETED.name()))
+                    .flatMap(result -> Mono.fromRunnable(() -> resultRepository.insert(resultContext.getResultUuid(), result))
+                            .then(Mono.fromRunnable(() -> resultRepository.insertStatus(List.of(resultContext.getResultUuid()), SecurityAnalysisStatus.COMPLETED.name())))
                             .then(Mono.just(result)))
                     .doOnSuccess(result -> {
                         if (result != null) {  // result available
@@ -196,7 +196,8 @@ public class SecurityAnalysisWorkerService {
                         if (!(throwable instanceof CancellationException)) {
                             LOGGER.error(FAIL_MESSAGE, throwable);
                             stoppedPublisherService.publishFail(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver(), throwable.getMessage());
-                            return resultRepository.delete(resultContext.getResultUuid()).then(Mono.empty());
+                            resultRepository.delete(resultContext.getResultUuid());
+                            return Mono.empty();
                         }
                         return Mono.empty();
                     })
@@ -223,13 +224,7 @@ public class SecurityAnalysisWorkerService {
             if (future != null) {
                 future.cancel(true);  // cancel computation in progress
 
-                resultRepository.delete(cancelContext.getResultUuid())
-                        .doOnSuccess(unused -> {
-                            stoppedPublisherService.publishCancel(cancelContext.getResultUuid(), cancelContext.getReceiver());
-                            LOGGER.info(CANCEL_MESSAGE + " (resultUuid='{}')", cancelContext.getResultUuid());
-                        })
-                        .doOnError(throwable -> LOGGER.error(throwable.toString(), throwable))
-                        .subscribe();
+                resultRepository.delete(cancelContext.getResultUuid());
             }
         };
     }

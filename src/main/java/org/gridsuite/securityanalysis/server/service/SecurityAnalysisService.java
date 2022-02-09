@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
-import org.gridsuite.securityanalysis.server.repository.SecurityAnalysisResultRepository;
+import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -63,23 +63,23 @@ public class SecurityAnalysisService {
     }
 
     public Mono<SecurityAnalysisResult> getResult(UUID resultUuid, Set<LimitViolationType> limitTypes) {
-        return resultRepository.find(resultUuid, limitTypes);
+        return Mono.fromCallable(() -> resultRepository.find(resultUuid, limitTypes));
     }
 
     public Mono<Void> deleteResult(UUID resultUuid) {
-        return resultRepository.delete(resultUuid);
+        return Mono.fromRunnable(() -> resultRepository.delete(resultUuid));
     }
 
     public Mono<Void> deleteResults() {
-        return resultRepository.deleteAll();
+        return Mono.fromRunnable(() -> resultRepository.deleteAll());
     }
 
     public Mono<String> getStatus(UUID resultUuid) {
-        return resultRepository.findStatus(resultUuid);
+        return Mono.fromCallable(() -> resultRepository.findStatus(resultUuid));
     }
 
     public Mono<Void> setStatus(List<UUID> resultUuids, String status) {
-        return resultRepository.insertStatus(resultUuids, status);
+        return Mono.fromRunnable(() -> resultRepository.insertStatus(resultUuids, status));
     }
 
     public Mono<Void> stop(UUID resultUuid, String receiver) {

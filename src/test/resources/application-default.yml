@@ -4,6 +4,7 @@ spring:
     properties:
       dialect: org.hibernate.dialect.H2Dialect
       hibernate.format_sql: true
+      hibernate.generate_statistics: true
 
 logging:
   level:
