@@ -43,6 +43,8 @@ import java.util.*;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -172,11 +174,22 @@ public class SecurityAnalysisWorkerService {
         return message -> {
             SecurityAnalysisResultContext resultContext = SecurityAnalysisResultContext.fromMessage(message, objectMapper);
             runRequests.add(resultContext.getResultUuid());
+            AtomicReference<Long> startTime = new AtomicReference<>();
 
             run(resultContext.getRunContext(), resultContext.getResultUuid())
-                    .flatMap(result -> Mono.fromRunnable(() -> resultRepository.insert(resultContext.getResultUuid(), result))
-                            .then(Mono.fromRunnable(() -> resultRepository.insertStatus(List.of(resultContext.getResultUuid()), SecurityAnalysisStatus.COMPLETED.name())))
-                            .then(Mono.just(result)))
+                .doOnSubscribe(x -> startTime.set(System.nanoTime()))
+                    .flatMap(result -> {
+                        long nanoTime = System.nanoTime();
+                        LOGGER.info("Just run in {}s", TimeUnit.NANOSECONDS.toSeconds(nanoTime - startTime.getAndSet(nanoTime)));
+                        return Mono.fromRunnable(() -> resultRepository.insert(resultContext.getResultUuid(), result))
+                                .then(Mono.fromRunnable(() -> resultRepository.insertStatus(List.of(resultContext.getResultUuid()),
+                                    SecurityAnalysisStatus.COMPLETED.name())))
+                                .then(Mono.just(result))
+                            .doFinally(ignored -> {
+                                long finalNanoTime = System.nanoTime();
+                                LOGGER.info("Stored in {}s", TimeUnit.NANOSECONDS.toSeconds(finalNanoTime - startTime.getAndSet(finalNanoTime)));
+                            });
+                    })
                     .doOnSuccess(result -> {
                         if (result != null) {  // result available
                             Message<String> sendMessage = MessageBuilder
