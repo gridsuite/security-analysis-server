@@ -15,11 +15,11 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.gridsuite.securityanalysis.server.entities.ComputationStatusEntity;
+import org.gridsuite.securityanalysis.server.entities.ContingencyElementEmbeddable;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.GlobalStatusEntity;
 import org.gridsuite.securityanalysis.server.entities.LimitViolationEntity;
@@ -27,9 +27,18 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.powsybl.contingency.BranchContingency;
+import com.powsybl.contingency.BusbarSectionContingency;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.contingency.ContingencyElement;
+import com.powsybl.contingency.DanglingLineContingency;
 import com.powsybl.contingency.GeneratorContingency;
+import com.powsybl.contingency.HvdcLineContingency;
+import com.powsybl.contingency.LineContingency;
+import com.powsybl.contingency.LoadContingency;
+import com.powsybl.contingency.ShuntCompensatorContingency;
+import com.powsybl.contingency.StaticVarCompensatorContingency;
+import com.powsybl.contingency.ThreeWindingsTransformerContingency;
+import com.powsybl.contingency.TwoWindingsTransformerContingency;
 import com.powsybl.security.LimitViolation;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.LimitViolationsResult;
@@ -70,13 +79,25 @@ public class SecurityAnalysisResultRepository {
     }
 
     private static Contingency fromEntity(ContingencyEntity entity) {
-        Stream<ContingencyElement> branchStream = entity.getBranchIds() != null
-                ? entity.getBranchIds().stream().map(BranchContingency::new)
-                : Stream.empty();
-        Stream<ContingencyElement> generatorStream = entity.getGeneratorIds() != null
-                ? entity.getGeneratorIds().stream().map(GeneratorContingency::new)
-                : Stream.empty();
-        return new Contingency(entity.getContingencyId(), Stream.concat(branchStream, generatorStream).collect(Collectors.toList()));
+        List<ContingencyElement> elements = entity.getContingencyElements().stream()
+            .map(e -> {
+                switch (e.getElementType()) {
+                    case LINE: return new LineContingency(e.getElementId());
+                    case BRANCH: return new BranchContingency(e.getElementId());
+                    case LOAD: return new LoadContingency(e.getElementId());
+                    case GENERATOR: return new GeneratorContingency(e.getElementId());
+                    case BUSBAR_SECTION: return new BusbarSectionContingency(e.getElementId());
+                    case HVDC_LINE: return new HvdcLineContingency(e.getElementId());
+                    case DANGLING_LINE: return new DanglingLineContingency(e.getElementId());
+                    case SHUNT_COMPENSATOR: return new ShuntCompensatorContingency(e.getElementId());
+                    case TWO_WINDINGS_TRANSFORMER: return new TwoWindingsTransformerContingency(e.getElementId());
+                    case THREE_WINDINGS_TRANSFORMER: return new ThreeWindingsTransformerContingency(e.getElementId());
+                    case STATIC_VAR_COMPENSATOR: return new StaticVarCompensatorContingency(e.getElementId());
+                    default:
+                        throw new IllegalStateException("Element type yet support: " + e.getElementType());
+                }
+            }).collect(Collectors.toList());
+        return new Contingency(entity.getContingencyId(), elements);
     }
 
     private static LimitViolationEntity toEntity(UUID resultUuid, String contingencyId, LimitViolation limitViolation) {
@@ -98,22 +119,9 @@ public class SecurityAnalysisResultRepository {
     }
 
     private static ContingencyEntity toEntity(UUID resultUuid, Contingency contingency) {
-        List<String> branchIds = new ArrayList<>();
-        List<String> generatorIds = new ArrayList<>();
-        for (ContingencyElement element : contingency.getElements()) {
-            switch (element.getType()) {
-                case LINE:
-                case BRANCH:
-                    branchIds.add(element.getId());
-                    break;
-                case GENERATOR:
-                    generatorIds.add(element.getId());
-                    break;
-                default:
-                    throw new IllegalStateException("Element type yet support: " + element.getType());
-            }
-        }
-        return new ContingencyEntity(resultUuid, contingency.getId(), branchIds, generatorIds);
+        List<ContingencyElementEmbeddable> elements = contingency.getElements().stream()
+            .map(e -> new ContingencyElementEmbeddable(e.getType(), e.getId())).collect(Collectors.toList());
+        return new ContingencyEntity(resultUuid, contingency.getId(), elements);
     }
 
     private static GlobalStatusEntity toEntity(UUID resultUuid, String status) {
