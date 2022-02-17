@@ -21,7 +21,5 @@ public interface ComputationStatusRepository extends JpaRepository<ComputationSt
 
     List<ComputationStatusEntity> findByResultUuid(UUID resultUuid);
 
-    List<ComputationStatusEntity> findByResultUuidAndContingencyId(UUID resultUuid, String contingencyId);
-
     void deleteByResultUuid(UUID resultUuid);
 }
