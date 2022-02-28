@@ -6,6 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
@@ -15,9 +16,11 @@ import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.SecurityAnalysis;
 import com.powsybl.security.SecurityAnalysisProvider;
 
+import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.gridsuite.securityanalysis.server.service.UuidGeneratorService;
+import org.gridsuite.securityanalysis.server.util.MatcherJson;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -93,6 +96,9 @@ public class SecurityAnalysisControllerTest {
 
     @SpyBean
     private SecurityAnalysisWorkerService workerService;
+
+    @Autowired
+    private ObjectMapper mapper;
 
     @Before
     public void setUp() throws Exception {
@@ -180,8 +186,10 @@ public class SecurityAnalysisControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody(String.class)
-                .isEqualTo(EXPECTED_JSON_VARIANT);
+                .expectBody(SecurityAnalysisResult.class)
+                .value(new MatcherJson<>(mapper, SecurityAnalysisProviderMock.RESULT));
+                //.isEqualTo(SecurityAnalysisProviderMock.CONTINGENCIES);
+                //SecurityAnalysisProviderMock.CONTINGENCIES
 
         // run with implicit initial variant
         webTestClient.post()
