@@ -94,7 +94,7 @@ public class SecurityAnalysisResultRepository {
                     case THREE_WINDINGS_TRANSFORMER: return new ThreeWindingsTransformerContingency(e.getElementId());
                     case STATIC_VAR_COMPENSATOR: return new StaticVarCompensatorContingency(e.getElementId());
                     default:
-                        throw new IllegalStateException("Element type yet support: " + e.getElementType());
+                        throw new IllegalStateException("Element type not yet support: " + e.getElementType());
                 }
             }).collect(Collectors.toList());
         return new Contingency(entity.getContingencyId(), elements);
