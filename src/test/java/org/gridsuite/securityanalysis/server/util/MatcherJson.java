@@ -6,10 +6,6 @@
  */
 package org.gridsuite.securityanalysis.server.util;
 
-import java.util.Collection;
-
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 
@@ -21,70 +17,6 @@ import lombok.SneakyThrows;
  * @author Laurent Garnier <laurent.garnier at rte-france.com>
  */
 public class MatcherJson<T> extends TypeSafeMatcher<T> {
-
-    private static class RecursiveJsonToStringStyle extends ToStringStyle {
-
-        private static final int INFINITE_DEPTH = -1;
-
-        /**
-         * Setting this field to 0 will have the same effect as using original {@link #ToStringStyle}: it will print all 1st
-         * level values without traversing into them. Setting to 1 will traverse up to 2nd level and so on.
-         */
-        private final int maxDepth;
-
-        private int depth;
-
-        public RecursiveJsonToStringStyle() {
-            this(INFINITE_DEPTH);
-
-            setNullText("");
-        }
-
-        public RecursiveJsonToStringStyle(int maxDepth) {
-            setUseShortClassName(true);
-            setUseIdentityHashCode(false);
-
-            this.maxDepth = maxDepth;
-        }
-
-        @Override
-        public void appendStart(StringBuffer buffer, Object object) {
-            if (object != null) {
-                this.appendContentStart(buffer);
-                this.appendFieldSeparator(buffer);
-            }
-        }
-
-        @Override
-        protected void appendFieldStart(StringBuffer buffer, String fieldName) {
-            if (fieldName != null) {
-                buffer.append(fieldName);
-                buffer.append(":");
-            }
-        }
-
-        @Override
-        protected void appendDetail(StringBuffer buffer, String fieldName, Object value) {
-            if (value.getClass().getName().startsWith("java.lang.")
-                || maxDepth != INFINITE_DEPTH && depth >= maxDepth) {
-                buffer.append(value);
-            } else {
-                depth++;
-                buffer.append(ReflectionToStringBuilder.toString(value, this));
-                buffer.append(System.lineSeparator());
-                depth--;
-            }
-        }
-
-        @Override
-        protected void appendDetail(StringBuffer buffer, String fieldName, Collection<?> coll) {
-            depth++;
-            buffer.append(ReflectionToStringBuilder.toString(coll.toArray(), this, true, true));
-            depth--;
-        }
-    }
-
-    RecursiveJsonToStringStyle style = new RecursiveJsonToStringStyle();
 
     ObjectMapper mapper;
 
@@ -101,14 +33,15 @@ public class MatcherJson<T> extends TypeSafeMatcher<T> {
         return mapper.writeValueAsString(reference).equals(mapper.writeValueAsString(s));
     }
 
+    @SneakyThrows
     @Override
     public void describeTo(Description description) {
-        description.appendText(ReflectionToStringBuilder.toString(reference, style));
+        description.appendText(mapper.writeValueAsString(reference));
     }
 
+    @SneakyThrows
     protected void describeMismatchSafely(T item, Description mismatchDescription) {
-        String toAdd = ReflectionToStringBuilder.toString(item, style);
-        mismatchDescription.appendText("was ").appendText(toAdd);
+        mismatchDescription.appendText("was ").appendText(mapper.writeValueAsString(item));
     }
 
 }
