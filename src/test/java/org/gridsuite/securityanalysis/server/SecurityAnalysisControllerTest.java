@@ -6,6 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
@@ -15,9 +16,11 @@ import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.SecurityAnalysis;
 import com.powsybl.security.SecurityAnalysisProvider;
 
+import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.gridsuite.securityanalysis.server.service.UuidGeneratorService;
+import org.gridsuite.securityanalysis.server.util.MatcherJson;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -68,12 +71,6 @@ public class SecurityAnalysisControllerTest {
     private static final UUID NETWORK_FOR_MERGING_VIEW_UUID = UUID.fromString("11111111-7977-4592-ba19-88027e4254e4");
     private static final UUID OTHER_NETWORK_FOR_MERGING_VIEW_UUID = UUID.fromString("22222222-7977-4592-ba19-88027e4254e4");
 
-    private static final String EXPECTED_JSON = "{\"version\":\"1.1\",\"preContingencyResult\":{\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"l3\",\"limitType\":\"CURRENT\",\"acceptableDuration\":1200,\"limit\":10.0,\"limitReduction\":1.0,\"value\":11.0,\"side\":\"ONE\"}],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]},\"postContingencyResults\":[{\"contingency\":{\"id\":\"l1\",\"elements\":[{\"id\":\"l1\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"vl1\",\"limitType\":\"HIGH_VOLTAGE\",\"acceptableDuration\":0,\"limit\":400.0,\"limitReduction\":1.0,\"value\":410.0}],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]},{\"contingency\":{\"id\":\"l2\",\"elements\":[{\"id\":\"l2\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"vl1\",\"limitType\":\"HIGH_VOLTAGE\",\"acceptableDuration\":0,\"limit\":400.0,\"limitReduction\":1.0,\"value\":410.0}],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]}]}";
-
-    private static final String EXPECTED_JSON_VARIANT = "{\"version\":\"1.1\",\"preContingencyResult\":{\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"l6\",\"limitType\":\"CURRENT\",\"acceptableDuration\":1200,\"limit\":10.0,\"limitReduction\":1.0,\"value\":11.0,\"side\":\"ONE\"}],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]},\"postContingencyResults\":[{\"contingency\":{\"id\":\"l3\",\"elements\":[{\"id\":\"l3\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"vl7\",\"limitType\":\"HIGH_VOLTAGE\",\"acceptableDuration\":0,\"limit\":400.0,\"limitReduction\":1.0,\"value\":410.0}],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]},{\"contingency\":{\"id\":\"l4\",\"elements\":[{\"id\":\"l4\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"vl7\",\"limitType\":\"HIGH_VOLTAGE\",\"acceptableDuration\":0,\"limit\":400.0,\"limitReduction\":1.0,\"value\":410.0}],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]}]}";
-
-    private static final String EXPECTED_FILTERED_JSON = "{\"version\":\"1.1\",\"preContingencyResult\":{\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[{\"subjectId\":\"l3\",\"limitType\":\"CURRENT\",\"acceptableDuration\":1200,\"limit\":10.0,\"limitReduction\":1.0,\"value\":11.0,\"side\":\"ONE\"}],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]},\"postContingencyResults\":[{\"contingency\":{\"id\":\"l1\",\"elements\":[{\"id\":\"l1\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]},{\"contingency\":{\"id\":\"l2\",\"elements\":[{\"id\":\"l2\",\"type\":\"BRANCH\"}]},\"limitViolationsResult\":{\"computationOk\":true,\"limitViolations\":[],\"actionsTaken\":[]},\"branchResults\":[],\"busResults\":[],\"threeWindingsTransformerResults\":[]}]}";
-
     private static final String ERROR_MESSAGE = "Error message test";
 
     @Autowired
@@ -93,6 +90,9 @@ public class SecurityAnalysisControllerTest {
 
     @SpyBean
     private SecurityAnalysisWorkerService workerService;
+
+    @Autowired
+    private ObjectMapper mapper;
 
     @Before
     public void setUp() throws Exception {
@@ -180,8 +180,8 @@ public class SecurityAnalysisControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody(String.class)
-                .isEqualTo(EXPECTED_JSON_VARIANT);
+                .expectBody(SecurityAnalysisResult.class)
+                .value(new MatcherJson<>(mapper, RESULT_VARIANT));
 
         // run with implicit initial variant
         webTestClient.post()
@@ -189,8 +189,8 @@ public class SecurityAnalysisControllerTest {
             .exchange()
             .expectStatus().isOk()
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
-            .expectBody(String.class)
-            .isEqualTo(EXPECTED_JSON);
+            .expectBody(SecurityAnalysisResult.class)
+            .value(new MatcherJson<>(mapper, RESULT));
     }
 
     @Test
@@ -213,8 +213,8 @@ public class SecurityAnalysisControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody(String.class)
-                .isEqualTo(EXPECTED_JSON);
+                .expectBody(SecurityAnalysisResult.class)
+                .value(new MatcherJson<>(mapper, RESULT));
 
         // test limit type filtering
         webTestClient.get()
@@ -222,8 +222,8 @@ public class SecurityAnalysisControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody(String.class)
-                .isEqualTo(EXPECTED_FILTERED_JSON);
+                .expectBody(SecurityAnalysisResult.class)
+                .value(new MatcherJson<>(mapper, RESULT_FILTERED));
 
         // should throw not found if result does not exist
         webTestClient.get()
@@ -251,8 +251,8 @@ public class SecurityAnalysisControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody(String.class)
-                .isEqualTo(EXPECTED_JSON);
+                .expectBody(SecurityAnalysisResult.class)
+            .value(new MatcherJson<>(mapper, RESULT));
     }
 
     @Test
@@ -285,8 +285,8 @@ public class SecurityAnalysisControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody(String.class)
-                .isEqualTo(EXPECTED_JSON);
+                .expectBody(SecurityAnalysisResult.class)
+            .value(new MatcherJson<>(mapper, RESULT));
     }
 
     @Test

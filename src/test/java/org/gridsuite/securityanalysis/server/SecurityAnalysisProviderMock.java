@@ -6,23 +6,41 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import com.powsybl.computation.ComputationManager;
-import com.powsybl.contingency.BranchContingency;
-import com.powsybl.contingency.ContingenciesProvider;
-import com.powsybl.contingency.Contingency;
-import com.powsybl.iidm.network.Branch;
-import com.powsybl.iidm.network.Network;
-import com.powsybl.security.*;
-import com.powsybl.security.interceptors.SecurityAnalysisInterceptor;
-import com.powsybl.security.monitor.StateMonitor;
-import com.powsybl.security.results.PostContingencyResult;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
+import com.powsybl.computation.ComputationManager;
+import com.powsybl.contingency.BranchContingency;
+import com.powsybl.contingency.BusbarSectionContingency;
+import com.powsybl.contingency.ContingenciesProvider;
+import com.powsybl.contingency.Contingency;
+import com.powsybl.contingency.DanglingLineContingency;
+import com.powsybl.contingency.GeneratorContingency;
+import com.powsybl.contingency.HvdcLineContingency;
+import com.powsybl.contingency.LineContingency;
+import com.powsybl.contingency.ShuntCompensatorContingency;
+import com.powsybl.contingency.StaticVarCompensatorContingency;
+import com.powsybl.contingency.ThreeWindingsTransformerContingency;
+import com.powsybl.contingency.TwoWindingsTransformerContingency;
+import com.powsybl.iidm.network.Branch;
+import com.powsybl.iidm.network.Network;
+import com.powsybl.security.LimitViolation;
+import com.powsybl.security.LimitViolationDetector;
+import com.powsybl.security.LimitViolationFilter;
+import com.powsybl.security.LimitViolationType;
+import com.powsybl.security.LimitViolationsResult;
+import com.powsybl.security.SecurityAnalysisParameters;
+import com.powsybl.security.SecurityAnalysisProvider;
+import com.powsybl.security.SecurityAnalysisReport;
+import com.powsybl.security.SecurityAnalysisResult;
+import com.powsybl.security.interceptors.SecurityAnalysisInterceptor;
+import com.powsybl.security.monitor.StateMonitor;
+import com.powsybl.security.results.PostContingencyResult;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -36,10 +54,23 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     static final String CONTINGENCY_LIST_ERROR_NAME = "listError";
     static final String CONTINGENCY_LIST_NAME_VARIANT = "listVariant";
 
-    static final List<Contingency> CONTINGENCIES = List.of(new Contingency("l1", new BranchContingency("l1")),
-                                                           new Contingency("l2", new BranchContingency("l2")));
-    static final List<Contingency> CONTINGENCIES_VARIANT = List.of(new Contingency("l3", new BranchContingency("l3")),
-        new Contingency("l4", new BranchContingency("l4")));
+    static final List<Contingency> CONTINGENCIES = List.of(
+        new Contingency("l1", new BranchContingency("l1")),
+        new Contingency("l2", new GeneratorContingency("l2")),
+        new Contingency("l3", new BusbarSectionContingency("l3")),
+        new Contingency("l4", new LineContingency("l4")),
+        //new Contingency("l5", new LoadContingency("l5")), //ContingencyElementDeserializer does not handle LOAD
+        new Contingency("l6", new HvdcLineContingency("l6")),
+        new Contingency("l7", new DanglingLineContingency("l7")),
+        new Contingency("l8", new ShuntCompensatorContingency("l8")),
+        new Contingency("l9", new TwoWindingsTransformerContingency("l9")),
+        new Contingency("la", new ThreeWindingsTransformerContingency("l0")), // Contingencies are reordered by id
+        new Contingency("lb", new StaticVarCompensatorContingency("la"))
+    );
+    static final List<Contingency> CONTINGENCIES_VARIANT = List.of(
+        new Contingency("l3", new BusbarSectionContingency("l3")),
+        new Contingency("l4", new LineContingency("l4"))
+    );
 
     static final LimitViolation LIMIT_VIOLATION_1 = new LimitViolation("l3", LimitViolationType.CURRENT, "", 20 * 60, 10, 1, 11, Branch.Side.ONE);
     static final LimitViolation LIMIT_VIOLATION_2 = new LimitViolation("vl1", LimitViolationType.HIGH_VOLTAGE, "", 0, 400, 1, 410, null);
@@ -52,6 +83,10 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
 
     static final SecurityAnalysisResult RESULT_VARIANT = new SecurityAnalysisResult(new LimitViolationsResult(true, List.of(LIMIT_VIOLATION_3)),
         CONTINGENCIES_VARIANT.stream().map(contingency -> new PostContingencyResult(contingency, true, List.of(LIMIT_VIOLATION_4)))
+            .collect(Collectors.toList()));
+
+    static final SecurityAnalysisResult RESULT_FILTERED = new SecurityAnalysisResult(new LimitViolationsResult(true, List.of(LIMIT_VIOLATION_1)),
+        CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency, true, Collections.emptyList()))
             .collect(Collectors.toList()));
 
     static final SecurityAnalysisReport REPORT = new SecurityAnalysisReport(RESULT);
@@ -71,7 +106,10 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
             List<SecurityAnalysisInterceptor> interceptors,
             List<StateMonitor> monitors) {
         LOGGER.info("Run security analysis mock");
-        return CompletableFuture.completedFuture(workingVariantId.equals(VARIANT_3_ID) ? REPORT_VARIANT : REPORT);
+        if (workingVariantId.equals(VARIANT_3_ID)) {
+            return CompletableFuture.completedFuture(REPORT_VARIANT);
+        }
+        return CompletableFuture.completedFuture(REPORT);
     }
 
     @Override

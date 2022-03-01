@@ -51,9 +51,5 @@ public class ContingencyEntity implements Serializable {
     private String contingencyId;
 
     @ElementCollection
-    private List<String> branchIds;
-
-    @ElementCollection
-    private List<String> generatorIds;
-
+    private List<ContingencyElementEmbeddable> contingencyElements;
 }
