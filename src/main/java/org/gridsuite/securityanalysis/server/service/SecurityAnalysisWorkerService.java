@@ -19,8 +19,8 @@ import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.security.LimitViolationFilter;
 import com.powsybl.security.SecurityAnalysis;
 import com.powsybl.security.SecurityAnalysisReport;
-import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.security.SecurityAnalysisResult;
+import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.ws.commons.LogUtils;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
@@ -154,9 +154,15 @@ public class SecurityAnalysisWorkerService {
                 .flatMap(tuple -> {
                     SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
                     CompletableFuture<SecurityAnalysisResult> future = securityAnalysisRunner.runAsync(
-                        tuple.getT1(), variantId, new DefaultLimitViolationDetector(),
-                        LimitViolationFilter.load(), LocalComputationManager.getDefault(),
-                        context.getParameters(), n -> tuple.getT2(), Collections.emptyList(), Collections.emptyList()
+                        tuple.getT1(),
+                        variantId,
+                        n -> tuple.getT2(),
+                        context.getParameters(),
+                        LocalComputationManager.getDefault(),
+                        LimitViolationFilter.load(),
+                        new DefaultLimitViolationDetector(),
+                        Collections.emptyList(),
+                        Collections.emptyList()
                     ).thenApply(SecurityAnalysisReport::getResult);
                     if (resultUuid != null) {
                         futures.put(resultUuid, future);
