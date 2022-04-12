@@ -189,7 +189,7 @@ public class SecurityAnalysisWorkerService {
                         LOGGER.info("Just run in {}s", TimeUnit.NANOSECONDS.toSeconds(nanoTime - startTime.getAndSet(nanoTime)));
                         return Mono.fromRunnable(() -> resultRepository.insert(resultContext.getResultUuid(), result))
                                 .then(Mono.fromRunnable(() -> resultRepository.insertStatus(List.of(resultContext.getResultUuid()),
-                                        result.getPreContingencyResult().getLimitViolationsResult().isComputationOk() ? SecurityAnalysisStatus.CONVERGED.name() : SecurityAnalysisStatus.DIVERGED.name())))
+                                        result.getPreContingencyLimitViolationsResult().isComputationOk() ? SecurityAnalysisStatus.CONVERGED.name() : SecurityAnalysisStatus.DIVERGED.name())))
                                 .then(Mono.just(result))
                             .doFinally(ignored -> {
                                 long finalNanoTime = System.nanoTime();
