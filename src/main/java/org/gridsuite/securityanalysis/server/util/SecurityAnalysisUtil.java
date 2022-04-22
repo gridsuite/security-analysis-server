@@ -6,12 +6,21 @@
  */
 package org.gridsuite.securityanalysis.server.util;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import com.powsybl.security.SecurityAnalysis;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 public final class SecurityAnalysisUtil {
+
+    private static String defaultProvider;
+
+    @Value("${loadflow.default-provider:OpenSecurityAnalysis}")
+    public void setDefaultProvider(String defaultProviderValue) {
+        SecurityAnalysisUtil.defaultProvider = defaultProviderValue;
+    }
 
     private SecurityAnalysisUtil() {
     }
@@ -20,7 +29,7 @@ public final class SecurityAnalysisUtil {
         if (provider != null) {
             return SecurityAnalysis.find(provider);
         } else {
-            return SecurityAnalysis.find("OpenSecurityAnalysis"); // open load flow by default
+            return SecurityAnalysis.find(defaultProvider);
         }
     }
 }

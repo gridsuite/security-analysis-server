@@ -8,6 +8,7 @@ package org.gridsuite.securityanalysis.server.util;
 
 import com.powsybl.commons.PowsyblException;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Value;
 
 import static org.junit.Assert.*;
 
@@ -16,11 +17,14 @@ import static org.junit.Assert.*;
  */
 public class SecurityAnalysisUtilTest {
 
+    @Value("${loadflow.default-provider:OpenSecurityAnalysis}")
+    String defaultLoadflowProvider;
+
     @Test
     public void test() {
         assertEquals(SecurityAnalysisUtil.getRunner("OpenSecurityAnalysis").getName(), "OpenSecurityAnalysis");
         assertEquals(SecurityAnalysisUtil.getRunner("Hades2").getName(), "Hades2");
-        assertEquals(SecurityAnalysisUtil.getRunner(null).getName(), "OpenSecurityAnalysis");
+        assertEquals(SecurityAnalysisUtil.getRunner(null).getName(), defaultLoadflowProvider);
         PowsyblException e = assertThrows(PowsyblException.class, () -> SecurityAnalysisUtil.getRunner("XXX"));
         assertEquals("SecurityAnalysisProvider 'XXX' not found", e.getMessage());
     }
