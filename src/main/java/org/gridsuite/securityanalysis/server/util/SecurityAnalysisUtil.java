@@ -7,12 +7,14 @@
 package org.gridsuite.securityanalysis.server.util;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
 import com.powsybl.security.SecurityAnalysis;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
+@Component
 public final class SecurityAnalysisUtil {
 
     private static String defaultProvider;
