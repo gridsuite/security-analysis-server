@@ -9,6 +9,7 @@ package org.gridsuite.securityanalysis.server.util;
 import com.powsybl.commons.PowsyblException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -25,12 +26,15 @@ public class SecurityAnalysisUtilTest {
     @Value("${loadflow.default-provider:OpenSecurityAnalysis}")
     String defaultLoadflowProvider;
 
+    @Autowired
+    SecurityAnalysisRunnerSupplier securityAnalysisUtil;
+
     @Test
     public void test() {
-        assertEquals(SecurityAnalysisUtil.getRunner("OpenSecurityAnalysis").getName(), "OpenSecurityAnalysis");
-        assertEquals(SecurityAnalysisUtil.getRunner("Hades2").getName(), "Hades2");
-        assertEquals(SecurityAnalysisUtil.getRunner(null).getName(), defaultLoadflowProvider);
-        PowsyblException e = assertThrows(PowsyblException.class, () -> SecurityAnalysisUtil.getRunner("XXX"));
+        assertEquals(securityAnalysisUtil.getRunner("OpenSecurityAnalysis").getName(), "OpenSecurityAnalysis");
+        assertEquals(securityAnalysisUtil.getRunner("Hades2").getName(), "Hades2");
+        assertEquals(securityAnalysisUtil.getRunner(null).getName(), defaultLoadflowProvider);
+        PowsyblException e = assertThrows(PowsyblException.class, () -> securityAnalysisUtil.getRunner("XXX"));
         assertEquals("SecurityAnalysisProvider 'XXX' not found", e.getMessage());
     }
 }

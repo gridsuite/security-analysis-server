@@ -7,27 +7,20 @@
 package org.gridsuite.securityanalysis.server.util;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
+import org.springframework.context.annotation.Configuration;
 
 import com.powsybl.security.SecurityAnalysis;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
-@Component
-public final class SecurityAnalysisUtil {
-
-    private static String defaultProvider;
+@Configuration
+public class SecurityAnalysisRunnerSupplier {
 
     @Value("${loadflow.default-provider:OpenSecurityAnalysis}")
-    public void setDefaultProvider(String defaultProviderValue) {
-        SecurityAnalysisUtil.defaultProvider = defaultProviderValue;
-    }
+    private String defaultProvider;
 
-    private SecurityAnalysisUtil() {
-    }
-
-    public static SecurityAnalysis.Runner getRunner(String provider) {
+    public SecurityAnalysis.Runner getRunner(String provider) {
         if (provider != null) {
             return SecurityAnalysis.find(provider);
         } else {
