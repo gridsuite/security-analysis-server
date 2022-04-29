@@ -31,9 +31,9 @@ public class SecurityAnalysisUtilTest {
 
     @Test
     public void test() {
-        assertEquals(securityAnalysisUtil.getRunner("OpenSecurityAnalysis").getName(), "OpenSecurityAnalysis");
-        assertEquals(securityAnalysisUtil.getRunner("Hades2").getName(), "Hades2");
-        assertEquals(securityAnalysisUtil.getRunner(null).getName(), defaultLoadflowProvider);
+        assertEquals("OpenSecurityAnalysis", securityAnalysisUtil.getRunner("OpenSecurityAnalysis").getName());
+        assertEquals("Hades2", securityAnalysisUtil.getRunner("Hades2").getName());
+        assertEquals(defaultLoadflowProvider, securityAnalysisUtil.getRunner(null).getName());
         PowsyblException e = assertThrows(PowsyblException.class, () -> securityAnalysisUtil.getRunner("XXX"));
         assertEquals("SecurityAnalysisProvider 'XXX' not found", e.getMessage());
     }
