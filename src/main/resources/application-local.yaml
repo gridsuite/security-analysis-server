@@ -10,7 +10,3 @@ network-store-server:
 
 actions-server:
   base-uri: http://localhost:5022
-
-# default values for loadflow providers "Hades2" or "OpenSecurityAnalysis"
-loadflow:
-  default-provider: OpenSecurityAnalysis
