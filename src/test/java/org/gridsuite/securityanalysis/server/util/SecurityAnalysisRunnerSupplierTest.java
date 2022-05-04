@@ -21,20 +21,20 @@ import static org.junit.Assert.*;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class SecurityAnalysisUtilTest {
+public class SecurityAnalysisRunnerSupplierTest {
 
     @Value("${loadflow.default-provider}")
     String defaultLoadflowProvider;
 
     @Autowired
-    SecurityAnalysisRunnerSupplier securityAnalysisUtil;
+    SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier;
 
     @Test
     public void test() {
-        assertEquals("OpenSecurityAnalysis", securityAnalysisUtil.getRunner("OpenSecurityAnalysis").getName());
-        assertEquals("Hades2", securityAnalysisUtil.getRunner("Hades2").getName());
-        assertEquals(defaultLoadflowProvider, securityAnalysisUtil.getRunner(null).getName());
-        PowsyblException e = assertThrows(PowsyblException.class, () -> securityAnalysisUtil.getRunner("XXX"));
+        assertEquals("OpenSecurityAnalysis", securityAnalysisRunnerSupplier.getRunner("OpenSecurityAnalysis").getName());
+        assertEquals("Hades2", securityAnalysisRunnerSupplier.getRunner("Hades2").getName());
+        assertEquals(defaultLoadflowProvider, securityAnalysisRunnerSupplier.getRunner(null).getName());
+        PowsyblException e = assertThrows(PowsyblException.class, () -> securityAnalysisRunnerSupplier.getRunner("XXX"));
         assertEquals("SecurityAnalysisProvider 'XXX' not found", e.getMessage());
     }
 }

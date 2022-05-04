@@ -88,13 +88,13 @@ public class SecurityAnalysisWorkerService {
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService,
                                          SecurityAnalysisResultRepository resultRepository, ObjectMapper objectMapper,
-                                         SecurityAnalysisStoppedPublisherService stoppedPublisherService,   SecurityAnalysisRunnerSupplier securityAnalysisUtil) {
+                                         SecurityAnalysisStoppedPublisherService stoppedPublisherService,   SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.resultRepository = Objects.requireNonNull(resultRepository);
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.stoppedPublisherService = Objects.requireNonNull(stoppedPublisherService);
-        securityAnalysisFactorySupplier = securityAnalysisUtil::getRunner;
+        securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
     }
 
     public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier) {
