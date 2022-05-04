@@ -7,14 +7,14 @@
 package org.gridsuite.securityanalysis.server.util;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Service;
 
 import com.powsybl.security.SecurityAnalysis;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
-@Configuration
+@Service
 public class SecurityAnalysisRunnerSupplier {
 
     @Value("${loadflow.default-provider}")
