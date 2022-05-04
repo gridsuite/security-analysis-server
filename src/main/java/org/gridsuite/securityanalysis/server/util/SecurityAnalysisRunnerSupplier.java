@@ -17,7 +17,7 @@ import com.powsybl.security.SecurityAnalysis;
 @Configuration
 public class SecurityAnalysisRunnerSupplier {
 
-    @Value("${loadflow.default-provider:OpenSecurityAnalysis}")
+    @Value("${loadflow.default-provider}")
     private String defaultProvider;
 
     public SecurityAnalysis.Runner getRunner(String provider) {
