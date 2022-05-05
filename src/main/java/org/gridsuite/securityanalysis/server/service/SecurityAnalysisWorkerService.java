@@ -24,7 +24,7 @@ import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.ws.commons.LogUtils;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
-import org.gridsuite.securityanalysis.server.util.SecurityAnalysisUtil;
+import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,16 +84,17 @@ public class SecurityAnalysisWorkerService {
     @Autowired
     private StreamBridge resultMessagePublisher;
 
-    private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier = SecurityAnalysisUtil::getRunner;
+    private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier;
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService,
                                          SecurityAnalysisResultRepository resultRepository, ObjectMapper objectMapper,
-                                         SecurityAnalysisStoppedPublisherService stoppedPublisherService) {
+                                         SecurityAnalysisStoppedPublisherService stoppedPublisherService,   SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.resultRepository = Objects.requireNonNull(resultRepository);
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.stoppedPublisherService = Objects.requireNonNull(stoppedPublisherService);
+        securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
     }
 
     public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier) {
