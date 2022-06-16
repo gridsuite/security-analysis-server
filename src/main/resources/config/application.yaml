@@ -30,10 +30,6 @@ spring:
         jdbc:
           batch_size: 100
 
-logging:
-  level:
-    ROOT: INFO
-
 dbName: sa
 
 # default values for loadflow providers "Hades2" or "OpenSecurityAnalysis"
