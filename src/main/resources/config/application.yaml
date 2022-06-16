@@ -22,14 +22,6 @@ spring:
           destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.stopped
       source: publishRun;publishResult;publishCancel;publishStopped
 
-  jpa:
-    properties:
-      hibernates:
-        order_inserts: true
-        order_updates: true
-        jdbc:
-          batch_size: 100
-
 dbName: sa
 
 # default values for loadflow providers "Hades2" or "OpenSecurityAnalysis"
