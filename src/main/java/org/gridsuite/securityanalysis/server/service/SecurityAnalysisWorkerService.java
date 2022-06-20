@@ -40,6 +40,7 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.util.function.Tuple2;
 
 import java.util.*;
 import java.util.concurrent.CancellationException;
@@ -179,8 +180,9 @@ public class SecurityAnalysisWorkerService {
                     }
                     Mono<SecurityAnalysisResult> result = resultUuid != null && cancelComputationRequests.get(resultUuid) != null ? Mono.empty() : Mono.fromCompletionStage(future);
                     if (context.getReportUuid() != null) {
-                        return reportService.sendReport(context.getReportUuid(), reporter)
-                                .then(result);
+                        return result.zipWhen(r -> reportService.sendReport(context.getReportUuid(), reporter)
+                                .thenReturn("") /* because zipWhen needs 2 non empty mono */)
+                        .map(Tuple2::getT1);
                     } else {
                         return result;
                     }
