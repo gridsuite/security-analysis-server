@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
  */
 public class SecurityAnalysisResultContext {
 
+    private static final String REPORT_UUID = "reportUuid";
+
     private final UUID resultUuid;
 
     private final SecurityAnalysisRunContext runContext;
@@ -75,7 +77,7 @@ public class SecurityAnalysisResultContext {
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }
-        UUID reportUuid = headers.containsKey("reportUuid") ? UUID.fromString((String) headers.get("reportUuid")) : null;
+        UUID reportUuid = headers.containsKey(REPORT_UUID) ? UUID.fromString((String) headers.get(REPORT_UUID)) : null;
         SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, variantId, otherNetworkUuids, contingencyListNames, receiver, provider, parameters, reportUuid);
         return new SecurityAnalysisResultContext(resultUuid, runContext);
     }
@@ -95,7 +97,7 @@ public class SecurityAnalysisResultContext {
                 .setHeader("contingencyListNames", String.join(",", runContext.getContingencyListNames()))
                 .setHeader("receiver", runContext.getReceiver())
                 .setHeader("provider", runContext.getProvider())
-                .setHeader("reportUuid", runContext.getReportUuid())
+                .setHeader(REPORT_UUID, runContext.getReportUuid())
                 .build();
     }
 }
