@@ -75,7 +75,8 @@ public class SecurityAnalysisResultContext {
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }
-        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, variantId, otherNetworkUuids, contingencyListNames, receiver, provider, parameters);
+        UUID reportUuid = headers.containsKey("reportUuid") ? UUID.fromString((String) headers.get("reportUuid")) : null;
+        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, variantId, otherNetworkUuids, contingencyListNames, receiver, provider, parameters, reportUuid);
         return new SecurityAnalysisResultContext(resultUuid, runContext);
     }
 
@@ -94,6 +95,7 @@ public class SecurityAnalysisResultContext {
                 .setHeader("contingencyListNames", String.join(",", runContext.getContingencyListNames()))
                 .setHeader("receiver", runContext.getReceiver())
                 .setHeader("provider", runContext.getProvider())
+                .setHeader("reportUuid", runContext.getReportUuid())
                 .build();
     }
 }

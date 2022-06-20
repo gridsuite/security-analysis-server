@@ -10,3 +10,6 @@ network-store-server:
 
 actions-server:
   base-uri: http://localhost:5022
+
+report-server:
+  base-uri: http://localhost:5028

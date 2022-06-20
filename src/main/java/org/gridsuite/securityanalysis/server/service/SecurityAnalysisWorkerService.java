@@ -9,6 +9,8 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.powsybl.commons.PowsyblException;
+import com.powsybl.commons.reporter.Reporter;
+import com.powsybl.commons.reporter.ReporterModel;
 import com.powsybl.computation.local.LocalComputationManager;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.iidm.mergingview.MergingView;
@@ -69,6 +71,8 @@ public class SecurityAnalysisWorkerService {
 
     private ActionsService actionsService;
 
+    private ReportService reportService;
+
     private SecurityAnalysisResultRepository resultRepository;
 
     private ObjectMapper objectMapper;
@@ -86,11 +90,12 @@ public class SecurityAnalysisWorkerService {
 
     private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier;
 
-    public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService,
+    public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService, ReportService reportService,
                                          SecurityAnalysisResultRepository resultRepository, ObjectMapper objectMapper,
                                          SecurityAnalysisStoppedPublisherService stoppedPublisherService,   SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
+        this.reportService = Objects.requireNonNull(reportService);
         this.resultRepository = Objects.requireNonNull(resultRepository);
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.stoppedPublisherService = Objects.requireNonNull(stoppedPublisherService);
@@ -154,6 +159,9 @@ public class SecurityAnalysisWorkerService {
         return Mono.zip(network, contingencies)
                 .flatMap(tuple -> {
                     SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
+
+                    Reporter reporter = context.getReportUuid() != null ? new ReporterModel("SecurityAnalysis", "Security analysis") : Reporter.NO_OP;
+
                     CompletableFuture<SecurityAnalysisResult> future = securityAnalysisRunner.runAsync(
                         tuple.getT1(),
                         variantId,
@@ -163,15 +171,18 @@ public class SecurityAnalysisWorkerService {
                         LimitViolationFilter.load(),
                         new DefaultLimitViolationDetector(),
                         Collections.emptyList(),
-                        Collections.emptyList()
-                    ).thenApply(SecurityAnalysisReport::getResult);
+                        Collections.emptyList(),
+                        reporter)
+                            .thenApply(SecurityAnalysisReport::getResult);
                     if (resultUuid != null) {
                         futures.put(resultUuid, future);
                     }
-                    if (resultUuid != null && cancelComputationRequests.get(resultUuid) != null) {
-                        return Mono.empty();
+                    Mono<SecurityAnalysisResult> result = resultUuid != null && cancelComputationRequests.get(resultUuid) != null ? Mono.empty() : Mono.fromCompletionStage(future);
+                    if (context.getReportUuid() != null) {
+                        return reportService.sendReport(context.getReportUuid(), reporter)
+                                .then(result);
                     } else {
-                        return Mono.fromCompletionStage(future);
+                        return result;
                     }
                 });
     }
