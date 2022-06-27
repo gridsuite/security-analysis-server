@@ -7,6 +7,7 @@
 package org.gridsuite.securityanalysis.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
@@ -18,6 +19,7 @@ import com.powsybl.security.SecurityAnalysisProvider;
 
 import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
+import org.gridsuite.securityanalysis.server.service.ReportService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.gridsuite.securityanalysis.server.service.UuidGeneratorService;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
@@ -42,6 +44,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Constructor;
 import java.util.UUID;
@@ -51,6 +54,7 @@ import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.CANCEL_MESSAGE;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.FAIL_MESSAGE;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
 
@@ -67,6 +71,7 @@ public class SecurityAnalysisControllerTest {
     private static final UUID NETWORK_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e4");
     private static final UUID NETWORK_STOP_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e6");
     private static final UUID RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5d");
+    private static final UUID REPORT_UUID = UUID.fromString("0c4de370-3e6a-4d72-b292-d355a97e0d53");
     private static final UUID OTHER_RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5a");
     private static final UUID NETWORK_FOR_MERGING_VIEW_UUID = UUID.fromString("11111111-7977-4592-ba19-88027e4254e4");
     private static final UUID OTHER_NETWORK_FOR_MERGING_VIEW_UUID = UUID.fromString("22222222-7977-4592-ba19-88027e4254e4");
@@ -84,6 +89,9 @@ public class SecurityAnalysisControllerTest {
 
     @MockBean
     private ActionsService actionsService;
+
+    @MockBean
+    private ReportService reportService;
 
     @MockBean
     private UuidGeneratorService uuidGeneratorService;
@@ -144,6 +152,9 @@ public class SecurityAnalysisControllerTest {
 
         // UUID service mocking to always generate the same result UUID
         given(uuidGeneratorService.generate()).willReturn(RESULT_UUID);
+
+        given(reportService.sendReport(any(UUID.class), any(Reporter.class)))
+                .willReturn(Mono.empty());
 
         // SecurityAnalysis.Runner constructor is private..
         Constructor<SecurityAnalysis.Runner> constructor = SecurityAnalysis.Runner.class.getDeclaredConstructor(SecurityAnalysisProvider.class);
@@ -357,4 +368,16 @@ public class SecurityAnalysisControllerTest {
                 .exchange()
                 .expectStatus().isNotFound();
     }
+
+    @Test
+    public void runWithReportTest() {
+        webTestClient.post()
+                .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME + "&reportUuid=" + REPORT_UUID)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(SecurityAnalysisResult.class)
+                .value(new MatcherJson<>(mapper, RESULT));
+    }
+
 }

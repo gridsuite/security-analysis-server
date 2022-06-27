@@ -31,7 +31,7 @@ public class SecurityAnalysisRunnerSupplierTest {
 
     @Test
     public void test() {
-        assertEquals("OpenSecurityAnalysis", securityAnalysisRunnerSupplier.getRunner("OpenSecurityAnalysis").getName());
+        assertEquals("OpenLoadFlow", securityAnalysisRunnerSupplier.getRunner("OpenLoadFlow").getName());
         assertEquals("Hades2", securityAnalysisRunnerSupplier.getRunner("Hades2").getName());
         assertEquals(defaultLoadflowProvider, securityAnalysisRunnerSupplier.getRunner(null).getName());
         PowsyblException e = assertThrows(PowsyblException.class, () -> securityAnalysisRunnerSupplier.getRunner("XXX"));

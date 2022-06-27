@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import com.powsybl.commons.reporter.Reporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,14 +98,15 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     static final String VARIANT_3_ID = "variant_3";
 
     public CompletableFuture<SecurityAnalysisReport> run(Network network,
-            String workingVariantId,
-            LimitViolationDetector detector,
-            LimitViolationFilter filter,
-            ComputationManager computationManager,
-            SecurityAnalysisParameters parameters,
-            ContingenciesProvider contingenciesProvider,
-            List<SecurityAnalysisInterceptor> interceptors,
-            List<StateMonitor> monitors) {
+                                                         String workingVariantId,
+                                                         LimitViolationDetector detector,
+                                                         LimitViolationFilter filter,
+                                                         ComputationManager computationManager,
+                                                         SecurityAnalysisParameters parameters,
+                                                         ContingenciesProvider contingenciesProvider,
+                                                         List<SecurityAnalysisInterceptor> interceptors,
+                                                         List<StateMonitor> monitors,
+                                                         Reporter reporter) {
         LOGGER.info("Run security analysis mock");
         if (workingVariantId.equals(VARIANT_3_ID)) {
             return CompletableFuture.completedFuture(REPORT_VARIANT);
