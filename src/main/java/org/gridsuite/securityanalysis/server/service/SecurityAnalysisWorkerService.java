@@ -53,7 +53,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.CANCEL_MESSAGE;
-import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.FAIL_MESSAGE;
+import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisFailedPublisherService.FAIL_MESSAGE;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -80,6 +80,8 @@ public class SecurityAnalysisWorkerService {
 
     private SecurityAnalysisStoppedPublisherService stoppedPublisherService;
 
+    private SecurityAnalysisFailedPublisherService failedPublisherService;
+
     private Map<UUID, CompletableFuture<SecurityAnalysisResult>> futures = new ConcurrentHashMap<>();
 
     private Map<UUID, SecurityAnalysisCancelContext> cancelComputationRequests = new ConcurrentHashMap<>();
@@ -93,13 +95,15 @@ public class SecurityAnalysisWorkerService {
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService, ReportService reportService,
                                          SecurityAnalysisResultRepository resultRepository, ObjectMapper objectMapper,
-                                         SecurityAnalysisStoppedPublisherService stoppedPublisherService,   SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier) {
+                                         SecurityAnalysisStoppedPublisherService stoppedPublisherService, SecurityAnalysisFailedPublisherService failedPublisherService,
+                                         SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.reportService = Objects.requireNonNull(reportService);
         this.resultRepository = Objects.requireNonNull(resultRepository);
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.stoppedPublisherService = Objects.requireNonNull(stoppedPublisherService);
+        this.failedPublisherService = Objects.requireNonNull(failedPublisherService);
         securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
     }
 
@@ -228,7 +232,7 @@ public class SecurityAnalysisWorkerService {
                     .onErrorResume(throwable -> {
                         if (!(throwable instanceof CancellationException)) {
                             LOGGER.error(FAIL_MESSAGE, throwable);
-                            stoppedPublisherService.publishFail(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver(), throwable.getMessage());
+                            failedPublisherService.publishFail(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver(), throwable.getMessage());
                             resultRepository.delete(resultContext.getResultUuid());
                             return Mono.empty();
                         }

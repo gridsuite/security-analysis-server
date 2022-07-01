@@ -20,7 +20,9 @@ spring:
             destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.cancel
         publishStopped-out-0:
           destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.stopped
-      source: publishRun;publishResult;publishCancel;publishStopped
+        publishFailed-out-0:
+          destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.failed
+      source: publishRun;publishResult;publishCancel;publishStopped;publishFailed
 
 dbName: sa
 

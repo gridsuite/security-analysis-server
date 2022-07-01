@@ -23,7 +23,6 @@ import java.util.UUID;
 public class SecurityAnalysisStoppedPublisherService {
 
     public static final String CANCEL_MESSAGE = "Security analysis was canceled";
-    public static final String FAIL_MESSAGE = "Security analysis has failed";
 
     private static final String CATEGORY_BROKER_OUTPUT = SecurityAnalysisStoppedPublisherService.class.getName() + ".output-broker-messages";
 
@@ -34,10 +33,6 @@ public class SecurityAnalysisStoppedPublisherService {
 
     public void publishCancel(UUID resultUuid, String receiver) {
         publish(resultUuid, receiver, CANCEL_MESSAGE);
-    }
-
-    public void publishFail(UUID resultUuid, String receiver, String causeMessage) {
-        publish(resultUuid, receiver, FAIL_MESSAGE + " : " + causeMessage);
     }
 
     public void publish(UUID resultUuid, String receiver, String stopMessage) {

@@ -52,7 +52,7 @@ import java.util.UUID;
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.CANCEL_MESSAGE;
-import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.FAIL_MESSAGE;
+import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisFailedPublisherService.FAIL_MESSAGE;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -75,6 +75,8 @@ public class SecurityAnalysisControllerTest {
     private static final UUID OTHER_RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5a");
     private static final UUID NETWORK_FOR_MERGING_VIEW_UUID = UUID.fromString("11111111-7977-4592-ba19-88027e4254e4");
     private static final UUID OTHER_NETWORK_FOR_MERGING_VIEW_UUID = UUID.fromString("22222222-7977-4592-ba19-88027e4254e4");
+
+    private static final int TIMEOUT = 1000;
 
     private static final String ERROR_MESSAGE = "Error message test";
 
@@ -173,6 +175,8 @@ public class SecurityAnalysisControllerTest {
         }
         while (output.receive(1000, "sa.stopped") != null) {
         }
+        while (output.receive(1000, "sa.failed") != null) {
+        }
     }
 
     // added for testStatus can return null, after runTest
@@ -215,7 +219,7 @@ public class SecurityAnalysisControllerTest {
                 .expectBody(UUID.class)
                 .isEqualTo(RESULT_UUID);
 
-        Message<byte[]> resultMessage = output.receive(1000, "sa.result");
+        Message<byte[]> resultMessage = output.receive(TIMEOUT, "sa.result");
         assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
         assertEquals("me", resultMessage.getHeaders().get("receiver"));
 
@@ -276,7 +280,7 @@ public class SecurityAnalysisControllerTest {
                 .expectBody(UUID.class)
                 .isEqualTo(RESULT_UUID);
 
-        output.receive(1000, "sa.result");
+        output.receive(TIMEOUT, "sa.result");
 
         webTestClient.delete()
                 .uri("/" + VERSION + "/results")
@@ -339,7 +343,7 @@ public class SecurityAnalysisControllerTest {
                 .exchange()
                 .expectStatus().isOk();
 
-        Message<byte[]> message = output.receive(3000, "sa.stopped");
+        Message<byte[]> message = output.receive(TIMEOUT * 3, "sa.stopped");
         assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
         assertEquals("me", message.getHeaders().get("receiver"));
         assertEquals(CANCEL_MESSAGE, message.getHeaders().get("message"));
@@ -357,7 +361,7 @@ public class SecurityAnalysisControllerTest {
                 .isEqualTo(RESULT_UUID);
 
         // Message stopped has been sent
-        Message<byte[]> cancelMessage = output.receive(1000, "sa.stopped");
+        Message<byte[]> cancelMessage = output.receive(TIMEOUT, "sa.failed");
         assertEquals(RESULT_UUID.toString(), cancelMessage.getHeaders().get("resultUuid"));
         assertEquals("me", cancelMessage.getHeaders().get("receiver"));
         assertEquals(FAIL_MESSAGE + " : " + ERROR_MESSAGE, cancelMessage.getHeaders().get("message"));
