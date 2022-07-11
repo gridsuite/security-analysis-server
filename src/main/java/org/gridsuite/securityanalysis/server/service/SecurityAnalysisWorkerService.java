@@ -48,6 +48,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -87,6 +89,8 @@ public class SecurityAnalysisWorkerService {
     private Map<UUID, SecurityAnalysisCancelContext> cancelComputationRequests = new ConcurrentHashMap<>();
 
     private Set<UUID> runRequests = Sets.newConcurrentHashSet();
+
+    private Lock lockRunAndCancelAS = new ReentrantLock();
 
     @Autowired
     private StreamBridge resultMessagePublisher;
@@ -129,7 +133,7 @@ public class SecurityAnalysisWorkerService {
             return network;
         } else {
             Mono<List<Network>> otherNetworks = Flux.fromIterable(otherNetworkUuids)
-                    .flatMap(uuid -> getNetwork(uuid))
+                    .flatMap(this::getNetwork)
                     .collectList();
             return Mono.zip(network, otherNetworks)
                     .map(t -> {
@@ -148,6 +152,62 @@ public class SecurityAnalysisWorkerService {
         return run(context, null);
     }
 
+    private CompletableFuture<SecurityAnalysisResult> runASAsync(SecurityAnalysisRunContext context,
+                                                               Tuple2<Network, List<Contingency>> tuple,
+                                                               Reporter reporter,
+                                                               UUID resultUuid) {
+        lockRunAndCancelAS.lock();
+        try {
+            if (cancelComputationRequests.get(resultUuid) != null) {
+                return null;
+            }
+            SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
+            String variantId = context.getVariantId() != null ? context.getVariantId() : VariantManagerConstants.INITIAL_VARIANT_ID;
+
+            CompletableFuture<SecurityAnalysisResult> future = securityAnalysisRunner.runAsync(
+                tuple.getT1(),
+                variantId,
+                n -> tuple.getT2(),
+                context.getParameters(),
+                LocalComputationManager.getDefault(),
+                LimitViolationFilter.load(),
+                new DefaultLimitViolationDetector(),
+                Collections.emptyList(),
+                Collections.emptyList(),
+                reporter)
+                .thenApply(SecurityAnalysisReport::getResult);
+            if (resultUuid != null) {
+                futures.put(resultUuid, future);
+            }
+            return future;
+        } finally {
+            lockRunAndCancelAS.unlock();
+        }
+    }
+
+    private void cancelASAsync(SecurityAnalysisCancelContext cancelContext) {
+        lockRunAndCancelAS.lock();
+        try {
+            cancelComputationRequests.put(cancelContext.getResultUuid(), cancelContext);
+
+            // find the completableFuture associated with result uuid
+            CompletableFuture<SecurityAnalysisResult> future = futures.get(cancelContext.getResultUuid());
+            if (future != null) {
+                future.cancel(true);  // cancel computation in progress
+
+                cleanASResultsAndPublishCancel(cancelContext.getResultUuid(), cancelContext.getReceiver());
+            }
+        } finally {
+            lockRunAndCancelAS.unlock();
+        }
+    }
+
+    private void cleanASResultsAndPublishCancel(UUID resultUuid, String receiver) {
+        resultRepository.delete(resultUuid);
+        stoppedPublisherService.publishCancel(resultUuid, receiver);
+        LOGGER.info(CANCEL_MESSAGE + " (resultUuid='{}')", resultUuid);
+    }
+
     private Mono<SecurityAnalysisResult> run(SecurityAnalysisRunContext context, UUID resultUuid) {
         Objects.requireNonNull(context);
 
@@ -159,30 +219,14 @@ public class SecurityAnalysisWorkerService {
                 .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid(), context.getVariantId()))
                 .collectList();
 
-        String variantId = context.getVariantId() != null ? context.getVariantId() : VariantManagerConstants.INITIAL_VARIANT_ID;
-
         return Mono.zip(network, contingencies)
                 .flatMap(tuple -> {
-                    SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
 
                     Reporter reporter = context.getReportUuid() != null ? new ReporterModel("SecurityAnalysis", "Security analysis") : Reporter.NO_OP;
 
-                    CompletableFuture<SecurityAnalysisResult> future = securityAnalysisRunner.runAsync(
-                        tuple.getT1(),
-                        variantId,
-                        n -> tuple.getT2(),
-                        context.getParameters(),
-                        LocalComputationManager.getDefault(),
-                        LimitViolationFilter.load(),
-                        new DefaultLimitViolationDetector(),
-                        Collections.emptyList(),
-                        Collections.emptyList(),
-                        reporter)
-                            .thenApply(SecurityAnalysisReport::getResult);
-                    if (resultUuid != null) {
-                        futures.put(resultUuid, future);
-                    }
-                    Mono<SecurityAnalysisResult> result = resultUuid != null && cancelComputationRequests.get(resultUuid) != null ? Mono.empty() : Mono.fromCompletionStage(future);
+                    CompletableFuture<SecurityAnalysisResult> future = runASAsync(context, tuple, reporter, resultUuid);
+
+                    Mono<SecurityAnalysisResult> result = future == null ? Mono.empty() : Mono.fromCompletionStage(future);
                     if (context.getReportUuid() != null) {
                         return result.zipWhen(r -> reportService.sendReport(context.getReportUuid(), reporter)
                                 .thenReturn("") /* because zipWhen needs 2 non empty mono */)
@@ -225,7 +269,7 @@ public class SecurityAnalysisWorkerService {
                             LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
                         } else {  // result not available : stop computation request
                             if (cancelComputationRequests.get(resultContext.getResultUuid()) != null) {
-                                stoppedPublisherService.publishCancel(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
+                                cleanASResultsAndPublishCancel(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
                             }
                         }
                     })
@@ -249,23 +293,7 @@ public class SecurityAnalysisWorkerService {
 
     @Bean
     public Consumer<Message<String>> consumeCancel() {
-        return message -> {
-            SecurityAnalysisCancelContext cancelContext = SecurityAnalysisCancelContext.fromMessage(message);
-
-            if (runRequests.contains(cancelContext.getResultUuid())) {
-                cancelComputationRequests.put(cancelContext.getResultUuid(), cancelContext);
-            }
-
-            // find the completableFuture associated with result uuid
-            CompletableFuture<SecurityAnalysisResult> future = futures.get(cancelContext.getResultUuid());
-            if (future != null) {
-                future.cancel(true);  // cancel computation in progress
-
-                resultRepository.delete(cancelContext.getResultUuid());
-                stoppedPublisherService.publishCancel(cancelContext.getResultUuid(), cancelContext.getReceiver());
-                LOGGER.info(CANCEL_MESSAGE + " (resultUuid='{}')", cancelContext.getResultUuid());
-            }
-        };
+        return message -> cancelASAsync(SecurityAnalysisCancelContext.fromMessage(message));
     }
 
     private void sendResultMessage(Message<String> message) {
