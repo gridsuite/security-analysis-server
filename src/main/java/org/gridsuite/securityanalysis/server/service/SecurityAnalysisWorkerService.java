@@ -158,7 +158,7 @@ public class SecurityAnalysisWorkerService {
                                                                UUID resultUuid) {
         lockRunAndCancelAS.lock();
         try {
-            if (cancelComputationRequests.get(resultUuid) != null) {
+            if (resultUuid != null && cancelComputationRequests.get(resultUuid) != null) {
                 return null;
             }
             SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
