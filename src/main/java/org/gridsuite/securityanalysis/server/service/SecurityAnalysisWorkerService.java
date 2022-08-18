@@ -287,7 +287,7 @@ public class SecurityAnalysisWorkerService {
                         cancelComputationRequests.remove(resultContext.getResultUuid());
                         runRequests.remove(resultContext.getResultUuid());
                     })
-                    .subscribe();
+                    .block();
         };
     }
 
