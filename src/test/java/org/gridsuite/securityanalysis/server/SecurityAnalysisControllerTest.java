@@ -311,7 +311,7 @@ public class SecurityAnalysisControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody(String.class)
-                .isEqualTo(null);
+                .isEqualTo("CONVERGED");
 
         webTestClient.put()
                 .uri("/" + VERSION + "/results/invalidate-status?resultUuid=" + RESULT_UUID)
