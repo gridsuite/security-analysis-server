@@ -240,54 +240,58 @@ public class SecurityAnalysisWorkerService {
     @Bean
     public Consumer<Message<String>> consumeRun() {
         return message -> {
-            SecurityAnalysisResultContext resultContext = SecurityAnalysisResultContext.fromMessage(message, objectMapper);
-            runRequests.add(resultContext.getResultUuid());
-            AtomicReference<Long> startTime = new AtomicReference<>();
+            try {
+                SecurityAnalysisResultContext resultContext = SecurityAnalysisResultContext.fromMessage(message, objectMapper);
+                runRequests.add(resultContext.getResultUuid());
+                AtomicReference<Long> startTime = new AtomicReference<>();
 
-            run(resultContext.getRunContext(), resultContext.getResultUuid())
-                .doOnSubscribe(x -> startTime.set(System.nanoTime()))
-                    .flatMap(result -> {
-                        long nanoTime = System.nanoTime();
-                        LOGGER.info("Just run in {}s", TimeUnit.NANOSECONDS.toSeconds(nanoTime - startTime.getAndSet(nanoTime)));
-                        return Mono.fromRunnable(() -> resultRepository.insert(resultContext.getResultUuid(), result))
-                                .then(Mono.fromRunnable(() -> resultRepository.insertStatus(List.of(resultContext.getResultUuid()),
-                                        result.getPreContingencyLimitViolationsResult().isComputationOk() ? SecurityAnalysisStatus.CONVERGED.name() : SecurityAnalysisStatus.DIVERGED.name())))
-                                .then(Mono.just(result))
-                            .doFinally(ignored -> {
-                                long finalNanoTime = System.nanoTime();
-                                LOGGER.info("Stored in {}s", TimeUnit.NANOSECONDS.toSeconds(finalNanoTime - startTime.getAndSet(finalNanoTime)));
-                            });
-                    })
-                    .doOnSuccess(result -> {
-                        if (result != null) {  // result available
-                            Message<String> sendMessage = MessageBuilder
-                                    .withPayload("")
-                                    .setHeader("resultUuid", resultContext.getResultUuid().toString())
-                                    .setHeader("receiver", resultContext.getRunContext().getReceiver())
-                                    .build();
-                            sendResultMessage(sendMessage);
-                            LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
-                        } else {  // result not available : stop computation request
-                            if (cancelComputationRequests.get(resultContext.getResultUuid()) != null) {
-                                cleanASResultsAndPublishCancel(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
+                run(resultContext.getRunContext(), resultContext.getResultUuid())
+                        .doOnSubscribe(x -> startTime.set(System.nanoTime()))
+                        .flatMap(result -> {
+                            long nanoTime = System.nanoTime();
+                            LOGGER.info("Just run in {}s", TimeUnit.NANOSECONDS.toSeconds(nanoTime - startTime.getAndSet(nanoTime)));
+                            return Mono.fromRunnable(() -> resultRepository.insert(resultContext.getResultUuid(), result))
+                                    .then(Mono.fromRunnable(() -> resultRepository.insertStatus(List.of(resultContext.getResultUuid()),
+                                            result.getPreContingencyLimitViolationsResult().isComputationOk() ? SecurityAnalysisStatus.CONVERGED.name() : SecurityAnalysisStatus.DIVERGED.name())))
+                                    .then(Mono.just(result))
+                                    .doFinally(ignored -> {
+                                        long finalNanoTime = System.nanoTime();
+                                        LOGGER.info("Stored in {}s", TimeUnit.NANOSECONDS.toSeconds(finalNanoTime - startTime.getAndSet(finalNanoTime)));
+                                    });
+                        })
+                        .doOnSuccess(result -> {
+                            if (result != null) {  // result available
+                                Message<String> sendMessage = MessageBuilder
+                                        .withPayload("")
+                                        .setHeader("resultUuid", resultContext.getResultUuid().toString())
+                                        .setHeader("receiver", resultContext.getRunContext().getReceiver())
+                                        .build();
+                                sendResultMessage(sendMessage);
+                                LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
+                            } else {  // result not available : stop computation request
+                                if (cancelComputationRequests.get(resultContext.getResultUuid()) != null) {
+                                    cleanASResultsAndPublishCancel(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
+                                }
                             }
-                        }
-                    })
-                    .onErrorResume(throwable -> {
-                        if (!(throwable instanceof CancellationException)) {
-                            LOGGER.error(FAIL_MESSAGE, throwable);
-                            failedPublisherService.publishFail(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver(), throwable.getMessage());
-                            resultRepository.delete(resultContext.getResultUuid());
+                        })
+                        .onErrorResume(throwable -> {
+                            if (!(throwable instanceof CancellationException)) {
+                                LOGGER.error(FAIL_MESSAGE, throwable);
+                                failedPublisherService.publishFail(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver(), throwable.getMessage());
+                                resultRepository.delete(resultContext.getResultUuid());
+                                return Mono.empty();
+                            }
                             return Mono.empty();
-                        }
-                        return Mono.empty();
-                    })
-                    .doFinally(s -> {
-                        futures.remove(resultContext.getResultUuid());
-                        cancelComputationRequests.remove(resultContext.getResultUuid());
-                        runRequests.remove(resultContext.getResultUuid());
-                    })
-                    .subscribe();
+                        })
+                        .doFinally(s -> {
+                            futures.remove(resultContext.getResultUuid());
+                            cancelComputationRequests.remove(resultContext.getResultUuid());
+                            runRequests.remove(resultContext.getResultUuid());
+                        })
+                        .block();
+            } catch (Exception e) {
+                LOGGER.error("Exception in consumeRun", e);
+            }
         };
     }
 
