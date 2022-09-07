@@ -11,7 +11,7 @@ spring:
           destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.run
           group: saGroup
           consumer:
-            concurrency: 1
+            concurrency: 2
         publishRun-out-0:
           destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.run
         publishResult-out-0:
