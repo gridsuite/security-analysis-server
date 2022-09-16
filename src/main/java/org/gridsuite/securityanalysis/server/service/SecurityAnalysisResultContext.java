@@ -12,10 +12,13 @@ import com.powsybl.commons.PowsyblException;
 import com.powsybl.security.SecurityAnalysisParameters;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.support.MessageBuilder;
 
 import java.io.UncheckedIOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -80,24 +83,5 @@ public class SecurityAnalysisResultContext {
         UUID reportUuid = headers.containsKey(REPORT_UUID) ? UUID.fromString((String) headers.get(REPORT_UUID)) : null;
         SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, variantId, otherNetworkUuids, contingencyListNames, receiver, provider, parameters, reportUuid);
         return new SecurityAnalysisResultContext(resultUuid, runContext);
-    }
-
-    public Message<String> toMessage(ObjectMapper objectMapper) {
-        String parametersJson;
-        try {
-            parametersJson = objectMapper.writeValueAsString(runContext.getParameters());
-        } catch (JsonProcessingException e) {
-            throw new UncheckedIOException(e);
-        }
-        return MessageBuilder.withPayload(parametersJson)
-                .setHeader("resultUuid", resultUuid.toString())
-                .setHeader("networkUuid", runContext.getNetworkUuid().toString())
-                .setHeader("variantId", runContext.getVariantId())
-                .setHeader("otherNetworkUuids", runContext.getOtherNetworkUuids().stream().map(UUID::toString).collect(Collectors.joining(",")))
-                .setHeader("contingencyListNames", String.join(",", runContext.getContingencyListNames()))
-                .setHeader("receiver", runContext.getReceiver())
-                .setHeader("provider", runContext.getProvider())
-                .setHeader(REPORT_UUID, runContext.getReportUuid())
-                .build();
     }
 }

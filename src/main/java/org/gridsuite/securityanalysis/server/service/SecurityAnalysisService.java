@@ -6,20 +6,20 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.stream.function.StreamBridge;
-import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.util.*;
+import java.io.UncheckedIOException;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -31,24 +31,22 @@ public class SecurityAnalysisService {
 
     private UuidGeneratorService uuidGeneratorService;
 
+    private NotificationService notificationService;
+
     private ObjectMapper objectMapper;
 
     private static final String CANCEL_CATEGORY_BROKER_OUTPUT = SecurityAnalysisService.class.getName() + ".output-broker-messages.cancel";
 
     private static final String RUN_CATEGORY_BROKER_OUTPUT = SecurityAnalysisService.class.getName() + ".output-broker-messages.run";
 
-    private static final Logger RUN_MESSAGE_LOGGER = LoggerFactory.getLogger(RUN_CATEGORY_BROKER_OUTPUT);
-
-    private static final Logger CANCEL_MESSAGE_LOGGER = LoggerFactory.getLogger(CANCEL_CATEGORY_BROKER_OUTPUT);
-
-    @Autowired
-    private StreamBridge publisher;
-
     public SecurityAnalysisService(SecurityAnalysisResultRepository resultRepository,
-                                   UuidGeneratorService uuidGeneratorService, ObjectMapper objectMapper) {
+                                   UuidGeneratorService uuidGeneratorService,
+                                   ObjectMapper objectMapper,
+                                   NotificationService notificationService) {
         this.resultRepository = Objects.requireNonNull(resultRepository);
         this.uuidGeneratorService = Objects.requireNonNull(uuidGeneratorService);
         this.objectMapper = Objects.requireNonNull(objectMapper);
+        this.notificationService = Objects.requireNonNull(notificationService);
     }
 
     public Mono<UUID> runAndSaveResult(SecurityAnalysisRunContext runContext) {
@@ -57,8 +55,15 @@ public class SecurityAnalysisService {
 
         // update status to running status
         return setStatus(List.of(resultUuid), SecurityAnalysisStatus.RUNNING.name()).then(
-                Mono.fromRunnable(() ->
-                        sendRunMessage(new SecurityAnalysisResultContext(resultUuid, runContext).toMessage(objectMapper)))
+                Mono.fromRunnable(() -> {
+                    String parametersJson;
+                    try {
+                        parametersJson = objectMapper.writeValueAsString(runContext.getParameters());
+                    } catch (JsonProcessingException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                    notificationService.emitRunAnalysisMessage(parametersJson, resultUuid.toString(), runContext);
+                })
                 .thenReturn(resultUuid));
     }
 
@@ -83,17 +88,6 @@ public class SecurityAnalysisService {
     }
 
     public Mono<Void> stop(UUID resultUuid, String receiver) {
-        return Mono.fromRunnable(() ->
-                sendCancelMessage(new SecurityAnalysisCancelContext(resultUuid, receiver).toMessage())).then();
-    }
-
-    private void sendRunMessage(Message<String> message) {
-        RUN_MESSAGE_LOGGER.debug("Sending message : {}", message);
-        publisher.send("publishRun-out-0", message);
-    }
-
-    private void sendCancelMessage(Message<String> message) {
-        CANCEL_MESSAGE_LOGGER.debug("Sending message : {}", message);
-        publisher.send("publishCancel-out-0", message);
+        return Mono.fromRunnable(() -> notificationService.emitCancelAnalysisMessage(resultUuid.toString(), receiver)).then();
     }
 }
