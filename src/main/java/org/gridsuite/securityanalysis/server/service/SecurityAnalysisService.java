@@ -35,10 +35,6 @@ public class SecurityAnalysisService {
 
     private ObjectMapper objectMapper;
 
-    private static final String CANCEL_CATEGORY_BROKER_OUTPUT = SecurityAnalysisService.class.getName() + ".output-broker-messages.cancel";
-
-    private static final String RUN_CATEGORY_BROKER_OUTPUT = SecurityAnalysisService.class.getName() + ".output-broker-messages.run";
-
     public SecurityAnalysisService(SecurityAnalysisResultRepository resultRepository,
                                    UuidGeneratorService uuidGeneratorService,
                                    ObjectMapper objectMapper,
