@@ -22,6 +22,8 @@ import java.util.stream.Collectors;
  * @author Seddik Yengui <seddik.yengui at rte-france.com>
  */
 
+// Today we don't send notification inside @Transactional block. If this behavior change, we should use @PostCompletion to
+// make sure that the notification is sent only when all the work inside @Transactional block is done.
 @Service
 public class NotificationService {
     public static final String RECEIVER_HEADER = "receiver";
@@ -46,8 +48,6 @@ public class NotificationService {
         publisher.send(bindingName, message);
     }
 
-    // Today we don't send notification inside @Transactional block. If this behavior change, we should use @PostCompletion to
-    // make sure that the notification is sent only when all the work inside @Transactional block is done.
     public void emitAnalysisResultsMessage(String resultUuid, String receiver) {
         sendMessage(MessageBuilder.withPayload("")
                                   .setHeader(RESULT_UUID_HEADER, resultUuid)
