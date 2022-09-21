@@ -11,6 +11,7 @@ import com.google.common.collect.Sets;
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.commons.reporter.ReporterModel;
+import com.powsybl.computation.ComputationManager;
 import com.powsybl.computation.local.LocalComputationManager;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.iidm.mergingview.MergingView;
@@ -42,11 +43,9 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.function.Tuple2;
 
+import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.CancellationException;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -97,10 +96,12 @@ public class SecurityAnalysisWorkerService {
 
     private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier;
 
+    private SecurityAnalysisExecutionService securityAnalysisExecutionService;
+
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService, ReportService reportService,
                                          SecurityAnalysisResultRepository resultRepository, ObjectMapper objectMapper,
                                          SecurityAnalysisStoppedPublisherService stoppedPublisherService, SecurityAnalysisFailedPublisherService failedPublisherService,
-                                         SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier) {
+                                         SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, SecurityAnalysisExecutionService securityAnalysisExecutionService) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.reportService = Objects.requireNonNull(reportService);
@@ -108,7 +109,8 @@ public class SecurityAnalysisWorkerService {
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.stoppedPublisherService = Objects.requireNonNull(stoppedPublisherService);
         this.failedPublisherService = Objects.requireNonNull(failedPublisherService);
-        securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
+        this.securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
+        this.securityAnalysisExecutionService = securityAnalysisExecutionService;
     }
 
     public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier) {
@@ -169,7 +171,7 @@ public class SecurityAnalysisWorkerService {
                 variantId,
                 n -> tuple.getT2(),
                 context.getParameters(),
-                LocalComputationManager.getDefault(),
+                getLocalComputationManager(),
                 LimitViolationFilter.load(),
                 new DefaultLimitViolationDetector(),
                 Collections.emptyList(),
@@ -182,6 +184,15 @@ public class SecurityAnalysisWorkerService {
             return future;
         } finally {
             lockRunAndCancelAS.unlock();
+        }
+    }
+
+    private ComputationManager getLocalComputationManager() {
+        try {
+            return new LocalComputationManager(securityAnalysisExecutionService.getExecutorService());
+        } catch (IOException e) {
+            LOGGER.error(e.getMessage(), e);
+            return LocalComputationManager.getDefault();
         }
     }
 
