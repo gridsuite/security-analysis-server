@@ -46,8 +46,8 @@ public class NotificationService {
         publisher.send(bindingName, message);
     }
 
-    // Today we don't send notification inside @Transactional block. If this behavior change, we must make sure
-    // that the notification is sent only when all the work inside @Transactional block is done.
+    // Today we don't send notification inside @Transactional block. If this behavior change, we should use @PostCompletion to
+    // make sure that the notification is sent only when all the work inside @Transactional block is done.
     public void emitAnalysisResultsMessage(String resultUuid, String receiver) {
         sendMessage(MessageBuilder.withPayload("")
                                   .setHeader(RESULT_UUID_HEADER, resultUuid)
@@ -56,8 +56,6 @@ public class NotificationService {
                 "publishResult-out-0");
     }
 
-    // Today we don't send notification inside @Transactional block. If this behavior change, we must make sure
-    // that the notification is sent only when all the work inside @Transactional block is done.
     public void emitStopAnalysisMessage(String resultUuid, String receiver) {
         sendMessage(MessageBuilder.withPayload("")
                                   .setHeader(RESULT_UUID_HEADER, resultUuid)
@@ -67,8 +65,6 @@ public class NotificationService {
                 "publishStopped-out-0");
     }
 
-    // Today we don't send notification inside @Transactional block. If this behavior change, we must make sure
-    // that the notification is sent only when all the work inside @Transactional block is done.
     public void emitFailAnalysisMessage(String resultUuid, String receiver, String causeMessage) {
         sendMessage(MessageBuilder.withPayload("")
                                   .setHeader(RESULT_UUID_HEADER, resultUuid)
@@ -78,8 +74,6 @@ public class NotificationService {
                 "publishFailed-out-0");
     }
 
-    // Today we don't send notification inside @Transactional block. If this behavior change, we must make sure
-    // that the notification is sent only when all the work inside @Transactional block is done.
     public void emitRunAnalysisMessage(String payload, String resultUuid, SecurityAnalysisRunContext runContext) {
         sendMessage(MessageBuilder.withPayload(payload)
                                   .setHeader(RESULT_UUID_HEADER, resultUuid)
@@ -95,8 +89,6 @@ public class NotificationService {
                 "publishRun-out-0");
     }
 
-    // Today we don't send notification inside @Transactional block. If this behavior change, we must make sure
-    // that the notification is sent only when all the work inside @Transactional block is done.
     public void emitCancelAnalysisMessage(String resultUuid, String receiver) {
         sendMessage(MessageBuilder.withPayload("")
                                   .setHeader(RESULT_UUID_HEADER, resultUuid)
