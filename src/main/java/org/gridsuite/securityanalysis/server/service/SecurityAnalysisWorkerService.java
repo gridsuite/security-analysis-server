@@ -69,8 +69,6 @@ public class SecurityAnalysisWorkerService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisWorkerService.class);
 
-    private static final String CATEGORY_BROKER_OUTPUT = SecurityAnalysisWorkerService.class.getName() + ".output-broker-messages";
-
     private NetworkStoreService networkStoreService;
 
     private ActionsService actionsService;
