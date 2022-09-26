@@ -12,7 +12,6 @@ import com.powsybl.commons.PowsyblException;
 import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.commons.reporter.ReporterModel;
 import com.powsybl.computation.ComputationManager;
-import com.powsybl.computation.local.LocalComputationManager;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.iidm.mergingview.MergingView;
 import com.powsybl.iidm.network.Network;
@@ -44,6 +43,7 @@ import reactor.core.scheduler.Schedulers;
 import reactor.util.function.Tuple2;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -189,10 +189,9 @@ public class SecurityAnalysisWorkerService {
 
     private ComputationManager getLocalComputationManager() {
         try {
-            return new LocalComputationManager(securityAnalysisExecutionService.getExecutorService());
+            return securityAnalysisExecutionService.getLocalComputationManager();
         } catch (IOException e) {
-            LOGGER.error(e.getMessage(), e);
-            return LocalComputationManager.getDefault();
+            throw new UncheckedIOException(e);
         }
     }
 

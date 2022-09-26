@@ -7,10 +7,13 @@
 
 package org.gridsuite.securityanalysis.server.service;
 
+import com.powsybl.computation.ComputationManager;
+import com.powsybl.computation.local.LocalComputationManager;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -31,5 +34,9 @@ public class SecurityAnalysisExecutionService {
 
     public ExecutorService getExecutorService() {
         return executorService;
+    }
+
+    public ComputationManager getLocalComputationManager() throws IOException {
+        return new LocalComputationManager(getExecutorService());
     }
 }
