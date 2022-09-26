@@ -29,12 +29,9 @@ import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResult
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
@@ -44,8 +41,17 @@ import reactor.util.function.Tuple2;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -53,8 +59,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.CANCEL_MESSAGE;
-import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisFailedPublisherService.FAIL_MESSAGE;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.CANCEL_MESSAGE;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.FAIL_MESSAGE;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -65,23 +71,17 @@ public class SecurityAnalysisWorkerService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisWorkerService.class);
 
-    private static final String CATEGORY_BROKER_OUTPUT = SecurityAnalysisWorkerService.class.getName() + ".output-broker-messages";
-
-    private static final Logger OUTPUT_MESSAGE_LOGGER = LoggerFactory.getLogger(CATEGORY_BROKER_OUTPUT);
-
     private NetworkStoreService networkStoreService;
 
     private ActionsService actionsService;
 
     private ReportService reportService;
 
+    private NotificationService notificationService;
+
     private SecurityAnalysisResultRepository resultRepository;
 
     private ObjectMapper objectMapper;
-
-    private SecurityAnalysisStoppedPublisherService stoppedPublisherService;
-
-    private SecurityAnalysisFailedPublisherService failedPublisherService;
 
     private Map<UUID, CompletableFuture<SecurityAnalysisResult>> futures = new ConcurrentHashMap<>();
 
@@ -91,26 +91,21 @@ public class SecurityAnalysisWorkerService {
 
     private Lock lockRunAndCancelAS = new ReentrantLock();
 
-    @Autowired
-    private StreamBridge resultMessagePublisher;
-
     private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier;
 
     private SecurityAnalysisExecutionService securityAnalysisExecutionService;
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService, ReportService reportService,
                                          SecurityAnalysisResultRepository resultRepository, ObjectMapper objectMapper,
-                                         SecurityAnalysisStoppedPublisherService stoppedPublisherService, SecurityAnalysisFailedPublisherService failedPublisherService,
-                                         SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, SecurityAnalysisExecutionService securityAnalysisExecutionService) {
+                                         SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, NotificationService notificationService, SecurityAnalysisExecutionService securityAnalysisExecutionService) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.reportService = Objects.requireNonNull(reportService);
         this.resultRepository = Objects.requireNonNull(resultRepository);
         this.objectMapper = Objects.requireNonNull(objectMapper);
-        this.stoppedPublisherService = Objects.requireNonNull(stoppedPublisherService);
-        this.failedPublisherService = Objects.requireNonNull(failedPublisherService);
-        this.securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
-        this.securityAnalysisExecutionService = securityAnalysisExecutionService;
+        this.notificationService = Objects.requireNonNull(notificationService);
+        this.securityAnalysisExecutionService = Objects.requireNonNull(securityAnalysisExecutionService);
+        securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
     }
 
     public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier) {
@@ -214,7 +209,7 @@ public class SecurityAnalysisWorkerService {
 
     private void cleanASResultsAndPublishCancel(UUID resultUuid, String receiver) {
         resultRepository.delete(resultUuid);
-        stoppedPublisherService.publishCancel(resultUuid, receiver);
+        notificationService.emitStopAnalysisMessage(resultUuid.toString(), receiver);
         LOGGER.info(CANCEL_MESSAGE + " (resultUuid='{}')", resultUuid);
     }
 
@@ -271,12 +266,7 @@ public class SecurityAnalysisWorkerService {
                         })
                         .doOnSuccess(result -> {
                             if (result != null) {  // result available
-                                Message<String> sendMessage = MessageBuilder
-                                        .withPayload("")
-                                        .setHeader("resultUuid", resultContext.getResultUuid().toString())
-                                        .setHeader("receiver", resultContext.getRunContext().getReceiver())
-                                        .build();
-                                sendResultMessage(sendMessage);
+                                notificationService.emitAnalysisResultsMessage(resultContext.getResultUuid().toString(), resultContext.getRunContext().getReceiver());
                                 LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
                             } else {  // result not available : stop computation request
                                 if (cancelComputationRequests.get(resultContext.getResultUuid()) != null) {
@@ -287,7 +277,9 @@ public class SecurityAnalysisWorkerService {
                         .onErrorResume(throwable -> {
                             if (!(throwable instanceof CancellationException)) {
                                 LOGGER.error(FAIL_MESSAGE, throwable);
-                                failedPublisherService.publishFail(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver(), throwable.getMessage());
+                                notificationService.emitFailAnalysisMessage(resultContext.getResultUuid().toString(),
+                                        resultContext.getRunContext().getReceiver(),
+                                        throwable.getMessage());
                                 resultRepository.delete(resultContext.getResultUuid());
                                 return Mono.empty();
                             }
@@ -308,10 +300,5 @@ public class SecurityAnalysisWorkerService {
     @Bean
     public Consumer<Message<String>> consumeCancel() {
         return message -> cancelASAsync(SecurityAnalysisCancelContext.fromMessage(message));
-    }
-
-    private void sendResultMessage(Message<String> message) {
-        OUTPUT_MESSAGE_LOGGER.debug("Sending message : {}", message);
-        resultMessagePublisher.send("publishResult-out-0", message);
     }
 }
