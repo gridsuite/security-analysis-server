@@ -14,6 +14,8 @@ import org.springframework.messaging.support.MessageBuilder;
 import java.util.Objects;
 import java.util.UUID;
 
+import static org.gridsuite.securityanalysis.server.service.NotificationService.RESULT_UUID_HEADER;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.RECEIVER_HEADER;
 /**
  * @author Franck Lecuyer <franck.lecuyer at rte-france.com>
  */
@@ -47,15 +49,15 @@ public class SecurityAnalysisCancelContext {
     public static SecurityAnalysisCancelContext fromMessage(Message<String> message) {
         Objects.requireNonNull(message);
         MessageHeaders headers = message.getHeaders();
-        UUID resultUuid = UUID.fromString(getNonNullHeader(headers, "resultUuid"));
-        String receiver = (String) headers.get("receiver");
+        UUID resultUuid = UUID.fromString(getNonNullHeader(headers, RESULT_UUID_HEADER));
+        String receiver = (String) headers.get(RECEIVER_HEADER);
         return new SecurityAnalysisCancelContext(resultUuid, receiver);
     }
 
     public Message<String> toMessage() {
         return MessageBuilder.withPayload("")
-                .setHeader("resultUuid", resultUuid.toString())
-                .setHeader("receiver", receiver)
+                .setHeader(RESULT_UUID_HEADER, resultUuid.toString())
+                .setHeader(RECEIVER_HEADER, receiver)
                 .build();
     }
 }
