@@ -6,7 +6,6 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
@@ -15,7 +14,6 @@ import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResult
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
-import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -51,15 +49,9 @@ public class SecurityAnalysisService {
 
         // update status to running status
         return setStatus(List.of(resultUuid), SecurityAnalysisStatus.RUNNING.name()).then(
-                Mono.fromRunnable(() -> {
-                    String parametersJson;
-                    try {
-                        parametersJson = objectMapper.writeValueAsString(runContext.getParameters());
-                    } catch (JsonProcessingException e) {
-                        throw new UncheckedIOException(e);
-                    }
-                    notificationService.emitRunAnalysisMessage(parametersJson, resultUuid.toString(), runContext);
-                })
+                Mono.fromRunnable(() ->
+                    notificationService.emitRunAnalysisMessage(new SecurityAnalysisResultContext(resultUuid, runContext).toMessage(objectMapper))
+                )
                 .thenReturn(resultUuid));
     }
 
@@ -84,6 +76,6 @@ public class SecurityAnalysisService {
     }
 
     public Mono<Void> stop(UUID resultUuid, String receiver) {
-        return Mono.fromRunnable(() -> notificationService.emitCancelAnalysisMessage(resultUuid.toString(), receiver)).then();
+        return Mono.fromRunnable(() -> notificationService.emitCancelAnalysisMessage(new SecurityAnalysisCancelContext(resultUuid, receiver).toMessage())).then();
     }
 }

@@ -15,9 +15,6 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
-import java.util.stream.Collectors;
-
 /**
  * @author Seddik Yengui <seddik.yengui at rte-france.com>
  */
@@ -38,7 +35,7 @@ public class NotificationService {
     public static final String OTHER_NETWORK_UUIDS_HEADER = "otherNetworkUuids";
     public static final String CONTINGENCY_LIST_NAMES_HEADER = "contingencyListNames";
     public static final String PROVIDER_HEADER = "provider";
-    private static final String REPORT_UUID_HEADER = "reportUuid";
+    public static final String REPORT_UUID_HEADER = "reportUuid";
 
     @Autowired
     private StreamBridge publisher;
@@ -74,26 +71,11 @@ public class NotificationService {
                 "publishFailed-out-0");
     }
 
-    public void emitRunAnalysisMessage(String payload, String resultUuid, SecurityAnalysisRunContext runContext) {
-        sendMessage(MessageBuilder.withPayload(payload)
-                                  .setHeader(RESULT_UUID_HEADER, resultUuid)
-                                  .setHeader(NETWORK_UUID_HEADER, runContext.getNetworkUuid().toString())
-                                  .setHeader(VARIANT_ID_HEADER, runContext.getVariantId())
-                                  .setHeader(OTHER_NETWORK_UUIDS_HEADER, runContext.getOtherNetworkUuids().stream()
-                                         .map(UUID::toString).collect(Collectors.joining(",")))
-                                  .setHeader(CONTINGENCY_LIST_NAMES_HEADER, String.join(",", runContext.getContingencyListNames()))
-                                  .setHeader(RECEIVER_HEADER, runContext.getReceiver())
-                                  .setHeader(PROVIDER_HEADER, runContext.getProvider())
-                                  .setHeader(REPORT_UUID_HEADER, runContext.getReportUuid())
-                                  .build(),
-                "publishRun-out-0");
+    public void emitRunAnalysisMessage(Message<String> message) {
+        sendMessage(message, "publishRun-out-0");
     }
 
-    public void emitCancelAnalysisMessage(String resultUuid, String receiver) {
-        sendMessage(MessageBuilder.withPayload("")
-                                  .setHeader(RESULT_UUID_HEADER, resultUuid)
-                                  .setHeader(RECEIVER_HEADER, receiver)
-                                  .build(),
-                "publishCancel-out-0");
+    public void emitCancelAnalysisMessage(Message<String> message) {
+        sendMessage(message, "publishCancel-out-0");
     }
 }
