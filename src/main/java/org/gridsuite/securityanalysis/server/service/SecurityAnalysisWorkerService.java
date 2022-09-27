@@ -174,6 +174,8 @@ public class SecurityAnalysisWorkerService {
                 new DefaultLimitViolationDetector(),
                 Collections.emptyList(),
                 Collections.emptyList(),
+                Collections.emptyList(),
+                Collections.emptyList(),
                 reporter)
                 .thenApply(SecurityAnalysisReport::getResult);
             if (resultUuid != null) {
