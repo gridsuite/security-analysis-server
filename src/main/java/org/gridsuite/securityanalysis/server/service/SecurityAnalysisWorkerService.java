@@ -11,7 +11,6 @@ import com.google.common.collect.Sets;
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.commons.reporter.ReporterModel;
-import com.powsybl.computation.ComputationManager;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.iidm.mergingview.MergingView;
 import com.powsybl.iidm.network.Network;
@@ -39,8 +38,6 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.function.Tuple2;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -166,7 +163,7 @@ public class SecurityAnalysisWorkerService {
                 variantId,
                 n -> tuple.getT2(),
                 context.getParameters(),
-                getLocalComputationManager(),
+                securityAnalysisExecutionService.getLocalComputationManager(),
                 LimitViolationFilter.load(),
                 new DefaultLimitViolationDetector(),
                 Collections.emptyList(),
@@ -179,14 +176,6 @@ public class SecurityAnalysisWorkerService {
             return future;
         } finally {
             lockRunAndCancelAS.unlock();
-        }
-    }
-
-    private ComputationManager getLocalComputationManager() {
-        try {
-            return securityAnalysisExecutionService.getLocalComputationManager();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 

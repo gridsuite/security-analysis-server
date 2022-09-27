@@ -9,11 +9,11 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.computation.ComputationManager;
 import com.powsybl.computation.local.LocalComputationManager;
+import lombok.SneakyThrows;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
-import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -22,9 +22,13 @@ public class SecurityAnalysisExecutionService {
 
     private ExecutorService executorService;
 
+    private ComputationManager computationManager;
+
+    @SneakyThrows
     @PostConstruct
     private void postConstruct() {
         executorService = Executors.newCachedThreadPool();
+        computationManager = new LocalComputationManager(getExecutorService());
     }
 
     @PreDestroy
@@ -36,7 +40,7 @@ public class SecurityAnalysisExecutionService {
         return executorService;
     }
 
-    public ComputationManager getLocalComputationManager() throws IOException {
-        return new LocalComputationManager(getExecutorService());
+    public ComputationManager getLocalComputationManager() {
+        return computationManager;
     }
 }
