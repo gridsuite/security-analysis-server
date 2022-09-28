@@ -11,7 +11,6 @@ import com.google.common.collect.Sets;
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.commons.reporter.ReporterModel;
-import com.powsybl.computation.local.LocalComputationManager;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.iidm.mergingview.MergingView;
 import com.powsybl.iidm.network.Network;
@@ -91,15 +90,18 @@ public class SecurityAnalysisWorkerService {
 
     private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier;
 
+    private SecurityAnalysisExecutionService securityAnalysisExecutionService;
+
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService, ReportService reportService,
                                          SecurityAnalysisResultRepository resultRepository, ObjectMapper objectMapper,
-                                         SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, NotificationService notificationService) {
+                                         SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, NotificationService notificationService, SecurityAnalysisExecutionService securityAnalysisExecutionService) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.reportService = Objects.requireNonNull(reportService);
         this.resultRepository = Objects.requireNonNull(resultRepository);
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.notificationService = Objects.requireNonNull(notificationService);
+        this.securityAnalysisExecutionService = Objects.requireNonNull(securityAnalysisExecutionService);
         securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
     }
 
@@ -161,7 +163,7 @@ public class SecurityAnalysisWorkerService {
                 variantId,
                 n -> tuple.getT2(),
                 context.getParameters(),
-                LocalComputationManager.getDefault(),
+                securityAnalysisExecutionService.getLocalComputationManager(),
                 LimitViolationFilter.load(),
                 new DefaultLimitViolationDetector(),
                 Collections.emptyList(),
