@@ -12,6 +12,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import com.powsybl.commons.reporter.Reporter;
+import com.powsybl.security.action.Action;
+import com.powsybl.security.strategy.OperatorStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,6 +107,8 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                                                          SecurityAnalysisParameters parameters,
                                                          ContingenciesProvider contingenciesProvider,
                                                          List<SecurityAnalysisInterceptor> interceptors,
+                                                         List<OperatorStrategy> operatorStrategies,
+                                                         List<Action> actions,
                                                          List<StateMonitor> monitors,
                                                          Reporter reporter) {
         LOGGER.info("Run security analysis mock");

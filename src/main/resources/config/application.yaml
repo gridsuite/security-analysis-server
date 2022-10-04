@@ -26,7 +26,9 @@ spring:
           destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.failed
       output-bindings: publishRun;publishResult;publishCancel;publishStopped;publishFailed
 
-dbName: sa
+powsybl-ws:
+  database:
+    name: sa
 
 # default values for loadflow providers "Hades2" or "OpenLoadFlow"
 loadflow:

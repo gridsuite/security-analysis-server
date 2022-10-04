@@ -15,15 +15,26 @@ import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
 
 import java.io.UncheckedIOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static org.gridsuite.securityanalysis.server.service.NotificationService.CONTINGENCY_LIST_NAMES_HEADER;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.NETWORK_UUID_HEADER;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.OTHER_NETWORK_UUIDS_HEADER;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.PROVIDER_HEADER;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.RECEIVER_HEADER;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.REPORT_UUID_HEADER;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.RESULT_UUID_HEADER;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.VARIANT_ID_HEADER;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 public class SecurityAnalysisResultContext {
-
-    private static final String REPORT_UUID = "reportUuid";
 
     private final UUID resultUuid;
 
@@ -61,23 +72,23 @@ public class SecurityAnalysisResultContext {
     public static SecurityAnalysisResultContext fromMessage(Message<String> message, ObjectMapper objectMapper) {
         Objects.requireNonNull(message);
         MessageHeaders headers = message.getHeaders();
-        UUID resultUuid = UUID.fromString(getNonNullHeader(headers, "resultUuid"));
-        UUID networkUuid = UUID.fromString(getNonNullHeader(headers, "networkUuid"));
-        String variantId = (String) headers.get("variantId");
-        List<UUID> otherNetworkUuids = getHeaderList(headers, "otherNetworkUuids")
+        UUID resultUuid = UUID.fromString(getNonNullHeader(headers, RESULT_UUID_HEADER));
+        UUID networkUuid = UUID.fromString(getNonNullHeader(headers, NETWORK_UUID_HEADER));
+        String variantId = (String) headers.get(VARIANT_ID_HEADER);
+        List<UUID> otherNetworkUuids = getHeaderList(headers, OTHER_NETWORK_UUIDS_HEADER)
                 .stream()
                 .map(UUID::fromString)
                 .collect(Collectors.toList());
-        List<String> contingencyListNames = getHeaderList(headers, "contingencyListNames");
-        String receiver = (String) headers.get("receiver");
-        String provider = (String) headers.get("provider");
+        List<String> contingencyListNames = getHeaderList(headers, CONTINGENCY_LIST_NAMES_HEADER);
+        String receiver = (String) headers.get(RECEIVER_HEADER);
+        String provider = (String) headers.get(PROVIDER_HEADER);
         SecurityAnalysisParameters parameters;
         try {
             parameters = objectMapper.readValue(message.getPayload(), SecurityAnalysisParameters.class);
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }
-        UUID reportUuid = headers.containsKey(REPORT_UUID) ? UUID.fromString((String) headers.get(REPORT_UUID)) : null;
+        UUID reportUuid = headers.containsKey(REPORT_UUID_HEADER) ? UUID.fromString((String) headers.get(REPORT_UUID_HEADER)) : null;
         SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, variantId, otherNetworkUuids, contingencyListNames, receiver, provider, parameters, reportUuid);
         return new SecurityAnalysisResultContext(resultUuid, runContext);
     }
@@ -90,14 +101,15 @@ public class SecurityAnalysisResultContext {
             throw new UncheckedIOException(e);
         }
         return MessageBuilder.withPayload(parametersJson)
-                .setHeader("resultUuid", resultUuid.toString())
-                .setHeader("networkUuid", runContext.getNetworkUuid().toString())
-                .setHeader("variantId", runContext.getVariantId())
-                .setHeader("otherNetworkUuids", runContext.getOtherNetworkUuids().stream().map(UUID::toString).collect(Collectors.joining(",")))
-                .setHeader("contingencyListNames", String.join(",", runContext.getContingencyListNames()))
-                .setHeader("receiver", runContext.getReceiver())
-                .setHeader("provider", runContext.getProvider())
-                .setHeader(REPORT_UUID, runContext.getReportUuid())
+                .setHeader(RESULT_UUID_HEADER, resultUuid.toString())
+                .setHeader(NETWORK_UUID_HEADER, runContext.getNetworkUuid().toString())
+                .setHeader(VARIANT_ID_HEADER, runContext.getVariantId())
+                .setHeader(OTHER_NETWORK_UUIDS_HEADER, runContext.getOtherNetworkUuids().stream()
+                        .map(UUID::toString).collect(Collectors.joining(",")))
+                .setHeader(CONTINGENCY_LIST_NAMES_HEADER, String.join(",", runContext.getContingencyListNames()))
+                .setHeader(RECEIVER_HEADER, runContext.getReceiver())
+                .setHeader(PROVIDER_HEADER, runContext.getProvider())
+                .setHeader(REPORT_UUID_HEADER, runContext.getReportUuid())
                 .build();
     }
 }

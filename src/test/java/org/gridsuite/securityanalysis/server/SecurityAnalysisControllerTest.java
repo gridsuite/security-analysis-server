@@ -33,7 +33,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.http.MediaType;
@@ -51,8 +50,8 @@ import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
-import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisStoppedPublisherService.CANCEL_MESSAGE;
-import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisFailedPublisherService.FAIL_MESSAGE;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.CANCEL_MESSAGE;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.FAIL_MESSAGE;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -98,7 +97,7 @@ public class SecurityAnalysisControllerTest {
     @MockBean
     private UuidGeneratorService uuidGeneratorService;
 
-    @SpyBean
+    @Autowired
     private SecurityAnalysisWorkerService workerService;
 
     @Autowired
