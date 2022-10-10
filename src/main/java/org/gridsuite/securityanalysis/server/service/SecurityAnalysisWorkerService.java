@@ -68,6 +68,8 @@ public class SecurityAnalysisWorkerService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisWorkerService.class);
 
+    private static final String AS_TYPE_REPORT = "SecurityAnalysis";
+
     private NetworkStoreService networkStoreService;
 
     private ActionsService actionsService;
@@ -218,13 +220,20 @@ public class SecurityAnalysisWorkerService {
         return Mono.zip(network, contingencies)
                 .flatMap(tuple -> {
 
-                    Reporter reporter = context.getReportUuid() != null ? new ReporterModel("SecurityAnalysis", "Security analysis") : Reporter.NO_OP;
+                    Reporter rootReporter = Reporter.NO_OP;
+                    Reporter reporter = Reporter.NO_OP;
+                    if (context.getReportUuid() != null) {
+                        String rootReporterId = context.getReporterId() + "@" + AS_TYPE_REPORT;
+                        rootReporter = new ReporterModel(rootReporterId, rootReporterId);
+                        reporter = rootReporter.createSubReporter(AS_TYPE_REPORT, AS_TYPE_REPORT + " (${providerToUse})", "providerToUse", context.getProvider());
+                    }
 
                     CompletableFuture<SecurityAnalysisResult> future = runASAsync(context, tuple, reporter, resultUuid);
 
                     Mono<SecurityAnalysisResult> result = future == null ? Mono.empty() : Mono.fromCompletionStage(future);
                     if (context.getReportUuid() != null) {
-                        return result.zipWhen(r -> reportService.sendReport(context.getReportUuid(), reporter)
+                        Reporter finalRootReporter = rootReporter;
+                        return result.zipWhen(r -> reportService.sendReport(context.getReportUuid(), finalRootReporter)
                                 .thenReturn("") /* because zipWhen needs 2 non empty mono */)
                         .map(Tuple2::getT1);
                     } else {

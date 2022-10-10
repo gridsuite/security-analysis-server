@@ -22,14 +22,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static org.gridsuite.securityanalysis.server.service.NotificationService.CONTINGENCY_LIST_NAMES_HEADER;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.NETWORK_UUID_HEADER;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.OTHER_NETWORK_UUIDS_HEADER;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.PROVIDER_HEADER;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.RECEIVER_HEADER;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.REPORT_UUID_HEADER;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.RESULT_UUID_HEADER;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.VARIANT_ID_HEADER;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.*;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -89,7 +82,8 @@ public class SecurityAnalysisResultContext {
             throw new UncheckedIOException(e);
         }
         UUID reportUuid = headers.containsKey(REPORT_UUID_HEADER) ? UUID.fromString((String) headers.get(REPORT_UUID_HEADER)) : null;
-        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, variantId, otherNetworkUuids, contingencyListNames, receiver, provider, parameters, reportUuid);
+        String reporterId = headers.containsKey(REPORTER_ID_HEADER) ? (String) headers.get(REPORTER_ID_HEADER) : null;
+        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, variantId, otherNetworkUuids, contingencyListNames, receiver, provider, parameters, reportUuid, reporterId);
         return new SecurityAnalysisResultContext(resultUuid, runContext);
     }
 
@@ -110,6 +104,7 @@ public class SecurityAnalysisResultContext {
                 .setHeader(RECEIVER_HEADER, runContext.getReceiver())
                 .setHeader(PROVIDER_HEADER, runContext.getProvider())
                 .setHeader(REPORT_UUID_HEADER, runContext.getReportUuid())
+                .setHeader(REPORTER_ID_HEADER, runContext.getReporterId())
                 .build();
     }
 }
