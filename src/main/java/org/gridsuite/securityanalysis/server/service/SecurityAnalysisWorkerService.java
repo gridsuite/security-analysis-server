@@ -104,7 +104,7 @@ public class SecurityAnalysisWorkerService {
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.notificationService = Objects.requireNonNull(notificationService);
         this.securityAnalysisExecutionService = Objects.requireNonNull(securityAnalysisExecutionService);
-        securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
+        this.securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
     }
 
     public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier) {
@@ -149,15 +149,15 @@ public class SecurityAnalysisWorkerService {
     }
 
     private CompletableFuture<SecurityAnalysisResult> runASAsync(SecurityAnalysisRunContext context,
-                                                               Tuple2<Network, List<Contingency>> tuple,
-                                                               Reporter reporter,
-                                                               UUID resultUuid) {
+                                                                 SecurityAnalysis.Runner securityAnalysisRunner,
+                                                                 Tuple2<Network, List<Contingency>> tuple,
+                                                                 Reporter reporter,
+                                                                 UUID resultUuid) {
         lockRunAndCancelAS.lock();
         try {
             if (resultUuid != null && cancelComputationRequests.get(resultUuid) != null) {
                 return null;
             }
-            SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
             String variantId = context.getVariantId() != null ? context.getVariantId() : VariantManagerConstants.INITIAL_VARIANT_ID;
 
             CompletableFuture<SecurityAnalysisResult> future = securityAnalysisRunner.runAsync(
@@ -220,15 +220,17 @@ public class SecurityAnalysisWorkerService {
         return Mono.zip(network, contingencies)
                 .flatMap(tuple -> {
 
+                    SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
+
                     Reporter rootReporter = Reporter.NO_OP;
                     Reporter reporter = Reporter.NO_OP;
                     if (context.getReportUuid() != null) {
-                        String rootReporterId = context.getReporterId() + "@" + AS_TYPE_REPORT;
+                        String rootReporterId = context.getReporterId() == null ? AS_TYPE_REPORT : context.getReporterId() + "@" + AS_TYPE_REPORT;
                         rootReporter = new ReporterModel(rootReporterId, rootReporterId);
-                        reporter = rootReporter.createSubReporter(AS_TYPE_REPORT, AS_TYPE_REPORT + " (${providerToUse})", "providerToUse", context.getProvider());
+                        reporter = rootReporter.createSubReporter(AS_TYPE_REPORT, AS_TYPE_REPORT + " (${providerToUse})", "providerToUse", securityAnalysisRunner.getName());
                     }
 
-                    CompletableFuture<SecurityAnalysisResult> future = runASAsync(context, tuple, reporter, resultUuid);
+                    CompletableFuture<SecurityAnalysisResult> future = runASAsync(context, securityAnalysisRunner, tuple, reporter, resultUuid);
 
                     Mono<SecurityAnalysisResult> result = future == null ? Mono.empty() : Mono.fromCompletionStage(future);
                     if (context.getReportUuid() != null) {
