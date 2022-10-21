@@ -68,6 +68,8 @@ public class SecurityAnalysisWorkerService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisWorkerService.class);
 
+    private static final String AS_TYPE_REPORT = "SecurityAnalysis";
+
     private NetworkStoreService networkStoreService;
 
     private ActionsService actionsService;
@@ -102,7 +104,7 @@ public class SecurityAnalysisWorkerService {
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.notificationService = Objects.requireNonNull(notificationService);
         this.securityAnalysisExecutionService = Objects.requireNonNull(securityAnalysisExecutionService);
-        securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
+        this.securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
     }
 
     public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier) {
@@ -147,15 +149,15 @@ public class SecurityAnalysisWorkerService {
     }
 
     private CompletableFuture<SecurityAnalysisResult> runASAsync(SecurityAnalysisRunContext context,
-                                                               Tuple2<Network, List<Contingency>> tuple,
-                                                               Reporter reporter,
-                                                               UUID resultUuid) {
+                                                                 SecurityAnalysis.Runner securityAnalysisRunner,
+                                                                 Tuple2<Network, List<Contingency>> tuple,
+                                                                 Reporter reporter,
+                                                                 UUID resultUuid) {
         lockRunAndCancelAS.lock();
         try {
             if (resultUuid != null && cancelComputationRequests.get(resultUuid) != null) {
                 return null;
             }
-            SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
             String variantId = context.getVariantId() != null ? context.getVariantId() : VariantManagerConstants.INITIAL_VARIANT_ID;
 
             CompletableFuture<SecurityAnalysisResult> future = securityAnalysisRunner.runAsync(
@@ -218,13 +220,22 @@ public class SecurityAnalysisWorkerService {
         return Mono.zip(network, contingencies)
                 .flatMap(tuple -> {
 
-                    Reporter reporter = context.getReportUuid() != null ? new ReporterModel("SecurityAnalysis", "Security analysis") : Reporter.NO_OP;
+                    SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
 
-                    CompletableFuture<SecurityAnalysisResult> future = runASAsync(context, tuple, reporter, resultUuid);
+                    Reporter rootReporter = Reporter.NO_OP;
+                    Reporter reporter = Reporter.NO_OP;
+                    if (context.getReportUuid() != null) {
+                        String rootReporterId = context.getReporterId() == null ? AS_TYPE_REPORT : context.getReporterId() + "@" + AS_TYPE_REPORT;
+                        rootReporter = new ReporterModel(rootReporterId, rootReporterId);
+                        reporter = rootReporter.createSubReporter(AS_TYPE_REPORT, AS_TYPE_REPORT + " (${providerToUse})", "providerToUse", securityAnalysisRunner.getName());
+                    }
+
+                    CompletableFuture<SecurityAnalysisResult> future = runASAsync(context, securityAnalysisRunner, tuple, reporter, resultUuid);
 
                     Mono<SecurityAnalysisResult> result = future == null ? Mono.empty() : Mono.fromCompletionStage(future);
                     if (context.getReportUuid() != null) {
-                        return result.zipWhen(r -> reportService.sendReport(context.getReportUuid(), reporter)
+                        Reporter finalRootReporter = rootReporter;
+                        return result.zipWhen(r -> reportService.sendReport(context.getReportUuid(), finalRootReporter)
                                 .thenReturn("") /* because zipWhen needs 2 non empty mono */)
                         .map(Tuple2::getT1);
                     } else {
