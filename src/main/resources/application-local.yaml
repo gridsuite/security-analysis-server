@@ -9,8 +9,6 @@ powsybl-ws:
   database:
    host: localhost
 
-
-
 backing-services:
   actions-server:
     base-uri: http://localhost:5022
