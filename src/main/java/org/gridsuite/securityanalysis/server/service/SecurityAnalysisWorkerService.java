@@ -15,6 +15,7 @@ import com.powsybl.contingency.Contingency;
 import com.powsybl.iidm.mergingview.MergingView;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
+import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.security.LimitViolationFilter;
@@ -259,7 +260,7 @@ public class SecurityAnalysisWorkerService {
                             LOGGER.info("Just run in {}s", TimeUnit.NANOSECONDS.toSeconds(nanoTime - startTime.getAndSet(nanoTime)));
                             return Mono.fromRunnable(() -> resultRepository.insert(resultContext.getResultUuid(), result))
                                     .then(Mono.fromRunnable(() -> resultRepository.insertStatus(List.of(resultContext.getResultUuid()),
-                                            result.getPreContingencyLimitViolationsResult().isComputationOk() ? SecurityAnalysisStatus.CONVERGED.name() : SecurityAnalysisStatus.DIVERGED.name())))
+                                            result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED ? SecurityAnalysisStatus.CONVERGED : SecurityAnalysisStatus.DIVERGED)))
                                     .then(Mono.just(result))
                                     .doFinally(ignored -> {
                                         long finalNanoTime = System.nanoTime();

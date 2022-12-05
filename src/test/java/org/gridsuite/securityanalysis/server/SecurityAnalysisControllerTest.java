@@ -18,6 +18,7 @@ import com.powsybl.security.SecurityAnalysis;
 import com.powsybl.security.SecurityAnalysisProvider;
 
 import com.powsybl.security.SecurityAnalysisResult;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.ReportService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
@@ -309,7 +310,7 @@ public class SecurityAnalysisControllerTest {
                 .uri("/" + VERSION + "/results/" + RESULT_UUID + "/status")
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(String.class)
+                .expectBody(SecurityAnalysisStatus.class)
                 .isEqualTo(null);
 
         webTestClient.put()
@@ -321,8 +322,8 @@ public class SecurityAnalysisControllerTest {
                 .uri("/" + VERSION + "/results/" + RESULT_UUID + "/status")
                 .exchange()
                 .expectStatus().isOk()
-                .expectBody(String.class)
-                .isEqualTo("NOT_DONE");
+                .expectBody(SecurityAnalysisStatus.class)
+                .isEqualTo(SecurityAnalysisStatus.NOT_DONE);
     }
 
     @Test
