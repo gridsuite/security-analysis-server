@@ -1,0 +1,17 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-3.10.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.10.xsd">
+    <changeSet author="jamgotchiangeo" id="1669636012822">
+        <addColumn tableName="computation_status">
+            <column name="status" type="varchar(21)"/>
+        </addColumn>
+        <update tableName="computation_status">
+            <column name="status" value="CONVERGED"/>
+            <where>ok=true</where>
+        </update>
+        <update tableName="computation_status">
+            <column name="status" value="FAILED"/>
+            <where>ok=false</where>
+        </update>
+        <dropNotNullConstraint tableName="computation_status" columnName="ok" columnDataType="BOOLEAN" />
+    </changeSet>
+</databaseChangeLog>

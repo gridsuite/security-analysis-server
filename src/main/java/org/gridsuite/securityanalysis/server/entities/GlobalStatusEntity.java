@@ -10,13 +10,12 @@ import java.util.UUID;
 
 import java.io.Serializable;
 
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 
 /**
  * @author Franck Lecuyer <franck.lecuyer at rte-france.com>
@@ -31,5 +30,6 @@ public class GlobalStatusEntity implements Serializable {
     @Id
     private UUID resultUuid;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private SecurityAnalysisStatus status;
 }
