@@ -47,7 +47,7 @@ public class ComputationStatusEntity implements Serializable {
     private String contingencyId;
 
     /**
-     * We kee a String as it could model LoadFlowResult.ComponentResult.Status or PostContingencyComputationStatus.
+     * We keep a String as it could model LoadFlowResult.ComponentResult.Status or PostContingencyComputationStatus.
      */
     private String status;
 }
