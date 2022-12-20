@@ -12,6 +12,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 import com.powsybl.commons.reporter.Reporter;
+import com.powsybl.loadflow.LoadFlowResult;
+import com.powsybl.security.*;
 import com.powsybl.security.action.Action;
 import com.powsybl.security.strategy.OperatorStrategy;
 import org.slf4j.Logger;
@@ -32,15 +34,6 @@ import com.powsybl.contingency.ThreeWindingsTransformerContingency;
 import com.powsybl.contingency.TwoWindingsTransformerContingency;
 import com.powsybl.iidm.network.Branch;
 import com.powsybl.iidm.network.Network;
-import com.powsybl.security.LimitViolation;
-import com.powsybl.security.LimitViolationDetector;
-import com.powsybl.security.LimitViolationFilter;
-import com.powsybl.security.LimitViolationType;
-import com.powsybl.security.LimitViolationsResult;
-import com.powsybl.security.SecurityAnalysisParameters;
-import com.powsybl.security.SecurityAnalysisProvider;
-import com.powsybl.security.SecurityAnalysisReport;
-import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.interceptors.SecurityAnalysisInterceptor;
 import com.powsybl.security.monitor.StateMonitor;
 import com.powsybl.security.results.PostContingencyResult;
@@ -80,16 +73,16 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     static final LimitViolation LIMIT_VIOLATION_3 = new LimitViolation("l6", LimitViolationType.CURRENT, "", 20 * 60, 10, 1, 11, Branch.Side.ONE);
     static final LimitViolation LIMIT_VIOLATION_4 = new LimitViolation("vl7", LimitViolationType.HIGH_VOLTAGE, "", 0, 400, 1, 410, null);
 
-    static final SecurityAnalysisResult RESULT = new SecurityAnalysisResult(new LimitViolationsResult(true, List.of(LIMIT_VIOLATION_1)),
-            CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency, true, List.of(LIMIT_VIOLATION_2)))
+    static final SecurityAnalysisResult RESULT = new SecurityAnalysisResult(new LimitViolationsResult(List.of(LIMIT_VIOLATION_1)), LoadFlowResult.ComponentResult.Status.CONVERGED,
+            CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, List.of(LIMIT_VIOLATION_2)))
             .collect(Collectors.toList()));
 
-    static final SecurityAnalysisResult RESULT_VARIANT = new SecurityAnalysisResult(new LimitViolationsResult(true, List.of(LIMIT_VIOLATION_3)),
-        CONTINGENCIES_VARIANT.stream().map(contingency -> new PostContingencyResult(contingency, true, List.of(LIMIT_VIOLATION_4)))
+    static final SecurityAnalysisResult RESULT_VARIANT = new SecurityAnalysisResult(new LimitViolationsResult(List.of(LIMIT_VIOLATION_3)), LoadFlowResult.ComponentResult.Status.CONVERGED,
+        CONTINGENCIES_VARIANT.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, List.of(LIMIT_VIOLATION_4)))
             .collect(Collectors.toList()));
 
-    static final SecurityAnalysisResult RESULT_FILTERED = new SecurityAnalysisResult(new LimitViolationsResult(true, List.of(LIMIT_VIOLATION_1)),
-        CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency, true, Collections.emptyList()))
+    static final SecurityAnalysisResult RESULT_FILTERED = new SecurityAnalysisResult(new LimitViolationsResult(List.of(LIMIT_VIOLATION_1)), LoadFlowResult.ComponentResult.Status.CONVERGED,
+        CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, Collections.emptyList()))
             .collect(Collectors.toList()));
 
     static final SecurityAnalysisReport REPORT = new SecurityAnalysisReport(RESULT);
