@@ -23,7 +23,7 @@ import static org.junit.Assert.*;
 @SpringBootTest
 public class SecurityAnalysisRunnerSupplierTest {
 
-    @Value("${loadflow.default-provider}")
+    @Value("${powsybl-ws.loadflow.default-provider}")
     String defaultLoadflowProvider;
 
     @Autowired

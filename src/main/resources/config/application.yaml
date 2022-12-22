@@ -29,7 +29,3 @@ spring:
 powsybl-ws:
   database:
     name: sa
-
-# default values for loadflow providers "Hades2" or "OpenLoadFlow"
-loadflow:
-  default-provider: OpenLoadFlow
