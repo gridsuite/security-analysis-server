@@ -151,4 +151,12 @@ public class SecurityAnalysisController {
         Mono<Void> result = service.stop(resultUuid, receiver);
         return ResponseEntity.ok().body(result);
     }
+
+    @GetMapping(value = "/providers", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get all security analysis providers")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200")})
+    public ResponseEntity<List<String>> getProviders() {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
+                .body(service.getProviders());
+    }
 }

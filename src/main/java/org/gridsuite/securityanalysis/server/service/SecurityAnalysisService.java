@@ -7,7 +7,9 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.powsybl.commons.util.ServiceLoaderCache;
 import com.powsybl.security.LimitViolationType;
+import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
@@ -18,6 +20,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -25,13 +28,13 @@ import java.util.UUID;
  */
 @Service
 public class SecurityAnalysisService {
-    private SecurityAnalysisResultRepository resultRepository;
+    private final SecurityAnalysisResultRepository resultRepository;
 
-    private UuidGeneratorService uuidGeneratorService;
+    private final UuidGeneratorService uuidGeneratorService;
 
-    private NotificationService notificationService;
+    private final NotificationService notificationService;
 
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
 
     public SecurityAnalysisService(SecurityAnalysisResultRepository resultRepository,
                                    UuidGeneratorService uuidGeneratorService,
@@ -77,5 +80,11 @@ public class SecurityAnalysisService {
 
     public Mono<Void> stop(UUID resultUuid, String receiver) {
         return Mono.fromRunnable(() -> notificationService.emitCancelAnalysisMessage(new SecurityAnalysisCancelContext(resultUuid, receiver).toMessage())).then();
+    }
+
+    public List<String> getProviders() {
+        return new ServiceLoaderCache<>(SecurityAnalysisProvider.class).getServices().stream()
+                .map(SecurityAnalysisProvider::getName)
+                .collect(Collectors.toList());
     }
 }

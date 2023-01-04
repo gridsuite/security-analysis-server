@@ -47,6 +47,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Constructor;
+import java.util.List;
 import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
@@ -384,4 +385,14 @@ public class SecurityAnalysisControllerTest {
                 .value(new MatcherJson<>(mapper, RESULT));
     }
 
+    @Test
+    public void getProvidersTest() {
+        webTestClient.get()
+                .uri("/" + VERSION + "/providers")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(List.class)
+                .isEqualTo(List.of("OpenLoadFlow", "Hades2"));
+    }
 }
