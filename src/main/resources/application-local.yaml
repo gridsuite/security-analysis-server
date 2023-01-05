@@ -9,11 +9,14 @@ powsybl-ws:
   database:
    host: localhost
 
-network-store-server:
-  base-uri: http://localhost:8080
+powsybl:
+  services:
+    network-store-server:
+      base-uri: http://localhost:8080
 
-actions-server:
-  base-uri: http://localhost:5022
-
-report-server:
-  base-uri: http://localhost:5028
+gridsuite:
+  services:
+    actions-server:
+      base-uri: http://localhost:5022
+    report-server:
+      base-uri: http://localhost:5028
