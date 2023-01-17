@@ -29,7 +29,7 @@ public class ReportService {
 
     @Autowired
     public ReportService(WebClient.Builder builder,
-                         @Value("${report-server.base-uri:http://report-server/}") String baseUri) {
+                         @Value("${gridsuite.services.report-server.base-uri:http://report-server/}") String baseUri) {
         webClient = builder.baseUrl(baseUri)
                 .build();
     }
