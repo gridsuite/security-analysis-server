@@ -32,6 +32,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
+import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -154,9 +155,16 @@ public class SecurityAnalysisController {
 
     @GetMapping(value = "/providers", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get all security analysis providers")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200")})
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Security analysis providers have not been found")})
     public ResponseEntity<List<String>> getProviders() {
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
                 .body(service.getProviders());
+    }
+
+    @GetMapping(value = "/default-provider", produces = TEXT_PLAIN_VALUE)
+    @Operation(summary = "Get security analysis default provider")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "The security analysis default provider has not been found"))
+    public ResponseEntity<String> getDefaultProvider() {
+        return ResponseEntity.ok().body(service.getDefaultProvider());
     }
 }

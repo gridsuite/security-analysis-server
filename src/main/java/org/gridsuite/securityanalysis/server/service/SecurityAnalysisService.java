@@ -13,6 +13,7 @@ import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -36,14 +37,18 @@ public class SecurityAnalysisService {
 
     private final ObjectMapper objectMapper;
 
+    private final String defaultProvider;
+
     public SecurityAnalysisService(SecurityAnalysisResultRepository resultRepository,
                                    UuidGeneratorService uuidGeneratorService,
                                    ObjectMapper objectMapper,
-                                   NotificationService notificationService) {
+                                   NotificationService notificationService,
+                                   @Value("${security-analysis.default-provider}") String defaultProvider) {
         this.resultRepository = Objects.requireNonNull(resultRepository);
         this.uuidGeneratorService = Objects.requireNonNull(uuidGeneratorService);
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.notificationService = Objects.requireNonNull(notificationService);
+        this.defaultProvider = Objects.requireNonNull(defaultProvider);
     }
 
     public Mono<UUID> runAndSaveResult(SecurityAnalysisRunContext runContext) {
@@ -86,5 +91,9 @@ public class SecurityAnalysisService {
         return new ServiceLoaderCache<>(SecurityAnalysisProvider.class).getServices().stream()
                 .map(SecurityAnalysisProvider::getName)
                 .collect(Collectors.toList());
+    }
+
+    public String getDefaultProvider() {
+        return defaultProvider;
     }
 }
