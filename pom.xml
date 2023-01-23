@@ -47,7 +47,7 @@
         <java.version>11</java.version>
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
         <jaxb-runtime.version>2.4.0-b180830.0438</jaxb-runtime.version>
-        <jib.from.image>gridsuite/java-hades2</jib.from.image>
+        <jib.from.image>gridsuite/java-simulator</jib.from.image>
         <gridsuite-dependencies.version>21</gridsuite-dependencies.version>
         <liquibase-hibernate-package>org.gridsuite.securityanalysis.server</liquibase-hibernate-package>
     </properties>
@@ -159,6 +159,11 @@
         <dependency>
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-config-classic</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.powsybl</groupId>
+            <artifactId>powsybl-dynaflow</artifactId>
             <scope>runtime</scope>
         </dependency>
         <dependency>
