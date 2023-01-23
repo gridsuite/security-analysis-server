@@ -16,7 +16,6 @@ import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.SecurityAnalysis;
 import com.powsybl.security.SecurityAnalysisProvider;
-
 import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
@@ -51,6 +50,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Constructor;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -412,4 +413,25 @@ public class SecurityAnalysisControllerTest {
                 .value(new MatcherJson<>(mapper, RESULT));
     }
 
+    @Test
+    public void getProvidersTest() {
+        webTestClient.get()
+                .uri("/" + VERSION + "/providers")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(List.class)
+                .isEqualTo(List.of("OpenLoadFlow", "Hades2"));
+    }
+
+    @Test
+    public void getDefaultProviderTest() {
+        webTestClient.get()
+                .uri("/" + VERSION + "/default-provider")
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(new MediaType(MediaType.TEXT_PLAIN, StandardCharsets.UTF_8))
+                .expectBody(String.class)
+                .isEqualTo("OpenLoadFlow");
+    }
 }

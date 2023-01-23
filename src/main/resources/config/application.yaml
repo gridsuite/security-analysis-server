@@ -31,5 +31,5 @@ powsybl-ws:
     name: sa
 
 # default values for loadflow providers "Hades2" or "OpenLoadFlow"
-loadflow:
+security-analysis:
   default-provider: OpenLoadFlow
