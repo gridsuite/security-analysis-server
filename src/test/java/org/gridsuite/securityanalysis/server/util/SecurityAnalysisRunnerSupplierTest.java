@@ -23,8 +23,8 @@ import static org.junit.Assert.*;
 @SpringBootTest
 public class SecurityAnalysisRunnerSupplierTest {
 
-    @Value("${loadflow.default-provider}")
-    String defaultLoadflowProvider;
+    @Value("${security-analysis.default-provider}")
+    String defaultSecurityAnalysisProvider;
 
     @Autowired
     SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier;
@@ -33,7 +33,7 @@ public class SecurityAnalysisRunnerSupplierTest {
     public void test() {
         assertEquals("OpenLoadFlow", securityAnalysisRunnerSupplier.getRunner("OpenLoadFlow").getName());
         assertEquals("Hades2", securityAnalysisRunnerSupplier.getRunner("Hades2").getName());
-        assertEquals(defaultLoadflowProvider, securityAnalysisRunnerSupplier.getRunner(null).getName());
+        assertEquals(defaultSecurityAnalysisProvider, securityAnalysisRunnerSupplier.getRunner(null).getName());
         PowsyblException e = assertThrows(PowsyblException.class, () -> securityAnalysisRunnerSupplier.getRunner("XXX"));
         assertEquals("SecurityAnalysisProvider 'XXX' not found", e.getMessage());
     }

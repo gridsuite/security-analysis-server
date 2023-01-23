@@ -7,10 +7,13 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.powsybl.commons.util.ServiceLoaderCache;
 import com.powsybl.security.LimitViolationType;
+import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -18,6 +21,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -25,22 +29,26 @@ import java.util.UUID;
  */
 @Service
 public class SecurityAnalysisService {
-    private SecurityAnalysisResultRepository resultRepository;
+    private final SecurityAnalysisResultRepository resultRepository;
 
-    private UuidGeneratorService uuidGeneratorService;
+    private final UuidGeneratorService uuidGeneratorService;
 
-    private NotificationService notificationService;
+    private final NotificationService notificationService;
 
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
+
+    private final String defaultProvider;
 
     public SecurityAnalysisService(SecurityAnalysisResultRepository resultRepository,
                                    UuidGeneratorService uuidGeneratorService,
                                    ObjectMapper objectMapper,
-                                   NotificationService notificationService) {
+                                   NotificationService notificationService,
+                                   @Value("${security-analysis.default-provider}") String defaultProvider) {
         this.resultRepository = Objects.requireNonNull(resultRepository);
         this.uuidGeneratorService = Objects.requireNonNull(uuidGeneratorService);
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.notificationService = Objects.requireNonNull(notificationService);
+        this.defaultProvider = Objects.requireNonNull(defaultProvider);
     }
 
     public Mono<UUID> runAndSaveResult(SecurityAnalysisRunContext runContext) {
@@ -77,5 +85,15 @@ public class SecurityAnalysisService {
 
     public Mono<Void> stop(UUID resultUuid, String receiver) {
         return Mono.fromRunnable(() -> notificationService.emitCancelAnalysisMessage(new SecurityAnalysisCancelContext(resultUuid, receiver).toMessage())).then();
+    }
+
+    public List<String> getProviders() {
+        return new ServiceLoaderCache<>(SecurityAnalysisProvider.class).getServices().stream()
+                .map(SecurityAnalysisProvider::getName)
+                .collect(Collectors.toList());
+    }
+
+    public String getDefaultProvider() {
+        return defaultProvider;
     }
 }
