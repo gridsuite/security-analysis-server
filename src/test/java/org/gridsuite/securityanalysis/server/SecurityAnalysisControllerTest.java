@@ -393,7 +393,7 @@ public class SecurityAnalysisControllerTest {
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
                 .expectBody(List.class)
-                .isEqualTo(List.of("OpenLoadFlow", "Hades2"));
+                .isEqualTo(List.of("DynawoSecurityAnalysis", "OpenLoadFlow", "Hades2"));
     }
 
     @Test
