@@ -7,7 +7,6 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.powsybl.commons.util.ServiceLoaderCache;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.security.SecurityAnalysisResult;
@@ -88,7 +87,7 @@ public class SecurityAnalysisService {
     }
 
     public List<String> getProviders() {
-        return new ServiceLoaderCache<>(SecurityAnalysisProvider.class).getServices().stream()
+        return SecurityAnalysisProvider.findAll().stream()
                 .map(SecurityAnalysisProvider::getName)
                 .collect(Collectors.toList());
     }
