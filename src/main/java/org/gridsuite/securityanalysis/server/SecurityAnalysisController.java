@@ -6,6 +6,10 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.powsybl.commons.PowsyblException;
+import com.powsybl.commons.extensions.Extension;
+import com.powsybl.loadflow.LoadFlowParameters;
+import com.powsybl.loadflow.LoadFlowProvider;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.security.SecurityAnalysisResult;
@@ -16,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisRunContext;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisService;
@@ -55,8 +60,21 @@ public class SecurityAnalysisController {
         return otherNetworkUuids != null ? otherNetworkUuids : Collections.emptyList();
     }
 
-    private static SecurityAnalysisParameters getNonNullParameters(SecurityAnalysisParameters parameters) {
-        return parameters != null ? parameters : new SecurityAnalysisParameters();
+    private static SecurityAnalysisParameters getParameters(SecurityAnalysisParametersInfos parameters, String provider) {
+        if (parameters == null || parameters.getParameters() == null) {
+            return new SecurityAnalysisParameters(); // default params
+        }
+        SecurityAnalysisParameters params = parameters.getParameters();
+        if (parameters.getLoadFlowSpecificParameters() == null || parameters.getLoadFlowSpecificParameters().isEmpty()) {
+            return params; // no specific LF params
+        }
+        LoadFlowProvider lfProvider = LoadFlowProvider.findAll().stream()
+                .filter(p -> p.getName().equals(provider))
+                .findFirst().orElseThrow(() -> new PowsyblException("Model not found " + provider));
+        Extension<LoadFlowParameters> extension = lfProvider.loadSpecificParameters(parameters.getLoadFlowSpecificParameters())
+                .orElseThrow(() -> new PowsyblException("Cannot add specific loadflow parameters with model " + provider));
+        params.getLoadFlowParameters().addExtension((Class) extension.getClass(), extension);
+        return params;
     }
 
     @PostMapping(value = "/networks/{networkUuid}/run", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
@@ -72,17 +90,18 @@ public class SecurityAnalysisController {
                                                             @Parameter(description = "Provider") @RequestParam(name = "provider", required = false) String provider,
                                                             @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
                                                             @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
-                                                            @RequestBody(required = false) SecurityAnalysisParameters parameters) {
-        SecurityAnalysisParameters nonNullParameters = getNonNullParameters(parameters);
+                                                            @RequestBody(required = false) SecurityAnalysisParametersInfos parameters) {
+        String providerToUse = provider != null ? provider : service.getDefaultProvider();
+        SecurityAnalysisParameters saParameters = getParameters(parameters, providerToUse);
         List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
-        Mono<SecurityAnalysisResult> result = workerService.run(new SecurityAnalysisRunContext(networkUuid, variantId, nonNullOtherNetworkUuids, contigencyListNames, null, provider, nonNullParameters, reportUuid, reporterId));
+        Mono<SecurityAnalysisResult> result = workerService.run(new SecurityAnalysisRunContext(networkUuid, variantId, nonNullOtherNetworkUuids, contigencyListNames, null, providerToUse, saParameters, reportUuid, reporterId));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
     }
 
     @PostMapping(value = "/networks/{networkUuid}/run-and-save", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     @Operation(summary = "Run a security analysis on a network and save results in the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200",
-                                        description = "The security analysis has been performed and results have been save to database",
+                                        description = "The security analysis has been performed and results have been saved to database",
                                         content = {@Content(mediaType = APPLICATION_JSON_VALUE,
                                                             schema = @Schema(implementation = SecurityAnalysisResult.class))})})
     public ResponseEntity<Mono<UUID>> runAndSave(@Parameter(description = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
@@ -93,10 +112,11 @@ public class SecurityAnalysisController {
                                                  @Parameter(description = "Provider") @RequestParam(name = "provider", required = false) String provider,
                                                  @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
                                                  @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
-                                                 @RequestBody(required = false) SecurityAnalysisParameters parameters) {
-        SecurityAnalysisParameters nonNullParameters = getNonNullParameters(parameters);
+                                                 @RequestBody(required = false) SecurityAnalysisParametersInfos parameters) {
+        String providerToUse = provider != null ? provider : service.getDefaultProvider();
+        SecurityAnalysisParameters saParameters = getParameters(parameters, providerToUse);
         List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
-        Mono<UUID> resultUuid = service.runAndSaveResult(new SecurityAnalysisRunContext(networkUuid, variantId, nonNullOtherNetworkUuids, contigencyListNames, receiver, provider, nonNullParameters, reportUuid, reporterId));
+        Mono<UUID> resultUuid = service.runAndSaveResult(new SecurityAnalysisRunContext(networkUuid, variantId, nonNullOtherNetworkUuids, contigencyListNames, receiver, providerToUse, saParameters, reportUuid, reporterId));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(resultUuid);
     }
 
