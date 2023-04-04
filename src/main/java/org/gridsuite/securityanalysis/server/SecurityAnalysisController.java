@@ -61,11 +61,9 @@ public class SecurityAnalysisController {
     }
 
     private static SecurityAnalysisParameters getParameters(SecurityAnalysisParametersInfos parameters, String provider) {
-        if (parameters == null || parameters.getParameters() == null) {
-            return new SecurityAnalysisParameters(); // default params
-        }
-        SecurityAnalysisParameters params = parameters.getParameters();
-        if (parameters.getLoadFlowSpecificParameters() == null || parameters.getLoadFlowSpecificParameters().isEmpty()) {
+        SecurityAnalysisParameters params = parameters == null || parameters.getParameters() == null ?
+                new SecurityAnalysisParameters() : parameters.getParameters();
+        if (parameters == null ||  parameters.getLoadFlowSpecificParameters() == null || parameters.getLoadFlowSpecificParameters().isEmpty()) {
             return params; // no specific LF params
         }
         LoadFlowProvider lfProvider = LoadFlowProvider.findAll().stream()
