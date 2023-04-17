@@ -6,7 +6,12 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
+import com.powsybl.commons.PowsyblException;
+import com.powsybl.commons.extensions.Extension;
+import com.powsybl.loadflow.LoadFlowParameters;
+import com.powsybl.loadflow.LoadFlowProvider;
 import com.powsybl.security.SecurityAnalysisParameters;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
 
 import java.util.List;
 import java.util.Objects;
@@ -36,6 +41,19 @@ public class SecurityAnalysisRunContext {
     private final String reporterId;
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<UUID> otherNetworkUuids, List<String> contingencyListNames,
+                                      String receiver, String provider, SecurityAnalysisParametersInfos parameters, UUID reportUuid, String reporterId) {
+        this.networkUuid = Objects.requireNonNull(networkUuid);
+        this.variantId = variantId;
+        this.otherNetworkUuids = Objects.requireNonNull(otherNetworkUuids);
+        this.contingencyListNames = Objects.requireNonNull(contingencyListNames);
+        this.receiver = receiver;
+        this.provider = provider;
+        this.parameters = buildParameters(parameters, provider);
+        this.reportUuid = reportUuid;
+        this.reporterId = reporterId;
+    }
+
+    public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<UUID> otherNetworkUuids, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParameters parameters, UUID reportUuid, String reporterId) {
         this.networkUuid = Objects.requireNonNull(networkUuid);
         this.variantId = variantId;
@@ -46,6 +64,21 @@ public class SecurityAnalysisRunContext {
         this.parameters = Objects.requireNonNull(parameters);
         this.reportUuid = reportUuid;
         this.reporterId = reporterId;
+    }
+
+    private SecurityAnalysisParameters buildParameters(SecurityAnalysisParametersInfos parameters, String provider) {
+        SecurityAnalysisParameters params = parameters == null || parameters.getParameters() == null ?
+                SecurityAnalysisParameters.load() : parameters.getParameters();
+        if (parameters == null || parameters.getLoadFlowSpecificParameters() == null || parameters.getLoadFlowSpecificParameters().isEmpty()) {
+            return params; // no specific LF params
+        }
+        LoadFlowProvider lfProvider = LoadFlowProvider.findAll().stream()
+                .filter(p -> p.getName().equals(provider))
+                .findFirst().orElseThrow(() -> new PowsyblException("Security analysis provider not found " + provider));
+        Extension<LoadFlowParameters> extension = lfProvider.loadSpecificParameters(parameters.getLoadFlowSpecificParameters())
+                .orElseThrow(() -> new PowsyblException("Cannot add specific loadflow parameters with security analysis provider " + provider));
+        params.getLoadFlowParameters().addExtension((Class) extension.getClass(), extension);
+        return params;
     }
 
     public UUID getNetworkUuid() {

@@ -213,7 +213,7 @@ public class SecurityAnalysisControllerTest {
         simpleRunRequest(SecurityAnalysisParametersInfos.builder()
                 .parameters(SecurityAnalysisParameters.load())
                 .build());
-        // with empty specific LFParams
+        // with 2 specific LFParams
         simpleRunRequest(SecurityAnalysisParametersInfos.builder()
                 .parameters(SecurityAnalysisParameters.load())
                 .loadFlowSpecificParameters(Map.of("reactiveRangeCheckMode", "TARGET_P", "plausibleActivePowerLimit", "4000.0"))
