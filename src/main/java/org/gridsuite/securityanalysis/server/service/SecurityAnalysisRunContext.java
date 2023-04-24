@@ -42,15 +42,7 @@ public class SecurityAnalysisRunContext {
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<UUID> otherNetworkUuids, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParametersInfos parameters, UUID reportUuid, String reporterId) {
-        this.networkUuid = Objects.requireNonNull(networkUuid);
-        this.variantId = variantId;
-        this.otherNetworkUuids = Objects.requireNonNull(otherNetworkUuids);
-        this.contingencyListNames = Objects.requireNonNull(contingencyListNames);
-        this.receiver = receiver;
-        this.provider = provider;
-        this.parameters = buildParameters(parameters, provider);
-        this.reportUuid = reportUuid;
-        this.reporterId = reporterId;
+        this(networkUuid, variantId, otherNetworkUuids, contingencyListNames, receiver, provider, buildParameters(parameters, provider), reportUuid, reporterId);
     }
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<UUID> otherNetworkUuids, List<String> contingencyListNames,
@@ -66,7 +58,7 @@ public class SecurityAnalysisRunContext {
         this.reporterId = reporterId;
     }
 
-    private SecurityAnalysisParameters buildParameters(SecurityAnalysisParametersInfos parameters, String provider) {
+    private static SecurityAnalysisParameters buildParameters(SecurityAnalysisParametersInfos parameters, String provider) {
         SecurityAnalysisParameters params = parameters == null || parameters.getParameters() == null ?
                 SecurityAnalysisParameters.load() : parameters.getParameters();
         if (parameters == null || parameters.getLoadFlowSpecificParameters() == null || parameters.getLoadFlowSpecificParameters().isEmpty()) {
