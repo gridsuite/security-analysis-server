@@ -15,8 +15,11 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.SecurityAnalysis;
+import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.security.SecurityAnalysisResult;
+import lombok.SneakyThrows;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.ReportService;
@@ -48,6 +51,7 @@ import reactor.core.publisher.Mono;
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
@@ -188,11 +192,39 @@ public class SecurityAnalysisControllerTest {
             .expectStatus().isOk();
     }
 
+    @SneakyThrows
+    public void simpleRunRequest(SecurityAnalysisParametersInfos lfParams) {
+        webTestClient.post()
+                .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME_VARIANT + "&variantId=" + VARIANT_3_ID)
+                .bodyValue(lfParams)
+                .exchange()
+                .expectStatus().isOk()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON)
+                .expectBody(SecurityAnalysisResult.class)
+                .value(new MatcherJson<>(mapper, RESULT_VARIANT));
+    }
+
+    @Test
+    @SneakyThrows
+    public void runTestWithLFParams() {
+        // run with some empty params
+        simpleRunRequest(SecurityAnalysisParametersInfos.builder().build());
+        // with default LFParams
+        simpleRunRequest(SecurityAnalysisParametersInfos.builder()
+                .parameters(SecurityAnalysisParameters.load())
+                .build());
+        // with 2 specific LFParams
+        simpleRunRequest(SecurityAnalysisParametersInfos.builder()
+                .parameters(SecurityAnalysisParameters.load())
+                .loadFlowSpecificParameters(Map.of("reactiveRangeCheckMode", "TARGET_P", "plausibleActivePowerLimit", "4000.0"))
+                .build());
+    }
+
     @Test
     public void runTest() {
         // run with specific variant
         webTestClient.post()
-                .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME_VARIANT + "&variantId=" + VARIANT_3_ID)
+                .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME_VARIANT + "&variantId=" + VARIANT_3_ID + "&provider=OpenLoadFlow")
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -210,10 +242,10 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void runAndSaveTest() throws InterruptedException {
+    public void runAndSaveTest() {
         webTestClient.post()
                 .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
-                        + "&receiver=me&variantId=" + VARIANT_2_ID)
+                        + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow")
                 .exchange()
                 .expectStatus().isOk()
                 .expectHeader().contentType(MediaType.APPLICATION_JSON)
