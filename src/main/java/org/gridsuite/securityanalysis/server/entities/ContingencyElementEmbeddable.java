@@ -6,8 +6,8 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
 
 import com.powsybl.contingency.ContingencyElementType;
 import lombok.AllArgsConstructor;

@@ -7,16 +7,10 @@
 package org.gridsuite.securityanalysis.server.entities;
 
 import java.util.List;
-import java.util.UUID;
 
 import java.io.Serializable;
 
-import javax.persistence.ElementCollection;
-import javax.persistence.Embeddable;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.IdClass;
-import javax.persistence.Table;
+import jakarta.persistence.*;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,25 +24,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Entity
 @Table(name = "contingency")
-@IdClass(ContingencyEntity.ID.class)
 public class ContingencyEntity implements Serializable {
 
-    @NoArgsConstructor
-    @Getter
-    @Embeddable
-    static class ID implements Serializable {
-        @Id
-        private UUID resultUuid;
-
-        @Id
-        private String contingencyId;
-    }
-
-    @Id
-    private UUID resultUuid;
-
-    @Id
-    private String contingencyId;
+    @EmbeddedId
+    private ContingencyEntityId resultId;
 
     @ElementCollection
     private List<ContingencyElementEmbeddable> contingencyElements;
