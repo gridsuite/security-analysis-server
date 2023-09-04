@@ -40,5 +40,4 @@ public class SupervisionControllerTest {
         assertEquals(resultCount, 0);
 
     }
-
 }

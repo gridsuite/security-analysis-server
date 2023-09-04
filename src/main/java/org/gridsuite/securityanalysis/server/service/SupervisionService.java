@@ -20,8 +20,7 @@ public class SupervisionService {
         this.globalStatusRepository = globalStatusRepository;
     }
 
-
     public Integer getResultsCount() {
-           return (int) globalStatusRepository.count();
+        return (int) globalStatusRepository.count();
     }
 }
