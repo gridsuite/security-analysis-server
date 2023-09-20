@@ -258,9 +258,9 @@ public class SecurityAnalysisWorkerService {
                         .flatMap(result -> {
                             long nanoTime = System.nanoTime();
                             LOGGER.info("Just run in {}s", TimeUnit.NANOSECONDS.toSeconds(nanoTime - startTime.getAndSet(nanoTime)));
-                            return Mono.fromRunnable(() -> resultRepository.insert(resultContext.getResultUuid(), result))
-                                    .then(Mono.fromRunnable(() -> resultRepository.insertStatus(List.of(resultContext.getResultUuid()),
-                                            result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED ? SecurityAnalysisStatus.CONVERGED : SecurityAnalysisStatus.DIVERGED)))
+                            return Mono.fromRunnable(() -> resultRepository.insert(resultContext.getResultUuid(),
+                                            result,
+                                            result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED ? SecurityAnalysisStatus.CONVERGED : SecurityAnalysisStatus.DIVERGED))
                                     .then(Mono.just(result))
                                     .doFinally(ignored -> {
                                         long finalNanoTime = System.nanoTime();
