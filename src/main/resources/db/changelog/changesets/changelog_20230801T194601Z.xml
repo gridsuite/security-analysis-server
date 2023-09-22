@@ -3,7 +3,6 @@
     <changeSet author="hedhiliabd" id="1689623201842-1">
         <modifyDataType columnName="element_type"
                         newDataType="tinyint"
-                        schemaName="public"
                         tableName="contingency_entity_contingency_elements"/>
     </changeSet>
 </databaseChangeLog>
