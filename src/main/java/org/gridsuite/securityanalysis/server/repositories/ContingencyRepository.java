@@ -19,7 +19,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ContingencyRepository extends JpaRepository<ContingencyEntity, UUID> {
 
-    List<ContingencyEntity> findByResultUuid(UUID resultUuid);
+    List<ContingencyEntity> findByResultIdResultUuid(UUID resultUuid);
 
-    void deleteByResultUuid(UUID resultUuid);
+    void deleteByResultIdResultUuid(UUID resultUuid);
 }
