@@ -154,7 +154,7 @@ public class SecurityAnalysisResultRepository {
     }
 
     @Transactional
-    public void insert(UUID resultUuid, SecurityAnalysisResult result) {
+    public void insert(UUID resultUuid, SecurityAnalysisResult result, SecurityAnalysisStatus status) {
         Objects.requireNonNull(resultUuid);
         Objects.requireNonNull(result);
 
@@ -169,6 +169,7 @@ public class SecurityAnalysisResultRepository {
         );
         computationStatusRepository.save(toEntity(resultUuid, null, result.getPreContingencyResult().getStatus().name()));
         limitViolationRepository.saveAll(toEntity(resultUuid, null, result.getPreContingencyResult().getLimitViolationsResult().getLimitViolations()));
+        globalStatusRepository.save(toEntity(resultUuid, status));
     }
 
     public void insertStatus(List<UUID> resultUuids, SecurityAnalysisStatus status) {
