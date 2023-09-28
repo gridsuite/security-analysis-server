@@ -74,7 +74,7 @@ public class SecurityAnalysisResultRepository {
                         throw new IllegalStateException("Element type not yet support: " + e.getElementType());
                 }
             }).collect(Collectors.toList());
-        return new Contingency(entity.getContingencyId(), elements);
+        return new Contingency(entity.getResultId().getContingencyId(), elements);
     }
 
     private static LimitViolationEntity toEntity(UUID resultUuid, String contingencyId, LimitViolation limitViolation) {
@@ -98,7 +98,7 @@ public class SecurityAnalysisResultRepository {
     private static ContingencyEntity toEntity(UUID resultUuid, Contingency contingency) {
         List<ContingencyElementEmbeddable> elements = contingency.getElements().stream()
             .map(e -> new ContingencyElementEmbeddable(e.getType(), e.getId())).collect(Collectors.toList());
-        return new ContingencyEntity(resultUuid, contingency.getId(), elements);
+        return new ContingencyEntity(new ContingencyEntityId(resultUuid, contingency.getId()), elements);
     }
 
     private static GlobalStatusEntity toEntity(UUID resultUuid, SecurityAnalysisStatus status) {
@@ -125,7 +125,7 @@ public class SecurityAnalysisResultRepository {
             .collect(
                 Collectors.groupingBy(Pair::getKey, Collectors.mapping(Pair::getValue, Collectors.toCollection(ArrayList::new))));
 
-        List<ContingencyEntity> contingencyEntities = contingencyRepository.findByResultUuid(resultUuid);
+        List<ContingencyEntity> contingencyEntities = contingencyRepository.findByResultIdResultUuid(resultUuid);
         List<Contingency> contingencies = contingencyEntities.stream()
                 .map(SecurityAnalysisResultRepository::fromEntity)
                 .collect(Collectors.toList());
@@ -183,7 +183,7 @@ public class SecurityAnalysisResultRepository {
         Objects.requireNonNull(resultUuid);
         computationStatusRepository.deleteByResultUuid(resultUuid);
         limitViolationRepository.deleteByResultUuid(resultUuid);
-        contingencyRepository.deleteByResultUuid(resultUuid);
+        contingencyRepository.deleteByResultIdResultUuid(resultUuid);
         globalStatusRepository.deleteByResultUuid(resultUuid);
     }
 
