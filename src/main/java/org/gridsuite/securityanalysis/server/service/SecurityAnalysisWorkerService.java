@@ -25,7 +25,7 @@ import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.ws.commons.LogUtils;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
-import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
+import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepositoryOld;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,7 +79,7 @@ public class SecurityAnalysisWorkerService {
 
     private NotificationService notificationService;
 
-    private SecurityAnalysisResultRepository resultRepository;
+    private SecurityAnalysisResultRepositoryOld resultRepository;
 
     private ObjectMapper objectMapper;
 
@@ -96,7 +96,7 @@ public class SecurityAnalysisWorkerService {
     private SecurityAnalysisExecutionService securityAnalysisExecutionService;
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService, ReportService reportService,
-                                         SecurityAnalysisResultRepository resultRepository, ObjectMapper objectMapper,
+                                         SecurityAnalysisResultRepositoryOld resultRepository, ObjectMapper objectMapper,
                                          SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, NotificationService notificationService, SecurityAnalysisExecutionService securityAnalysisExecutionService) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
