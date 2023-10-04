@@ -46,7 +46,7 @@ public class SecurityAnalysisResultRepository {
         this.globalStatusRepository = globalStatusRepository;
     }
 
-    private static LimitViolation fromEntity(LimitViolationEntity entity) {
+    private static LimitViolation fromEntity(LimitViolationEntityOld entity) {
         return new LimitViolation(entity.getSubjectId(), entity.getLimitType(), entity.getLimitName(), entity.getAcceptableDuration(),
                 entity.getLimit(), entity.getLimitReduction(), entity.getValue(), entity.getSide());
     }
@@ -55,7 +55,7 @@ public class SecurityAnalysisResultRepository {
         return entity.getStatus();
     }
 
-    private static Contingency fromEntity(ContingencyEntity entity) {
+    private static Contingency fromEntity(ContingencyEntityOld entity) {
         List<ContingencyElement> elements = entity.getContingencyElements().stream()
             .map(e -> {
                 switch (e.getElementType()) {
@@ -77,8 +77,8 @@ public class SecurityAnalysisResultRepository {
         return new Contingency(entity.getResultId().getContingencyId(), elements);
     }
 
-    private static LimitViolationEntity toEntity(UUID resultUuid, String contingencyId, LimitViolation limitViolation) {
-        return new LimitViolationEntity(resultUuid, limitViolation.getLimitType(), contingencyId, limitViolation.getSubjectId(),
+    private static LimitViolationEntityOld toEntity(UUID resultUuid, String contingencyId, LimitViolation limitViolation) {
+        return new LimitViolationEntityOld(resultUuid, limitViolation.getLimitType(), contingencyId, limitViolation.getSubjectId(),
                 limitViolation.getSubjectName(), limitViolation.getLimit(), limitViolation.getLimitName(),
                 limitViolation.getAcceptableDuration(), limitViolation.getLimitReduction(), limitViolation.getValue(),
                 limitViolation.getSide());
@@ -88,17 +88,17 @@ public class SecurityAnalysisResultRepository {
         return new ComputationStatusEntity(resultUuid, contingency != null ? contingency.getId() : "", status);
     }
 
-    private static List<LimitViolationEntity> toEntity(UUID resultUuid, Contingency contingency, List<LimitViolation> limitViolations) {
+    private static List<LimitViolationEntityOld> toEntity(UUID resultUuid, Contingency contingency, List<LimitViolation> limitViolations) {
         return limitViolations
                 .stream()
                 .map(limitViolation -> toEntity(resultUuid, contingency != null ? contingency.getId() : "", limitViolation))
                 .collect(Collectors.toList());
     }
 
-    private static ContingencyEntity toEntity(UUID resultUuid, Contingency contingency) {
-        List<ContingencyElementEmbeddable> elements = contingency.getElements().stream()
-            .map(e -> new ContingencyElementEmbeddable(e.getType(), e.getId())).collect(Collectors.toList());
-        return new ContingencyEntity(new ContingencyEntityId(resultUuid, contingency.getId()), elements);
+    private static ContingencyEntityOld toEntity(UUID resultUuid, Contingency contingency) {
+        List<ContingencyElementEmbeddableOld> elements = contingency.getElements().stream()
+            .map(e -> new ContingencyElementEmbeddableOld(e.getType(), e.getId())).collect(Collectors.toList());
+        return new ContingencyEntityOld(new ContingencyEntityId(resultUuid, contingency.getId()), elements);
     }
 
     private static GlobalStatusEntity toEntity(UUID resultUuid, SecurityAnalysisStatus status) {
@@ -116,7 +116,7 @@ public class SecurityAnalysisResultRepository {
         Map<String, String> computationsStatusesByContingencyId = statusEntities.stream()
             .collect(Collectors.toMap(ComputationStatusEntity::getContingencyId, SecurityAnalysisResultRepository::fromEntity));
 
-        List<LimitViolationEntity> limitViolationEntities = limitTypes.isEmpty()
+        List<LimitViolationEntityOld> limitViolationEntities = limitTypes.isEmpty()
             ? limitViolationRepository.findByResultUuid(resultUuid)
             : limitViolationRepository.findByResultUuidAndLimitTypeIn(resultUuid, limitTypes);
 
@@ -125,7 +125,7 @@ public class SecurityAnalysisResultRepository {
             .collect(
                 Collectors.groupingBy(Pair::getKey, Collectors.mapping(Pair::getValue, Collectors.toCollection(ArrayList::new))));
 
-        List<ContingencyEntity> contingencyEntities = contingencyRepository.findByResultIdResultUuid(resultUuid);
+        List<ContingencyEntityOld> contingencyEntities = contingencyRepository.findByResultIdResultUuid(resultUuid);
         List<Contingency> contingencies = contingencyEntities.stream()
                 .map(SecurityAnalysisResultRepository::fromEntity)
                 .collect(Collectors.toList());

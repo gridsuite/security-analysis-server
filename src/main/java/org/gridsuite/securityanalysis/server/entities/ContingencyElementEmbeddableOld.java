@@ -6,9 +6,10 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
-import com.powsybl.contingency.ContingencyElementType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
+
+import com.powsybl.contingency.ContingencyElementType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -20,7 +21,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Embeddable
-public class ContingencyElementEmbeddable {
+public class ContingencyElementEmbeddableOld {
 
     @Column
     private ContingencyElementType elementType;

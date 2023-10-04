@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import org.gridsuite.securityanalysis.server.entities.LimitViolationEntity;
+import org.gridsuite.securityanalysis.server.entities.LimitViolationEntityOld;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -20,11 +20,11 @@ import com.powsybl.security.LimitViolationType;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @Repository
-public interface LimitViolationRepository extends JpaRepository<LimitViolationEntity, UUID> {
+public interface LimitViolationRepository extends JpaRepository<LimitViolationEntityOld, UUID> {
 
-    List<LimitViolationEntity> findByResultUuid(UUID resultUuid);
+    List<LimitViolationEntityOld> findByResultUuid(UUID resultUuid);
 
-    List<LimitViolationEntity> findByResultUuidAndLimitTypeIn(UUID resultUuid, Set<LimitViolationType> limitTypes);
+    List<LimitViolationEntityOld> findByResultUuidAndLimitTypeIn(UUID resultUuid, Set<LimitViolationType> limitTypes);
 
     void deleteByResultUuid(UUID resultUuid);
 }
