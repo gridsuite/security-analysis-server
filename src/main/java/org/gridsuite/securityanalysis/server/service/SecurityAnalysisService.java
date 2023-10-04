@@ -11,7 +11,6 @@ import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
-import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepositoryOld;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -28,7 +27,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class SecurityAnalysisService {
-    private final SecurityAnalysisResultRepositoryOld resultRepository;
+    private final SecurityAnalysisResultService resultRepository;
 
     private final UuidGeneratorService uuidGeneratorService;
 
@@ -38,7 +37,7 @@ public class SecurityAnalysisService {
 
     private final String defaultProvider;
 
-    public SecurityAnalysisService(SecurityAnalysisResultRepositoryOld resultRepository,
+    public SecurityAnalysisService(SecurityAnalysisResultService resultRepository,
                                    UuidGeneratorService uuidGeneratorService,
                                    ObjectMapper objectMapper,
                                    NotificationService notificationService,

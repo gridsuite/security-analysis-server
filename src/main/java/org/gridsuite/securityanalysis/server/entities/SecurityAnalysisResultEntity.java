@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,7 +19,8 @@ public class SecurityAnalysisResultEntity {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private UUID id;
 
-    private String status;
+    @Setter
+    private SecurityAnalysisStatus status;
 
     @OneToMany(mappedBy = "result", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ContingencyEntity> contingencies;
@@ -28,7 +31,7 @@ public class SecurityAnalysisResultEntity {
     @Embedded
     private PreContingencyResultEntity preContingencyResult;
 
-    public SecurityAnalysisResultEntity(String status, List<ContingencyEntity> contingencies, PreContingencyResultEntity preContingencyResult) {
+    public SecurityAnalysisResultEntity(SecurityAnalysisStatus status, List<ContingencyEntity> contingencies, PreContingencyResultEntity preContingencyResult) {
         this.status = status;
         this.contingencies = contingencies;
         this.preContingencyResult = preContingencyResult;
