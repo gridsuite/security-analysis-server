@@ -1,6 +1,5 @@
 package org.gridsuite.securityanalysis.server.repositories;
 
-import org.gridsuite.securityanalysis.server.entities.LimitViolationEntityOld;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
