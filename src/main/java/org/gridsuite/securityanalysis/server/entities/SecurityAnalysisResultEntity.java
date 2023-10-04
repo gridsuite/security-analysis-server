@@ -13,7 +13,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @Getter
 @Entity
-@Table(name = "result")
+@Table(name = "security_analysis_result")
 public class SecurityAnalysisResultEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
