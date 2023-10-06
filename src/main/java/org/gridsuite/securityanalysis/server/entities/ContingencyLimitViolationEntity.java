@@ -3,6 +3,7 @@ package org.gridsuite.securityanalysis.server.entities;
 import com.powsybl.iidm.network.Branch;
 import com.powsybl.security.LimitViolationType;
 import jakarta.persistence.*;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
@@ -10,12 +11,9 @@ import java.util.UUID;
 
 @NoArgsConstructor
 @Entity
+@Getter
 @Table(name = "contingency_limit_violation")
 public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntity {
-    @Id
-    @GeneratedValue
-    private UUID id;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @Setter
     private ContingencyEntity contingency;

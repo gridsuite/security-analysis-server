@@ -7,11 +7,18 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.UUID;
+
 @NoArgsConstructor
 @Getter
 @MappedSuperclass
 public abstract class AbstractLimitViolationEntity {
-    @ManyToOne
+
+    @Id
+    @GeneratedValue
+    private UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @Setter
     private SecurityAnalysisResultEntity result;
 

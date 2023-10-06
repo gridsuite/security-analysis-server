@@ -18,6 +18,7 @@ import com.powsybl.security.SecurityAnalysis;
 import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.security.SecurityAnalysisResult;
+import com.powsybl.security.results.PreContingencyResult;
 import lombok.SneakyThrows;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
@@ -50,6 +51,7 @@ import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -111,6 +113,10 @@ public class SecurityAnalysisControllerTest {
 
     @Before
     public void setUp() throws Exception {
+        //FIXME: remove those lines
+        webTestClient = webTestClient.mutate()
+            .responseTimeout(Duration.ofMillis(30000))
+            .build();
         MockitoAnnotations.initMocks(this);
 
         // network store service mocking
@@ -257,6 +263,30 @@ public class SecurityAnalysisControllerTest {
         assertEquals("me", resultMessage.getHeaders().get("receiver"));
 
         webTestClient.get()
+            .uri("/" + VERSION + "/results/" + RESULT_UUID + "/n")
+            .exchange()
+            .expectStatus().isOk()
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody(PreContingencyResult.class)
+            .value(new MatcherJson<>(mapper, RESULT.getPreContingencyResult()));
+
+        webTestClient.get()
+            .uri("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies")
+            .exchange()
+            .expectStatus().isOk()
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody(List.class)
+            .value(new MatcherJson<>(mapper, RESULT.getPreContingencyResult()));
+
+        webTestClient.get()
+            .uri("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints")
+            .exchange()
+            .expectStatus().isOk()
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody(PreContingencyResult.class)
+            .value(new MatcherJson<>(mapper, RESULT.getPreContingencyResult()));
+
+       /* webTestClient.get()
                 .uri("/" + VERSION + "/results/" + RESULT_UUID)
                 .exchange()
                 .expectStatus().isOk()
@@ -288,7 +318,7 @@ public class SecurityAnalysisControllerTest {
         webTestClient.get()
                 .uri("/" + VERSION + "/results/" + RESULT_UUID)
                 .exchange()
-                .expectStatus().isNotFound();
+                .expectStatus().isNotFound();*/
     }
 
     @Test

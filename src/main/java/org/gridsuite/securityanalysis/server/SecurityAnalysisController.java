@@ -8,6 +8,7 @@ package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
+import com.powsybl.security.results.PreContingencyResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -15,6 +16,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.gridsuite.securityanalysis.server.dto.ConstraintToContingencyDTO;
+import org.gridsuite.securityanalysis.server.dto.ContingencyToConstraintDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisRunContext;
@@ -107,6 +110,39 @@ public class SecurityAnalysisController {
         Mono<SecurityAnalysisResult> result = service.getResult(resultUuid, limitTypeSet);
         return result.map(r -> ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(r))
                 .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping(value = "/results/{resultUuid}/n", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get a security analysis result from the database - N datas")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
+        @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
+    public Mono<ResponseEntity<PreContingencyResult>> getNResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+
+        Mono<PreContingencyResult> result = service.getNResult(resultUuid);
+        return result.map(r -> ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(r))
+            .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping(value = "/results/{resultUuid}/nmk-contingencies", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get a security analysis result from the database - NMK contingencies datas")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
+        @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
+    public Mono<ResponseEntity<List<ContingencyToConstraintDTO>>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+
+        Mono<List<ContingencyToConstraintDTO>> result = service.getNmKContingenciesResult(resultUuid);
+        return result.map(r -> ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(r))
+            .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping(value = "/results/{resultUuid}/nmk-constraints", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get a security analysis result from the database - NMK contingencies datas")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
+        @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
+    public Mono<ResponseEntity<List<ConstraintToContingencyDTO>>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+
+        Mono<List<ConstraintToContingencyDTO>> result = service.getNmKConstraintsResult(resultUuid);
+        return result.map(r -> ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(r))
+            .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping(value = "/results/{resultUuid}", produces = APPLICATION_JSON_VALUE)

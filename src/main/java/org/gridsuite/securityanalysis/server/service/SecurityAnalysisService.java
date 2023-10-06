@@ -10,6 +10,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.security.SecurityAnalysisResult;
+import com.powsybl.security.results.PreContingencyResult;
+import org.gridsuite.securityanalysis.server.dto.ConstraintToContingencyDTO;
+import org.gridsuite.securityanalysis.server.dto.ContingencyToConstraintDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -63,6 +66,18 @@ public class SecurityAnalysisService {
 
     public Mono<SecurityAnalysisResult> getResult(UUID resultUuid, Set<LimitViolationType> limitTypes) {
         return Mono.fromCallable(() -> resultRepository.find(resultUuid, limitTypes));
+    }
+
+    public Mono<PreContingencyResult> getNResult(UUID resultUuid) {
+        return Mono.fromCallable(() -> resultRepository.findNResult(resultUuid));
+    }
+
+    public Mono<List<ContingencyToConstraintDTO>> getNmKContingenciesResult(UUID resultUuid) {
+        return Mono.fromCallable(() -> resultRepository.findNmKContingenciesResult(resultUuid));
+    }
+
+    public Mono<List<ConstraintToContingencyDTO>> getNmKConstraintsResult(UUID resultUuid) {
+        return Mono.fromCallable(() -> resultRepository.findNmKConstraintsResult((resultUuid)));
     }
 
     public Mono<Void> deleteResult(UUID resultUuid) {
