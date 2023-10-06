@@ -28,7 +28,7 @@ public class ContingencyEntity {
     private String contingencyId;
 
     @Setter
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @ManyToOne(fetch = FetchType.LAZY)
     private SecurityAnalysisResultEntity result;
 
     @ElementCollection

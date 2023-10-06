@@ -16,7 +16,7 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
     @GeneratedValue
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @Setter
     private ContingencyEntity contingency;
 
