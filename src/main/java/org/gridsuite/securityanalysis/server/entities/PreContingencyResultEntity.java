@@ -16,7 +16,7 @@ public class PreContingencyResultEntity {
     /**
      * We keep a String as it could model LoadFlowResult.ComponentResult.Status or PostContingencyComputationStatus.
      */
-    private String status;
+    private String preContingencyStatus;
 
     @ElementCollection
     private List<PreContingencyLimitViolationEntity> preContingencyLimitViolation;

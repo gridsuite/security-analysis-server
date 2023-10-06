@@ -171,7 +171,7 @@ public class SecurityAnalysisControllerTest {
         workerService.setSecurityAnalysisFactorySupplier(provider -> runner);
 
         // purge messages
-        while (output.receive(1000, "sa.result") != null) {
+        /*while (output.receive(1000, "sa.result") != null) {
         }
         // purge messages
         while (output.receive(1000, "sa.run") != null) {
@@ -181,7 +181,7 @@ public class SecurityAnalysisControllerTest {
         while (output.receive(1000, "sa.stopped") != null) {
         }
         while (output.receive(1000, "sa.failed") != null) {
-        }
+        }*/
     }
 
     // added for testStatus can return null, after runTest

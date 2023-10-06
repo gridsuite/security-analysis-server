@@ -14,8 +14,10 @@ import com.powsybl.security.results.PostContingencyResult;
 import com.powsybl.security.results.PreContingencyResult;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.entities.*;
+import org.gridsuite.securityanalysis.server.repositories.ContingencyRepository;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
@@ -24,12 +26,15 @@ import java.util.stream.Collectors;
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
-@Repository
+@Service
 public class SecurityAnalysisResultService {
     private SecurityAnalysisResultRepository securityAnalysisResultRepository;
+    private ContingencyRepository contingencyRepository;
 
-    public SecurityAnalysisResultService(SecurityAnalysisResultRepository securityAnalysisResultRepository) {
+    public SecurityAnalysisResultService(SecurityAnalysisResultRepository securityAnalysisResultRepository,
+                                         ContingencyRepository contingencyRepository) {
         this.securityAnalysisResultRepository = securityAnalysisResultRepository;
+        this.contingencyRepository = contingencyRepository;
     }
 
     @Transactional(readOnly = true)
@@ -37,24 +42,34 @@ public class SecurityAnalysisResultService {
         Objects.requireNonNull(resultUuid);
         Objects.requireNonNull(limitTypes);
 
-        Optional<SecurityAnalysisResultEntity> securityAnalysisResultEntityOpt = securityAnalysisResultRepository.findById(resultUuid);
-        if(securityAnalysisResultEntityOpt.isEmpty()) {
+        Optional<SecurityAnalysisResultEntity> securityAnalysisResultEntityOpt = /*limitTypes.isEmpty()*/
+            /*?*/ securityAnalysisResultRepository.findById(resultUuid);
+/*
+            : securityAnalysisResultRepository.findByIdAndFilterLimitViolationsByLimitType(resultUuid, limitTypes);
+*/
+
+        if (securityAnalysisResultEntityOpt.isEmpty()) {
             return null;
         }
         SecurityAnalysisResultEntity securityAnalysisResultEntity = securityAnalysisResultEntityOpt.get();
         PreContingencyResultEntity preContingencyResultEntity = securityAnalysisResultEntity.getPreContingencyResult();
 
-        List<LimitViolation> preContingencyLimitViolations = preContingencyResultEntity.getPreContingencyLimitViolation()
-            .stream().map(preContingencyLimitViolation -> fromEntity(preContingencyLimitViolation)).collect(Collectors.toList());
+        List<LimitViolation> preContingencyLimitViolations = preContingencyResultEntity.getPreContingencyLimitViolation().stream()
+            .map(preContingencyLimitViolation -> fromEntity(preContingencyLimitViolation))
+            .filter(limitViolation -> limitTypes.isEmpty() || limitTypes.contains(limitViolation.getLimitType()))
+            .collect(Collectors.toList());
 
-        PreContingencyResult preContingencyResult = new PreContingencyResult(LoadFlowResult.ComponentResult.Status.valueOf(preContingencyResultEntity.getStatus()),
+        PreContingencyResult preContingencyResult = new PreContingencyResult(LoadFlowResult.ComponentResult.Status.valueOf(preContingencyResultEntity.getPreContingencyStatus()),
             new LimitViolationsResult(preContingencyLimitViolations),
             new NetworkResult(Collections.emptyList(), Collections.emptyList(), Collections.emptyList()));
 
         List<PostContingencyResult> postContingencyResults = securityAnalysisResultEntity.getContingencies().stream()
             .map(contingencyEntity -> {
                 PostContingencyComputationStatus status = PostContingencyComputationStatus.valueOf(contingencyEntity.getStatus());
-                List<LimitViolation> limitViolations = contingencyEntity.getContingencyLimitViolations().stream().map(limitViolation -> fromEntity(limitViolation)).collect(Collectors.toList());
+                List<LimitViolation> limitViolations = contingencyEntity.getContingencyLimitViolations().stream()
+                    .map(limitViolation -> fromEntity(limitViolation))
+                    .filter(limitViolation -> limitTypes.isEmpty() || limitTypes.contains(limitViolation.getLimitType()))
+                    .collect(Collectors.toList());
                 Contingency contingency = fromEntity(contingencyEntity);
                 return new PostContingencyResult(contingency, status, limitViolations);
             })
@@ -68,7 +83,7 @@ public class SecurityAnalysisResultService {
         Objects.requireNonNull(resultUuid);
         Objects.requireNonNull(result);
 
-        SecurityAnalysisResultEntity securityAnalysisResult = toEntity(result, status);
+        SecurityAnalysisResultEntity securityAnalysisResult = toEntity(resultUuid, result, status);
         securityAnalysisResultRepository.save(securityAnalysisResult);
     }
 
@@ -77,7 +92,7 @@ public class SecurityAnalysisResultService {
         Objects.requireNonNull(resultUuids);
         resultUuids.forEach(resultUuid -> {
             Optional<SecurityAnalysisResultEntity> securityAnalysisResult = securityAnalysisResultRepository.findById(resultUuid);
-            if(securityAnalysisResult.isPresent()) {
+            if (securityAnalysisResult.isPresent()) {
                 securityAnalysisResult.get().setStatus(status);
             }
         });
@@ -98,14 +113,14 @@ public class SecurityAnalysisResultService {
     public SecurityAnalysisStatus findStatus(UUID resultUuid) {
         Objects.requireNonNull(resultUuid);
         Optional<SecurityAnalysisResultEntity> securityAnalysisResult = securityAnalysisResultRepository.findById(resultUuid);
-        if(securityAnalysisResult.isEmpty()) {
+        if (securityAnalysisResult.isEmpty()) {
             return null;
         }
 
         return securityAnalysisResult.get().getStatus();
     }
 
-    private static LimitViolation fromEntity(LimitViolationEntity entity) {
+    private static LimitViolation fromEntity(AbstractLimitViolationEntity entity) {
         return new LimitViolation(entity.getSubjectId(), entity.getLimitType(), entity.getLimitName(), entity.getAcceptableDuration(),
             entity.getLimit(), entity.getLimitReduction(), entity.getValue(), entity.getSide());
     }
@@ -132,34 +147,34 @@ public class SecurityAnalysisResultService {
         return new Contingency(entity.getContingencyId(), elements);
     }
 
-    private static SecurityAnalysisResultEntity toEntity(SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
+    private static SecurityAnalysisResultEntity toEntity(UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
         List<ContingencyEntity> contingencies = securityAnalysisResult.getPostContingencyResults().stream()
             .map(postContingencyResult -> toEntity(postContingencyResult)).collect(Collectors.toList());
 
         PreContingencyResultEntity preContingencyResult = toEntity(securityAnalysisResult.getPreContingencyResult());
 
-        return new SecurityAnalysisResultEntity(securityAnalysisStatus, contingencies, preContingencyResult);
+        return new SecurityAnalysisResultEntity(resultUuid, securityAnalysisStatus, contingencies, preContingencyResult);
     }
 
     private static PreContingencyResultEntity toEntity(PreContingencyResult preContingencyResult) {
-        List<PreContingencyLimitViolationEntity> preContingencyLimitViolation = preContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation -> toPreContingencyEntity(limitViolation)).collect(Collectors.toList());
+        List<PreContingencyLimitViolationEntity> preContingencyLimitViolation = preContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation -> toPreContingencyLimitViolationEntity(limitViolation)).collect(Collectors.toList());
         return new PreContingencyResultEntity(preContingencyResult.getStatus().name(), preContingencyLimitViolation);
     }
 
     private static ContingencyEntity toEntity(PostContingencyResult postContingencyResult) {
         List<ContingencyElementEmbeddable> contingencyElements = postContingencyResult.getContingency().getElements().stream().map(contingencyElement -> toEntity(contingencyElement)).collect(Collectors.toList());
-        List<ContingencyLimitViolationEntity> contingencyLimitViolations = postContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation -> toContingencyEntity(limitViolation)).collect(Collectors.toList());
+        List<ContingencyLimitViolationEntity> contingencyLimitViolations = postContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation -> toContingencyLimitViolationEntity(limitViolation)).collect(Collectors.toList());
         return new ContingencyEntity(postContingencyResult.getContingency().getId(), postContingencyResult.getStatus().name(), contingencyElements, contingencyLimitViolations);
     }
 
-    private static ContingencyLimitViolationEntity toContingencyEntity(LimitViolation limitViolation) {
+    private static ContingencyLimitViolationEntity toContingencyLimitViolationEntity(LimitViolation limitViolation) {
         return new ContingencyLimitViolationEntity(limitViolation.getSubjectId(),
             limitViolation.getSubjectName(), limitViolation.getLimit(), limitViolation.getLimitName(),
             limitViolation.getLimitType(), limitViolation.getAcceptableDuration(), limitViolation.getLimitReduction(), limitViolation.getValue(),
             limitViolation.getSide());
     }
 
-    private static PreContingencyLimitViolationEntity toPreContingencyEntity(LimitViolation limitViolation) {
+    private static PreContingencyLimitViolationEntity toPreContingencyLimitViolationEntity(LimitViolation limitViolation) {
         return new PreContingencyLimitViolationEntity(limitViolation.getSubjectId(),
             limitViolation.getSubjectName(), limitViolation.getLimit(), limitViolation.getLimitName(),
             limitViolation.getLimitType(), limitViolation.getAcceptableDuration(), limitViolation.getLimitReduction(), limitViolation.getValue(),

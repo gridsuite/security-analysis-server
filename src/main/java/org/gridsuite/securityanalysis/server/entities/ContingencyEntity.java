@@ -3,6 +3,7 @@ package org.gridsuite.securityanalysis.server.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,7 +18,7 @@ public class ContingencyEntity {
         this.contingencyId = contingencyId;
         this.status = status;
         this.contingencyElements = contingencyElements;
-        this.contingencyLimitViolations = contingencyLimitViolations;
+        setContingencyLimitViolations(contingencyLimitViolations);
     }
 
     @Id
@@ -26,6 +27,7 @@ public class ContingencyEntity {
 
     private String contingencyId;
 
+    @Setter
     @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     private SecurityAnalysisResultEntity result;
 
@@ -39,4 +41,11 @@ public class ContingencyEntity {
      * We keep a String as it could model LoadFlowResult.ComponentResult.Status or PostContingencyComputationStatus.
      */
     private String status;
+
+    private void setContingencyLimitViolations(List<ContingencyLimitViolationEntity> contingencyLimitViolations) {
+        if (contingencyLimitViolations != null) {
+            this.contingencyLimitViolations = contingencyLimitViolations;
+            contingencyLimitViolations.forEach(lm -> lm.setContingency(this));
+        }
+    }
 }

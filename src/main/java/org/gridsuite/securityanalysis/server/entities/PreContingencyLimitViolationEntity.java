@@ -9,7 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Getter
 @Embeddable
-public class PreContingencyLimitViolationEntity extends LimitViolationEntity{
+public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEntity {
+
     public PreContingencyLimitViolationEntity(String subjectId, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
         super(subjectId, subjectName, limit, limitName, limitType, acceptableDuration, limitReduction, value, side);
     }

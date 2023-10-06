@@ -78,7 +78,7 @@ public class SecurityAnalysisWorkerService {
 
     private NotificationService notificationService;
 
-    private SecurityAnalysisResultService resultRepository;
+    private SecurityAnalysisResultService securityAnalysisResultService;
 
     private ObjectMapper objectMapper;
 
@@ -100,7 +100,7 @@ public class SecurityAnalysisWorkerService {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.reportService = Objects.requireNonNull(reportService);
-        this.resultRepository = Objects.requireNonNull(resultRepository);
+        this.securityAnalysisResultService = Objects.requireNonNull(resultRepository);
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.notificationService = Objects.requireNonNull(notificationService);
         this.securityAnalysisExecutionService = Objects.requireNonNull(securityAnalysisExecutionService);
@@ -201,7 +201,7 @@ public class SecurityAnalysisWorkerService {
     }
 
     private void cleanASResultsAndPublishCancel(UUID resultUuid, String receiver) {
-        resultRepository.delete(resultUuid);
+        securityAnalysisResultService.delete(resultUuid);
         notificationService.emitStopAnalysisMessage(resultUuid.toString(), receiver);
         LOGGER.info(CANCEL_MESSAGE + " (resultUuid='{}')", resultUuid);
     }
@@ -257,7 +257,7 @@ public class SecurityAnalysisWorkerService {
                         .flatMap(result -> {
                             long nanoTime = System.nanoTime();
                             LOGGER.info("Just run in {}s", TimeUnit.NANOSECONDS.toSeconds(nanoTime - startTime.getAndSet(nanoTime)));
-                            return Mono.fromRunnable(() -> resultRepository.insert(resultContext.getResultUuid(),
+                            return Mono.fromRunnable(() -> securityAnalysisResultService.insert(resultContext.getResultUuid(),
                                             result,
                                             result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED ? SecurityAnalysisStatus.CONVERGED : SecurityAnalysisStatus.DIVERGED))
                                     .then(Mono.just(result))
@@ -282,7 +282,7 @@ public class SecurityAnalysisWorkerService {
                                 notificationService.emitFailAnalysisMessage(resultContext.getResultUuid().toString(),
                                         resultContext.getRunContext().getReceiver(),
                                         throwable.getMessage());
-                                resultRepository.delete(resultContext.getResultUuid());
+                                securityAnalysisResultService.delete(resultContext.getResultUuid());
                                 return Mono.empty();
                             }
                             return Mono.empty();

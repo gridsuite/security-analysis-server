@@ -5,18 +5,14 @@ import com.powsybl.security.LimitViolationType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.util.UUID;
+import lombok.Setter;
 
 @NoArgsConstructor
 @Getter
 @MappedSuperclass
-public abstract class LimitViolationEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private UUID id;
-
+public abstract class AbstractLimitViolationEntity {
     @ManyToOne
+    @Setter
     private SecurityAnalysisResultEntity result;
 
     private String subjectId;
@@ -41,7 +37,7 @@ public abstract class LimitViolationEntity {
     @Enumerated(EnumType.STRING)
     private Branch.Side side;
 
-    public LimitViolationEntity(String subjectId, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
+    public AbstractLimitViolationEntity(String subjectId, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
         this.subjectId = subjectId;
         this.subjectName = subjectName;
         this.limit = limit;
