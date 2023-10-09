@@ -1,6 +1,5 @@
 package org.gridsuite.securityanalysis.server.dto;
 
-import com.powsybl.contingency.ContingencyElementType;
 import com.powsybl.iidm.network.Branch;
 import com.powsybl.security.LimitViolationType;
 import lombok.AllArgsConstructor;
@@ -26,7 +25,7 @@ public class ContingencyFromConstraintDTO {
     public double value;
     public List<ContingencyElementDTO> elements;
 
-    public static ContingencyFromConstraintDTO toDto (ContingencyLimitViolationEntity limitViolation) {
+    public static ContingencyFromConstraintDTO toDto(ContingencyLimitViolationEntity limitViolation) {
         ContingencyEntity contingency = limitViolation.getContingency();
         return new ContingencyFromConstraintDTO(
             contingency.getContingencyId(),

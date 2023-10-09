@@ -33,8 +33,8 @@ public class ConstraintEntity {
     @OneToMany(mappedBy = "constraint")
     List<ContingencyLimitViolationEntity> contingencyLimitViolations;
 
-    public void addContingencyLimitViolation (ContingencyLimitViolationEntity contingencyLimitViolation) {
-        if(this.contingencyLimitViolations == null) {
+    public void addContingencyLimitViolation(ContingencyLimitViolationEntity contingencyLimitViolation) {
+        if (this.contingencyLimitViolations == null) {
             this.contingencyLimitViolations = new ArrayList<>();
         }
         this.contingencyLimitViolations.add(contingencyLimitViolation);

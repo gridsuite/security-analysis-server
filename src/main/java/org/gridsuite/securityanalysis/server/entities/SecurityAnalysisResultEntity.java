@@ -68,7 +68,7 @@ public class SecurityAnalysisResultEntity {
     }
 
     private void setConstraints(List<ConstraintEntity> constraints) {
-        if(constraints != null){
+        if (constraints != null) {
             this.constraints = constraints;
             constraints.forEach(constraint -> constraint.setResult(this));
         }

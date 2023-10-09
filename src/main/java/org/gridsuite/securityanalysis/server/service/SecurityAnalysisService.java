@@ -7,9 +7,7 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisProvider;
-import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.results.PreContingencyResult;
 import org.gridsuite.securityanalysis.server.dto.ConstraintToContingencyDTO;
 import org.gridsuite.securityanalysis.server.dto.ContingencyToConstraintDTO;
@@ -20,7 +18,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -73,7 +70,7 @@ public class SecurityAnalysisService {
     }
 
     public Mono<List<ConstraintToContingencyDTO>> getNmKConstraintsResult(UUID resultUuid) {
-        return Mono.fromCallable(() -> resultRepository.findNmKConstraintsResult((resultUuid)));
+        return Mono.fromCallable(() -> resultRepository.findNmKConstraintsResult(resultUuid));
     }
 
     public Mono<Void> deleteResult(UUID resultUuid) {

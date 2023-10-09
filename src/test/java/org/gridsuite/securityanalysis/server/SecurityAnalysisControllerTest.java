@@ -48,7 +48,6 @@ import reactor.core.publisher.Mono;
 
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -110,10 +109,6 @@ public class SecurityAnalysisControllerTest {
 
     @Before
     public void setUp() throws Exception {
-        //FIXME: remove those lines
-        webTestClient = webTestClient.mutate()
-            .responseTimeout(Duration.ofMillis(30000))
-            .build();
         MockitoAnnotations.initMocks(this);
 
         // network store service mocking
@@ -174,7 +169,7 @@ public class SecurityAnalysisControllerTest {
         workerService.setSecurityAnalysisFactorySupplier(provider -> runner);
 
         // purge messages
-        /*while (output.receive(1000, "sa.result") != null) {
+        while (output.receive(1000, "sa.result") != null) {
         }
         // purge messages
         while (output.receive(1000, "sa.run") != null) {
@@ -184,7 +179,7 @@ public class SecurityAnalysisControllerTest {
         while (output.receive(1000, "sa.stopped") != null) {
         }
         while (output.receive(1000, "sa.failed") != null) {
-        }*/
+        }
     }
 
     // added for testStatus can return null, after runTest
@@ -457,7 +452,7 @@ public class SecurityAnalysisControllerTest {
                 .isEqualTo("OpenLoadFlow");
     }
 
-    private void assertResultNotFound (UUID resultUuid) {
+    private void assertResultNotFound(UUID resultUuid) {
         webTestClient.get()
             .uri("/" + VERSION + "/results/" + resultUuid + "/n")
             .exchange()

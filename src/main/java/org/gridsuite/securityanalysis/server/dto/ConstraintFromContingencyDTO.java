@@ -19,9 +19,7 @@ public class ConstraintFromContingencyDTO {
     public double limit;
     public double value;
 
-
-
-    public static ConstraintFromContingencyDTO toDto (ContingencyLimitViolationEntity limitViolation) {
+    public static ConstraintFromContingencyDTO toDto(ContingencyLimitViolationEntity limitViolation) {
         String subjectId = limitViolation.getConstraint() != null
             ? limitViolation.getConstraint().getSubjectId()
             : null;

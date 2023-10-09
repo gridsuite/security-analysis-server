@@ -18,7 +18,7 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
 
     public ContingencyLimitViolationEntity(ConstraintEntity constraint, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
         super(constraint, subjectName, limit, limitName, limitType, acceptableDuration, limitReduction, value, side);
-        if(constraint != null) {
+        if (constraint != null) {
             constraint.addContingencyLimitViolation(this);
         }
     }

@@ -6,7 +6,6 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -99,7 +98,6 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         )).collect(Collectors.toList()
     );
 
-
     static final List<ConstraintToContingencyDTO> RESULT_CONSTRAINTS = List.of(
         new ConstraintToContingencyDTO(LIMIT_VIOLATION_1.getSubjectId(), List.of()),
         new ConstraintToContingencyDTO(
@@ -116,7 +114,6 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                 c.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).collect(Collectors.toList())))
             .collect(Collectors.toList())
         ));
-
 
     static final SecurityAnalysisReport REPORT = new SecurityAnalysisReport(RESULT);
     static final SecurityAnalysisReport REPORT_VARIANT = new SecurityAnalysisReport(RESULT_VARIANT);
