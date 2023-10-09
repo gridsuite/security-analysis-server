@@ -342,6 +342,18 @@ public class SecurityAnalysisControllerTest {
                 .expectBody(SecurityAnalysisStatus.class)
                 .isEqualTo(null);
 
+        webTestClient.put()
+            .uri("/" + VERSION + "/results/invalidate-status?resultUuid=" + RESULT_UUID)
+            .exchange()
+            .expectStatus().isOk();
+
+        webTestClient.get()
+            .uri("/" + VERSION + "/results/" + RESULT_UUID + "/status")
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(SecurityAnalysisStatus.class)
+            .isEqualTo(SecurityAnalysisStatus.NOT_DONE);
+
         webTestClient.post()
             .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
                 + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow")

@@ -112,8 +112,9 @@ public class SecurityAnalysisResultService {
     public void insertStatus(List<UUID> resultUuids, SecurityAnalysisStatus status) {
         Objects.requireNonNull(resultUuids);
         resultUuids.forEach(resultUuid -> {
-            Optional<SecurityAnalysisResultEntity> securityAnalysisResult = securityAnalysisResultRepository.findById(resultUuid);
-            securityAnalysisResult.ifPresent(sar -> sar.setStatus(status));
+            SecurityAnalysisResultEntity securityAnalysisResult = securityAnalysisResultRepository.findById(resultUuid).orElse(new SecurityAnalysisResultEntity(resultUuid));
+            securityAnalysisResult.setStatus(status);
+            securityAnalysisResultRepository.save(securityAnalysisResult);
         });
     }
 

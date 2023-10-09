@@ -34,6 +34,10 @@ public class SecurityAnalysisResultEntity {
     @OneToMany(mappedBy = "result", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ConstraintEntity> constraints;
 
+    public SecurityAnalysisResultEntity(UUID id){
+        this.id = id;
+    }
+
     public SecurityAnalysisResultEntity(UUID id, SecurityAnalysisStatus status, String preContingencyStatus, List<ContingencyEntity> contingencies, List<PreContingencyLimitViolationEntity> preContingencyLimitViolations) {
         this.id = id;
         this.status = status;
