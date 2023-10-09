@@ -11,10 +11,11 @@ public class RestResponseEntityExceptionHandler {
 
     @ExceptionHandler(SecurityAnalysisException.class)
     protected ResponseEntity<Object> handleStudyException(SecurityAnalysisException exception) {
-        if (SecurityAnalysisException.Type.RESULT_NOT_FOUND.equals(exception.getType())) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getType());
-        } else {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        switch (exception.getType()) {
+            case RESULT_NOT_FOUND :
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getType());
+            default:
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 }
