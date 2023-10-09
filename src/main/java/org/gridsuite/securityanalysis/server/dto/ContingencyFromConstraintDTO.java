@@ -15,15 +15,15 @@ import java.util.stream.Collectors;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ContingencyFromConstraintDTO {
-    public String contingencyId;
-    public String computationStatus;
-    public LimitViolationType limitType;
-    public String limitName;
-    public Branch.Side side;
-    public int acceptableDuration;
-    public double limit;
-    public double value;
-    public List<ContingencyElementDTO> elements;
+    private String contingencyId;
+    private String computationStatus;
+    private LimitViolationType limitType;
+    private String limitName;
+    private Branch.Side side;
+    private int acceptableDuration;
+    private double limit;
+    private double value;
+    private List<ContingencyElementDTO> elements;
 
     public static ContingencyFromConstraintDTO toDto(ContingencyLimitViolationEntity limitViolation) {
         ContingencyEntity contingency = limitViolation.getContingency();

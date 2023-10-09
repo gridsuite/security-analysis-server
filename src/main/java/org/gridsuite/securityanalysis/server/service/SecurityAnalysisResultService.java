@@ -94,7 +94,9 @@ public class SecurityAnalysisResultService {
     }
 
     public void assertResultExists(UUID resultUuid) {
-        securityAnalysisResultRepository.findById(resultUuid).orElseThrow(() -> new SecurityAnalysisException(SecurityAnalysisException.Type.RESULT_NOT_FOUND));
+        if (securityAnalysisResultRepository.findById(resultUuid).isEmpty()) {
+            throw new SecurityAnalysisException(SecurityAnalysisException.Type.RESULT_NOT_FOUND);
+        }
     }
 
     @Transactional

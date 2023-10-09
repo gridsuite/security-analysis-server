@@ -40,7 +40,7 @@ public abstract class AbstractLimitViolationEntity {
     @Enumerated(EnumType.STRING)
     private Branch.Side side;
 
-    public AbstractLimitViolationEntity(ConstraintEntity constraint, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
+    protected AbstractLimitViolationEntity(ConstraintEntity constraint, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
         this.constraint = constraint;
         this.subjectName = subjectName;
         this.limit = limit;

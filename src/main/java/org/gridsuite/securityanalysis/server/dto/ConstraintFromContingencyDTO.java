@@ -11,13 +11,13 @@ import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationE
 @AllArgsConstructor
 @NoArgsConstructor
 public class ConstraintFromContingencyDTO {
-    public String subjectId;
-    public LimitViolationType limitType;
-    public String limitName;
-    public Branch.Side side;
-    public int acceptableDuration;
-    public double limit;
-    public double value;
+    private String subjectId;
+    private LimitViolationType limitType;
+    private String limitName;
+    private Branch.Side side;
+    private int acceptableDuration;
+    private double limit;
+    private double value;
 
     public static ConstraintFromContingencyDTO toDto(ContingencyLimitViolationEntity limitViolation) {
         String subjectId = limitViolation.getConstraint() != null

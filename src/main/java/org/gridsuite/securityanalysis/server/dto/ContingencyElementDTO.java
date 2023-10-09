@@ -8,8 +8,8 @@ import org.gridsuite.securityanalysis.server.entities.ContingencyElementEmbeddab
 @AllArgsConstructor
 @NoArgsConstructor
 public class ContingencyElementDTO {
-    public String id;
-    public ContingencyElementType elementType;
+    private String id;
+    private ContingencyElementType elementType;
 
     public static ContingencyElementDTO toDto(ContingencyElementEmbeddable contingencyElement) {
         return new ContingencyElementDTO(contingencyElement.getElementId(), contingencyElement.getElementType());

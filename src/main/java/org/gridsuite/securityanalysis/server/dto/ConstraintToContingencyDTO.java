@@ -10,7 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ConstraintToContingencyDTO {
-    public String constraintId;
+    private String constraintId;
 
-    public List<ContingencyFromConstraintDTO> contingencies;
+    private List<ContingencyFromConstraintDTO> contingencies;
 }
