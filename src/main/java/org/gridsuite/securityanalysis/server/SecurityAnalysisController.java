@@ -99,19 +99,6 @@ public class SecurityAnalysisController {
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(resultUuid);
     }
 
-    @GetMapping(value = "/results/{resultUuid}", produces = APPLICATION_JSON_VALUE)
-    @Operation(summary = "Get a security analysis result from the database")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
-                           @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public Mono<ResponseEntity<SecurityAnalysisResult>> getResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
-                                                                  @Parameter(description = "Limit type") @RequestParam(name = "limitType", required = false) List<String> limitTypes) {
-        Set<LimitViolationType> limitTypeSet = limitTypes != null ? limitTypes.stream().map(LimitViolationType::valueOf).collect(Collectors.toSet())
-                                                                  : Collections.emptySet();
-        Mono<SecurityAnalysisResult> result = service.getResult(resultUuid, limitTypeSet);
-        return result.map(r -> ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(r))
-                .defaultIfEmpty(ResponseEntity.notFound().build());
-    }
-
     @GetMapping(value = "/results/{resultUuid}/n", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get a security analysis result from the database - N datas")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),

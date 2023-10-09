@@ -22,10 +22,7 @@ import com.powsybl.security.results.PreContingencyResult;
 import lombok.SneakyThrows;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
-import org.gridsuite.securityanalysis.server.service.ActionsService;
-import org.gridsuite.securityanalysis.server.service.ReportService;
-import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
-import org.gridsuite.securityanalysis.server.service.UuidGeneratorService;
+import org.gridsuite.securityanalysis.server.service.*;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
 import org.junit.After;
 import org.junit.Before;
@@ -276,38 +273,18 @@ public class SecurityAnalysisControllerTest {
             .expectStatus().isOk()
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
             .expectBody(List.class)
-            .value(new MatcherJson<>(mapper, RESULT.getPreContingencyResult()));
+            .value(new MatcherJson<>(mapper, RESULT_CONTINGENCIES));
 
         webTestClient.get()
             .uri("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints")
             .exchange()
             .expectStatus().isOk()
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
-            .expectBody(PreContingencyResult.class)
-            .value(new MatcherJson<>(mapper, RESULT.getPreContingencyResult()));
-
-       /* webTestClient.get()
-                .uri("/" + VERSION + "/results/" + RESULT_UUID)
-                .exchange()
-                .expectStatus().isOk()
-                .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody(SecurityAnalysisResult.class)
-                .value(new MatcherJson<>(mapper, RESULT));
-
-        // test limit type filtering
-        webTestClient.get()
-                .uri("/" + VERSION + "/results/" + RESULT_UUID + "?limitType=CURRENT")
-                .exchange()
-                .expectStatus().isOk()
-                .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody(SecurityAnalysisResult.class)
-                .value(new MatcherJson<>(mapper, RESULT_FILTERED));
+            .expectBody(List.class)
+            .value(new MatcherJson<>(mapper, RESULT_CONSTRAINTS));
 
         // should throw not found if result does not exist
-        webTestClient.get()
-                .uri("/" + VERSION + "/results/" + OTHER_RESULT_UUID)
-                .exchange()
-                .expectStatus().isNotFound();
+        assertResultNotFound(OTHER_RESULT_UUID);
 
         // test one result deletion
         webTestClient.delete()
@@ -315,10 +292,7 @@ public class SecurityAnalysisControllerTest {
                 .exchange()
                 .expectStatus().isOk();
 
-        webTestClient.get()
-                .uri("/" + VERSION + "/results/" + RESULT_UUID)
-                .exchange()
-                .expectStatus().isNotFound();*/
+        assertResultNotFound(RESULT_UUID);
     }
 
     @Test
@@ -350,10 +324,7 @@ public class SecurityAnalysisControllerTest {
                 .exchange()
                 .expectStatus().isOk();
 
-        webTestClient.get()
-                .uri("/" + VERSION + "/results/" + RESULT_UUID)
-                .exchange()
-                .expectStatus().isNotFound();
+        assertResultNotFound(RESULT_UUID);
     }
 
     @Test
@@ -376,10 +347,30 @@ public class SecurityAnalysisControllerTest {
                 .expectBody(SecurityAnalysisStatus.class)
                 .isEqualTo(null);
 
+        webTestClient.post()
+            .uri("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
+                + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow")
+            .exchange()
+            .expectStatus().isOk()
+            .expectHeader().contentType(MediaType.APPLICATION_JSON)
+            .expectBody(UUID.class)
+            .isEqualTo(RESULT_UUID);
+
+        Message<byte[]> resultMessage = output.receive(TIMEOUT, "sa.result");
+        assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
+        assertEquals("me", resultMessage.getHeaders().get("receiver"));
+
+        webTestClient.get()
+            .uri("/" + VERSION + "/results/" + RESULT_UUID + "/status")
+            .exchange()
+            .expectStatus().isOk()
+            .expectBody(SecurityAnalysisStatus.class)
+            .isEqualTo(SecurityAnalysisStatus.CONVERGED);
+
         webTestClient.put()
-                .uri("/" + VERSION + "/results/invalidate-status?resultUuid=" + RESULT_UUID)
-                .exchange()
-                .expectStatus().isOk();
+            .uri("/" + VERSION + "/results/invalidate-status?resultUuid=" + RESULT_UUID)
+            .exchange()
+            .expectStatus().isOk();
 
         webTestClient.get()
                 .uri("/" + VERSION + "/results/" + RESULT_UUID + "/status")
@@ -430,10 +421,7 @@ public class SecurityAnalysisControllerTest {
         assertEquals(FAIL_MESSAGE + " : " + ERROR_MESSAGE, cancelMessage.getHeaders().get("message"));
 
         // No result
-        webTestClient.get()
-                .uri("/" + VERSION + "/results/" + RESULT_UUID)
-                .exchange()
-                .expectStatus().isNotFound();
+        assertResultNotFound(RESULT_UUID);
     }
 
     @Test
@@ -467,5 +455,22 @@ public class SecurityAnalysisControllerTest {
                 .expectHeader().contentType(new MediaType(MediaType.TEXT_PLAIN, StandardCharsets.UTF_8))
                 .expectBody(String.class)
                 .isEqualTo("OpenLoadFlow");
+    }
+
+    private void assertResultNotFound (UUID resultUuid) {
+        webTestClient.get()
+            .uri("/" + VERSION + "/results/" + resultUuid + "/n")
+            .exchange()
+            .expectStatus().isNotFound();
+
+        webTestClient.get()
+            .uri("/" + VERSION + "/results/" + resultUuid + "/nmk-contingencies")
+            .exchange()
+            .expectStatus().isNotFound();
+
+        webTestClient.get()
+            .uri("/" + VERSION + "/results/" + resultUuid + "/nmk-constraints")
+            .exchange()
+            .expectStatus().isNotFound();
     }
 }

@@ -5,6 +5,7 @@ import com.powsybl.security.LimitViolationType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationEntity;
 
 @Getter
 @AllArgsConstructor
@@ -17,4 +18,13 @@ public class ConstraintFromContingencyDTO {
     public int acceptableDuration;
     public double limit;
     public double value;
+
+
+
+    public static ConstraintFromContingencyDTO toDto (ContingencyLimitViolationEntity limitViolation) {
+        String subjectId = limitViolation.getConstraint() != null
+            ? limitViolation.getConstraint().getSubjectId()
+            : null;
+        return new ConstraintFromContingencyDTO(subjectId, limitViolation.getLimitType(), limitViolation.getLimitName(), limitViolation.getSide(), limitViolation.getAcceptableDuration(), limitViolation.getLimit(), limitViolation.getValue());
+    }
 }

@@ -18,11 +18,8 @@ public abstract class AbstractLimitViolationEntity {
     @GeneratedValue
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @Setter
-    private SecurityAnalysisResultEntity result;
-
-    private String subjectId;
+    @ManyToOne
+    private ConstraintEntity constraint;
 
     private String subjectName;
 
@@ -44,8 +41,8 @@ public abstract class AbstractLimitViolationEntity {
     @Enumerated(EnumType.STRING)
     private Branch.Side side;
 
-    public AbstractLimitViolationEntity(String subjectId, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
-        this.subjectId = subjectId;
+    public AbstractLimitViolationEntity(ConstraintEntity constraint, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
+        this.constraint = constraint;
         this.subjectName = subjectName;
         this.limit = limit;
         this.limitName = limitName;

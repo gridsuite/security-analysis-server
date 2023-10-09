@@ -16,6 +16,7 @@ import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.security.*;
 import com.powsybl.security.action.Action;
 import com.powsybl.security.strategy.OperatorStrategy;
+import org.gridsuite.securityanalysis.server.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,9 +82,41 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         CONTINGENCIES_VARIANT.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, List.of(LIMIT_VIOLATION_4)))
             .collect(Collectors.toList()));
 
-    static final SecurityAnalysisResult RESULT_FILTERED = new SecurityAnalysisResult(new LimitViolationsResult(List.of(LIMIT_VIOLATION_1)), LoadFlowResult.ComponentResult.Status.CONVERGED,
-        CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, Collections.emptyList()))
-            .collect(Collectors.toList()));
+    static final List<ContingencyToConstraintDTO> RESULT_CONTINGENCIES = CONTINGENCIES.stream().map(c ->
+        new ContingencyToConstraintDTO(
+            c.getId(),
+            LoadFlowResult.ComponentResult.Status.CONVERGED.name(),
+            c.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).collect(Collectors.toList()),
+            List.of(new ConstraintFromContingencyDTO(
+                LIMIT_VIOLATION_2.getSubjectId(),
+                LIMIT_VIOLATION_2.getLimitType(),
+                LIMIT_VIOLATION_2.getLimitName(),
+                LIMIT_VIOLATION_2.getSide(),
+                LIMIT_VIOLATION_2.getAcceptableDuration(),
+                LIMIT_VIOLATION_2.getLimit(),
+                LIMIT_VIOLATION_2.getValue())
+            )
+        )).collect(Collectors.toList()
+    );
+
+
+    static final List<ConstraintToContingencyDTO> RESULT_CONSTRAINTS = List.of(
+        new ConstraintToContingencyDTO(LIMIT_VIOLATION_1.getSubjectId(), List.of()),
+        new ConstraintToContingencyDTO(
+            LIMIT_VIOLATION_2.getSubjectId(),
+            CONTINGENCIES.stream().map(c -> new ContingencyFromConstraintDTO(
+                c.getId(),
+                LoadFlowResult.ComponentResult.Status.CONVERGED.name(),
+                LIMIT_VIOLATION_2.getLimitType(),
+                LIMIT_VIOLATION_2.getLimitName(),
+                LIMIT_VIOLATION_2.getSide(),
+                LIMIT_VIOLATION_2.getAcceptableDuration(),
+                LIMIT_VIOLATION_2.getLimit(),
+                LIMIT_VIOLATION_2.getValue(),
+                c.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).collect(Collectors.toList())))
+            .collect(Collectors.toList())
+        ));
+
 
     static final SecurityAnalysisReport REPORT = new SecurityAnalysisReport(RESULT);
     static final SecurityAnalysisReport REPORT_VARIANT = new SecurityAnalysisReport(RESULT_VARIANT);

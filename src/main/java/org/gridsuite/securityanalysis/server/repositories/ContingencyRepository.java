@@ -1,7 +1,6 @@
 package org.gridsuite.securityanalysis.server.repositories;
 
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
-import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -10,5 +9,5 @@ import java.util.UUID;
 
 @Repository
 public interface ContingencyRepository extends JpaRepository<ContingencyEntity, UUID> {
-    List<ContingencyEntity> findByResultId(UUID resultUuid);
+    List<ContingencyEntity> findByResultIdOrderByContingencyId(UUID resultUuid);
 }

@@ -1,0 +1,155 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-7">
+        <createTable tableName="contingency_limit_violation">
+            <column name="id" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="contingency_limit_violationPK"/>
+            </column>
+            <column name="acceptable_duration" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="limit_value" type="FLOAT(53)"/>
+            <column name="limit_name" type="VARCHAR(255)"/>
+            <column name="limit_reduction" type="FLOAT4">
+                <constraints nullable="false"/>
+            </column>
+            <column name="limit_type" type="VARCHAR(255)"/>
+            <column name="side" type="VARCHAR(255)"/>
+            <column name="subject_name" type="VARCHAR(255)"/>
+            <column name="offending_value" type="FLOAT(53)"/>
+            <column name="constraint_id" type="UUID"/>
+            <column name="contingency_uuid" type="UUID"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-8">
+        <createTable tableName="contingency_limit_violation_constraint">
+            <column name="id" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="contingency_limit_violation_constraintPK"/>
+            </column>
+            <column name="subject_id" type="VARCHAR(255)"/>
+            <column name="result_id" type="UUID"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-9">
+        <createTable tableName="pre_contingency_limit_violation">
+            <column name="id" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="pre_contingency_limit_violationPK"/>
+            </column>
+            <column name="acceptable_duration" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="limit_value" type="FLOAT(53)"/>
+            <column name="limit_name" type="VARCHAR(255)"/>
+            <column name="limit_reduction" type="FLOAT4">
+                <constraints nullable="false"/>
+            </column>
+            <column name="limit_type" type="VARCHAR(255)"/>
+            <column name="side" type="VARCHAR(255)"/>
+            <column name="subject_name" type="VARCHAR(255)"/>
+            <column name="offending_value" type="FLOAT(53)"/>
+            <column name="constraint_id" type="UUID"/>
+            <column name="result_id" type="UUID"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-10">
+        <createTable tableName="security_analysis_result">
+            <column name="id" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="security_analysis_resultPK"/>
+            </column>
+            <column name="pre_contingency_status" type="VARCHAR(255)"/>
+            <column name="status" type="TINYINT"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-11">
+        <addColumn tableName="contingency_entity_contingency_elements">
+            <column name="contingency_entity_uuid" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-12">
+        <addColumn tableName="contingency">
+            <column name="result_id" type="uuid"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-13">
+        <addColumn tableName="contingency">
+            <column name="status" type="varchar(255)"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-14">
+        <addColumn tableName="contingency">
+            <column name="uuid" type="uuid">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-23">
+        <dropForeignKeyConstraint baseTableName="CONTINGENCY_ENTITY_CONTINGENCY_ELEMENTS" constraintName="FKPNMUIJ3QKI9U4KF7OMME39UGN"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696491239589-100">
+        <dropIndex indexName="contingency_entity_elements_idx" tableName="contingency_entity_contingency_elements"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-5">
+        <dropPrimaryKey tableName="contingency"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-6">
+        <addPrimaryKey columnNames="uuid" constraintName="contingencyPK" tableName="contingency"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-15">
+        <createIndex indexName="IX_contingencyPK" tableName="contingency" unique="true">
+            <column name="uuid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-16">
+        <addForeignKeyConstraint baseColumnNames="constraint_id" baseTableName="contingency_limit_violation" constraintName="FKg621k02jl7b4gdhcaoojee4uh" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="contingency_limit_violation_constraint" validate="true"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-17">
+        <addForeignKeyConstraint baseColumnNames="contingency_entity_uuid" baseTableName="contingency_entity_contingency_elements" constraintName="FKjckkamkmx4ja70chvumfb0gmh" deferrable="false" initiallyDeferred="false" referencedColumnNames="uuid" referencedTableName="contingency" validate="true"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-18">
+        <addForeignKeyConstraint baseColumnNames="contingency_uuid" baseTableName="contingency_limit_violation" constraintName="FKkit55jrqewyfjanf04avnnaiu" deferrable="false" initiallyDeferred="false" referencedColumnNames="uuid" referencedTableName="contingency" validate="true"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-19">
+        <addForeignKeyConstraint baseColumnNames="result_id" baseTableName="contingency_limit_violation_constraint" constraintName="FKost8wo7m7t7e9p0ee6fyjgifh" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="security_analysis_result" validate="true"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-20">
+        <addForeignKeyConstraint baseColumnNames="result_id" baseTableName="contingency" constraintName="FKr9wbq7iw2uj6wgqwr7ugjcd4v" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="security_analysis_result" validate="true"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-21">
+        <addForeignKeyConstraint baseColumnNames="constraint_id" baseTableName="pre_contingency_limit_violation" constraintName="FKrqyte5qgbym6fmgpj25mcrjg7" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="contingency_limit_violation_constraint" validate="true"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-22">
+        <addForeignKeyConstraint baseColumnNames="result_id" baseTableName="pre_contingency_limit_violation" constraintName="FKs49qjye9k7squgtn63kidym64" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="security_analysis_result" validate="true"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-24">
+        <dropTable tableName="COMPUTATION_STATUS"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-25">
+        <dropTable tableName="GLOBAL_STATUS"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-26">
+        <dropTable tableName="LIMIT_VIOLATION"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-27">
+        <dropColumn columnName="CONTINGENCY_ENTITY_CONTINGENCY_ID" tableName="CONTINGENCY_ENTITY_CONTINGENCY_ELEMENTS"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-28">
+        <dropColumn columnName="CONTINGENCY_ENTITY_RESULT_UUID" tableName="CONTINGENCY_ENTITY_CONTINGENCY_ELEMENTS"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-29">
+        <dropColumn columnName="RESULT_UUID" tableName="contingency"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-1">
+        <modifyDataType columnName="contingency_id" newDataType="varchar(255)" tableName="contingency"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-2">
+        <dropNotNullConstraint columnDataType="varchar(255)" columnName="contingency_id" tableName="contingency"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-3">
+        <modifyDataType columnName="element_id" newDataType="varchar(255)" tableName="contingency_entity_contingency_elements"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1696840393168-4">
+        <modifyDataType columnName="element_type" newDataType="tinyint" tableName="contingency_entity_contingency_elements"/>
+    </changeSet>
+</databaseChangeLog>

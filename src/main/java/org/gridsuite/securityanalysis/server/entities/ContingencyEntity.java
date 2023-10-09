@@ -34,7 +34,7 @@ public class ContingencyEntity {
     @ElementCollection
     private List<ContingencyElementEmbeddable> contingencyElements;
 
-    @OneToMany(mappedBy = "contingency")
+    @OneToMany(mappedBy = "contingency", cascade = CascadeType.ALL, orphanRemoval = true)
     List<ContingencyLimitViolationEntity> contingencyLimitViolations;
 
     /**

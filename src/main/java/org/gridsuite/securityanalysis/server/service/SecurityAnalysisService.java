@@ -64,10 +64,6 @@ public class SecurityAnalysisService {
                 .thenReturn(resultUuid));
     }
 
-    public Mono<SecurityAnalysisResult> getResult(UUID resultUuid, Set<LimitViolationType> limitTypes) {
-        return Mono.fromCallable(() -> resultRepository.find(resultUuid, limitTypes));
-    }
-
     public Mono<PreContingencyResult> getNResult(UUID resultUuid) {
         return Mono.fromCallable(() -> resultRepository.findNResult(resultUuid));
     }

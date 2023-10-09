@@ -7,5 +7,5 @@ import java.util.List;
 import java.util.UUID;
 
 public interface ContingencyLimitViolationRepository extends JpaRepository<ContingencyLimitViolationEntity, UUID> {
-    List<ContingencyLimitViolationEntity> findByResultId(UUID resultuuid);
+    
 }

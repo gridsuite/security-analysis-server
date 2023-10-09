@@ -7,8 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.UUID;
-
 @NoArgsConstructor
 @Entity
 @Getter
@@ -18,7 +16,10 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
     @Setter
     private ContingencyEntity contingency;
 
-    public ContingencyLimitViolationEntity(String subjectId, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
-        super(subjectId, subjectName, limit, limitName, limitType, acceptableDuration, limitReduction, value, side);
+    public ContingencyLimitViolationEntity(ConstraintEntity constraint, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
+        super(constraint, subjectName, limit, limitName, limitType, acceptableDuration, limitReduction, value, side);
+        if(constraint != null) {
+            constraint.addContingencyLimitViolation(this);
+        }
     }
 }
