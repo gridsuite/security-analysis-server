@@ -148,28 +148,6 @@ public class SecurityAnalysisResultService {
             limitViolationEntity.getLimit(), limitViolationEntity.getLimitReduction(), limitViolationEntity.getValue(), limitViolationEntity.getSide());
     }
 
-    private static Contingency fromEntity(ContingencyEntity entity) {
-        List<ContingencyElement> elements = entity.getContingencyElements().stream()
-            .map(e -> {
-                switch (e.getElementType()) {
-                    case LINE: return new LineContingency(e.getElementId());
-                    case BRANCH: return new BranchContingency(e.getElementId());
-                    case LOAD: return new LoadContingency(e.getElementId());
-                    case GENERATOR: return new GeneratorContingency(e.getElementId());
-                    case BUSBAR_SECTION: return new BusbarSectionContingency(e.getElementId());
-                    case HVDC_LINE: return new HvdcLineContingency(e.getElementId());
-                    case DANGLING_LINE: return new DanglingLineContingency(e.getElementId());
-                    case SHUNT_COMPENSATOR: return new ShuntCompensatorContingency(e.getElementId());
-                    case TWO_WINDINGS_TRANSFORMER: return new TwoWindingsTransformerContingency(e.getElementId());
-                    case THREE_WINDINGS_TRANSFORMER: return new ThreeWindingsTransformerContingency(e.getElementId());
-                    case STATIC_VAR_COMPENSATOR: return new StaticVarCompensatorContingency(e.getElementId());
-                    default:
-                        throw new IllegalStateException("Element type not yet support: " + e.getElementType());
-                }
-            }).collect(Collectors.toList());
-        return new Contingency(entity.getContingencyId(), elements);
-    }
-
     private static SecurityAnalysisResultEntity toEntity(UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
         Map<String, ConstraintEntity> constraintsBySubjectId = getUniqueConstraintsFromResult(securityAnalysisResult)
             .stream().collect(Collectors.toMap(
