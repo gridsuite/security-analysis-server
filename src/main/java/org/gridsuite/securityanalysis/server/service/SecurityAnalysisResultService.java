@@ -31,19 +31,16 @@ public class SecurityAnalysisResultService {
     private SecurityAnalysisResultRepository securityAnalysisResultRepository;
     private ContingencyRepository contingencyRepository;
     private PreContingencyLimitViolationRepository preContingencyLimitViolationRepository;
-    private ContingencyLimitViolationRepository contingencyLimitViolationRepository;
     private ConstraintRepository constraintRepository;
 
 
     public SecurityAnalysisResultService(SecurityAnalysisResultRepository securityAnalysisResultRepository,
                                          ContingencyRepository contingencyRepository,
                                          PreContingencyLimitViolationRepository preContingencyLimitViolationRepository,
-                                         ContingencyLimitViolationRepository contingencyLimitViolationRepository,
                                          ConstraintRepository constraintRepository) {
         this.securityAnalysisResultRepository = securityAnalysisResultRepository;
         this.contingencyRepository = contingencyRepository;
         this.preContingencyLimitViolationRepository = preContingencyLimitViolationRepository;
-        this.contingencyLimitViolationRepository = contingencyLimitViolationRepository;
         this.constraintRepository = constraintRepository;
     }
 
