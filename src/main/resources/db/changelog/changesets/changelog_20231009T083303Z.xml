@@ -85,7 +85,7 @@
         </addColumn>
     </changeSet>
     <changeSet author="lesaulnierkev (generated)" id="1696840393168-23">
-        <dropForeignKeyConstraint baseTableName="CONTINGENCY_ENTITY_CONTINGENCY_ELEMENTS" constraintName="FKPNMUIJ3QKI9U4KF7OMME39UGN"/>
+        <dropForeignKeyConstraint baseTableName="contingency_entity_contingency_elements" constraintName="FKpnmuij3qki9u4kf7omme39ugn"/>
     </changeSet>
     <changeSet author="lesaulnierkev (generated)" id="1696491239589-100">
         <dropIndex indexName="contingency_entity_elements_idx" tableName="contingency_entity_contingency_elements"/>
