@@ -27,7 +27,7 @@ public class ReportService {
 
     private static final String DELIMITER = "/";
 
-    public String baseUri;
+    private String baseUri;
 
     @Autowired
     private RestTemplate restTemplate;
