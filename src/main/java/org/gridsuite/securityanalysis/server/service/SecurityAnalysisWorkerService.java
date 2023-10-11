@@ -105,7 +105,6 @@ public class SecurityAnalysisWorkerService {
     }
 
     private Network getNetwork(UUID networkUuid) {
-        // FIXME was bounded to elastic
         try {
             return networkStoreService.getNetwork(networkUuid, PreloadingStrategy.COLLECTION);
         } catch (PowsyblException e) {
