@@ -138,7 +138,9 @@ public class SecurityAnalysisWorkerService {
     public SecurityAnalysisResult run(SecurityAnalysisRunContext context) {
         try {
             return run(context, null);
-        } catch (Exception e) {
+        } catch (ExecutionException e) {
+            throw new SecurityAnalysisException(SecurityAnalysisException.Type.RUN_AS_ERROR, e.getMessage());
+        } catch (InterruptedException e) {
             throw new SecurityAnalysisException(SecurityAnalysisException.Type.RUN_AS_ERROR, e.getMessage());
         }
     }
