@@ -14,10 +14,8 @@ import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
-import com.powsybl.security.SecurityAnalysis;
-import com.powsybl.security.SecurityAnalysisParameters;
-import com.powsybl.security.SecurityAnalysisProvider;
-import com.powsybl.security.SecurityAnalysisResult;
+import com.powsybl.security.*;
+import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.security.results.PreContingencyResult;
 import lombok.SneakyThrows;
 import org.gridsuite.securityanalysis.server.dto.ConstraintToContingencyDTO;
@@ -50,9 +48,12 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
@@ -60,6 +61,7 @@ import static org.gridsuite.securityanalysis.server.service.NotificationService.
 import static org.gridsuite.securityanalysis.server.service.NotificationService.FAIL_MESSAGE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -101,9 +103,6 @@ public class SecurityAnalysisControllerTest {
     private ActionsService actionsService;
 
     @MockBean
-    private SecurityAnalysis.Runner securityAnalysisRunner;
-
-    @MockBean
     private UuidGeneratorService uuidGeneratorService;
 
     @Autowired
@@ -132,9 +131,8 @@ public class SecurityAnalysisControllerTest {
 
         when(networkStoreService.getNetwork(NETWORK_STOP_UUID, PreloadingStrategy.COLLECTION)).thenAnswer((Answer) invocation -> {
             //Needed so the stop call doesn't arrive too late
-            Thread.sleep(2000);
             Network network1 = new NetworkFactoryImpl().createNetwork("other", "test");
-            network1.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_2_ID);
+            network1.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_TO_STOP_ID);
             return network1;
         });
 
@@ -155,6 +153,8 @@ public class SecurityAnalysisControllerTest {
                 .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
         given(actionsService.getContingencyList(CONTINGENCY_LIST_ERROR_NAME, NETWORK_UUID, VARIANT_1_ID))
                 .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
+        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_STOP_UUID, VARIANT_TO_STOP_ID))
+            .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_FOR_MERGING_VIEW_UUID, null))
             .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, OTHER_NETWORK_FOR_MERGING_VIEW_UUID, null))
@@ -162,10 +162,6 @@ public class SecurityAnalysisControllerTest {
 
         // UUID service mocking to always generate the same result UUID
         given(uuidGeneratorService.generate()).willReturn(RESULT_UUID);
-
-        //FIXME should send something ?
-        /*given(reportService.sendReport(any(UUID.class), any(Reporter.class)))
-                .willReturn(void);*/
 
         // SecurityAnalysis.Runner constructor is private..
         Constructor<SecurityAnalysis.Runner> constructor = SecurityAnalysis.Runner.class.getDeclaredConstructor(SecurityAnalysisProvider.class);
@@ -432,20 +428,29 @@ public class SecurityAnalysisControllerTest {
 
     @Test
     public void stopTest() throws Exception {
-        MvcResult mvcResult;
-        String resultAsString;
+        countDownLatch = new CountDownLatch(1);
 
-        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_STOP_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
-            + "&receiver=me&variantId=" + VARIANT_2_ID))
-                .andExpectAll(
-                    status().isOk(),
-                    content().contentType(MediaType.APPLICATION_JSON)
-                ).andReturn();
+        new Thread(() -> {
+            try {
+                MvcResult mvcResult;
+                String resultAsString;
+                mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_STOP_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
+                        + "&receiver=me&variantId=" + VARIANT_TO_STOP_ID))
+                    .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON)
+                    ).andReturn();
 
-        resultAsString = mvcResult.getResponse().getContentAsString();
-        UUID resultUuid = mapper.readValue(resultAsString, UUID.class);
-        assertEquals(RESULT_UUID, resultUuid);
+                resultAsString = mvcResult.getResponse().getContentAsString();
+                UUID resultUuid = mapper.readValue(resultAsString, UUID.class);
+                assertEquals(RESULT_UUID, resultUuid);
+            } catch (Exception e) {
+                throw new RuntimeException(e.getMessage());
+            }
+        }).start();
 
+        // wait for security analysis to actually run before trying to stop it
+        countDownLatch.await();
 
         mockMvc.perform(put("/" + VERSION + "/results/" + RESULT_UUID + "/stop"
             + "?receiver=me"))
@@ -500,7 +505,7 @@ public class SecurityAnalysisControllerTest {
 
         resultAsString = mvcResult.getResponse().getContentAsString();
         SecurityAnalysisResult securityAnalysisResult = mapper.readValue(resultAsString, SecurityAnalysisResult.class);
-        assertEquals(RESULT, securityAnalysisResult);
+        assertThat(RESULT, new MatcherJson<>(mapper, securityAnalysisResult));
     }
 
     @Test

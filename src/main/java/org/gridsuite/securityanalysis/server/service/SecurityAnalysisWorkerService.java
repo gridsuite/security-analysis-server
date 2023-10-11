@@ -136,7 +136,11 @@ public class SecurityAnalysisWorkerService {
     }
 
     public SecurityAnalysisResult run(SecurityAnalysisRunContext context) {
-        return run(context, null);
+        try {
+            return run(context, null);
+        } catch (Exception e) {
+            throw new SecurityAnalysisException(SecurityAnalysisException.Type.RUN_AS_ERROR, e.getMessage());
+        }
     }
 
     private CompletableFuture<SecurityAnalysisResult> runASAsync(SecurityAnalysisRunContext context,
@@ -198,7 +202,7 @@ public class SecurityAnalysisWorkerService {
         LOGGER.info(CANCEL_MESSAGE + " (resultUuid='{}')", resultUuid);
     }
 
-    private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) {
+    private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) throws ExecutionException, InterruptedException {
         Objects.requireNonNull(context);
 
         LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(LogUtils::sanitizeParam).collect(Collectors.toList()));
@@ -226,8 +230,9 @@ public class SecurityAnalysisWorkerService {
         try {
             result = future == null ? null : future.get();
         } catch (Exception e) {
-            if (e instanceof InterruptedException) {
+            if (e instanceof CancellationException) {
                 Thread.currentThread().interrupt();
+               // throw e;
             }
             throw new SecurityAnalysisException(SecurityAnalysisException.Type.RUN_AS_ERROR, e.getMessage());
         }

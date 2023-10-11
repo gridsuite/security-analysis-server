@@ -8,6 +8,8 @@ package org.gridsuite.securityanalysis.server;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.powsybl.commons.reporter.Reporter;
@@ -121,6 +123,9 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     static final String VARIANT_1_ID = "variant_1";
     static final String VARIANT_2_ID = "variant_2";
     static final String VARIANT_3_ID = "variant_3";
+    static final String VARIANT_TO_STOP_ID = "variant_to_stop";
+
+    static CountDownLatch countDownLatch;
 
     public CompletableFuture<SecurityAnalysisReport> run(Network network,
                                                          String workingVariantId,
@@ -137,6 +142,11 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         LOGGER.info("Run security analysis mock");
         if (workingVariantId.equals(VARIANT_3_ID)) {
             return CompletableFuture.completedFuture(REPORT_VARIANT);
+        }
+        if(workingVariantId.equals(VARIANT_TO_STOP_ID)){
+            countDownLatch.countDown();
+            // creating a long completable future which is here to be canceled
+            return new CompletableFuture<SecurityAnalysisReport>().completeOnTimeout(REPORT, 3, TimeUnit.SECONDS);
         }
         return CompletableFuture.completedFuture(REPORT);
     }
