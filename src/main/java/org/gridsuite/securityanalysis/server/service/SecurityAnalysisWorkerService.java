@@ -232,7 +232,7 @@ public class SecurityAnalysisWorkerService {
         } catch (Exception e) {
             if (e instanceof CancellationException) {
                 Thread.currentThread().interrupt();
-               throw e;
+                throw e;
             }
             throw new SecurityAnalysisException(SecurityAnalysisException.Type.RUN_AS_ERROR, e.getMessage());
         }
