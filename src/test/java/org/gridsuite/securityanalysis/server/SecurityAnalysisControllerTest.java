@@ -14,8 +14,10 @@ import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
-import com.powsybl.security.*;
-import com.powsybl.security.detectors.DefaultLimitViolationDetector;
+import com.powsybl.security.SecurityAnalysis;
+import com.powsybl.security.SecurityAnalysisParameters;
+import com.powsybl.security.SecurityAnalysisProvider;
+import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.results.PreContingencyResult;
 import lombok.SneakyThrows;
 import org.gridsuite.securityanalysis.server.dto.ConstraintToContingencyDTO;
@@ -48,11 +50,9 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
@@ -61,7 +61,6 @@ import static org.gridsuite.securityanalysis.server.service.NotificationService.
 import static org.gridsuite.securityanalysis.server.service.NotificationService.FAIL_MESSAGE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -221,32 +220,32 @@ public class SecurityAnalysisControllerTest {
                 .build());
     }
 
-   @Test
+    @Test
     public void runTest() throws Exception {
-       MvcResult mvcResult;
-       String resultAsString;
+        MvcResult mvcResult;
+        String resultAsString;
 
-       // run with specific variant
-       mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME_VARIANT + "&variantId=" + VARIANT_3_ID + "&provider=OpenLoadFlow"))
+        // run with specific variant
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME_VARIANT + "&variantId=" + VARIANT_3_ID + "&provider=OpenLoadFlow"))
                 .andExpectAll(
                     status().isOk(),
                     content().contentType(MediaType.APPLICATION_JSON)
                 ).andReturn();
 
-       resultAsString = mvcResult.getResponse().getContentAsString();
-       SecurityAnalysisResult securityAnalysisResult = mapper.readValue(resultAsString, SecurityAnalysisResult.class);
-       assertThat(RESULT_VARIANT, new MatcherJson<>(mapper, securityAnalysisResult));
+        resultAsString = mvcResult.getResponse().getContentAsString();
+        SecurityAnalysisResult securityAnalysisResult = mapper.readValue(resultAsString, SecurityAnalysisResult.class);
+        assertThat(RESULT_VARIANT, new MatcherJson<>(mapper, securityAnalysisResult));
 
-       // run with implicit initial variant
-       mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME))
+        // run with implicit initial variant
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME))
            .andExpectAll(
                status().isOk(),
                content().contentType(MediaType.APPLICATION_JSON)
            ).andReturn();
 
-       resultAsString = mvcResult.getResponse().getContentAsString();
-       securityAnalysisResult = mapper.readValue(resultAsString, SecurityAnalysisResult.class);
-       assertThat(RESULT, new MatcherJson<>(mapper, securityAnalysisResult));
+        resultAsString = mvcResult.getResponse().getContentAsString();
+        securityAnalysisResult = mapper.readValue(resultAsString, SecurityAnalysisResult.class);
+        assertThat(RESULT, new MatcherJson<>(mapper, securityAnalysisResult));
     }
 
     @Test
@@ -305,7 +304,6 @@ public class SecurityAnalysisControllerTest {
         // test one result deletion
         mockMvc.perform(delete("/" + VERSION + "/results/" + RESULT_UUID))
                 .andExpect(status().isOk());
-
 
         assertResultNotFound(RESULT_UUID);
     }
@@ -372,10 +370,10 @@ public class SecurityAnalysisControllerTest {
 
         // getting status when result does not exist
         mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/status"))
-                .andExpectAll(
-                    status().isOk(),
-                    content().string("")
-                );
+            .andExpectAll(
+                status().isOk(),
+                content().string("")
+            );
 
         // invalidating unexisting result
         mockMvc.perform(put("/" + VERSION + "/results/invalidate-status?resultUuid=" + RESULT_UUID))
@@ -456,7 +454,6 @@ public class SecurityAnalysisControllerTest {
             + "?receiver=me"))
                 .andExpect(status().isOk());
 
-
         Message<byte[]> message = output.receive(TIMEOUT * 3, "sa.stopped");
         assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
         assertEquals("me", message.getHeaders().get("receiver"));
@@ -527,11 +524,11 @@ public class SecurityAnalysisControllerTest {
     @Test
     public void getDefaultProviderTest() throws Exception {
         mockMvc.perform(get("/" + VERSION + "/default-provider"))
-                .andExpectAll(
-                    status().isOk(),
-                    content().contentType(new MediaType(MediaType.TEXT_PLAIN, StandardCharsets.UTF_8)),
-                    content().string("OpenLoadFlow")
-                );
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(new MediaType(MediaType.TEXT_PLAIN, StandardCharsets.UTF_8)),
+                content().string("OpenLoadFlow")
+            );
     }
 
     private void assertResultNotFound(UUID resultUuid) throws Exception {

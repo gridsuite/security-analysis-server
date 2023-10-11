@@ -140,15 +140,17 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                                                          List<StateMonitor> monitors,
                                                          Reporter reporter) {
         LOGGER.info("Run security analysis mock");
-        if (workingVariantId.equals(VARIANT_3_ID)) {
-            return CompletableFuture.completedFuture(REPORT_VARIANT);
+        switch (workingVariantId) {
+            case VARIANT_3_ID:
+                return CompletableFuture.completedFuture(REPORT_VARIANT);
+            case VARIANT_TO_STOP_ID:
+                countDownLatch.countDown();
+                // creating a long completable future which is here to be canceled
+                return new CompletableFuture<SecurityAnalysisReport>().completeOnTimeout(REPORT, 3, TimeUnit.SECONDS);
+            default:
+                return CompletableFuture.completedFuture(REPORT);
         }
-        if(workingVariantId.equals(VARIANT_TO_STOP_ID)){
-            countDownLatch.countDown();
-            // creating a long completable future which is here to be canceled
-            return new CompletableFuture<SecurityAnalysisReport>().completeOnTimeout(REPORT, 3, TimeUnit.SECONDS);
-        }
-        return CompletableFuture.completedFuture(REPORT);
+
     }
 
     @Override
