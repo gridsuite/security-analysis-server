@@ -49,7 +49,7 @@ public class SecurityAnalysisResultService {
         List<PreContingencyLimitViolationEntity> preContingencyLimitViolationEntities = preContingencyLimitViolationRepository.findByResultId(resultUuid);
 
         List<LimitViolation> preContingencyLimitViolations = preContingencyLimitViolationEntities.stream()
-            .map(AbstractLimitViolationEntity::fromEntity)
+            .map(AbstractLimitViolationEntity::toLimitViolation)
             .toList();
 
         return new PreContingencyResult(

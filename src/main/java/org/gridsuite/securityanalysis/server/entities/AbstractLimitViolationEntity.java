@@ -62,7 +62,7 @@ public abstract class AbstractLimitViolationEntity {
         this.side = side;
     }
 
-    public static LimitViolation fromEntity(AbstractLimitViolationEntity limitViolationEntity) {
+    public static LimitViolation toLimitViolation(AbstractLimitViolationEntity limitViolationEntity) {
         String subjectId = limitViolationEntity.getConstraint() != null
             ? limitViolationEntity.getConstraint().getSubjectId()
             : null;
