@@ -6,7 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.repositories;
 
-import org.gridsuite.securityanalysis.server.entities.ConstraintEntity;
+import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -15,6 +15,6 @@ import java.util.UUID;
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
 
-public interface ConstraintRepository extends JpaRepository<ConstraintEntity, UUID> {
-    List<ConstraintEntity> findByResultIdOrderBySubjectId(UUID resultUuid);
+public interface SubjectLimitViolationRepository extends JpaRepository<SubjectLimitViolationEntity, UUID> {
+    List<SubjectLimitViolationEntity> findByResultIdOrderBySubjectId(UUID resultUuid);
 }

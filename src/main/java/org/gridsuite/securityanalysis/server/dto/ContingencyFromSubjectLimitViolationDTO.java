@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ContingencyFromConstraintDTO {
+public class ContingencyFromSubjectLimitViolationDTO {
     private String contingencyId;
     private String computationStatus;
     private LimitViolationType limitType;
@@ -36,7 +36,7 @@ public class ContingencyFromConstraintDTO {
     private List<ContingencyElementDTO> elements;
     private Double loading;
 
-    public ContingencyFromConstraintDTO(String contingencyId, String computationStatus, LimitViolationType limitType, String limitName, Branch.Side side, int acceptableDuration, double limit, double limitReduction, double value, List<ContingencyElementDTO> elements) {
+    public ContingencyFromSubjectLimitViolationDTO(String contingencyId, String computationStatus, LimitViolationType limitType, String limitName, Branch.Side side, int acceptableDuration, double limit, double limitReduction, double value, List<ContingencyElementDTO> elements) {
         this.contingencyId = contingencyId;
         this.computationStatus = computationStatus;
         this.limitType = limitType;
@@ -55,10 +55,10 @@ public class ContingencyFromConstraintDTO {
         this.loading = computedLoading;
     }
 
-    public static ContingencyFromConstraintDTO toDto(ContingencyLimitViolationEntity limitViolation) {
+    public static ContingencyFromSubjectLimitViolationDTO toDto(ContingencyLimitViolationEntity limitViolation) {
         ContingencyEntity contingency = limitViolation.getContingency();
 
-        return new ContingencyFromConstraintDTO(
+        return new ContingencyFromSubjectLimitViolationDTO(
             contingency.getContingencyId(),
             contingency.getStatus(),
             limitViolation.getLimitType(),

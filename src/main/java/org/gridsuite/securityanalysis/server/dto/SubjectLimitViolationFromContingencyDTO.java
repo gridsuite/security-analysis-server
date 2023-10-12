@@ -19,7 +19,7 @@ import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationE
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ConstraintFromContingencyDTO {
+public class SubjectLimitViolationFromContingencyDTO {
     private String subjectId;
     private LimitViolationType limitType;
     private String limitName;
@@ -30,7 +30,7 @@ public class ConstraintFromContingencyDTO {
     private double value;
     private Double loading;
 
-    public ConstraintFromContingencyDTO(String subjectId, LimitViolationType limitType, String limitName, Branch.Side side, int acceptableDuration, double limit, double limitReduction, double value) {
+    public SubjectLimitViolationFromContingencyDTO(String subjectId, LimitViolationType limitType, String limitName, Branch.Side side, int acceptableDuration, double limit, double limitReduction, double value) {
         this.subjectId = subjectId;
         this.limitType = limitType;
         this.limitName = limitName;
@@ -47,11 +47,11 @@ public class ConstraintFromContingencyDTO {
         this.loading = computedLoading;
     }
 
-    public static ConstraintFromContingencyDTO toDto(ContingencyLimitViolationEntity limitViolation) {
-        String subjectId = limitViolation.getConstraint() != null
-            ? limitViolation.getConstraint().getSubjectId()
+    public static SubjectLimitViolationFromContingencyDTO toDto(ContingencyLimitViolationEntity limitViolation) {
+        String subjectId = limitViolation.getSubjectLimitViolation() != null
+            ? limitViolation.getSubjectLimitViolation().getSubjectId()
             : null;
 
-        return new ConstraintFromContingencyDTO(subjectId, limitViolation.getLimitType(), limitViolation.getLimitName(), limitViolation.getSide(), limitViolation.getAcceptableDuration(), limitViolation.getLimit(), limitViolation.getLimitReduction(), limitViolation.getValue());
+        return new SubjectLimitViolationFromContingencyDTO(subjectId, limitViolation.getLimitType(), limitViolation.getLimitName(), limitViolation.getSide(), limitViolation.getAcceptableDuration(), limitViolation.getLimit(), limitViolation.getLimitReduction(), limitViolation.getValue());
     }
 }

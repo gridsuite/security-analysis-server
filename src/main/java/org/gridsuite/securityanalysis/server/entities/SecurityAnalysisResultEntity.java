@@ -44,7 +44,7 @@ public class SecurityAnalysisResultEntity {
     private List<PreContingencyLimitViolationEntity> preContingencyLimitViolations;
 
     @OneToMany(mappedBy = "result", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ConstraintEntity> constraints;
+    private List<SubjectLimitViolationEntity> subjectLimitViolations;
 
     public SecurityAnalysisResultEntity(UUID id) {
         this.id = id;
@@ -57,12 +57,12 @@ public class SecurityAnalysisResultEntity {
         setContingencies(contingencies);
         setPreContingencyLimitViolations(preContingencyLimitViolations);
 
-        // extracting unique constraints from all limit violations
-        setConstraints(
+        // extracting unique subject limit violations from all limit violations
+        setSubjectLimitViolations(
             Stream.concat(
                 this.contingencies.stream().flatMap(c -> c.getContingencyLimitViolations().stream()),
                 this.preContingencyLimitViolations.stream()
-            ).map(AbstractLimitViolationEntity::getConstraint)
+            ).map(AbstractLimitViolationEntity::getSubjectLimitViolation)
             .distinct()
             .filter(Objects::nonNull)
             .collect(Collectors.toList())
@@ -83,24 +83,24 @@ public class SecurityAnalysisResultEntity {
         }
     }
 
-    private void setConstraints(List<ConstraintEntity> constraints) {
-        if (constraints != null) {
-            this.constraints = constraints;
-            constraints.forEach(constraint -> constraint.setResult(this));
+    private void setSubjectLimitViolations(List<SubjectLimitViolationEntity> subjectLimitViolations) {
+        if (subjectLimitViolations != null) {
+            this.subjectLimitViolations = subjectLimitViolations;
+            subjectLimitViolations.forEach(subjectLimitViolation -> subjectLimitViolation.setResult(this));
         }
     }
 
     public static SecurityAnalysisResultEntity toEntity(UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
-        Map<String, ConstraintEntity> constraintsBySubjectId = SecurityAnalysisResultService.getUniqueConstraintsFromResult(securityAnalysisResult)
+        Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId = SecurityAnalysisResultService.getUniqueSubjectLimitViolationsFromResult(securityAnalysisResult)
             .stream().collect(Collectors.toMap(
-                ConstraintEntity::getSubjectId,
-                constraint -> constraint)
+                SubjectLimitViolationEntity::getSubjectId,
+                subjectLimitViolation -> subjectLimitViolation)
             );
 
         List<ContingencyEntity> contingencies = securityAnalysisResult.getPostContingencyResults().stream()
-            .map(postContingencyResult -> ContingencyEntity.toEntity(postContingencyResult, constraintsBySubjectId)).collect(Collectors.toList());
+            .map(postContingencyResult -> ContingencyEntity.toEntity(postContingencyResult, subjectLimitViolationsBySubjectId)).collect(Collectors.toList());
 
-        List<PreContingencyLimitViolationEntity> preContingencyLimitViolations = PreContingencyLimitViolationEntity.toEntityList(securityAnalysisResult.getPreContingencyResult(), constraintsBySubjectId);
+        List<PreContingencyLimitViolationEntity> preContingencyLimitViolations = PreContingencyLimitViolationEntity.toEntityList(securityAnalysisResult.getPreContingencyResult(), subjectLimitViolationsBySubjectId);
 
         return new SecurityAnalysisResultEntity(resultUuid, securityAnalysisStatus, securityAnalysisResult.getPreContingencyResult().getStatus().name(), contingencies, preContingencyLimitViolations);
     }

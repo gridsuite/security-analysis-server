@@ -18,8 +18,9 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ConstraintToContingencyDTO {
-    private String subjectId;
-
-    private List<ContingencyFromConstraintDTO> contingencies;
+public class ContingencyToSubjectLimitViolationDTO {
+    private String id;
+    private String status;
+    private List<ContingencyElementDTO> elements;
+    private List<SubjectLimitViolationFromContingencyDTO> subjectLimitViolations;
 }

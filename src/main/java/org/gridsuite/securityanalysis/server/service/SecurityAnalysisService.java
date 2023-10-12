@@ -9,8 +9,8 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.security.results.PreContingencyResult;
-import org.gridsuite.securityanalysis.server.dto.ConstraintToContingencyDTO;
-import org.gridsuite.securityanalysis.server.dto.ContingencyToConstraintDTO;
+import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationToContingencyDTO;
+import org.gridsuite.securityanalysis.server.dto.ContingencyToSubjectLimitViolationDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -65,11 +65,11 @@ public class SecurityAnalysisService {
         return Mono.fromCallable(() -> resultRepository.findNResult(resultUuid));
     }
 
-    public Mono<List<ContingencyToConstraintDTO>> getNmKContingenciesResult(UUID resultUuid) {
+    public Mono<List<ContingencyToSubjectLimitViolationDTO>> getNmKContingenciesResult(UUID resultUuid) {
         return Mono.fromCallable(() -> resultRepository.findNmKContingenciesResult(resultUuid));
     }
 
-    public Mono<List<ConstraintToContingencyDTO>> getNmKConstraintsResult(UUID resultUuid) {
+    public Mono<List<SubjectLimitViolationToContingencyDTO>> getNmKConstraintsResult(UUID resultUuid) {
         return Mono.fromCallable(() -> resultRepository.findNmKConstraintsResult(resultUuid));
     }
 

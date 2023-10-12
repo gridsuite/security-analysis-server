@@ -35,16 +35,16 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
     @Setter
     SecurityAnalysisResultEntity result;
 
-    public PreContingencyLimitViolationEntity(ConstraintEntity constraint, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
-        super(constraint, subjectName, limit, limitName, limitType, acceptableDuration, limitReduction, value, side);
+    public PreContingencyLimitViolationEntity(SubjectLimitViolationEntity subjectLimitViolation, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
+        super(subjectLimitViolation, subjectName, limit, limitName, limitType, acceptableDuration, limitReduction, value, side);
     }
 
-    public static List<PreContingencyLimitViolationEntity> toEntityList(PreContingencyResult preContingencyResult, Map<String, ConstraintEntity> constraintsBySubjectId) {
-        return preContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation -> toEntityList(limitViolation, constraintsBySubjectId.get(limitViolation.getSubjectId()))).collect(Collectors.toList());
+    public static List<PreContingencyLimitViolationEntity> toEntityList(PreContingencyResult preContingencyResult, Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId) {
+        return preContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation -> toEntityList(limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()))).collect(Collectors.toList());
     }
 
-    public static PreContingencyLimitViolationEntity toEntityList(LimitViolation limitViolation, ConstraintEntity constraint) {
-        return new PreContingencyLimitViolationEntity(constraint,
+    public static PreContingencyLimitViolationEntity toEntityList(LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
+        return new PreContingencyLimitViolationEntity(subjectLimitViolation,
             limitViolation.getSubjectName(), limitViolation.getLimit(), limitViolation.getLimitName(),
             limitViolation.getLimitType(), limitViolation.getAcceptableDuration(), limitViolation.getLimitReduction(), limitViolation.getValue(),
             limitViolation.getSide());

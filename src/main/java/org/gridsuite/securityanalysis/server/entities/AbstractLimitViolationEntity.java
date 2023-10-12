@@ -28,7 +28,7 @@ public abstract class AbstractLimitViolationEntity {
     private UUID id;
 
     @ManyToOne
-    private ConstraintEntity constraint;
+    private SubjectLimitViolationEntity subjectLimitViolation;
 
     private String subjectName;
 
@@ -50,8 +50,8 @@ public abstract class AbstractLimitViolationEntity {
     @Enumerated(EnumType.STRING)
     private Branch.Side side;
 
-    protected AbstractLimitViolationEntity(ConstraintEntity constraint, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
-        this.constraint = constraint;
+    protected AbstractLimitViolationEntity(SubjectLimitViolationEntity subjectLimitViolation, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
+        this.subjectLimitViolation = subjectLimitViolation;
         this.subjectName = subjectName;
         this.limit = limit;
         this.limitName = limitName;
@@ -63,8 +63,8 @@ public abstract class AbstractLimitViolationEntity {
     }
 
     public static LimitViolation toLimitViolation(AbstractLimitViolationEntity limitViolationEntity) {
-        String subjectId = limitViolationEntity.getConstraint() != null
-            ? limitViolationEntity.getConstraint().getSubjectId()
+        String subjectId = limitViolationEntity.getSubjectLimitViolation() != null
+            ? limitViolationEntity.getSubjectLimitViolation().getSubjectId()
             : null;
 
         return new LimitViolation(subjectId, limitViolationEntity.getLimitType(), limitViolationEntity.getLimitName(), limitViolationEntity.getAcceptableDuration(),

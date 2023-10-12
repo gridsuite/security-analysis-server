@@ -20,9 +20,9 @@ import java.util.UUID;
 
 @NoArgsConstructor
 @Entity
-@Table(name = "contingency_limit_violation_constraint")
-public class ConstraintEntity {
-    public ConstraintEntity(String subjectId) {
+@Table(name = "subject_limit_violation")
+public class SubjectLimitViolationEntity {
+    public SubjectLimitViolationEntity(String subjectId) {
         this.subjectId = subjectId;
     }
 
@@ -39,7 +39,7 @@ public class ConstraintEntity {
     private SecurityAnalysisResultEntity result;
 
     @Getter
-    @OneToMany(mappedBy = "constraint")
+    @OneToMany(mappedBy = "subjectLimitViolation")
     List<ContingencyLimitViolationEntity> contingencyLimitViolations;
 
     public void addContingencyLimitViolation(ContingencyLimitViolationEntity contingencyLimitViolation) {

@@ -26,15 +26,15 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
     @Setter
     private ContingencyEntity contingency;
 
-    public ContingencyLimitViolationEntity(ConstraintEntity constraint, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
-        super(constraint, subjectName, limit, limitName, limitType, acceptableDuration, limitReduction, value, side);
-        if (constraint != null) {
-            constraint.addContingencyLimitViolation(this);
+    public ContingencyLimitViolationEntity(SubjectLimitViolationEntity subjectLimitViolation, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
+        super(subjectLimitViolation, subjectName, limit, limitName, limitType, acceptableDuration, limitReduction, value, side);
+        if (subjectLimitViolation != null) {
+            subjectLimitViolation.addContingencyLimitViolation(this);
         }
     }
 
-    public static ContingencyLimitViolationEntity toEntity(LimitViolation limitViolation, ConstraintEntity constraint) {
-        return new ContingencyLimitViolationEntity(constraint,
+    public static ContingencyLimitViolationEntity toEntity(LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
+        return new ContingencyLimitViolationEntity(subjectLimitViolation,
             limitViolation.getSubjectName(), limitViolation.getLimit(), limitViolation.getLimitName(),
             limitViolation.getLimitType(), limitViolation.getAcceptableDuration(), limitViolation.getLimitReduction(), limitViolation.getValue(),
             limitViolation.getSide());

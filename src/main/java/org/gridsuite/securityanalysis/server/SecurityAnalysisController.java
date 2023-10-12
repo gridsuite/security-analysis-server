@@ -15,8 +15,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.gridsuite.securityanalysis.server.dto.ConstraintToContingencyDTO;
-import org.gridsuite.securityanalysis.server.dto.ContingencyToConstraintDTO;
+import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationToContingencyDTO;
+import org.gridsuite.securityanalysis.server.dto.ContingencyToSubjectLimitViolationDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisRunContext;
@@ -111,9 +111,9 @@ public class SecurityAnalysisController {
     @Operation(summary = "Get a security analysis result from the database - NMK contingencies datas")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public Mono<ResponseEntity<List<ContingencyToConstraintDTO>>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+    public Mono<ResponseEntity<List<ContingencyToSubjectLimitViolationDTO>>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
 
-        Mono<List<ContingencyToConstraintDTO>> result = service.getNmKContingenciesResult(resultUuid);
+        Mono<List<ContingencyToSubjectLimitViolationDTO>> result = service.getNmKContingenciesResult(resultUuid);
         return result.map(r -> ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(r))
             .defaultIfEmpty(ResponseEntity.notFound().build());
     }
@@ -122,9 +122,9 @@ public class SecurityAnalysisController {
     @Operation(summary = "Get a security analysis result from the database - NMK contingencies datas")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public Mono<ResponseEntity<List<ConstraintToContingencyDTO>>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+    public Mono<ResponseEntity<List<SubjectLimitViolationToContingencyDTO>>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
 
-        Mono<List<ConstraintToContingencyDTO>> result = service.getNmKConstraintsResult(resultUuid);
+        Mono<List<SubjectLimitViolationToContingencyDTO>> result = service.getNmKConstraintsResult(resultUuid);
         return result.map(r -> ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(r))
             .defaultIfEmpty(ResponseEntity.notFound().build());
     }

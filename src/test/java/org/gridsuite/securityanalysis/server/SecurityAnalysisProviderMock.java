@@ -81,12 +81,12 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         CONTINGENCIES_VARIANT.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, List.of(LIMIT_VIOLATION_4)))
             .collect(Collectors.toList()));
 
-    static final List<ContingencyToConstraintDTO> RESULT_CONTINGENCIES = CONTINGENCIES.stream().map(c ->
-        new ContingencyToConstraintDTO(
+    static final List<ContingencyToSubjectLimitViolationDTO> RESULT_CONTINGENCIES = CONTINGENCIES.stream().map(c ->
+        new ContingencyToSubjectLimitViolationDTO(
             c.getId(),
             LoadFlowResult.ComponentResult.Status.CONVERGED.name(),
             c.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).collect(Collectors.toList()),
-            List.of(new ConstraintFromContingencyDTO(
+            List.of(new SubjectLimitViolationFromContingencyDTO(
                 LIMIT_VIOLATION_2.getSubjectId(),
                 LIMIT_VIOLATION_2.getLimitType(),
                 LIMIT_VIOLATION_2.getLimitName(),
@@ -99,11 +99,11 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         )).collect(Collectors.toList()
     );
 
-    static final List<ConstraintToContingencyDTO> RESULT_CONSTRAINTS = List.of(
-        new ConstraintToContingencyDTO(LIMIT_VIOLATION_1.getSubjectId(), List.of()),
-        new ConstraintToContingencyDTO(
+    static final List<SubjectLimitViolationToContingencyDTO> RESULT_CONSTRAINTS = List.of(
+        new SubjectLimitViolationToContingencyDTO(LIMIT_VIOLATION_1.getSubjectId(), List.of()),
+        new SubjectLimitViolationToContingencyDTO(
             LIMIT_VIOLATION_2.getSubjectId(),
-            CONTINGENCIES.stream().map(c -> new ContingencyFromConstraintDTO(
+            CONTINGENCIES.stream().map(c -> new ContingencyFromSubjectLimitViolationDTO(
                 c.getId(),
                 LoadFlowResult.ComponentResult.Status.CONVERGED.name(),
                 LIMIT_VIOLATION_2.getLimitType(),
