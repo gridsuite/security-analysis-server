@@ -42,6 +42,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
+import org.springframework.data.domain.Page;
+import org.springframework.data.web.config.EnableSpringDataWebSupport;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.Message;
 import org.springframework.test.context.ContextConfiguration;
@@ -78,6 +80,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @RunWith(SpringRunner.class)
 @AutoConfigureMockMvc
 @SpringBootTest
+@EnableSpringDataWebSupport
 @ContextHierarchy({@ContextConfiguration(classes = {SecurityAnalysisApplication.class, TestChannelBinderConfiguration.class})})
 public class SecurityAnalysisControllerTest {
 
@@ -287,14 +290,15 @@ public class SecurityAnalysisControllerTest {
         PreContingencyResult preContingencyResult = mapper.readValue(resultAsString, PreContingencyResult.class);
         assertThat(RESULT.getPreContingencyResult(), new MatcherJson<>(mapper, preContingencyResult));
 
-        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies"))
+        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies?page=0&size=3&sort=contingencyId,desc"))
             .andExpectAll(
                 status().isOk(),
                 content().contentType(MediaType.APPLICATION_JSON)
             ).andReturn();
 
         resultAsString = mvcResult.getResponse().getContentAsString();
-        List<ContingencyToConstraintDTO> contingenciesToConstraints = mapper.readValue(resultAsString, new TypeReference<List<ContingencyToConstraintDTO>>() { });
+        Page<ContingencyToConstraintDTO> contingenciesToConstraints = mapper.readValue(resultAsString, new TypeReference<>() {
+        });
         assertThat(RESULT_CONTINGENCIES, new MatcherJson<>(mapper, contingenciesToConstraints));
 
         mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints"))

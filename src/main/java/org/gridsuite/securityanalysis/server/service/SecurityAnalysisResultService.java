@@ -16,6 +16,8 @@ import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.*;
 import org.gridsuite.securityanalysis.server.repositories.*;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,10 +65,10 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public List<ContingencyToConstraintDTO> findNmKContingenciesResult(UUID resultUuid) {
+    public Page<ContingencyToConstraintDTO> findNmKContingenciesResult(UUID resultUuid, Pageable pageable) {
         assertResultExists(resultUuid);
-        List<ContingencyEntity> contingencies = contingencyRepository.findByResultIdOrderByContingencyId(resultUuid);
-        return contingencies.stream().map(contingency -> {
+        Page<ContingencyEntity> contingenciesPageable = contingencyRepository.findByResultId(resultUuid, pageable);
+        return contingenciesPageable.map(contingency -> {
             List<ConstraintFromContingencyDTO> constraints = contingency.getContingencyLimitViolations().stream()
                 .map(ConstraintFromContingencyDTO::toDto)
                 .collect(Collectors.toList());
@@ -76,21 +78,21 @@ public class SecurityAnalysisResultService {
                 contingency.getContingencyElements().stream().map(ContingencyElementDTO::toDto).collect(Collectors.toList()),
                 constraints
             );
-        }).collect(Collectors.toList());
+        });
     }
 
     @Transactional(readOnly = true)
-    public List<ConstraintToContingencyDTO> findNmKConstraintsResult(UUID resultUuid) {
+    public Page<ConstraintToContingencyDTO> findNmKConstraintsResult(UUID resultUuid, Pageable pageable) {
         assertResultExists(resultUuid);
-        List<ConstraintEntity> constraints = constraintRepository.findByResultIdOrderBySubjectId(resultUuid);
+        Page<ConstraintEntity> constraints = constraintRepository.findByResultIdOrderBySubjectId(resultUuid, pageable);
 
-        return constraints.stream().map(constraint -> {
+        return constraints.map(constraint -> {
             List<ContingencyFromConstraintDTO> contingencies = constraint.getContingencyLimitViolations().stream()
                 .map(ContingencyFromConstraintDTO::toDto)
                 .collect(Collectors.toList());
 
             return new ConstraintToContingencyDTO(constraint.getSubjectId(), contingencies);
-        }).collect(Collectors.toList());
+        });
     }
 
     public void assertResultExists(UUID resultUuid) {

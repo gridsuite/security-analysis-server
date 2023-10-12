@@ -13,6 +13,8 @@ import org.gridsuite.securityanalysis.server.dto.ConstraintToContingencyDTO;
 import org.gridsuite.securityanalysis.server.dto.ContingencyToConstraintDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -62,12 +64,12 @@ public class SecurityAnalysisService {
         return resultRepository.findNResult(resultUuid);
     }
 
-    public List<ContingencyToConstraintDTO> getNmKContingenciesResult(UUID resultUuid) {
-        return resultRepository.findNmKContingenciesResult(resultUuid);
+    public Page<ContingencyToConstraintDTO> getNmKContingenciesResult(UUID resultUuid, Pageable pageable) {
+        return resultRepository.findNmKContingenciesResult(resultUuid, pageable);
     }
 
-    public List<ConstraintToContingencyDTO> getNmKConstraintsResult(UUID resultUuid) {
-        return resultRepository.findNmKConstraintsResult(resultUuid);
+    public Page<ConstraintToContingencyDTO> getNmKConstraintsResult(UUID resultUuid, Pageable pageable) {
+        return resultRepository.findNmKConstraintsResult(resultUuid, pageable);
     }
 
     public void deleteResult(UUID resultUuid) {
