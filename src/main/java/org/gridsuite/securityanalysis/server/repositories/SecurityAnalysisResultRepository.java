@@ -14,6 +14,7 @@ import java.util.UUID;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
+
 @Repository
 public interface SecurityAnalysisResultRepository extends JpaRepository<SecurityAnalysisResultEntity, UUID> {
 }

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
+
 @ControllerAdvice
 public class RestResponseEntityExceptionHandler {
 

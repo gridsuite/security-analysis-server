@@ -16,7 +16,8 @@ import java.util.UUID;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
+
 @Repository
 public interface ContingencyRepository extends JpaRepository<ContingencyEntity, UUID> {
-    List<ContingencyEntity> findByResultIdOrderByContingencyId(UUID resultUuid);
+    List<ContingencyEntity> findByResultIdAndStatusOrderByContingencyId(UUID resultUuid, String status);
 }

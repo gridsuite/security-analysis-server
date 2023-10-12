@@ -17,6 +17,7 @@ import lombok.Setter;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
+
 @NoArgsConstructor
 @Getter
 @Entity

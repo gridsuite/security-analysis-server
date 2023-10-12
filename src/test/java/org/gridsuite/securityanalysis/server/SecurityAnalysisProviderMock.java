@@ -93,6 +93,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                 LIMIT_VIOLATION_2.getSide(),
                 LIMIT_VIOLATION_2.getAcceptableDuration(),
                 LIMIT_VIOLATION_2.getLimit(),
+                LIMIT_VIOLATION_2.getLimitReduction(),
                 LIMIT_VIOLATION_2.getValue())
             )
         )).collect(Collectors.toList()
@@ -110,6 +111,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                 LIMIT_VIOLATION_2.getSide(),
                 LIMIT_VIOLATION_2.getAcceptableDuration(),
                 LIMIT_VIOLATION_2.getLimit(),
+                LIMIT_VIOLATION_2.getLimitReduction(),
                 LIMIT_VIOLATION_2.getValue(),
                 c.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).collect(Collectors.toList())))
             .collect(Collectors.toList())

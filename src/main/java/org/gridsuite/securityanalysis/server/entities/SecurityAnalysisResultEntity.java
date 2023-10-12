@@ -20,6 +20,7 @@ import java.util.stream.Stream;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
+
 @NoArgsConstructor
 @Getter
 @Entity

@@ -15,6 +15,7 @@ import java.util.UUID;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
+
 @Repository
 public interface PreContingencyLimitViolationRepository extends JpaRepository<PreContingencyLimitViolationEntity, UUID> {
     List<PreContingencyLimitViolationEntity> findByResultId(UUID resultUuid);

@@ -10,6 +10,7 @@ import java.util.Objects;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
+
 public class SecurityAnalysisException extends RuntimeException {
     public enum Type {
         RESULT_NOT_FOUND

@@ -65,7 +65,7 @@ public class SecurityAnalysisResultService {
     @Transactional(readOnly = true)
     public List<ContingencyToConstraintDTO> findNmKContingenciesResult(UUID resultUuid) {
         assertResultExists(resultUuid);
-        List<ContingencyEntity> contingencies = contingencyRepository.findByResultIdOrderByContingencyId(resultUuid);
+        List<ContingencyEntity> contingencies = contingencyRepository.findByResultIdAndStatusOrderByContingencyId(resultUuid, LoadFlowResult.ComponentResult.Status.CONVERGED.name());
         return contingencies.stream().map(contingency -> {
             List<ConstraintFromContingencyDTO> constraints = contingency.getContingencyLimitViolations().stream()
                 .map(ConstraintFromContingencyDTO::toDto)
@@ -85,7 +85,9 @@ public class SecurityAnalysisResultService {
         List<ConstraintEntity> constraints = constraintRepository.findByResultIdOrderBySubjectId(resultUuid);
 
         return constraints.stream().map(constraint -> {
+            // we only keep converged contingencies here
             List<ContingencyFromConstraintDTO> contingencies = constraint.getContingencyLimitViolations().stream()
+                .filter(lm -> LoadFlowResult.ComponentResult.Status.CONVERGED.name().equals(lm.getContingency().getStatus()))
                 .map(ContingencyFromConstraintDTO::toDto)
                 .collect(Collectors.toList());
 

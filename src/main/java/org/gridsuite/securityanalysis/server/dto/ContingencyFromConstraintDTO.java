@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
+
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
@@ -30,11 +31,33 @@ public class ContingencyFromConstraintDTO {
     private Branch.Side side;
     private int acceptableDuration;
     private double limit;
+    private double limitReduction;
     private double value;
     private List<ContingencyElementDTO> elements;
+    private Double loading;
+
+    public ContingencyFromConstraintDTO(String contingencyId, String computationStatus, LimitViolationType limitType, String limitName, Branch.Side side, int acceptableDuration, double limit, double limitReduction, double value, List<ContingencyElementDTO> elements) {
+        this.contingencyId = contingencyId;
+        this.computationStatus = computationStatus;
+        this.limitType = limitType;
+        this.limitName = limitName;
+        this.side = side;
+        this.acceptableDuration = acceptableDuration;
+        this.limit = limit;
+        this.limitReduction = limitReduction;
+        this.value = value;
+        this.elements = elements;
+
+        Double computedLoading = LimitViolationType.CURRENT.equals(limitType)
+            ? (100 * value) / (limit * limitReduction)
+            : null;
+
+        this.loading = computedLoading;
+    }
 
     public static ContingencyFromConstraintDTO toDto(ContingencyLimitViolationEntity limitViolation) {
         ContingencyEntity contingency = limitViolation.getContingency();
+
         return new ContingencyFromConstraintDTO(
             contingency.getContingencyId(),
             contingency.getStatus(),
@@ -43,6 +66,7 @@ public class ContingencyFromConstraintDTO {
             limitViolation.getSide(),
             limitViolation.getAcceptableDuration(),
             limitViolation.getLimit(),
+            limitViolation.getLimitReduction(),
             limitViolation.getValue(),
             contingency.getContingencyElements().stream().map(ContingencyElementDTO::toDto).collect(Collectors.toList())
         );

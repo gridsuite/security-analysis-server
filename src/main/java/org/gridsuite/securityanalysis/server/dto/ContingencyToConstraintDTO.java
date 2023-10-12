@@ -14,6 +14,7 @@ import java.util.List;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
+
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor

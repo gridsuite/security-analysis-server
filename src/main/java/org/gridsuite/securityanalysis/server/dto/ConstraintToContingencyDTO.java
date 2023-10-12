@@ -14,11 +14,12 @@ import java.util.List;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
+
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
 public class ConstraintToContingencyDTO {
-    private String constraintId;
+    private String subjecttId;
 
     private List<ContingencyFromConstraintDTO> contingencies;
 }

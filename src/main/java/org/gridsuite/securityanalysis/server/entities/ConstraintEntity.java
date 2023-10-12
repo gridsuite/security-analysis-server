@@ -17,6 +17,7 @@ import java.util.UUID;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
+
 @NoArgsConstructor
 @Entity
 @Table(name = "contingency_limit_violation_constraint")

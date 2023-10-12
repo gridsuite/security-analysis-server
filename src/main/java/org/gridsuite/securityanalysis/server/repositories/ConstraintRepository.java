@@ -14,6 +14,7 @@ import java.util.UUID;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
+
 public interface ConstraintRepository extends JpaRepository<ConstraintEntity, UUID> {
     List<ConstraintEntity> findByResultIdOrderBySubjectId(UUID resultUuid);
 }

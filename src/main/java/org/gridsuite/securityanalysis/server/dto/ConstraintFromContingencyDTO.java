@@ -15,6 +15,7 @@ import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationE
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
+
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
@@ -25,12 +26,32 @@ public class ConstraintFromContingencyDTO {
     private Branch.Side side;
     private int acceptableDuration;
     private double limit;
+    private double limitReduction;
     private double value;
+    private Double loading;
+
+    public ConstraintFromContingencyDTO(String subjectId, LimitViolationType limitType, String limitName, Branch.Side side, int acceptableDuration, double limit, double limitReduction, double value) {
+        this.subjectId = subjectId;
+        this.limitType = limitType;
+        this.limitName = limitName;
+        this.side = side;
+        this.acceptableDuration = acceptableDuration;
+        this.limit = limit;
+        this.limitReduction = limitReduction;
+        this.value = value;
+
+        Double computedLoading = LimitViolationType.CURRENT.equals(limitType)
+            ? (100 * value) / (limit * limitReduction)
+            : null;
+
+        this.loading = computedLoading;
+    }
 
     public static ConstraintFromContingencyDTO toDto(ContingencyLimitViolationEntity limitViolation) {
         String subjectId = limitViolation.getConstraint() != null
             ? limitViolation.getConstraint().getSubjectId()
             : null;
-        return new ConstraintFromContingencyDTO(subjectId, limitViolation.getLimitType(), limitViolation.getLimitName(), limitViolation.getSide(), limitViolation.getAcceptableDuration(), limitViolation.getLimit(), limitViolation.getValue());
+
+        return new ConstraintFromContingencyDTO(subjectId, limitViolation.getLimitType(), limitViolation.getLimitName(), limitViolation.getSide(), limitViolation.getAcceptableDuration(), limitViolation.getLimit(), limitViolation.getLimitReduction(), limitViolation.getValue());
     }
 }
