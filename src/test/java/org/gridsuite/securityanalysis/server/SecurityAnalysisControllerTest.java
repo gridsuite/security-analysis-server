@@ -255,7 +255,7 @@ public class SecurityAnalysisControllerTest {
         assertEquals("me", resultMessage.getHeaders().get("receiver"));
 
         webTestClient.get()
-            .uri("/" + VERSION + "/results/" + RESULT_UUID + "/n")
+            .uri("/" + VERSION + "/results/" + RESULT_UUID + "/n-result")
             .exchange()
             .expectStatus().isOk()
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -263,7 +263,7 @@ public class SecurityAnalysisControllerTest {
             .value(new MatcherJson<>(mapper, RESULT.getPreContingencyResult()));
 
         webTestClient.get()
-            .uri("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies")
+            .uri("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result")
             .exchange()
             .expectStatus().isOk()
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -271,7 +271,7 @@ public class SecurityAnalysisControllerTest {
             .value(new MatcherJson<>(mapper, RESULT_CONTINGENCIES));
 
         webTestClient.get()
-            .uri("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints")
+            .uri("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result")
             .exchange()
             .expectStatus().isOk()
             .expectHeader().contentType(MediaType.APPLICATION_JSON)
@@ -466,17 +466,17 @@ public class SecurityAnalysisControllerTest {
 
     private void assertResultNotFound(UUID resultUuid) {
         webTestClient.get()
-            .uri("/" + VERSION + "/results/" + resultUuid + "/n")
+            .uri("/" + VERSION + "/results/" + resultUuid + "/n-result")
             .exchange()
             .expectStatus().isNotFound();
 
         webTestClient.get()
-            .uri("/" + VERSION + "/results/" + resultUuid + "/nmk-contingencies")
+            .uri("/" + VERSION + "/results/" + resultUuid + "/nmk-contingencies-result")
             .exchange()
             .expectStatus().isNotFound();
 
         webTestClient.get()
-            .uri("/" + VERSION + "/results/" + resultUuid + "/nmk-constraints")
+            .uri("/" + VERSION + "/results/" + resultUuid + "/nmk-constraints-result")
             .exchange()
             .expectStatus().isNotFound();
     }

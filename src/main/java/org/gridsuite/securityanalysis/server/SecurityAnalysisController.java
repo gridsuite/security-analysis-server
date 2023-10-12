@@ -96,8 +96,8 @@ public class SecurityAnalysisController {
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(resultUuid);
     }
 
-    @GetMapping(value = "/results/{resultUuid}/n", produces = APPLICATION_JSON_VALUE)
-    @Operation(summary = "Get a security analysis result from the database - N datas")
+    @GetMapping(value = "/results/{resultUuid}/n-result", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get a security analysis result from the database - N result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public Mono<ResponseEntity<PreContingencyResult>> getNResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
@@ -107,8 +107,8 @@ public class SecurityAnalysisController {
             .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
-    @GetMapping(value = "/results/{resultUuid}/nmk-contingencies", produces = APPLICATION_JSON_VALUE)
-    @Operation(summary = "Get a security analysis result from the database - NMK contingencies datas")
+    @GetMapping(value = "/results/{resultUuid}/nmk-contingencies-result", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get a security analysis result from the database - NMK contingencies result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public Mono<ResponseEntity<List<ContingencyToSubjectLimitViolationDTO>>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
@@ -118,8 +118,8 @@ public class SecurityAnalysisController {
             .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
-    @GetMapping(value = "/results/{resultUuid}/nmk-constraints", produces = APPLICATION_JSON_VALUE)
-    @Operation(summary = "Get a security analysis result from the database - NMK contingencies datas")
+    @GetMapping(value = "/results/{resultUuid}/nmk-constraints-result", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get a security analysis result from the database - NMK contingencies result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public Mono<ResponseEntity<List<SubjectLimitViolationToContingencyDTO>>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
