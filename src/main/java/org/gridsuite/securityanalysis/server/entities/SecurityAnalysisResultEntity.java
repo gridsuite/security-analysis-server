@@ -6,13 +6,16 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
+import com.powsybl.security.SecurityAnalysisResult;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
+import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -85,5 +88,20 @@ public class SecurityAnalysisResultEntity {
             this.constraints = constraints;
             constraints.forEach(constraint -> constraint.setResult(this));
         }
+    }
+
+    public static SecurityAnalysisResultEntity toEntity(UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
+        Map<String, ConstraintEntity> constraintsBySubjectId = SecurityAnalysisResultService.getUniqueConstraintsFromResult(securityAnalysisResult)
+            .stream().collect(Collectors.toMap(
+                ConstraintEntity::getSubjectId,
+                constraint -> constraint)
+            );
+
+        List<ContingencyEntity> contingencies = securityAnalysisResult.getPostContingencyResults().stream()
+            .map(postContingencyResult -> ContingencyEntity.toEntity(postContingencyResult, constraintsBySubjectId)).collect(Collectors.toList());
+
+        List<PreContingencyLimitViolationEntity> preContingencyLimitViolations = PreContingencyLimitViolationEntity.toEntityList(securityAnalysisResult.getPreContingencyResult(), constraintsBySubjectId);
+
+        return new SecurityAnalysisResultEntity(resultUuid, securityAnalysisStatus, securityAnalysisResult.getPreContingencyResult().getStatus().name(), contingencies, preContingencyLimitViolations);
     }
 }

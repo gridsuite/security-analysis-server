@@ -7,6 +7,7 @@
 package org.gridsuite.securityanalysis.server.entities;
 
 import com.powsybl.iidm.network.Branch;
+import com.powsybl.security.LimitViolation;
 import com.powsybl.security.LimitViolationType;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -59,5 +60,14 @@ public abstract class AbstractLimitViolationEntity {
         this.limitReduction = limitReduction;
         this.value = value;
         this.side = side;
+    }
+
+    public static LimitViolation fromEntity(AbstractLimitViolationEntity limitViolationEntity) {
+        String subjectId = limitViolationEntity.getConstraint() != null
+            ? limitViolationEntity.getConstraint().getSubjectId()
+            : null;
+
+        return new LimitViolation(subjectId, limitViolationEntity.getLimitType(), limitViolationEntity.getLimitName(), limitViolationEntity.getAcceptableDuration(),
+            limitViolationEntity.getLimit(), limitViolationEntity.getLimitReduction(), limitViolationEntity.getValue(), limitViolationEntity.getSide());
     }
 }

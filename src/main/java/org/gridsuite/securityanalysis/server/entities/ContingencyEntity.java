@@ -6,13 +6,17 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
+import com.powsybl.security.results.PostContingencyResult;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
@@ -56,5 +60,14 @@ public class ContingencyEntity {
             this.contingencyLimitViolations = contingencyLimitViolations;
             contingencyLimitViolations.forEach(lm -> lm.setContingency(this));
         }
+    }
+
+    public static ContingencyEntity toEntity(PostContingencyResult postContingencyResult, Map<String, ConstraintEntity> constraintsBySubjectId) {
+        List<ContingencyElementEmbeddable> contingencyElements = postContingencyResult.getContingency().getElements().stream().map(contingencyElement -> ContingencyElementEmbeddable.toEntity(contingencyElement)).collect(Collectors.toList());
+
+        List<ContingencyLimitViolationEntity> contingencyLimitViolations = postContingencyResult.getLimitViolationsResult().getLimitViolations().stream()
+            .map(limitViolation -> ContingencyLimitViolationEntity.toEntity(limitViolation, constraintsBySubjectId.get(limitViolation.getSubjectId())))
+            .collect(Collectors.toList());
+        return new ContingencyEntity(postContingencyResult.getContingency().getId(), postContingencyResult.getStatus().name(), contingencyElements, contingencyLimitViolations);
     }
 }

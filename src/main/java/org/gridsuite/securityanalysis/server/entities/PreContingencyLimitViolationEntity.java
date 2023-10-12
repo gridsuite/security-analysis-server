@@ -7,13 +7,20 @@
 package org.gridsuite.securityanalysis.server.entities;
 
 import com.powsybl.iidm.network.Branch;
+import com.powsybl.security.LimitViolation;
 import com.powsybl.security.LimitViolationType;
+import com.powsybl.security.results.PreContingencyResult;
 import jakarta.persistence.Entity;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
@@ -30,5 +37,16 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
 
     public PreContingencyLimitViolationEntity(ConstraintEntity constraint, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
         super(constraint, subjectName, limit, limitName, limitType, acceptableDuration, limitReduction, value, side);
+    }
+
+    public static List<PreContingencyLimitViolationEntity> toEntityList(PreContingencyResult preContingencyResult, Map<String, ConstraintEntity> constraintsBySubjectId) {
+        return preContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation -> toEntityList(limitViolation, constraintsBySubjectId.get(limitViolation.getSubjectId()))).collect(Collectors.toList());
+    }
+
+    public static PreContingencyLimitViolationEntity toEntityList(LimitViolation limitViolation, ConstraintEntity constraint) {
+        return new PreContingencyLimitViolationEntity(constraint,
+            limitViolation.getSubjectName(), limitViolation.getLimit(), limitViolation.getLimitName(),
+            limitViolation.getLimitType(), limitViolation.getAcceptableDuration(), limitViolation.getLimitReduction(), limitViolation.getValue(),
+            limitViolation.getSide());
     }
 }
