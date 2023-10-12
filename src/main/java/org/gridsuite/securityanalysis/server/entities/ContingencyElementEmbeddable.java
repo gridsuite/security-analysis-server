@@ -6,6 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
+import com.powsybl.contingency.ContingencyElement;
 import com.powsybl.contingency.ContingencyElementType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
@@ -27,4 +28,8 @@ public class ContingencyElementEmbeddable {
 
     @Column
     private String elementId;
+
+    public static ContingencyElementEmbeddable toEntity(ContingencyElement contingencyElement) {
+        return new ContingencyElementEmbeddable(contingencyElement.getType(), contingencyElement.getId());
+    }
 }

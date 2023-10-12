@@ -21,10 +21,10 @@ import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.results.PreContingencyResult;
 import lombok.SneakyThrows;
-import org.gridsuite.securityanalysis.server.dto.ConstraintToContingencyDTO;
-import org.gridsuite.securityanalysis.server.dto.ContingencyToConstraintDTO;
+import org.gridsuite.securityanalysis.server.dto.ContingencyToSubjectLimitViolationDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
+import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationToContingencyDTO;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.ReportService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
@@ -280,7 +280,7 @@ public class SecurityAnalysisControllerTest {
         assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
         assertEquals("me", resultMessage.getHeaders().get("receiver"));
 
-        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/n"))
+        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/n-result"))
             .andExpectAll(
                 status().isOk(),
                 content().contentType(MediaType.APPLICATION_JSON)
@@ -290,25 +290,25 @@ public class SecurityAnalysisControllerTest {
         PreContingencyResult preContingencyResult = mapper.readValue(resultAsString, PreContingencyResult.class);
         assertThat(RESULT.getPreContingencyResult(), new MatcherJson<>(mapper, preContingencyResult));
 
-        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies?page=0&size=3&sort=contingencyId,desc"))
+        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result?page=0&size=3&sort=contingencyId,desc"))
             .andExpectAll(
                 status().isOk(),
                 content().contentType(MediaType.APPLICATION_JSON)
             ).andReturn();
 
         resultAsString = mvcResult.getResponse().getContentAsString();
-        Page<ContingencyToConstraintDTO> contingenciesToConstraints = mapper.readValue(resultAsString, new TypeReference<>() {
+        Page<ContingencyToSubjectLimitViolationDTO> contingenciesToConstraints = mapper.readValue(resultAsString, new TypeReference<>() {
         });
         assertThat(RESULT_CONTINGENCIES, new MatcherJson<>(mapper, contingenciesToConstraints));
 
-        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints"))
+        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result"))
             .andExpectAll(
                 status().isOk(),
                 content().contentType(MediaType.APPLICATION_JSON)
             ).andReturn();
 
         resultAsString = mvcResult.getResponse().getContentAsString();
-        List<ConstraintToContingencyDTO> constraintsToContingencies = mapper.readValue(resultAsString, new TypeReference<List<ConstraintToContingencyDTO>>() { });
+        List<SubjectLimitViolationToContingencyDTO> constraintsToContingencies = mapper.readValue(resultAsString, new TypeReference<List<SubjectLimitViolationToContingencyDTO>>() { });
         assertThat(RESULT_CONSTRAINTS, new MatcherJson<>(mapper, constraintsToContingencies));
 
         // should throw not found if result does not exist
@@ -545,13 +545,13 @@ public class SecurityAnalysisControllerTest {
     }
 
     private void assertResultNotFound(UUID resultUuid) throws Exception {
-        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/n"))
+        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/n-result"))
                 .andExpect(status().isNotFound());
 
-        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-contingencies"))
+        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-contingencies-result"))
             .andExpect(status().isNotFound());
 
-        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-constraints"))
+        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-constraints-result"))
             .andExpect(status().isNotFound());
     }
 }
