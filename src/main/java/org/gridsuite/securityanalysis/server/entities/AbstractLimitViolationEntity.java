@@ -1,12 +1,22 @@
+/**
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package org.gridsuite.securityanalysis.server.entities;
 
 import com.powsybl.iidm.network.Branch;
+import com.powsybl.security.LimitViolation;
 import com.powsybl.security.LimitViolationType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.util.UUID;
+/**
+ * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
+ */
 
 @NoArgsConstructor
 @Getter
@@ -18,7 +28,7 @@ public abstract class AbstractLimitViolationEntity {
     private UUID id;
 
     @ManyToOne
-    private ConstraintEntity constraint;
+    private SubjectLimitViolationEntity subjectLimitViolation;
 
     private String subjectName;
 
@@ -40,8 +50,8 @@ public abstract class AbstractLimitViolationEntity {
     @Enumerated(EnumType.STRING)
     private Branch.Side side;
 
-    protected AbstractLimitViolationEntity(ConstraintEntity constraint, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
-        this.constraint = constraint;
+    protected AbstractLimitViolationEntity(SubjectLimitViolationEntity subjectLimitViolation, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
+        this.subjectLimitViolation = subjectLimitViolation;
         this.subjectName = subjectName;
         this.limit = limit;
         this.limitName = limitName;
@@ -50,5 +60,14 @@ public abstract class AbstractLimitViolationEntity {
         this.limitReduction = limitReduction;
         this.value = value;
         this.side = side;
+    }
+
+    public static LimitViolation toLimitViolation(AbstractLimitViolationEntity limitViolationEntity) {
+        String subjectId = limitViolationEntity.getSubjectLimitViolation() != null
+            ? limitViolationEntity.getSubjectLimitViolation().getSubjectId()
+            : null;
+
+        return new LimitViolation(subjectId, limitViolationEntity.getLimitType(), limitViolationEntity.getLimitName(), limitViolationEntity.getAcceptableDuration(),
+            limitViolationEntity.getLimit(), limitViolationEntity.getLimitReduction(), limitViolationEntity.getValue(), limitViolationEntity.getSide());
     }
 }

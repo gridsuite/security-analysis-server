@@ -6,11 +6,11 @@
  */
 package org.gridsuite.securityanalysis.server.dto;
 
-import com.powsybl.contingency.ContingencyElementType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.gridsuite.securityanalysis.server.entities.ContingencyElementEmbeddable;
+
+import java.util.List;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
@@ -18,11 +18,9 @@ import org.gridsuite.securityanalysis.server.entities.ContingencyElementEmbeddab
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ContingencyElementDTO {
+public class ContingencyToSubjectLimitViolationDTO {
     private String id;
-    private ContingencyElementType elementType;
-
-    public static ContingencyElementDTO toDto(ContingencyElementEmbeddable contingencyElement) {
-        return new ContingencyElementDTO(contingencyElement.getElementId(), contingencyElement.getElementType());
-    }
+    private String status;
+    private List<ContingencyElementDTO> elements;
+    private List<SubjectLimitViolationFromContingencyDTO> subjectLimitViolations;
 }
