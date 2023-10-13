@@ -76,7 +76,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     static final LimitViolation LIMIT_VIOLATION_4 = new LimitViolation("vl7", LimitViolationType.HIGH_VOLTAGE, "", 0, 400, 1, 410, null);
 
     static final SecurityAnalysisResult RESULT = new SecurityAnalysisResult(new LimitViolationsResult(List.of(LIMIT_VIOLATION_1)), LoadFlowResult.ComponentResult.Status.CONVERGED,
-            CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, List.of(LIMIT_VIOLATION_2)))
+            CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, List.of(LIMIT_VIOLATION_1, LIMIT_VIOLATION_2)))
             .collect(Collectors.toList()));
 
     static final SecurityAnalysisResult RESULT_VARIANT = new SecurityAnalysisResult(new LimitViolationsResult(List.of(LIMIT_VIOLATION_3)), LoadFlowResult.ComponentResult.Status.CONVERGED,
@@ -88,21 +88,70 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
             c.getId(),
             LoadFlowResult.ComponentResult.Status.CONVERGED.name(),
             c.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).collect(Collectors.toList()),
-            List.of(new SubjectLimitViolationFromContingencyDTO(
-                LIMIT_VIOLATION_2.getSubjectId(),
-                LIMIT_VIOLATION_2.getLimitType(),
-                LIMIT_VIOLATION_2.getLimitName(),
-                LIMIT_VIOLATION_2.getSide(),
-                LIMIT_VIOLATION_2.getAcceptableDuration(),
-                LIMIT_VIOLATION_2.getLimit(),
-                LIMIT_VIOLATION_2.getLimitReduction(),
-                LIMIT_VIOLATION_2.getValue())
+            List.of(
+                new SubjectLimitViolationFromContingencyDTO(
+                    LIMIT_VIOLATION_1.getSubjectId(),
+                    LIMIT_VIOLATION_1.getLimitType(),
+                    LIMIT_VIOLATION_1.getLimitName(),
+                    LIMIT_VIOLATION_1.getSide(),
+                    LIMIT_VIOLATION_1.getAcceptableDuration(),
+                    LIMIT_VIOLATION_1.getLimit(),
+                    LIMIT_VIOLATION_1.getLimitReduction(),
+                    LIMIT_VIOLATION_1.getValue()),
+                new SubjectLimitViolationFromContingencyDTO(
+                    LIMIT_VIOLATION_2.getSubjectId(),
+                    LIMIT_VIOLATION_2.getLimitType(),
+                    LIMIT_VIOLATION_2.getLimitName(),
+                    LIMIT_VIOLATION_2.getSide(),
+                    LIMIT_VIOLATION_2.getAcceptableDuration(),
+                    LIMIT_VIOLATION_2.getLimit(),
+                    LIMIT_VIOLATION_2.getLimitReduction(),
+                    LIMIT_VIOLATION_2.getValue()
+                )
             )
         )).collect(Collectors.toList()
     );
 
+    static final List<ContingencyToSubjectLimitViolationDTO> resultFilteredByNestedIntegerField = RESULT_CONTINGENCIES.stream().map(r ->
+        new ContingencyToSubjectLimitViolationDTO(
+            r.getId(),
+            LoadFlowResult.ComponentResult.Status.CONVERGED.name(),
+            r.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getElementType())).collect(Collectors.toList()),
+            r.getSubjectLimitViolations().stream().filter(s -> s.getAcceptableDuration() == LIMIT_VIOLATION_1.getAcceptableDuration()).toList()
+        )
+    ).toList();
+
+    static final List<ContingencyToSubjectLimitViolationDTO> resultFilteredByNestedEnumField = RESULT_CONTINGENCIES.stream().map(r ->
+        new ContingencyToSubjectLimitViolationDTO(
+            r.getId(),
+            LoadFlowResult.ComponentResult.Status.CONVERGED.name(),
+            r.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getElementType())).collect(Collectors.toList()),
+            r.getSubjectLimitViolations().stream().filter(s -> s.getLimitType().equals(LimitViolationType.HIGH_VOLTAGE)).toList()
+        )
+    ).toList();
+
+    static final List<ContingencyToSubjectLimitViolationDTO> resultFilteredByDeeplyNestedField = RESULT_CONTINGENCIES.stream().map(r ->
+        new ContingencyToSubjectLimitViolationDTO(
+            r.getId(),
+            LoadFlowResult.ComponentResult.Status.CONVERGED.name(),
+            r.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getElementType())).collect(Collectors.toList()),
+            r.getSubjectLimitViolations().stream().filter(s -> s.getSubjectId().equals(LIMIT_VIOLATION_1.getSubjectId())).toList()
+        )
+    ).toList();
+
     static final List<SubjectLimitViolationToContingencyDTO> RESULT_CONSTRAINTS = List.of(
-        new SubjectLimitViolationToContingencyDTO(LIMIT_VIOLATION_1.getSubjectId(), List.of()),
+        new SubjectLimitViolationToContingencyDTO(LIMIT_VIOLATION_1.getSubjectId(),  CONTINGENCIES.stream().map(c -> new ContingencyFromSubjectLimitViolationDTO(
+                c.getId(),
+                LoadFlowResult.ComponentResult.Status.CONVERGED.name(),
+                LIMIT_VIOLATION_1.getLimitType(),
+                LIMIT_VIOLATION_1.getLimitName(),
+                LIMIT_VIOLATION_1.getSide(),
+                LIMIT_VIOLATION_1.getAcceptableDuration(),
+                LIMIT_VIOLATION_1.getLimit(),
+                LIMIT_VIOLATION_1.getLimitReduction(),
+                LIMIT_VIOLATION_1.getValue(),
+                c.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).collect(Collectors.toList())))
+            .collect(Collectors.toList())),
         new SubjectLimitViolationToContingencyDTO(
             LIMIT_VIOLATION_2.getSubjectId(),
             CONTINGENCIES.stream().map(c -> new ContingencyFromSubjectLimitViolationDTO(

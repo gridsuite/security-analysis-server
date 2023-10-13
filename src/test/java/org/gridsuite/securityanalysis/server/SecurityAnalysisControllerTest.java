@@ -12,23 +12,19 @@ import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
+import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
-import com.powsybl.security.SecurityAnalysis;
-import com.powsybl.security.SecurityAnalysisParameters;
-import com.powsybl.security.SecurityAnalysisProvider;
-import com.powsybl.security.SecurityAnalysisResult;
+import com.powsybl.security.*;
 import com.powsybl.security.results.PreContingencyResult;
 import lombok.SneakyThrows;
-import org.gridsuite.securityanalysis.server.dto.ContingencyToSubjectLimitViolationDTO;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
-import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationToContingencyDTO;
+import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.ReportService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.gridsuite.securityanalysis.server.service.UuidGeneratorService;
+import org.gridsuite.securityanalysis.server.util.CustomPageImpl;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
 import org.junit.After;
 import org.junit.Before;
@@ -43,6 +39,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.config.EnableSpringDataWebSupport;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.Message;
@@ -58,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
@@ -91,6 +91,8 @@ public class SecurityAnalysisControllerTest {
     private static final UUID OTHER_RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5a");
     private static final UUID NETWORK_FOR_MERGING_VIEW_UUID = UUID.fromString("11111111-7977-4592-ba19-88027e4254e4");
     private static final UUID OTHER_NETWORK_FOR_MERGING_VIEW_UUID = UUID.fromString("22222222-7977-4592-ba19-88027e4254e4");
+    private static final String NMK_CONTINGENCIES_PATH = "nmk-contingencies-result";
+    private static final String NMK_CONSTRAINTS_PATH = "nmk-constraints-result";
 
     private static final int TIMEOUT = 1000;
 
@@ -290,7 +292,7 @@ public class SecurityAnalysisControllerTest {
         PreContingencyResult preContingencyResult = mapper.readValue(resultAsString, PreContingencyResult.class);
         assertThat(RESULT.getPreContingencyResult(), new MatcherJson<>(mapper, preContingencyResult));
 
-        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result?page=0&size=3&sort=contingencyId,desc"))
+        /*mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result?page=0&size=3&contingencyId=l7"))
             .andExpectAll(
                 status().isOk(),
                 content().contentType(MediaType.APPLICATION_JSON)
@@ -299,17 +301,17 @@ public class SecurityAnalysisControllerTest {
         resultAsString = mvcResult.getResponse().getContentAsString();
         Page<ContingencyToSubjectLimitViolationDTO> contingenciesToConstraints = mapper.readValue(resultAsString, new TypeReference<>() {
         });
-        assertThat(RESULT_CONTINGENCIES, new MatcherJson<>(mapper, contingenciesToConstraints));
+        assertThat(RESULT_CONTINGENCIES, new MatcherJson<>(mapper, contingenciesToConstraints));*/
 
-        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result"))
+        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result?page=0&size=3"))
             .andExpectAll(
                 status().isOk(),
                 content().contentType(MediaType.APPLICATION_JSON)
             ).andReturn();
 
         resultAsString = mvcResult.getResponse().getContentAsString();
-        List<SubjectLimitViolationToContingencyDTO> constraintsToContingencies = mapper.readValue(resultAsString, new TypeReference<List<SubjectLimitViolationToContingencyDTO>>() { });
-        assertThat(RESULT_CONSTRAINTS, new MatcherJson<>(mapper, constraintsToContingencies));
+        CustomPageImpl<SubjectLimitViolationToContingencyDTO> constraintsToContingencies = mapper.readValue(resultAsString, new TypeReference<CustomPageImpl<SubjectLimitViolationToContingencyDTO>>() { });
+        assertThat(constraintsToContingencies, new MatcherJson<>(mapper, new CustomPageImpl<>(RESULT_CONSTRAINTS, PageRequest.ofSize(3), RESULT_CONSTRAINTS.size())));
 
         // should throw not found if result does not exist
         assertResultNotFound(OTHER_RESULT_UUID);
@@ -319,6 +321,82 @@ public class SecurityAnalysisControllerTest {
                 .andExpect(status().isOk());
 
         assertResultNotFound(RESULT_UUID);
+    }
+
+    @Test
+    public void findNmKContingenciesResults() throws Exception {
+        MvcResult mvcResult;
+        String resultAsString;
+
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
+                + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow"))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON)
+            ).andReturn();
+
+        resultAsString = mvcResult.getResponse().getContentAsString();
+        UUID resultUuid = mapper.readValue(resultAsString, UUID.class);
+        assertEquals(RESULT_UUID, resultUuid);
+
+        Message<byte[]> resultMessage = output.receive(TIMEOUT, "sa.result");
+        assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
+        assertEquals("me", resultMessage.getHeaders().get("receiver"));
+
+        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, null , RESULT_CONTINGENCIES);
+        testPaginatedResult(NMK_CONTINGENCIES_PATH, 1, 2, null , RESULT_CONTINGENCIES);
+        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 25, null , RESULT_CONTINGENCIES);
+        testPaginatedResult(NMK_CONTINGENCIES_PATH, 1, 25, null , RESULT_CONTINGENCIES);
+        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration(), resultFilteredByNestedIntegerField);
+        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "acceptableDuration="  + LIMIT_VIOLATION_1.getAcceptableDuration() + "&contingencyId=" + CONTINGENCIES.get(0).getId(),
+            resultFilteredByNestedIntegerField.stream().filter(r -> r.getId().equals(CONTINGENCIES.get(0).getId())).toList());
+        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "contingencyId=" + CONTINGENCIES.get(0).getId() + "&subjectId=" + LIMIT_VIOLATION_1.getSubjectId(),
+            resultFilteredByDeeplyNestedField.stream().filter(r -> r.getId().equals(CONTINGENCIES.get(0).getId())).toList());
+        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "limitType=" + LimitViolationType.HIGH_VOLTAGE, resultFilteredByNestedEnumField);
+    }
+
+    @Test
+    public void findNmKConstraintsResults() throws Exception {
+        MvcResult mvcResult;
+        String resultAsString;
+
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
+                + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow"))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON)
+            ).andReturn();
+
+        resultAsString = mvcResult.getResponse().getContentAsString();
+        UUID resultUuid = mapper.readValue(resultAsString, UUID.class);
+        assertEquals(RESULT_UUID, resultUuid);
+
+        Message<byte[]> resultMessage = output.receive(TIMEOUT, "sa.result");
+        assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
+        assertEquals("me", resultMessage.getHeaders().get("receiver"));
+
+        testPaginatedResult(NMK_CONSTRAINTS_PATH, 0, 3, null , RESULT_CONSTRAINTS);
+        testPaginatedResult(NMK_CONSTRAINTS_PATH, 1, 2, null , RESULT_CONSTRAINTS);
+        testPaginatedResult(NMK_CONSTRAINTS_PATH, 0, 25, null , RESULT_CONSTRAINTS);
+        testPaginatedResult(NMK_CONSTRAINTS_PATH, 1, 25, null , RESULT_CONSTRAINTS);
+    }
+
+    private <T> void testPaginatedResult(String path, int page, int pageSize, String filterQuery, List<T> expectedResult) throws Exception {
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/" + path + "?page=" + page + "&size=" + pageSize + "&" + filterQuery))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON)
+            ).andReturn();
+
+        String resultAsString = mvcResult.getResponse().getContentAsString();
+        CustomPageImpl<T> contingenciesToSubjectLimitViolations = mapper.readValue(resultAsString, new TypeReference<>() {
+        });
+
+        Pageable pageRequest = PageRequest.of(page, pageSize);
+        int start = Math.min((int)pageRequest.getOffset(), expectedResult.size());
+        int end = Math.min((start + pageRequest.getPageSize()), expectedResult.size());
+
+        assertThat(contingenciesToSubjectLimitViolations, new MatcherJson<>(mapper, new CustomPageImpl<>(expectedResult.subList(start, end), pageRequest, expectedResult.size())));
     }
 
     @Test

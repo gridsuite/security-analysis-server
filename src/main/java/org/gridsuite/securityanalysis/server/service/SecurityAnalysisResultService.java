@@ -16,6 +16,7 @@ import org.gridsuite.securityanalysis.server.repositories.*;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,9 +63,23 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ContingencyToSubjectLimitViolationDTO> findNmKContingenciesResult(UUID resultUuid, Pageable pageable) {
+    public Page<ContingencyToSubjectLimitViolationDTO> findNmKContingenciesResult(UUID resultUuid, ResultsSelectorDTO resultsSelector, Pageable pageable) {
         assertResultExists(resultUuid);
-        Page<ContingencyEntity> contingenciesPageable = contingencyRepository.findByResultIdAndStatusOrderByContingencyId(resultUuid, LoadFlowResult.ComponentResult.Status.CONVERGED.name(),pageable);
+
+        Specification<ContingencyEntity> specification = ContingencyRepository.getSpecification(
+            resultUuid,
+            resultsSelector.getContingencyId(),
+            resultsSelector.getStatus(),
+            resultsSelector.getSubjectId(),
+            resultsSelector.getLimitType(),
+            resultsSelector.getLimitName(),
+            resultsSelector.getSide(),
+            resultsSelector.getAcceptableDuration(),
+            resultsSelector.getLimit(),
+            resultsSelector.getLimitReduction(),
+            resultsSelector.getValue());
+
+        Page<ContingencyEntity> contingenciesPageable = contingencyRepository.findAll(specification, pageable);
         return contingenciesPageable.map(contingency -> {
             List<SubjectLimitViolationFromContingencyDTO> subjectLimitViolations = contingency.getContingencyLimitViolations().stream()
                 .map(SubjectLimitViolationFromContingencyDTO::toDto)
@@ -81,7 +96,8 @@ public class SecurityAnalysisResultService {
     @Transactional(readOnly = true)
     public Page<SubjectLimitViolationToContingencyDTO> findNmKConstraintsResult(UUID resultUuid, Pageable pageable) {
         assertResultExists(resultUuid);
-        Page<SubjectLimitViolationEntity> subjectLimitViolations = subjectLimitViolationRepository.findByResultIdOrderBySubjectId(resultUuid, pageable);
+        Specification<SubjectLimitViolationEntity> specification = SubjectLimitViolationRepository.getSpecification(resultUuid);
+        Page<SubjectLimitViolationEntity> subjectLimitViolations = subjectLimitViolationRepository.findAll(specification, pageable);
 
         return subjectLimitViolations.map(subjectLimitViolation -> {
             List<ContingencyFromSubjectLimitViolationDTO> contingencies = subjectLimitViolation.getContingencyLimitViolations().stream()

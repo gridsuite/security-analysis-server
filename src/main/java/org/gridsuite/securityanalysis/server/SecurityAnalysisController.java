@@ -15,10 +15,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationToContingencyDTO;
-import org.gridsuite.securityanalysis.server.dto.ContingencyToSubjectLimitViolationDTO;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
+import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisRunContext;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
@@ -114,8 +111,9 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<Page<ContingencyToSubjectLimitViolationDTO>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                                                                      @Parameter ResultsSelectorDTO resultsSelector,
                                                                                       Pageable pageable) {
-        Page<ContingencyToSubjectLimitViolationDTO> result = service.getNmKContingenciesResult(resultUuid, pageable);
+        Page<ContingencyToSubjectLimitViolationDTO> result = service.getNmKContingenciesResult(resultUuid, resultsSelector, pageable);
 
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)

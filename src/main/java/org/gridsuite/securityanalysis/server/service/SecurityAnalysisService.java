@@ -9,6 +9,7 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.security.results.PreContingencyResult;
+import org.gridsuite.securityanalysis.server.dto.ResultsSelectorDTO;
 import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationToContingencyDTO;
 import org.gridsuite.securityanalysis.server.dto.ContingencyToSubjectLimitViolationDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
@@ -64,8 +65,8 @@ public class SecurityAnalysisService {
         return resultRepository.findNResult(resultUuid);
     }
 
-    public Page<ContingencyToSubjectLimitViolationDTO> getNmKContingenciesResult(UUID resultUuid, Pageable pageable) {
-        return resultRepository.findNmKContingenciesResult(resultUuid, pageable);
+    public Page<ContingencyToSubjectLimitViolationDTO> getNmKContingenciesResult(UUID resultUuid, ResultsSelectorDTO resultsSelector, Pageable pageable) {
+        return resultRepository.findNmKContingenciesResult(resultUuid, resultsSelector, pageable);
     }
 
     public Page<SubjectLimitViolationToContingencyDTO> getNmKConstraintsResult(UUID resultUuid, Pageable pageable) {
