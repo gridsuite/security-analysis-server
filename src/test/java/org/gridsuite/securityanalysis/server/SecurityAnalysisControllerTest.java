@@ -22,6 +22,7 @@ import lombok.SneakyThrows;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
+import org.gridsuite.securityanalysis.server.service.NotificationService;
 import org.gridsuite.securityanalysis.server.service.ReportService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.gridsuite.securityanalysis.server.service.UuidGeneratorService;
@@ -30,12 +31,15 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
 import org.springframework.http.MediaType;
@@ -53,6 +57,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
@@ -61,6 +67,7 @@ import static org.gridsuite.securityanalysis.server.service.NotificationService.
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 /**
@@ -103,11 +110,16 @@ public class SecurityAnalysisControllerTest {
     @MockBean
     private UuidGeneratorService uuidGeneratorService;
 
+    @SpyBean
+    NotificationService notificationService;
+
     @Autowired
     private SecurityAnalysisWorkerService workerService;
 
     @Autowired
     private ObjectMapper mapper;
+
+    ExecutorService executor = Executors.newSingleThreadExecutor();
 
     @Before
     public void setUp() throws Exception {
@@ -182,6 +194,22 @@ public class SecurityAnalysisControllerTest {
         }
         while (output.receive(1000, "sa.failed") != null) {
         }
+
+        // Emit messages in separate threads, like in production.
+        // Otherwise the test binder calls consumers directly in the caller thread.
+        // By coincidence, this leads to the following exception,
+        // because we use webflux for the controller (calller thread),
+        // and we use webflux to implement control flow in consumeRun
+        // > Exception in consumeRun java.lang.IllegalStateException: block()/blockFirst()/blockLast() are blocking, which is not supported in thread parallel-5
+        doAnswer((InvocationOnMock invocation) ->
+            executor.submit(() -> {
+                try {
+                    return invocation.callRealMethod();
+                } catch (Throwable e) {
+                    throw new RuntimeException("Error in test wrapping emit", e);
+                }
+            })
+        ).when(notificationService).emitRunAnalysisMessage(Mockito.any());
     }
 
     // added for testStatus can return null, after runTest
