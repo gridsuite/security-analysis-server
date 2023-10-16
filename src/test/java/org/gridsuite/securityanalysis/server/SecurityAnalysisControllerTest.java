@@ -38,8 +38,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.cloud.stream.binder.test.TestChannelBinderConfiguration;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.config.EnableSpringDataWebSupport;
@@ -58,7 +56,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.stream.Collectors;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
@@ -344,25 +341,29 @@ public class SecurityAnalysisControllerTest {
         assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
         assertEquals("me", resultMessage.getHeaders().get("receiver"));
 
+        String basePath = NMK_CONTINGENCIES_PATH;
         // test pagination
-        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, null , RESULT_CONTINGENCIES);
-        testPaginatedResult(NMK_CONTINGENCIES_PATH, 1, 2, null , RESULT_CONTINGENCIES);
-        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 25, null , RESULT_CONTINGENCIES);
-        testPaginatedResult(NMK_CONTINGENCIES_PATH, 1, 25, null , RESULT_CONTINGENCIES);
+        testPaginatedResult(basePath, 0, 3, null, RESULT_CONTINGENCIES);
+        testPaginatedResult(basePath, 1, 2, null, RESULT_CONTINGENCIES);
+        testPaginatedResult(basePath, 0, 25, null, RESULT_CONTINGENCIES);
+        testPaginatedResult(basePath, 1, 25, null, RESULT_CONTINGENCIES);
 
         // test sorting
-        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "sort=contingencyId,desc" , RESULT_CONTINGENCIES.stream().sorted(Comparator.comparing(ContingencyToSubjectLimitViolationDTO::getId).reversed()).toList());
-        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "sort=contingencyId" , RESULT_CONTINGENCIES.stream().sorted(Comparator.comparing(ContingencyToSubjectLimitViolationDTO::getId)).toList());
+        testPaginatedResult(basePath, 0, 3, "sort=contingencyId,desc", RESULT_CONTINGENCIES.stream().sorted(Comparator.comparing(ContingencyToSubjectLimitViolationDTO::getId).reversed()).toList());
+        testPaginatedResult(basePath, 0, 3, "sort=contingencyId", RESULT_CONTINGENCIES.stream().sorted(Comparator.comparing(ContingencyToSubjectLimitViolationDTO::getId)).toList());
 
         // test filtering
-        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration(), resultFilteredByNestedIntegerField);
-        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "acceptableDuration="  + LIMIT_VIOLATION_1.getAcceptableDuration() + "&contingencyId=" + CONTINGENCIES.get(0).getId(),
-            resultFilteredByNestedIntegerField.stream().filter(r -> r.getId().equals(CONTINGENCIES.get(0).getId())).toList());
-        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "contingencyId=" + CONTINGENCIES.get(0).getId() + "&subjectId=" + LIMIT_VIOLATION_1.getSubjectId(),
-            resultFilteredByDeeplyNestedField.stream().filter(r -> r.getId().equals(CONTINGENCIES.get(0).getId())).toList());
-        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "limitType=" + LimitViolationType.HIGH_VOLTAGE, resultFilteredByNestedEnumField);
-        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration() + "&", resultFilteredByNestedIntegerField);
+        testPaginatedResult(basePath, 0, 3, "acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration(), RESULT_CONTINGENCIES_FILTERED_BY_NESTED_INTEGER_FIELD);
+        testPaginatedResult(basePath, 0, 3, "acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration() + "&contingencyId=" + CONTINGENCIES.get(0).getId(),
+            RESULT_CONTINGENCIES_FILTERED_BY_NESTED_INTEGER_FIELD.stream().filter(r -> r.getId().equals(CONTINGENCIES.get(0).getId())).toList());
+        testPaginatedResult(basePath, 0, 3, "contingencyId=" + CONTINGENCIES.get(0).getId() + "&subjectId=" + LIMIT_VIOLATION_1.getSubjectId(),
+            RESULT_CONTINGENCIES_FILTERED_BY_DEEPLY_NESTED_FIELD.stream().filter(r -> r.getId().equals(CONTINGENCIES.get(0).getId())).toList());
+        testPaginatedResult(basePath, 0, 3, "limitType=" + LimitViolationType.HIGH_VOLTAGE, RESULT_CONTINGENCIES_FILTERED_BY_NESTED_ENUM_FIELD);
+        testPaginatedResult(basePath, 0, 3, "acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration() + "&subjectId=" + LIMIT_VIOLATION_1.getSubjectId(), RESULT_CONTINGENCIES_FILTERED_BY_MULTIPLE_NESTED_FIELD);
 
+        // sorting and filtering test
+        testPaginatedResult(basePath, 0, 3, "sort=contingencyId,desc&acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration() + "&subjectId=" + LIMIT_VIOLATION_1.getSubjectId(),
+            RESULT_CONTINGENCIES_FILTERED_BY_MULTIPLE_NESTED_FIELD.stream().sorted(Comparator.comparing(ContingencyToSubjectLimitViolationDTO::getId).reversed()).toList());
     }
 
     @Test
@@ -385,10 +386,30 @@ public class SecurityAnalysisControllerTest {
         assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
         assertEquals("me", resultMessage.getHeaders().get("receiver"));
 
-        testPaginatedResult(NMK_CONSTRAINTS_PATH, 0, 3, null , RESULT_CONSTRAINTS);
-        testPaginatedResult(NMK_CONSTRAINTS_PATH, 1, 2, null , RESULT_CONSTRAINTS);
-        testPaginatedResult(NMK_CONSTRAINTS_PATH, 0, 25, null , RESULT_CONSTRAINTS);
-        testPaginatedResult(NMK_CONSTRAINTS_PATH, 1, 25, null , RESULT_CONSTRAINTS);
+        String basePath = NMK_CONSTRAINTS_PATH;
+        // test pagination
+        testPaginatedResult(basePath, 0, 3, null, RESULT_CONSTRAINTS);
+        testPaginatedResult(basePath, 1, 2, null, RESULT_CONSTRAINTS);
+        testPaginatedResult(basePath, 0, 25, null, RESULT_CONSTRAINTS);
+        testPaginatedResult(basePath, 1, 25, null, RESULT_CONSTRAINTS);
+
+        // test sorting
+        testPaginatedResult(basePath, 0, 3, "sort=subjectId,desc", RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationToContingencyDTO::getSubjectId).reversed()).toList());
+        testPaginatedResult(basePath, 0, 3, "sort=subjectId", RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationToContingencyDTO::getSubjectId)).toList());
+
+        // test filtering
+        testPaginatedResult(basePath, 0, 3, "acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration(), RESULT_CONSTRAINTS_FILTERED_BY_NESTED_INTEGER_FIELD);
+        testPaginatedResult(basePath, 0, 3, "acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration() + "&subjectId=" + LIMIT_VIOLATION_1.getSubjectId(),
+            RESULT_CONSTRAINTS_FILTERED_BY_NESTED_INTEGER_FIELD.stream().filter(r -> r.getSubjectId().equals(LIMIT_VIOLATION_1.getSubjectId())).toList());
+        testPaginatedResult(basePath, 0, 3, "subjectId=" + LIMIT_VIOLATION_1.getSubjectId() + "&status=" + LoadFlowResult.ComponentResult.Status.CONVERGED.name(),
+            RESULT_CONSTRAINTS_FILTERED_BY_DEEPLY_NESTED_FIELD.stream().filter(r -> r.getSubjectId().equals(LIMIT_VIOLATION_1.getSubjectId())).toList());
+        testPaginatedResult(basePath, 0, 3, "limitType=" + LimitViolationType.HIGH_VOLTAGE, RESULT_CONSTRAINTS_FILTERED_BY_NESTED_ENUM_FIELD);
+        testPaginatedResult(basePath, 0, 3, "acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration() + "&contingencyId=" + CONTINGENCIES.get(0).getId(), RESULT_CONSTRAINTS_FILTERED_BY_MULTIPLE_NESTED_FIELD);
+
+        // sorting and filtering test
+        testPaginatedResult(basePath, 0, 3, "sort=subjectId,desc&acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration() + "&contingencyId=" + CONTINGENCIES.get(0).getId(),
+            RESULT_CONSTRAINTS_FILTERED_BY_MULTIPLE_NESTED_FIELD.stream().sorted(Comparator.comparing(SubjectLimitViolationToContingencyDTO::getSubjectId).reversed()).toList());
+
     }
 
     private <T> void testPaginatedResult(String path, int page, int pageSize, String filterandSortQuery, List<T> expectedResult) throws Exception {
@@ -403,8 +424,8 @@ public class SecurityAnalysisControllerTest {
         });
 
         Pageable pageRequest = PageRequest.of(page, pageSize);
-        int start = Math.min((int)pageRequest.getOffset(), expectedResult.size());
-        int end = Math.min((start + pageRequest.getPageSize()), expectedResult.size());
+        int start = Math.min((int) pageRequest.getOffset(), expectedResult.size());
+        int end = Math.min(start + pageRequest.getPageSize(), expectedResult.size());
 
         assertThat(contingenciesToSubjectLimitViolations, new MatcherJson<>(mapper, new CustomPageImpl<>(expectedResult.subList(start, end), pageRequest, expectedResult.size())));
     }

@@ -68,6 +68,4 @@ public interface ContingencyRepository extends JpaRepository<ContingencyEntity, 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }
-
-
 }

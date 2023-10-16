@@ -6,7 +6,11 @@ import org.springframework.util.CollectionUtils;
 import java.util.Collection;
 import java.util.List;
 
-public class CriteriaUtils {
+public final class CriteriaUtils {
+    private CriteriaUtils() {
+        throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
+    }
+
     public static <T> void addPredicate(CriteriaBuilder criteriaBuilder,
                                      Path<?> path,
                                      List<Predicate> predicates,
@@ -51,12 +55,12 @@ public class CriteriaUtils {
         return criteriaQuery.getResultType() == Long.class || criteriaQuery.getResultType() == long.class;
     }
 
-    private static <T> Predicate filterToPredicate (CriteriaBuilder criteriaBuilder,
+    private static <T> Predicate filterToPredicate(CriteriaBuilder criteriaBuilder,
                                                 Path<?> joinPath,
                                                 T filter,
                                                 String fieldName,
                                                 String subFieldName) {
-        if(filter == null) {
+        if (filter == null) {
             return null;
         }
 

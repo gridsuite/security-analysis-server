@@ -99,8 +99,8 @@ public class SecurityAnalysisResultService {
         Specification<SubjectLimitViolationEntity> specification = SubjectLimitViolationRepository.getSpecification(
             resultUuid,
             resultsSelector.getSubjectId(),
-            resultsSelector.getStatus(),
             resultsSelector.getContingencyId(),
+            resultsSelector.getStatus(),
             resultsSelector.getLimitType(),
             resultsSelector.getLimitName(),
             resultsSelector.getSide(),

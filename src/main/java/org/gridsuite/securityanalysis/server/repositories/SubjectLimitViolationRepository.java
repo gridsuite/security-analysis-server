@@ -45,15 +45,15 @@ public interface SubjectLimitViolationRepository extends JpaRepository<SubjectLi
             // criteria in subjectLimitViolationEntity
             CriteriaUtils.addPredicate(criteriaBuilder, root, predicates, resultUuid, "result", "id");
             CriteriaUtils.addPredicate(criteriaBuilder, root, predicates, subjectId, "subjectId", null);
-            CriteriaUtils.addPredicate(criteriaBuilder, root, predicates, status, "status", null);
 
             // pageable makes a count request which should only count contingency results, not joined rows
-            if(!CriteriaUtils.currentQueryIsCountRecords(query)) {
+            if (!CriteriaUtils.currentQueryIsCountRecords(query)) {
                 // join fetch contingencyLimitViolation table
                 Join<Object, Object> contingencyLimitViolation = (Join<Object, Object>) root.fetch("contingencyLimitViolations", JoinType.LEFT);
 
                 // criteria in contingencyLimitViolationEntity
-                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, contingencyId, "contingencyId");
+                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, contingencyId, "contingency", "contingencyId");
+                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, status, "contingency", "status");
                 CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, limitType, "limitType");
                 CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, side, "side");
                 CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, limitName, "limitName");

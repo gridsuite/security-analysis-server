@@ -1,7 +1,6 @@
 package org.gridsuite.securityanalysis.server.dto;
 
 import com.powsybl.iidm.network.Branch;
-import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.security.LimitViolationType;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
