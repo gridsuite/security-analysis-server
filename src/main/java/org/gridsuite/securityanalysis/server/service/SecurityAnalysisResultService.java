@@ -17,6 +17,7 @@ import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.jgrapht.alg.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -171,10 +172,9 @@ public class SecurityAnalysisResultService {
         return Stream.concat(
                 securityAnalysisResult.getPostContingencyResults().stream().flatMap(pcr -> pcr.getLimitViolationsResult().getLimitViolations().stream()),
                 securityAnalysisResult.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().stream())
-            .map(LimitViolation::getSubjectId)
+            .map(lm -> new Pair<>(lm.getSubjectId(), lm.getSubjectName()))
             .distinct()
-            .map(SubjectLimitViolationEntity::new)
+            .map(pair -> new SubjectLimitViolationEntity(pair.getFirst(), pair.getSecond()))
             .toList();
     }
-
 }

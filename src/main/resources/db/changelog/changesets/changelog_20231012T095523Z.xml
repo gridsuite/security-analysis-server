@@ -15,7 +15,6 @@
             </column>
             <column name="limit_type" type="VARCHAR(255)"/>
             <column name="side" type="VARCHAR(255)"/>
-            <column name="subject_name" type="VARCHAR(255)"/>
             <column name="offending_value" type="FLOAT(53)"/>
             <column name="subject_limit_violation_id" type="UUID"/>
             <column name="contingency_uuid" type="UUID"/>
@@ -36,7 +35,6 @@
             </column>
             <column name="limit_type" type="VARCHAR(255)"/>
             <column name="side" type="VARCHAR(255)"/>
-            <column name="subject_name" type="VARCHAR(255)"/>
             <column name="offending_value" type="FLOAT(53)"/>
             <column name="subject_limit_violation_id" type="UUID"/>
             <column name="result_id" type="UUID"/>
@@ -57,6 +55,7 @@
                 <constraints nullable="false" primaryKey="true" primaryKeyName="subject_limit_violationPK"/>
             </column>
             <column name="subject_id" type="VARCHAR(255)"/>
+            <column name="subject_name" type="VARCHAR(255)"/>
             <column name="result_id" type="UUID"/>
         </createTable>
     </changeSet>

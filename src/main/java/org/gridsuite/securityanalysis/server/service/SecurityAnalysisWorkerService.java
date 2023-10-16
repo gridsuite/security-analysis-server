@@ -237,50 +237,46 @@ public class SecurityAnalysisWorkerService {
     @Bean
     public Consumer<Message<String>> consumeRun() {
         return message -> {
+            SecurityAnalysisResultContext resultContext = SecurityAnalysisResultContext.fromMessage(message, objectMapper);
             try {
-                SecurityAnalysisResultContext resultContext = SecurityAnalysisResultContext.fromMessage(message, objectMapper);
                 runRequests.add(resultContext.getResultUuid());
                 AtomicReference<Long> startTime = new AtomicReference<>();
 
                 startTime.set(System.nanoTime());
-                try {
-                    SecurityAnalysisResult result = run(resultContext.getRunContext(), resultContext.getResultUuid());
-                    long nanoTime = System.nanoTime();
-                    LOGGER.info("Just run in {}s", TimeUnit.NANOSECONDS.toSeconds(nanoTime - startTime.getAndSet(nanoTime)));
+                SecurityAnalysisResult result = run(resultContext.getRunContext(), resultContext.getResultUuid());
+                long nanoTime = System.nanoTime();
+                LOGGER.info("Just run in {}s", TimeUnit.NANOSECONDS.toSeconds(nanoTime - startTime.getAndSet(nanoTime)));
 
-                    securityAnalysisResultService.insert(
-                        resultContext.getResultUuid(),
-                        result,
-                        result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED
-                            ? SecurityAnalysisStatus.CONVERGED
-                            : SecurityAnalysisStatus.DIVERGED);
+                securityAnalysisResultService.insert(
+                    resultContext.getResultUuid(),
+                    result,
+                    result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED
+                        ? SecurityAnalysisStatus.CONVERGED
+                        : SecurityAnalysisStatus.DIVERGED);
 
-                    long finalNanoTime = System.nanoTime();
-                    LOGGER.info("Stored in {}s", TimeUnit.NANOSECONDS.toSeconds(finalNanoTime - startTime.getAndSet(finalNanoTime)));
+                long finalNanoTime = System.nanoTime();
+                LOGGER.info("Stored in {}s", TimeUnit.NANOSECONDS.toSeconds(finalNanoTime - startTime.getAndSet(finalNanoTime)));
 
-                    if (result != null) {  // result available
-                        notificationService.emitAnalysisResultsMessage(resultContext.getResultUuid().toString(), resultContext.getRunContext().getReceiver());
-                        LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
-                    } else {  // result not available : stop computation request
-                        if (cancelComputationRequests.get(resultContext.getResultUuid()) != null) {
-                            cleanASResultsAndPublishCancel(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
-                        }
+                if (result != null) {  // result available
+                    notificationService.emitAnalysisResultsMessage(resultContext.getResultUuid().toString(), resultContext.getRunContext().getReceiver());
+                    LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
+                } else {  // result not available : stop computation request
+                    if (cancelComputationRequests.get(resultContext.getResultUuid()) != null) {
+                        cleanASResultsAndPublishCancel(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
                     }
-                } catch (Exception e) {
-                    if (!(e instanceof CancellationException)) {
-                        LOGGER.error(FAIL_MESSAGE, e);
-                        notificationService.emitFailAnalysisMessage(resultContext.getResultUuid().toString(),
-                            resultContext.getRunContext().getReceiver(),
-                            e.getMessage());
-                        securityAnalysisResultService.delete(resultContext.getResultUuid());
-                    }
-                } finally {
-                    futures.remove(resultContext.getResultUuid());
-                    cancelComputationRequests.remove(resultContext.getResultUuid());
-                    runRequests.remove(resultContext.getResultUuid());
                 }
             } catch (Exception e) {
-                LOGGER.error("Exception in consumeRun", e);
+                if (!(e instanceof CancellationException)) {
+                    LOGGER.error(FAIL_MESSAGE, e);
+                    notificationService.emitFailAnalysisMessage(resultContext.getResultUuid().toString(),
+                        resultContext.getRunContext().getReceiver(),
+                        e.getMessage());
+                    securityAnalysisResultService.delete(resultContext.getResultUuid());
+                }
+            } finally {
+                futures.remove(resultContext.getResultUuid());
+                cancelComputationRequests.remove(resultContext.getResultUuid());
+                runRequests.remove(resultContext.getResultUuid());
             }
         };
     }

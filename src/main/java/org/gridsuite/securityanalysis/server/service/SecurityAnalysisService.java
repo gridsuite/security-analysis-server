@@ -29,7 +29,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class SecurityAnalysisService {
-    private final SecurityAnalysisResultService resultRepository;
+    private final SecurityAnalysisResultService securityAnalysisResultService;
 
     private final UuidGeneratorService uuidGeneratorService;
 
@@ -39,12 +39,12 @@ public class SecurityAnalysisService {
 
     private final String defaultProvider;
 
-    public SecurityAnalysisService(SecurityAnalysisResultService resultRepository,
+    public SecurityAnalysisService(SecurityAnalysisResultService securityAnalysisResultService,
                                    UuidGeneratorService uuidGeneratorService,
                                    ObjectMapper objectMapper,
                                    NotificationService notificationService,
                                    @Value("${security-analysis.default-provider}") String defaultProvider) {
-        this.resultRepository = Objects.requireNonNull(resultRepository);
+        this.securityAnalysisResultService = Objects.requireNonNull(securityAnalysisResultService);
         this.uuidGeneratorService = Objects.requireNonNull(uuidGeneratorService);
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.notificationService = Objects.requireNonNull(notificationService);
@@ -62,31 +62,31 @@ public class SecurityAnalysisService {
     }
 
     public PreContingencyResult getNResult(UUID resultUuid) {
-        return resultRepository.findNResult(resultUuid);
+        return securityAnalysisResultService.findNResult(resultUuid);
     }
 
     public Page<ContingencyToSubjectLimitViolationDTO> getNmKContingenciesResult(UUID resultUuid, ResultsSelectorDTO resultsSelector, Pageable pageable) {
-        return resultRepository.findNmKContingenciesResult(resultUuid, resultsSelector, pageable);
+        return securityAnalysisResultService.findNmKContingenciesResult(resultUuid, resultsSelector, pageable);
     }
 
     public Page<SubjectLimitViolationToContingencyDTO> getNmKConstraintsResult(UUID resultUuid, ResultsSelectorDTO resultsSelector, Pageable pageable) {
-        return resultRepository.findNmKConstraintsResult(resultUuid, resultsSelector, pageable);
+        return securityAnalysisResultService.findNmKConstraintsResult(resultUuid, resultsSelector, pageable);
     }
 
     public void deleteResult(UUID resultUuid) {
-        resultRepository.delete(resultUuid);
+        securityAnalysisResultService.delete(resultUuid);
     }
 
     public void deleteResults() {
-        resultRepository.deleteAll();
+        securityAnalysisResultService.deleteAll();
     }
 
     public SecurityAnalysisStatus getStatus(UUID resultUuid) {
-        return resultRepository.findStatus(resultUuid);
+        return securityAnalysisResultService.findStatus(resultUuid);
     }
 
     public void setStatus(List<UUID> resultUuids, SecurityAnalysisStatus status) {
-        resultRepository.insertStatus(resultUuids, status);
+        securityAnalysisResultService.insertStatus(resultUuids, status);
     }
 
     public void stop(UUID resultUuid, String receiver) {

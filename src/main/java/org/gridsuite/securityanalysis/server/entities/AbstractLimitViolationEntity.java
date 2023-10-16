@@ -30,8 +30,6 @@ public abstract class AbstractLimitViolationEntity {
     @ManyToOne
     private SubjectLimitViolationEntity subjectLimitViolation;
 
-    private String subjectName;
-
     @Column(name = "limitValue")
     private double limit;
 
@@ -50,9 +48,8 @@ public abstract class AbstractLimitViolationEntity {
     @Enumerated(EnumType.STRING)
     private Branch.Side side;
 
-    protected AbstractLimitViolationEntity(SubjectLimitViolationEntity subjectLimitViolation, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
+    protected AbstractLimitViolationEntity(SubjectLimitViolationEntity subjectLimitViolation, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
         this.subjectLimitViolation = subjectLimitViolation;
-        this.subjectName = subjectName;
         this.limit = limit;
         this.limitName = limitName;
         this.limitType = limitType;
