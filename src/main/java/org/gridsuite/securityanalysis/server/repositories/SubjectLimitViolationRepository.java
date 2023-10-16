@@ -6,20 +6,17 @@
  */
 package org.gridsuite.securityanalysis.server.repositories;
 
-import com.powsybl.loadflow.LoadFlowResult;
+import com.powsybl.iidm.network.Branch;
+import com.powsybl.security.LimitViolationType;
 import jakarta.persistence.criteria.*;
-import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.data.repository.PagingAndSortingRepository;
-import org.springframework.util.CollectionUtils;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 /**
@@ -27,43 +24,46 @@ import java.util.UUID;
  */
 
 public interface SubjectLimitViolationRepository extends JpaRepository<SubjectLimitViolationEntity, UUID>, JpaSpecificationExecutor<SubjectLimitViolationEntity> {
-    Page<SubjectLimitViolationEntity> findByResultIdOrderBySubjectId(UUID resultUuid, Pageable pageable);
-
     Page<SubjectLimitViolationEntity> findAll(Specification<SubjectLimitViolationEntity> specification, Pageable pageable);
 
-    static Specification<SubjectLimitViolationEntity> getSpecification(UUID resultUuid) {
+    static Specification<SubjectLimitViolationEntity> getSpecification(
+        UUID resultUuid,
+        String subjectId,
+        String contingencyId,
+        String status,
+        LimitViolationType limitType,
+        String limitName,
+        Branch.Side side,
+        Integer acceptableDuration,
+        Double limit,
+        Double limitReduction,
+        Double value
+    ) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
-            addPredicate(criteriaBuilder, root, predicates, List.of(resultUuid), "result", "id");
-            //addPredicate(criteriaBuilder, root, predicates, List.of("l1", "l3"), "contingencyId", null);
-/*
-            addPredicate(criteriaBuilder, root, predicates, List.of(LoadFlowResult.ComponentResult.Status.CONVERGED.name()), "status", null);
-*/
-            Join<Object, Object> contingencyLimitViolation;
-            if(!currentQueryIsCountRecords(query)) {
-                contingencyLimitViolation = (Join<Object, Object>) root.fetch("contingencyLimitViolations", JoinType.LEFT);
+
+            // criteria in subjectLimitViolationEntity
+            CriteriaUtils.addPredicate(criteriaBuilder, root, predicates, resultUuid, "result", "id");
+            CriteriaUtils.addPredicate(criteriaBuilder, root, predicates, subjectId, "subjectId", null);
+            CriteriaUtils.addPredicate(criteriaBuilder, root, predicates, status, "status", null);
+
+            // pageable makes a count request which should only count contingency results, not joined rows
+            if(!CriteriaUtils.currentQueryIsCountRecords(query)) {
+                // join fetch contingencyLimitViolation table
+                Join<Object, Object> contingencyLimitViolation = (Join<Object, Object>) root.fetch("contingencyLimitViolations", JoinType.LEFT);
+
+                // criteria in contingencyLimitViolationEntity
+                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, contingencyId, "contingencyId");
+                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, limitType, "limitType");
+                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, side, "side");
+                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, limitName, "limitName");
+                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, acceptableDuration, "acceptableDuration");
+                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, limit, "limit");
+                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, limitReduction, "limitReduction");
+                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, value, "value");
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
-    }
-
-    private static void addPredicate(CriteriaBuilder criteriaBuilder,
-                                     Root<SubjectLimitViolationEntity> root,
-                                     List<Predicate> predicates,
-                                     Collection<?> collection,
-                                     String fieldName,
-                                     String subFieldName) {
-        if (!CollectionUtils.isEmpty(collection)) {
-            Expression<?> expression = subFieldName == null ? root.get(fieldName) : root.get(fieldName).get(subFieldName);
-            var predicate = collection.stream()
-                .map(id -> criteriaBuilder.equal(expression, id))
-                .toArray(Predicate[]::new);
-            predicates.add(criteriaBuilder.or(predicate));
-        }
-    }
-
-    private static boolean currentQueryIsCountRecords(CriteriaQuery<?> criteriaQuery) {
-        return criteriaQuery.getResultType() == Long.class || criteriaQuery.getResultType() == long.class;
     }
 }

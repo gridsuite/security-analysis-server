@@ -53,6 +53,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -343,16 +344,25 @@ public class SecurityAnalysisControllerTest {
         assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
         assertEquals("me", resultMessage.getHeaders().get("receiver"));
 
+        // test pagination
         testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, null , RESULT_CONTINGENCIES);
         testPaginatedResult(NMK_CONTINGENCIES_PATH, 1, 2, null , RESULT_CONTINGENCIES);
         testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 25, null , RESULT_CONTINGENCIES);
         testPaginatedResult(NMK_CONTINGENCIES_PATH, 1, 25, null , RESULT_CONTINGENCIES);
+
+        // test sorting
+        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "sort=contingencyId,desc" , RESULT_CONTINGENCIES.stream().sorted(Comparator.comparing(ContingencyToSubjectLimitViolationDTO::getId).reversed()).toList());
+        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "sort=contingencyId" , RESULT_CONTINGENCIES.stream().sorted(Comparator.comparing(ContingencyToSubjectLimitViolationDTO::getId)).toList());
+
+        // test filtering
         testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration(), resultFilteredByNestedIntegerField);
         testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "acceptableDuration="  + LIMIT_VIOLATION_1.getAcceptableDuration() + "&contingencyId=" + CONTINGENCIES.get(0).getId(),
             resultFilteredByNestedIntegerField.stream().filter(r -> r.getId().equals(CONTINGENCIES.get(0).getId())).toList());
         testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "contingencyId=" + CONTINGENCIES.get(0).getId() + "&subjectId=" + LIMIT_VIOLATION_1.getSubjectId(),
             resultFilteredByDeeplyNestedField.stream().filter(r -> r.getId().equals(CONTINGENCIES.get(0).getId())).toList());
         testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "limitType=" + LimitViolationType.HIGH_VOLTAGE, resultFilteredByNestedEnumField);
+        testPaginatedResult(NMK_CONTINGENCIES_PATH, 0, 3, "acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration() + "&", resultFilteredByNestedIntegerField);
+
     }
 
     @Test
@@ -381,8 +391,8 @@ public class SecurityAnalysisControllerTest {
         testPaginatedResult(NMK_CONSTRAINTS_PATH, 1, 25, null , RESULT_CONSTRAINTS);
     }
 
-    private <T> void testPaginatedResult(String path, int page, int pageSize, String filterQuery, List<T> expectedResult) throws Exception {
-        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/" + path + "?page=" + page + "&size=" + pageSize + "&" + filterQuery))
+    private <T> void testPaginatedResult(String path, int page, int pageSize, String filterandSortQuery, List<T> expectedResult) throws Exception {
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/" + path + "?page=" + page + "&size=" + pageSize + "&" + filterandSortQuery))
             .andExpectAll(
                 status().isOk(),
                 content().contentType(MediaType.APPLICATION_JSON)

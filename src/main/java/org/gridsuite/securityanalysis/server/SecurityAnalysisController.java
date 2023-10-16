@@ -125,9 +125,10 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<Page<SubjectLimitViolationToContingencyDTO>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
-                                                                                    Pageable pageable) {
+                                                                                           ResultsSelectorDTO resultsSelector,
+                                                                                           Pageable pageable) {
 
-        Page<SubjectLimitViolationToContingencyDTO> result = service.getNmKConstraintsResult(resultUuid, pageable);
+        Page<SubjectLimitViolationToContingencyDTO> result = service.getNmKConstraintsResult(resultUuid, resultsSelector, pageable);
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
             : ResponseEntity.notFound().build();

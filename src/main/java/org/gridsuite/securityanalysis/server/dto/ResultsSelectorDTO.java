@@ -15,7 +15,6 @@ import lombok.Setter;
 public class ResultsSelectorDTO {
     String contingencyId;
     String status;
-
     String subjectId;
     LimitViolationType limitType;
     String limitName;
