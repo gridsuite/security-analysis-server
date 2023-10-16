@@ -35,8 +35,8 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
     @Setter
     SecurityAnalysisResultEntity result;
 
-    public PreContingencyLimitViolationEntity(SubjectLimitViolationEntity subjectLimitViolation, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
-        super(subjectLimitViolation, subjectName, limit, limitName, limitType, acceptableDuration, limitReduction, value, side);
+    public PreContingencyLimitViolationEntity(SubjectLimitViolationEntity subjectLimitViolation, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
+        super(subjectLimitViolation, limit, limitName, limitType, acceptableDuration, limitReduction, value, side);
     }
 
     public static List<PreContingencyLimitViolationEntity> toEntityList(PreContingencyResult preContingencyResult, Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId) {
@@ -44,8 +44,7 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
     }
 
     public static PreContingencyLimitViolationEntity toEntityList(LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
-        return new PreContingencyLimitViolationEntity(subjectLimitViolation,
-            limitViolation.getSubjectName(), limitViolation.getLimit(), limitViolation.getLimitName(),
+        return new PreContingencyLimitViolationEntity(subjectLimitViolation, limitViolation.getLimit(), limitViolation.getLimitName(),
             limitViolation.getLimitType(), limitViolation.getAcceptableDuration(), limitViolation.getLimitReduction(), limitViolation.getValue(),
             limitViolation.getSide());
     }

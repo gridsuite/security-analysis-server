@@ -26,16 +26,15 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
     @Setter
     private ContingencyEntity contingency;
 
-    public ContingencyLimitViolationEntity(SubjectLimitViolationEntity subjectLimitViolation, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
-        super(subjectLimitViolation, subjectName, limit, limitName, limitType, acceptableDuration, limitReduction, value, side);
+    public ContingencyLimitViolationEntity(SubjectLimitViolationEntity subjectLimitViolation, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
+        super(subjectLimitViolation, limit, limitName, limitType, acceptableDuration, limitReduction, value, side);
         if (subjectLimitViolation != null) {
             subjectLimitViolation.addContingencyLimitViolation(this);
         }
     }
 
     public static ContingencyLimitViolationEntity toEntity(LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
-        return new ContingencyLimitViolationEntity(subjectLimitViolation,
-            limitViolation.getSubjectName(), limitViolation.getLimit(), limitViolation.getLimitName(),
+        return new ContingencyLimitViolationEntity(subjectLimitViolation, limitViolation.getLimit(), limitViolation.getLimitName(),
             limitViolation.getLimitType(), limitViolation.getAcceptableDuration(), limitViolation.getLimitReduction(), limitViolation.getValue(),
             limitViolation.getSide());
     }
