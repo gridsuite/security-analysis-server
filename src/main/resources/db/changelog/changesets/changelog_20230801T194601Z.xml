@@ -3,7 +3,7 @@
     <changeSet author="hedhiliabd" id="1689623201842-1">
         <validCheckSum>8:e772a722c088f772d9dcc4be222f083b</validCheckSum>
         <modifyDataType columnName="element_type"
-                        newDataType="tinyint"
+                        newDataType="smallint"
                         tableName="contingency_entity_contingency_elements"/>
     </changeSet>
 </databaseChangeLog>
