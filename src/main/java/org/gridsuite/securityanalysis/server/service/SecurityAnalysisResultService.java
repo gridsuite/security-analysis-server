@@ -64,7 +64,7 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ContingencyToSubjectLimitViolationDTO> findNmKContingenciesResult(UUID resultUuid, ResultsSelectorDTO resultsSelector, Pageable pageable) {
+    public Page<ContingencyResultDTO> findNmKContingenciesResult(UUID resultUuid, ResultsSelectorDTO resultsSelector, Pageable pageable) {
         assertResultExists(resultUuid);
 
         Specification<ContingencyEntity> specification = ContingencyRepository.getSpecification(
@@ -81,21 +81,11 @@ public class SecurityAnalysisResultService {
             resultsSelector.getValue());
 
         Page<ContingencyEntity> contingenciesPageable = contingencyRepository.findAll(specification, pageable);
-        return contingenciesPageable.map(contingency -> {
-            List<SubjectLimitViolationFromContingencyDTO> subjectLimitViolations = contingency.getContingencyLimitViolations().stream()
-                .map(SubjectLimitViolationFromContingencyDTO::toDto)
-                .toList();
-            return new ContingencyToSubjectLimitViolationDTO(
-                contingency.getContingencyId(),
-                contingency.getStatus(),
-                contingency.getContingencyElements().stream().map(ContingencyElementDTO::toDto).toList(),
-                subjectLimitViolations
-            );
-        });
+        return contingenciesPageable.map(ContingencyResultDTO::toDto);
     }
 
     @Transactional(readOnly = true)
-    public Page<SubjectLimitViolationToContingencyDTO> findNmKConstraintsResult(UUID resultUuid, ResultsSelectorDTO resultsSelector, Pageable pageable) {
+    public Page<SubjectLimitViolationResultDTO> findNmKConstraintsResult(UUID resultUuid, ResultsSelectorDTO resultsSelector, Pageable pageable) {
         assertResultExists(resultUuid);
         Specification<SubjectLimitViolationEntity> specification = SubjectLimitViolationRepository.getSpecification(
             resultUuid,
@@ -112,13 +102,7 @@ public class SecurityAnalysisResultService {
 
         Page<SubjectLimitViolationEntity> subjectLimitViolations = subjectLimitViolationRepository.findAll(specification, pageable);
 
-        return subjectLimitViolations.map(subjectLimitViolation -> {
-            List<ContingencyFromSubjectLimitViolationDTO> contingencies = subjectLimitViolation.getContingencyLimitViolations().stream()
-                .map(ContingencyFromSubjectLimitViolationDTO::toDto)
-                .toList();
-
-            return new SubjectLimitViolationToContingencyDTO(subjectLimitViolation.getSubjectId(), contingencies);
-        });
+        return subjectLimitViolations.map(SubjectLimitViolationResultDTO::toDto);
     }
 
     public void assertResultExists(UUID resultUuid) {

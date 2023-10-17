@@ -21,6 +21,7 @@ import org.gridsuite.securityanalysis.server.service.SecurityAnalysisService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -110,10 +111,10 @@ public class SecurityAnalysisController {
     @Operation(summary = "Get a security analysis result from the database - NMK contingencies result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public ResponseEntity<Page<ContingencyToSubjectLimitViolationDTO>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+    public ResponseEntity<Page<ContingencyResultDTO>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                                                       @Parameter ResultsSelectorDTO resultsSelector,
-                                                                                      Pageable pageable) {
-        Page<ContingencyToSubjectLimitViolationDTO> result = service.getNmKContingenciesResult(resultUuid, resultsSelector, pageable);
+                                                                                      @PageableDefault() Pageable pageable) {
+        Page<ContingencyResultDTO> result = service.getNmKContingenciesResult(resultUuid, resultsSelector, pageable);
 
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
@@ -124,11 +125,11 @@ public class SecurityAnalysisController {
     @Operation(summary = "Get a security analysis result from the database - NMK contingencies result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public ResponseEntity<Page<SubjectLimitViolationToContingencyDTO>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+    public ResponseEntity<Page<SubjectLimitViolationResultDTO>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                                                            ResultsSelectorDTO resultsSelector,
                                                                                            Pageable pageable) {
 
-        Page<SubjectLimitViolationToContingencyDTO> result = service.getNmKConstraintsResult(resultUuid, resultsSelector, pageable);
+        Page<SubjectLimitViolationResultDTO> result = service.getNmKConstraintsResult(resultUuid, resultsSelector, pageable);
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
             : ResponseEntity.notFound().build();

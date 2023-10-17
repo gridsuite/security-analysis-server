@@ -293,7 +293,7 @@ public class SecurityAnalysisControllerTest {
             ).andReturn();
 
         resultAsString = mvcResult.getResponse().getContentAsString();
-        Page<ContingencyToSubjectLimitViolationDTO> contingenciesToConstraints = mapper.readValue(resultAsString, new TypeReference<>() {
+        Page<ContingencyResultDTO> contingenciesToConstraints = mapper.readValue(resultAsString, new TypeReference<>() {
         });
         assertThat(RESULT_CONTINGENCIES, new MatcherJson<>(mapper, contingenciesToConstraints));*/
 
@@ -304,7 +304,7 @@ public class SecurityAnalysisControllerTest {
             ).andReturn();
 
         resultAsString = mvcResult.getResponse().getContentAsString();
-        CustomPageImpl<SubjectLimitViolationToContingencyDTO> constraintsToContingencies = mapper.readValue(resultAsString, new TypeReference<CustomPageImpl<SubjectLimitViolationToContingencyDTO>>() { });
+        CustomPageImpl<SubjectLimitViolationResultDTO> constraintsToContingencies = mapper.readValue(resultAsString, new TypeReference<>() { });
         assertThat(constraintsToContingencies, new MatcherJson<>(mapper, new CustomPageImpl<>(RESULT_CONSTRAINTS, PageRequest.ofSize(3), RESULT_CONSTRAINTS.size())));
 
         // should throw not found if result does not exist
@@ -345,21 +345,25 @@ public class SecurityAnalysisControllerTest {
         testPaginatedResult(basePath, 1, 25, null, RESULT_CONTINGENCIES);
 
         // test sorting
-        testPaginatedResult(basePath, 0, 3, "sort=contingencyId,desc", RESULT_CONTINGENCIES.stream().sorted(Comparator.comparing(ContingencyToSubjectLimitViolationDTO::getId).reversed()).toList());
-        testPaginatedResult(basePath, 0, 3, "sort=contingencyId", RESULT_CONTINGENCIES.stream().sorted(Comparator.comparing(ContingencyToSubjectLimitViolationDTO::getId)).toList());
+        testPaginatedResult(basePath, 0, 3, "sort=contingencyId,desc", RESULT_CONTINGENCIES.stream().sorted(Comparator.comparing(this::getContingencyResultDTOId).reversed()).toList());
+        testPaginatedResult(basePath, 0, 3, "sort=contingencyId", RESULT_CONTINGENCIES.stream().sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList());
 
         // test filtering
         testPaginatedResult(basePath, 0, 3, "acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration(), RESULT_CONTINGENCIES_FILTERED_BY_NESTED_INTEGER_FIELD);
         testPaginatedResult(basePath, 0, 3, "acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration() + "&contingencyId=" + CONTINGENCIES.get(0).getId(),
-            RESULT_CONTINGENCIES_FILTERED_BY_NESTED_INTEGER_FIELD.stream().filter(r -> r.getId().equals(CONTINGENCIES.get(0).getId())).toList());
+            RESULT_CONTINGENCIES_FILTERED_BY_NESTED_INTEGER_FIELD.stream().filter(r -> r.getContingency().getContingencyId().equals(CONTINGENCIES.get(0).getId())).toList());
         testPaginatedResult(basePath, 0, 3, "contingencyId=" + CONTINGENCIES.get(0).getId() + "&subjectId=" + LIMIT_VIOLATION_1.getSubjectId(),
-            RESULT_CONTINGENCIES_FILTERED_BY_DEEPLY_NESTED_FIELD.stream().filter(r -> r.getId().equals(CONTINGENCIES.get(0).getId())).toList());
+            RESULT_CONTINGENCIES_FILTERED_BY_DEEPLY_NESTED_FIELD.stream().filter(r -> r.getContingency().getContingencyId().equals(CONTINGENCIES.get(0).getId())).toList());
         testPaginatedResult(basePath, 0, 3, "limitType=" + LimitViolationType.HIGH_VOLTAGE, RESULT_CONTINGENCIES_FILTERED_BY_NESTED_ENUM_FIELD);
         testPaginatedResult(basePath, 0, 3, "acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration() + "&subjectId=" + LIMIT_VIOLATION_1.getSubjectId(), RESULT_CONTINGENCIES_FILTERED_BY_MULTIPLE_NESTED_FIELD);
 
         // sorting and filtering test
         testPaginatedResult(basePath, 0, 3, "sort=contingencyId,desc&acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration() + "&subjectId=" + LIMIT_VIOLATION_1.getSubjectId(),
-            RESULT_CONTINGENCIES_FILTERED_BY_MULTIPLE_NESTED_FIELD.stream().sorted(Comparator.comparing(ContingencyToSubjectLimitViolationDTO::getId).reversed()).toList());
+            RESULT_CONTINGENCIES_FILTERED_BY_MULTIPLE_NESTED_FIELD.stream().sorted(Comparator.comparing(this::getContingencyResultDTOId).reversed()).toList());
+    }
+
+    private String getContingencyResultDTOId (ContingencyResultDTO contingencyResultDTO) {
+        return contingencyResultDTO.getContingency().getContingencyId();
     }
 
     @Test
@@ -390,8 +394,8 @@ public class SecurityAnalysisControllerTest {
         testPaginatedResult(basePath, 1, 25, null, RESULT_CONSTRAINTS);
 
         // test sorting
-        testPaginatedResult(basePath, 0, 3, "sort=subjectId,desc", RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationToContingencyDTO::getSubjectId).reversed()).toList());
-        testPaginatedResult(basePath, 0, 3, "sort=subjectId", RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationToContingencyDTO::getSubjectId)).toList());
+        testPaginatedResult(basePath, 0, 3, "sort=subjectId,desc", RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId).reversed()).toList());
+        testPaginatedResult(basePath, 0, 3, "sort=subjectId", RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList());
 
         // test filtering
         testPaginatedResult(basePath, 0, 3, "acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration(), RESULT_CONSTRAINTS_FILTERED_BY_NESTED_INTEGER_FIELD);
@@ -404,7 +408,7 @@ public class SecurityAnalysisControllerTest {
 
         // sorting and filtering test
         testPaginatedResult(basePath, 0, 3, "sort=subjectId,desc&acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration() + "&contingencyId=" + CONTINGENCIES.get(0).getId(),
-            RESULT_CONSTRAINTS_FILTERED_BY_MULTIPLE_NESTED_FIELD.stream().sorted(Comparator.comparing(SubjectLimitViolationToContingencyDTO::getSubjectId).reversed()).toList());
+            RESULT_CONSTRAINTS_FILTERED_BY_MULTIPLE_NESTED_FIELD.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId).reversed()).toList());
 
     }
 

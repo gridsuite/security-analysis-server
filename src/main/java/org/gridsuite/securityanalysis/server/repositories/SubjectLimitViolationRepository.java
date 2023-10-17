@@ -44,7 +44,7 @@ public interface SubjectLimitViolationRepository extends JpaRepository<SubjectLi
 
             // criteria in subjectLimitViolationEntity
             CriteriaUtils.addPredicate(criteriaBuilder, root, predicates, resultUuid, "result", "id");
-            CriteriaUtils.addPredicate(criteriaBuilder, root, predicates, subjectId, "subjectId", null);
+            CriteriaUtils.addPredicate(criteriaBuilder, root, predicates, subjectId, "subjectId");
 
             // pageable makes a count request which should only count contingency results, not joined rows
             if (!CriteriaUtils.currentQueryIsCountRecords(query)) {

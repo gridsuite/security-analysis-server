@@ -8,9 +8,7 @@ package org.gridsuite.securityanalysis.server.entities;
 
 import com.powsybl.security.SecurityAnalysisResult;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
 
@@ -27,6 +25,8 @@ import java.util.stream.Stream;
 @NoArgsConstructor
 @Getter
 @Entity
+@AllArgsConstructor
+@Builder
 @Table(name = "security_analysis_result")
 public class SecurityAnalysisResultEntity {
     @Id
@@ -50,46 +50,6 @@ public class SecurityAnalysisResultEntity {
         this.id = id;
     }
 
-    public SecurityAnalysisResultEntity(UUID id, SecurityAnalysisStatus status, String preContingencyStatus, List<ContingencyEntity> contingencies, List<PreContingencyLimitViolationEntity> preContingencyLimitViolations) {
-        this.id = id;
-        this.status = status;
-        this.preContingencyStatus = preContingencyStatus;
-        setContingencies(contingencies);
-        setPreContingencyLimitViolations(preContingencyLimitViolations);
-
-        // extracting unique subject limit violations from all limit violations
-        setSubjectLimitViolations(
-            Stream.concat(
-                this.contingencies.stream().flatMap(c -> c.getContingencyLimitViolations().stream()),
-                this.preContingencyLimitViolations.stream()
-            ).map(AbstractLimitViolationEntity::getSubjectLimitViolation)
-            .distinct()
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList())
-        );
-    }
-
-    private void setContingencies(List<ContingencyEntity> contingencies) {
-        if (contingencies != null) {
-            this.contingencies = contingencies;
-            this.contingencies.forEach(c -> c.setResult(this));
-        }
-    }
-
-    private void setPreContingencyLimitViolations(List<PreContingencyLimitViolationEntity> preContingencyLimitViolations) {
-        if (preContingencyLimitViolations != null) {
-            this.preContingencyLimitViolations = preContingencyLimitViolations;
-            this.preContingencyLimitViolations.forEach(lm -> lm.setResult(this));
-        }
-    }
-
-    private void setSubjectLimitViolations(List<SubjectLimitViolationEntity> subjectLimitViolations) {
-        if (subjectLimitViolations != null) {
-            this.subjectLimitViolations = subjectLimitViolations;
-            subjectLimitViolations.forEach(subjectLimitViolation -> subjectLimitViolation.setResult(this));
-        }
-    }
-
     public static SecurityAnalysisResultEntity toEntity(UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
         Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId = SecurityAnalysisResultService.getUniqueSubjectLimitViolationsFromResult(securityAnalysisResult)
             .stream().collect(Collectors.toMap(
@@ -102,6 +62,27 @@ public class SecurityAnalysisResultEntity {
 
         List<PreContingencyLimitViolationEntity> preContingencyLimitViolations = PreContingencyLimitViolationEntity.toEntityList(securityAnalysisResult.getPreContingencyResult(), subjectLimitViolationsBySubjectId);
 
-        return new SecurityAnalysisResultEntity(resultUuid, securityAnalysisStatus, securityAnalysisResult.getPreContingencyResult().getStatus().name(), contingencies, preContingencyLimitViolations);
+        List<SubjectLimitViolationEntity> subjectLimitViolations = Stream.concat(
+                contingencies.stream().flatMap(c -> c.getContingencyLimitViolations().stream()),
+                preContingencyLimitViolations.stream()
+            ).map(AbstractLimitViolationEntity::getSubjectLimitViolation)
+            .distinct()
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+
+        SecurityAnalysisResultEntity securityAnalysisResultEntity = SecurityAnalysisResultEntity.builder()
+            .id(resultUuid)
+            .status(securityAnalysisStatus)
+            .preContingencyStatus(securityAnalysisResult.getPreContingencyResult().getStatus().name())
+            .contingencies(contingencies)
+            .preContingencyLimitViolations(preContingencyLimitViolations)
+            .subjectLimitViolations(subjectLimitViolations)
+            .build();
+
+        //bidirectionnal associations
+        contingencies.forEach(c -> c.setResult(securityAnalysisResultEntity));
+        preContingencyLimitViolations.forEach(lm -> lm.setResult(securityAnalysisResultEntity));
+        subjectLimitViolations.forEach(subjectLimitViolation -> subjectLimitViolation.setResult(securityAnalysisResultEntity));
+        return securityAnalysisResultEntity;
     }
 }
