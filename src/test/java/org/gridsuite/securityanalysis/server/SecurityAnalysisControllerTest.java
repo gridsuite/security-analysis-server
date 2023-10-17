@@ -21,7 +21,7 @@ import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.results.PreContingencyResult;
 import lombok.SneakyThrows;
-import org.gridsuite.securityanalysis.server.dto.ContingencyResult;
+import org.gridsuite.securityanalysis.server.dto.ContingencyResultDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationResultDTO;
@@ -292,7 +292,7 @@ public class SecurityAnalysisControllerTest {
             ).andReturn();
 
         resultAsString = mvcResult.getResponse().getContentAsString();
-        List<ContingencyResult> contingenciesToConstraints = mapper.readValue(resultAsString, new TypeReference<List<ContingencyResult>>() { });
+        List<ContingencyResultDTO> contingenciesToConstraints = mapper.readValue(resultAsString, new TypeReference<List<ContingencyResultDTO>>() { });
         assertThat(RESULT_CONTINGENCIES, new MatcherJson<>(mapper, contingenciesToConstraints));
 
         mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result"))

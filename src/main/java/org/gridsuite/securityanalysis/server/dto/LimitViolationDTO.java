@@ -22,7 +22,7 @@ public class LimitViolationDTO {
     private double value;
     private Double loading;
 
-    public static LimitViolationDTO toDto (AbstractLimitViolationEntity limitViolation) {
+    public static LimitViolationDTO toDto(AbstractLimitViolationEntity limitViolation) {
         Double computedLoading = LimitViolationType.CURRENT.equals(limitViolation.getLimitType())
             ? (100 * limitViolation.getValue()) / (limitViolation.getLimit() * limitViolation.getLimitReduction())
             : null;

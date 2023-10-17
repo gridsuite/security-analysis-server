@@ -50,17 +50,6 @@ public abstract class AbstractLimitViolationEntity {
     @Enumerated(EnumType.STRING)
     private Branch.Side side;
 
-    protected AbstractLimitViolationEntity(SubjectLimitViolationEntity subjectLimitViolation, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
-        this.subjectLimitViolation = subjectLimitViolation;
-        this.limit = limit;
-        this.limitName = limitName;
-        this.limitType = limitType;
-        this.acceptableDuration = acceptableDuration;
-        this.limitReduction = limitReduction;
-        this.value = value;
-        this.side = side;
-    }
-
     public static LimitViolation toLimitViolation(AbstractLimitViolationEntity limitViolationEntity) {
         String subjectId = limitViolationEntity.getSubjectLimitViolation() != null
             ? limitViolationEntity.getSubjectLimitViolation().getSubjectId()

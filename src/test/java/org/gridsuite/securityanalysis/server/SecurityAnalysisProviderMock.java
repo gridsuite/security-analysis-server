@@ -83,11 +83,13 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         CONTINGENCIES_VARIANT.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, List.of(LIMIT_VIOLATION_4)))
             .collect(Collectors.toList()));
 
-    static final List<ContingencyResult> RESULT_CONTINGENCIES = CONTINGENCIES.stream().map(c ->
-        new ContingencyResult(
-            c.getId(),
-            LoadFlowResult.ComponentResult.Status.CONVERGED.name(),
-            c.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).collect(Collectors.toList()),
+    static final List<ContingencyResultDTO> RESULT_CONTINGENCIES = CONTINGENCIES.stream().map(c ->
+        new ContingencyResultDTO(
+            new ContingencyDTO(
+                c.getId(),
+                LoadFlowResult.ComponentResult.Status.CONVERGED.name(),
+                c.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).collect(Collectors.toList())
+            ),
             List.of(new SubjectLimitViolationDTO(
                 LIMIT_VIOLATION_2.getSubjectId(),
                 toLimitViolationDTO(LIMIT_VIOLATION_2)

@@ -61,20 +61,10 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public List<ContingencyResult> findNmKContingenciesResult(UUID resultUuid) {
+    public List<ContingencyResultDTO> findNmKContingenciesResult(UUID resultUuid) {
         assertResultExists(resultUuid);
         List<ContingencyEntity> contingencies = contingencyRepository.findByResultIdAndStatusOrderByContingencyId(resultUuid, LoadFlowResult.ComponentResult.Status.CONVERGED.name());
-        return contingencies.stream().map(contingency -> {
-            List<SubjectLimitViolationDTO> subjectLimitViolations = contingency.getContingencyLimitViolations().stream()
-                .map(SubjectLimitViolationDTO::toDto)
-                .toList();
-            return new ContingencyResult(
-                contingency.getContingencyId(),
-                contingency.getStatus(),
-                contingency.getContingencyElements().stream().map(ContingencyElementDTO::toDto).toList(),
-                subjectLimitViolations
-            );
-        }).toList();
+        return contingencies.stream().map(ContingencyResultDTO::toDto).toList();
     }
 
     @Transactional(readOnly = true)
@@ -82,15 +72,7 @@ public class SecurityAnalysisResultService {
         assertResultExists(resultUuid);
         List<SubjectLimitViolationEntity> subjectLimitViolations = subjectLimitViolationRepository.findByResultIdOrderBySubjectId(resultUuid);
 
-        return subjectLimitViolations.stream().map(subjectLimitViolation -> {
-            // we only keep converged contingencies here
-            List<ContingencyLimitViolationDTO> contingencies = subjectLimitViolation.getContingencyLimitViolations().stream()
-                .filter(lm -> LoadFlowResult.ComponentResult.Status.CONVERGED.name().equals(lm.getContingency().getStatus()))
-                .map(ContingencyLimitViolationDTO::toDto)
-                .toList();
-
-            return new SubjectLimitViolationResultDTO(subjectLimitViolation.getSubjectId(), contingencies);
-        }).toList();
+        return subjectLimitViolations.stream().map(SubjectLimitViolationResultDTO::toDto).toList();
     }
 
     public void assertResultExists(UUID resultUuid) {

@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.security.results.PreContingencyResult;
 import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationResultDTO;
-import org.gridsuite.securityanalysis.server.dto.ContingencyResult;
+import org.gridsuite.securityanalysis.server.dto.ContingencyResultDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -62,7 +62,7 @@ public class SecurityAnalysisService {
         return securityAnalysisResultService.findNResult(resultUuid);
     }
 
-    public List<ContingencyResult> getNmKContingenciesResult(UUID resultUuid) {
+    public List<ContingencyResultDTO> getNmKContingenciesResult(UUID resultUuid) {
         return securityAnalysisResultService.findNmKContingenciesResult(resultUuid);
     }
 

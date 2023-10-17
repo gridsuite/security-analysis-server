@@ -8,6 +8,7 @@ package org.gridsuite.securityanalysis.server.dto;
 
 import com.powsybl.contingency.ContingencyElementType;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.gridsuite.securityanalysis.server.entities.ContingencyElementEmbeddable;
@@ -16,6 +17,7 @@ import org.gridsuite.securityanalysis.server.entities.ContingencyElementEmbeddab
  */
 
 @Getter
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class ContingencyElementDTO {
@@ -23,6 +25,9 @@ public class ContingencyElementDTO {
     private ContingencyElementType elementType;
 
     public static ContingencyElementDTO toDto(ContingencyElementEmbeddable contingencyElement) {
-        return new ContingencyElementDTO(contingencyElement.getElementId(), contingencyElement.getElementType());
+        return ContingencyElementDTO.builder()
+            .id(contingencyElement.getElementId())
+            .elementType(contingencyElement.getElementType())
+            .build();
     }
 }

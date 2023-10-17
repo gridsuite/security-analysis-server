@@ -10,11 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationEntity;
-
-import java.util.List;
-import java.util.stream.Collectors;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */

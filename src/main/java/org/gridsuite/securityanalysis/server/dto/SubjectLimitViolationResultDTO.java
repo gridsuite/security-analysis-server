@@ -7,8 +7,10 @@
 package org.gridsuite.securityanalysis.server.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 
 import java.util.List;
 /**
@@ -16,10 +18,22 @@ import java.util.List;
  */
 
 @Getter
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
 public class SubjectLimitViolationResultDTO {
     private String subjectId;
 
     private List<ContingencyLimitViolationDTO> contingencies;
+
+    public static SubjectLimitViolationResultDTO toDto(SubjectLimitViolationEntity subjectLimitViolation) {
+        List<ContingencyLimitViolationDTO> contingencies = subjectLimitViolation.getContingencyLimitViolations().stream()
+            .map(ContingencyLimitViolationDTO::toDto)
+            .toList();
+
+        return SubjectLimitViolationResultDTO.builder()
+            .subjectId(subjectLimitViolation.getSubjectId())
+            .contingencies(contingencies)
+            .build();
+    }
 }
