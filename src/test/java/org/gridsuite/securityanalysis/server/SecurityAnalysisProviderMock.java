@@ -83,40 +83,27 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         CONTINGENCIES_VARIANT.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, List.of(LIMIT_VIOLATION_4)))
             .collect(Collectors.toList()));
 
-    static final List<ContingencyToSubjectLimitViolationDTO> RESULT_CONTINGENCIES = CONTINGENCIES.stream().map(c ->
-        new ContingencyToSubjectLimitViolationDTO(
+    static final List<ContingencyResult> RESULT_CONTINGENCIES = CONTINGENCIES.stream().map(c ->
+        new ContingencyResult(
             c.getId(),
             LoadFlowResult.ComponentResult.Status.CONVERGED.name(),
             c.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).collect(Collectors.toList()),
-            List.of(new SubjectLimitViolationFromContingencyDTO(
+            List.of(new SubjectLimitViolationDTO(
                 LIMIT_VIOLATION_2.getSubjectId(),
-                LIMIT_VIOLATION_2.getLimitType(),
-                LIMIT_VIOLATION_2.getLimitName(),
-                LIMIT_VIOLATION_2.getSide(),
-                LIMIT_VIOLATION_2.getAcceptableDuration(),
-                LIMIT_VIOLATION_2.getLimit(),
-                LIMIT_VIOLATION_2.getLimitReduction(),
-                LIMIT_VIOLATION_2.getValue())
+                toLimitViolationDTO(LIMIT_VIOLATION_2)
             )
-        )).collect(Collectors.toList()
+        ))).collect(Collectors.toList()
     );
 
-    static final List<SubjectLimitViolationToContingencyDTO> RESULT_CONSTRAINTS = List.of(
-        new SubjectLimitViolationToContingencyDTO(LIMIT_VIOLATION_1.getSubjectId(), List.of()),
-        new SubjectLimitViolationToContingencyDTO(
+    static final List<SubjectLimitViolationResultDTO> RESULT_CONSTRAINTS = List.of(
+        new SubjectLimitViolationResultDTO(LIMIT_VIOLATION_1.getSubjectId(), List.of()),
+        new SubjectLimitViolationResultDTO(
             LIMIT_VIOLATION_2.getSubjectId(),
-            CONTINGENCIES.stream().map(c -> new ContingencyFromSubjectLimitViolationDTO(
-                c.getId(),
-                LoadFlowResult.ComponentResult.Status.CONVERGED.name(),
-                LIMIT_VIOLATION_2.getLimitType(),
-                LIMIT_VIOLATION_2.getLimitName(),
-                LIMIT_VIOLATION_2.getSide(),
-                LIMIT_VIOLATION_2.getAcceptableDuration(),
-                LIMIT_VIOLATION_2.getLimit(),
-                LIMIT_VIOLATION_2.getLimitReduction(),
-                LIMIT_VIOLATION_2.getValue(),
-                c.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).collect(Collectors.toList())))
-            .collect(Collectors.toList())
+            CONTINGENCIES.stream().map(c -> new ContingencyLimitViolationDTO(
+                    new ContingencyDTO(c.getId(), LoadFlowResult.ComponentResult.Status.CONVERGED.name(), c.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).collect(Collectors.toList())),
+                    toLimitViolationDTO(LIMIT_VIOLATION_2)
+                )
+            ).collect(Collectors.toList())
         ));
 
     static final SecurityAnalysisReport REPORT = new SecurityAnalysisReport(RESULT);
@@ -163,5 +150,21 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     @Override
     public String getVersion() {
         return "1";
+    }
+
+    private static LimitViolationDTO toLimitViolationDTO(LimitViolation limitViolation) {
+        Double computedLoading = limitViolation.getLimitType().equals(LimitViolationType.CURRENT)
+            ? (100 * limitViolation.getValue()) / (limitViolation.getLimit() * limitViolation.getLimitReduction())
+            : null;
+        return new LimitViolationDTO(
+            limitViolation.getLimitType(),
+            limitViolation.getLimitName(),
+            limitViolation.getSide(),
+            limitViolation.getAcceptableDuration(),
+            limitViolation.getLimit(),
+            limitViolation.getLimitReduction(),
+            limitViolation.getValue(),
+            computedLoading
+        );
     }
 }

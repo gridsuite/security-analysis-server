@@ -61,14 +61,14 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public List<ContingencyToSubjectLimitViolationDTO> findNmKContingenciesResult(UUID resultUuid) {
+    public List<ContingencyResult> findNmKContingenciesResult(UUID resultUuid) {
         assertResultExists(resultUuid);
         List<ContingencyEntity> contingencies = contingencyRepository.findByResultIdAndStatusOrderByContingencyId(resultUuid, LoadFlowResult.ComponentResult.Status.CONVERGED.name());
         return contingencies.stream().map(contingency -> {
-            List<SubjectLimitViolationFromContingencyDTO> subjectLimitViolations = contingency.getContingencyLimitViolations().stream()
-                .map(SubjectLimitViolationFromContingencyDTO::toDto)
+            List<SubjectLimitViolationDTO> subjectLimitViolations = contingency.getContingencyLimitViolations().stream()
+                .map(SubjectLimitViolationDTO::toDto)
                 .toList();
-            return new ContingencyToSubjectLimitViolationDTO(
+            return new ContingencyResult(
                 contingency.getContingencyId(),
                 contingency.getStatus(),
                 contingency.getContingencyElements().stream().map(ContingencyElementDTO::toDto).toList(),
@@ -78,18 +78,18 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public List<SubjectLimitViolationToContingencyDTO> findNmKConstraintsResult(UUID resultUuid) {
+    public List<SubjectLimitViolationResultDTO> findNmKConstraintsResult(UUID resultUuid) {
         assertResultExists(resultUuid);
         List<SubjectLimitViolationEntity> subjectLimitViolations = subjectLimitViolationRepository.findByResultIdOrderBySubjectId(resultUuid);
 
         return subjectLimitViolations.stream().map(subjectLimitViolation -> {
             // we only keep converged contingencies here
-            List<ContingencyFromSubjectLimitViolationDTO> contingencies = subjectLimitViolation.getContingencyLimitViolations().stream()
+            List<ContingencyLimitViolationDTO> contingencies = subjectLimitViolation.getContingencyLimitViolations().stream()
                 .filter(lm -> LoadFlowResult.ComponentResult.Status.CONVERGED.name().equals(lm.getContingency().getStatus()))
-                .map(ContingencyFromSubjectLimitViolationDTO::toDto)
+                .map(ContingencyLimitViolationDTO::toDto)
                 .toList();
 
-            return new SubjectLimitViolationToContingencyDTO(subjectLimitViolation.getSubjectId(), contingencies);
+            return new SubjectLimitViolationResultDTO(subjectLimitViolation.getSubjectId(), contingencies);
         }).toList();
     }
 

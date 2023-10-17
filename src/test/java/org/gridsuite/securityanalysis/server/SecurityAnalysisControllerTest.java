@@ -21,10 +21,10 @@ import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.results.PreContingencyResult;
 import lombok.SneakyThrows;
-import org.gridsuite.securityanalysis.server.dto.ContingencyToSubjectLimitViolationDTO;
+import org.gridsuite.securityanalysis.server.dto.ContingencyResult;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
-import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationToContingencyDTO;
+import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationResultDTO;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.ReportService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
@@ -292,7 +292,7 @@ public class SecurityAnalysisControllerTest {
             ).andReturn();
 
         resultAsString = mvcResult.getResponse().getContentAsString();
-        List<ContingencyToSubjectLimitViolationDTO> contingenciesToConstraints = mapper.readValue(resultAsString, new TypeReference<List<ContingencyToSubjectLimitViolationDTO>>() { });
+        List<ContingencyResult> contingenciesToConstraints = mapper.readValue(resultAsString, new TypeReference<List<ContingencyResult>>() { });
         assertThat(RESULT_CONTINGENCIES, new MatcherJson<>(mapper, contingenciesToConstraints));
 
         mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result"))
@@ -302,7 +302,7 @@ public class SecurityAnalysisControllerTest {
             ).andReturn();
 
         resultAsString = mvcResult.getResponse().getContentAsString();
-        List<SubjectLimitViolationToContingencyDTO> constraintsToContingencies = mapper.readValue(resultAsString, new TypeReference<List<SubjectLimitViolationToContingencyDTO>>() { });
+        List<SubjectLimitViolationResultDTO> constraintsToContingencies = mapper.readValue(resultAsString, new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
         assertThat(RESULT_CONSTRAINTS, new MatcherJson<>(mapper, constraintsToContingencies));
 
         // should throw not found if result does not exist

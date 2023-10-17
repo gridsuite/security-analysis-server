@@ -10,32 +10,38 @@ import com.powsybl.iidm.network.Branch;
 import com.powsybl.security.LimitViolation;
 import com.powsybl.security.LimitViolationType;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
 
+@Data
 @NoArgsConstructor
-@Entity
+@SuperBuilder
 @Getter
+@Entity
 @Table(name = "contingency_limit_violation")
 public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @Setter
     private ContingencyEntity contingency;
 
-    public ContingencyLimitViolationEntity(SubjectLimitViolationEntity subjectLimitViolation, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
-        super(subjectLimitViolation, limit, limitName, limitType, acceptableDuration, limitReduction, value, side);
-        if (subjectLimitViolation != null) {
-            subjectLimitViolation.addContingencyLimitViolation(this);
-        }
-    }
-
     public static ContingencyLimitViolationEntity toEntity(LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
-        return new ContingencyLimitViolationEntity(subjectLimitViolation, limitViolation.getLimit(), limitViolation.getLimitName(),
-            limitViolation.getLimitType(), limitViolation.getAcceptableDuration(), limitViolation.getLimitReduction(), limitViolation.getValue(),
-            limitViolation.getSide());
+        ContingencyLimitViolationEntity contingencyLimitViolationEntity = ContingencyLimitViolationEntity.builder()
+            .limit(limitViolation.getLimit())
+            .limitName(limitViolation.getLimitName())
+            .limitType(limitViolation.getLimitType())
+            .acceptableDuration(limitViolation.getAcceptableDuration())
+            .limitReduction(limitViolation.getLimitReduction())
+            .value(limitViolation.getValue())
+            .side(limitViolation.getSide())
+            .subjectLimitViolation(subjectLimitViolation)
+            .build();
+
+        subjectLimitViolation.addContingencyLimitViolation(contingencyLimitViolationEntity);
+
+        return contingencyLimitViolationEntity;
     }
 }

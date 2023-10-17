@@ -15,8 +15,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationToContingencyDTO;
-import org.gridsuite.securityanalysis.server.dto.ContingencyToSubjectLimitViolationDTO;
+import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationResultDTO;
+import org.gridsuite.securityanalysis.server.dto.ContingencyResult;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisRunContext;
@@ -111,8 +111,8 @@ public class SecurityAnalysisController {
     @Operation(summary = "Get a security analysis result from the database - NMK contingencies result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public ResponseEntity<List<ContingencyToSubjectLimitViolationDTO>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
-        List<ContingencyToSubjectLimitViolationDTO> result = service.getNmKContingenciesResult(resultUuid);
+    public ResponseEntity<List<ContingencyResult>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        List<ContingencyResult> result = service.getNmKContingenciesResult(resultUuid);
 
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
@@ -123,9 +123,9 @@ public class SecurityAnalysisController {
     @Operation(summary = "Get a security analysis result from the database - NMK contingencies result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public ResponseEntity<List<SubjectLimitViolationToContingencyDTO>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+    public ResponseEntity<List<SubjectLimitViolationResultDTO>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
 
-        List<SubjectLimitViolationToContingencyDTO> result = service.getNmKConstraintsResult(resultUuid);
+        List<SubjectLimitViolationResultDTO> result = service.getNmKConstraintsResult(resultUuid);
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
             : ResponseEntity.notFound().build();

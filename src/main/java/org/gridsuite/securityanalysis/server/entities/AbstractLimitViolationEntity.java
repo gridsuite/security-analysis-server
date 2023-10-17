@@ -10,8 +10,8 @@ import com.powsybl.iidm.network.Branch;
 import com.powsybl.security.LimitViolation;
 import com.powsybl.security.LimitViolationType;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.util.UUID;
 /**
@@ -19,6 +19,8 @@ import java.util.UUID;
  */
 
 @NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
 @Getter
 @MappedSuperclass
 public abstract class AbstractLimitViolationEntity {
