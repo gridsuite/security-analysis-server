@@ -21,7 +21,6 @@ import org.gridsuite.securityanalysis.server.service.SecurityAnalysisService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -113,7 +112,7 @@ public class SecurityAnalysisController {
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<Page<ContingencyResultDTO>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                                                       @Parameter ResultsSelectorDTO resultsSelector,
-                                                                                      @PageableDefault() Pageable pageable) {
+                                                                                      Pageable pageable) {
         Page<ContingencyResultDTO> result = service.getNmKContingenciesResult(resultUuid, resultsSelector, pageable);
 
         return result != null
