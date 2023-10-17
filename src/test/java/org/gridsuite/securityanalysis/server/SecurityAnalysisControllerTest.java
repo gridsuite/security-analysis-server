@@ -362,7 +362,7 @@ public class SecurityAnalysisControllerTest {
             RESULT_CONTINGENCIES_FILTERED_BY_MULTIPLE_NESTED_FIELD.stream().sorted(Comparator.comparing(this::getContingencyResultDTOId).reversed()).toList());
     }
 
-    private String getContingencyResultDTOId (ContingencyResultDTO contingencyResultDTO) {
+    private String getContingencyResultDTOId(ContingencyResultDTO contingencyResultDTO) {
         return contingencyResultDTO.getContingency().getContingencyId();
     }
 
