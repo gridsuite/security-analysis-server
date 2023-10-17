@@ -1,0 +1,27 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+                   xmlns:pro="http://www.liquibase.org/xml/ns/pro"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="chuinetri (generated)" id="1697548639163-1">
+        <comment>Missing update from #61</comment>
+        <modifyDataType columnName="status" newDataType="varchar(255)" tableName="computation_status"/>
+        <dropColumn columnName="ok" tableName="computation_status"/>
+    </changeSet>
+
+    <changeSet author="chuinetri (base generated)" id="1697548639163-2">
+        <comment>We reconstruct primary/foreign keys constraints</comment>
+        <dropForeignKeyConstraint baseTableName="contingency_entity_contingency_elements" constraintName="FKPNMUIJ3QKI9U4KF7OMME39UGN"/>
+        <dropPrimaryKey tableName="contingency"/>
+    </changeSet>
+    <changeSet author="chuinetri (base generated)" id="1697548639163-3">
+        <comment>Next part of 1697548639163-2</comment>
+        <addPrimaryKey columnNames="contingency_id, result_uuid" constraintName="contingencyPK" tableName="contingency"/>
+        <createIndex indexName="IX_contingencyPK" tableName="contingency" unique="true">
+            <column name="contingency_id"/>
+            <column name="result_uuid"/>
+        </createIndex>
+        <addForeignKeyConstraint baseColumnNames="contingency_entity_contingency_id,contingency_entity_result_uuid" baseTableName="contingency_entity_contingency_elements" constraintName="FKpnmuij3qki9u4kf7omme39ugn" deferrable="false" initiallyDeferred="false" referencedColumnNames="contingency_id,result_uuid" referencedTableName="contingency" validate="true"/>
+    </changeSet>
+</databaseChangeLog>
