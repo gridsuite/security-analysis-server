@@ -6,8 +6,6 @@
  */
 package org.gridsuite.securityanalysis.server.repositories;
 
-import com.powsybl.iidm.network.Branch;
-import com.powsybl.security.LimitViolationType;
 import jakarta.persistence.criteria.*;
 import org.gridsuite.securityanalysis.server.dto.FilterDTO;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
