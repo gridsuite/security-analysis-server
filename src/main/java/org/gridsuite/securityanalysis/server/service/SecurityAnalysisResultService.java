@@ -64,24 +64,13 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ContingencyResultDTO> findNmKContingenciesResult(UUID resultUuid, ResultsSelectorDTO resultsSelector, Pageable pageable) {
+    public Page<ContingencyResultDTO> findNmKContingenciesResult(UUID resultUuid, List<FilterDTO> filters, Pageable pageable) {
         assertResultExists(resultUuid);
 
-        Specification<ContingencyEntity> specification = ContingencyRepository.getSpecification(
-            resultUuid,
-            resultsSelector.getContingencyId(),
-            resultsSelector.getStatus(),
-            resultsSelector.getSubjectId(),
-            resultsSelector.getLimitType(),
-            resultsSelector.getLimitName(),
-            resultsSelector.getSide(),
-            resultsSelector.getAcceptableDuration(),
-            resultsSelector.getLimit(),
-            resultsSelector.getLimitReduction(),
-            resultsSelector.getValue());
+        Specification<ContingencyEntity> specification = ContingencyRepository.getSpecification(resultUuid, filters);
 
-        Page<ContingencyEntity> contingenciesPageable = contingencyRepository.findAll(specification, pageable);
-        return contingenciesPageable.map(ContingencyResultDTO::toDto);
+        Page<ContingencyEntity> contingenciesPage = contingencyRepository.findAll(specification, pageable);
+        return contingenciesPage.map(ContingencyResultDTO::toDto);
     }
 
     @Transactional(readOnly = true)
@@ -100,9 +89,9 @@ public class SecurityAnalysisResultService {
             resultsSelector.getLimitReduction(),
             resultsSelector.getValue());
 
-        Page<SubjectLimitViolationEntity> subjectLimitViolations = subjectLimitViolationRepository.findAll(specification, pageable);
+        Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = subjectLimitViolationRepository.findAll(specification, pageable);
 
-        return subjectLimitViolations.map(SubjectLimitViolationResultDTO::toDto);
+        return subjectLimitViolationsPage.map(SubjectLimitViolationResultDTO::toDto);
     }
 
     public void assertResultExists(UUID resultUuid) {

@@ -100,6 +100,28 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     /**
      * RESULT_CONTINGENCIES filtered with different criterias START
      */
+    static List<ContingencyResultDTO> getResultContingenciesFilteredByContainsNestedSubjectId(String subjectId) {
+        return RESULT_CONTINGENCIES.stream().map(r ->
+            new ContingencyResultDTO(
+                r.getContingency(),
+                r.getSubjectLimitViolations().stream()
+                    .filter(s -> s.getSubjectId().contains(subjectId))
+                    .toList()
+            )
+        ).toList();
+    }
+
+    static List<ContingencyResultDTO> getResultContingenciesFilteredByStartsWithNestedSubjectId(String subjectId) {
+        return RESULT_CONTINGENCIES.stream().map(r ->
+            new ContingencyResultDTO(
+                r.getContingency(),
+                r.getSubjectLimitViolations().stream()
+                    .filter(s -> s.getSubjectId().startsWith(subjectId))
+                    .toList()
+            )
+        ).toList();
+    }
+
     static final List<ContingencyResultDTO> RESULT_CONTINGENCIES_FILTERED_BY_NESTED_INTEGER_FIELD = RESULT_CONTINGENCIES.stream().map(r ->
         new ContingencyResultDTO(
             r.getContingency(),

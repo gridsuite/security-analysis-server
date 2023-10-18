@@ -1,6 +1,7 @@
 package org.gridsuite.securityanalysis.server.repositories;
 
 import jakarta.persistence.criteria.*;
+import org.gridsuite.securityanalysis.server.dto.FilterDTO;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
@@ -14,7 +15,7 @@ public final class CriteriaUtils {
     public static <T> void addPredicate(CriteriaBuilder criteriaBuilder,
                                      Path<?> path,
                                      List<Predicate> predicates,
-                                     T filter,
+                                     FilterDTO filter,
                                      String fieldName) {
         addPredicate(criteriaBuilder, path, predicates, filter, fieldName, null);
     }
@@ -22,7 +23,7 @@ public final class CriteriaUtils {
     public static <T> void addPredicate(CriteriaBuilder criteriaBuilder,
                                      Path<?> path,
                                      List<Predicate> predicates,
-                                     T filter,
+                                     FilterDTO filter,
                                      String fieldName,
                                      String subFieldName) {
         Predicate predicate = filterToPredicate(criteriaBuilder, path, filter, fieldName, subFieldName);
@@ -34,15 +35,7 @@ public final class CriteriaUtils {
     // add condition on <joinPath>
     public static <T> void addJoinFilter(CriteriaBuilder criteriaBuilder,
                                          Join<?, ?> joinPath,
-                                         T filter,
-                                         String fieldName) {
-        addJoinFilter(criteriaBuilder, joinPath, filter, fieldName, null);
-    }
-
-    // add condition on <joinPath>
-    public static <T> void addJoinFilter(CriteriaBuilder criteriaBuilder,
-                                         Join<?, ?> joinPath,
-                                         T filter,
+                                         FilterDTO filter,
                                          String fieldName,
                                          String subFieldName) {
         Predicate predicate = filterToPredicate(criteriaBuilder, joinPath, filter, fieldName, subFieldName);
@@ -55,30 +48,46 @@ public final class CriteriaUtils {
         return criteriaQuery.getResultType() == Long.class || criteriaQuery.getResultType() == long.class;
     }
 
+    /**
+     * returns predicate depending on filter.value() type
+     * if it's a Collection, it will use "OR" operator between each value
+     */
     private static <T> Predicate filterToPredicate(CriteriaBuilder criteriaBuilder,
-                                                Path<?> joinPath,
-                                                T filter,
+                                                Path<?> path,
+                                                FilterDTO filter,
                                                 String fieldName,
                                                 String subFieldName) {
-        if (filter == null) {
-            return null;
-        }
-
         // expression targets field to filter on
-        Expression<?> expression = subFieldName == null ? joinPath.get(fieldName) : joinPath.get(fieldName).get(subFieldName);
+        Expression<?> expression = subFieldName == null ? path.get(fieldName) : path.get(fieldName).get(subFieldName);
 
         // collection values are filtered with "or" operator
-        if (filter instanceof Collection<?> filterCollection) {
+        if (filter.value() instanceof Collection<?> filterCollection) {
             if (CollectionUtils.isEmpty(filterCollection)) {
                 return null;
             }
             return criteriaBuilder.or(
                 filterCollection.stream().map(value ->
-                    criteriaBuilder.equal(expression, value)
+                    filterToAtomicPredicate(criteriaBuilder, expression, filter, value)
                 ).toArray(Predicate[]::new)
             );
         } else {
-            return criteriaBuilder.equal(expression, filter);
+            return filterToAtomicPredicate(criteriaBuilder, expression, filter, filter.value());
         }
+    }
+
+    /**
+     * returns atomic predicate depending on filter.dataType() and filter.type()
+     */
+    private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder, Expression expression, FilterDTO filter, Object value) {
+        if (filter.dataType().equals(FilterDTO.DataType.TEXT)) {
+            String filterValue = (String) value;
+            if (filter.type().equals(FilterDTO.Type.STARTS_WITH)) {
+                return criteriaBuilder.like(expression, filterValue + "%");
+            } else {
+                return criteriaBuilder.like(expression, "%" + filterValue + "%");
+            }
+        }
+
+        throw new UnsupportedOperationException("Not implemented");
     }
 }

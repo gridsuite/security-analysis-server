@@ -7,9 +7,8 @@
 
 package org.gridsuite.securityanalysis.server.repositories;
 
-import com.powsybl.iidm.network.Branch;
-import com.powsybl.security.LimitViolationType;
 import jakarta.persistence.criteria.*;
+import org.gridsuite.securityanalysis.server.dto.FilterDTO;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +20,7 @@ import org.springframework.stereotype.Repository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
@@ -31,41 +31,68 @@ public interface ContingencyRepository extends JpaRepository<ContingencyEntity, 
 
     static Specification<ContingencyEntity> getSpecification(
         UUID resultUuid,
-        String contingencyId,
-        String status,
-        String subjectId,
-        LimitViolationType limitType,
-        String limitName,
-        Branch.Side side,
-        Integer acceptableDuration,
-        Double limit,
-        Double limitReduction,
-        Double value
+        List<FilterDTO> filters
     ) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
             // criteria in contingencyEntity
-            CriteriaUtils.addPredicate(criteriaBuilder, root, predicates, resultUuid, "result", "id");
-            CriteriaUtils.addPredicate(criteriaBuilder, root, predicates, contingencyId, "contingencyId");
-            CriteriaUtils.addPredicate(criteriaBuilder, root, predicates, status, "status");
+            // filter by resultUuid
+            predicates.add(criteriaBuilder.equal(root.get("result").get("id"), resultUuid));
+
+            // user filters
+            List<FilterDTO> parentFilters = filters.stream().filter(f -> isParentFilter(f)).toList();
+            parentFilters.forEach(filter -> addPredicate(criteriaBuilder, root, predicates, filter));
 
             // pageable makes a count request which should only count contingency results, not joined rows
             if (!CriteriaUtils.currentQueryIsCountRecords(query)) {
                 // join fetch contingencyLimitViolation table
                 Join<Object, Object> contingencyLimitViolation = (Join<Object, Object>) root.fetch("contingencyLimitViolations", JoinType.LEFT);
+
                 // criteria in contingencyLimitViolationEntity
-                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, subjectId, "subjectLimitViolation", "subjectId");
-                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, limitType, "limitType");
-                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, limitName, "limitName");
-                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, side, "side");
-                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, acceptableDuration, "acceptableDuration");
-                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, limit, "limit");
-                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, limitReduction, "limitReduction");
-                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, value, "value");
+                List<FilterDTO> nestedFilters = filters.stream().filter(f -> !isParentFilter(f)).toList();
+                nestedFilters.forEach(filter -> addJoinFilter(criteriaBuilder, contingencyLimitViolation, filter));
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
+    }
+
+    private static void addPredicate(CriteriaBuilder criteriaBuilder,
+                                      Path path,
+                                      List<Predicate> predicates,
+                                      FilterDTO filter) {
+
+        String fieldName = switch (filter.column()) {
+            case CONTINGENCY_ID -> "contingencyId";
+            case STATUS -> "status";
+            default -> throw new UnsupportedOperationException("This method should be called for parent filters only");
+        };
+
+        CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, fieldName);
+    }
+
+    private static void addJoinFilter(CriteriaBuilder criteriaBuilder,
+                                      Join<?, ?> joinPath,
+                                      FilterDTO filter) {
+        String fieldName;
+        String subFieldName = null;
+
+        switch (filter.column()) {
+            case SUBJECT_ID -> {
+                fieldName = "subjectLimitViolation";
+                subFieldName = "subjectId";
+            }
+            case LIMIT_TYPE -> fieldName = "limitType";
+            case LIMIT_NAME -> fieldName = "limitName";
+            case SIDE -> fieldName = "side";
+            default -> throw new UnsupportedOperationException("This method should be called for nested filters only");
+        }
+
+        CriteriaUtils.addJoinFilter(criteriaBuilder, joinPath, filter, fieldName, subFieldName);
+    }
+
+    private static boolean isParentFilter(FilterDTO filter) {
+        return List.of(FilterDTO.FilterColumn.CONTINGENCY_ID, FilterDTO.FilterColumn.STATUS).contains(filter.column());
     }
 }

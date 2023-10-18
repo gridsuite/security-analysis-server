@@ -43,8 +43,8 @@ public interface SubjectLimitViolationRepository extends JpaRepository<SubjectLi
             List<Predicate> predicates = new ArrayList<>();
 
             // criteria in subjectLimitViolationEntity
-            CriteriaUtils.addPredicate(criteriaBuilder, root, predicates, resultUuid, "result", "id");
-            CriteriaUtils.addPredicate(criteriaBuilder, root, predicates, subjectId, "subjectId");
+/*            CriteriaUtils.addPredicate(criteriaBuilder, root, predicates, resultUuid, "result", "id");
+            CriteriaUtils.addPredicate(criteriaBuilder, root, predicates, subjectId, "subjectId");*/
 
             // pageable makes a count request which should only count contingency results, not joined rows
             if (!CriteriaUtils.currentQueryIsCountRecords(query)) {
@@ -52,7 +52,7 @@ public interface SubjectLimitViolationRepository extends JpaRepository<SubjectLi
                 Join<Object, Object> contingencyLimitViolation = (Join<Object, Object>) root.fetch("contingencyLimitViolations", JoinType.LEFT);
 
                 // criteria in contingencyLimitViolationEntity
-                CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, contingencyId, "contingency", "contingencyId");
+               /* CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, contingencyId, "contingency", "contingencyId");
                 CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, status, "contingency", "status");
                 CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, limitType, "limitType");
                 CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, side, "side");
@@ -61,8 +61,8 @@ public interface SubjectLimitViolationRepository extends JpaRepository<SubjectLi
                 CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, limit, "limit");
                 CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, limitReduction, "limitReduction");
                 CriteriaUtils.addJoinFilter(criteriaBuilder, contingencyLimitViolation, value, "value");
+            */
             }
-
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }

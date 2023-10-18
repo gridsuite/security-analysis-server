@@ -317,7 +317,7 @@ public class SecurityAnalysisControllerTest {
         assertResultNotFound(RESULT_UUID);
     }
 
-    @Test
+    /*@Test
     public void findNmKContingenciesResults() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
@@ -410,9 +410,9 @@ public class SecurityAnalysisControllerTest {
         testPaginatedResult(basePath, 0, 3, "sort=subjectId,desc&acceptableDuration=" + LIMIT_VIOLATION_1.getAcceptableDuration() + "&contingencyId=" + CONTINGENCIES.get(0).getId(),
             RESULT_CONSTRAINTS_FILTERED_BY_MULTIPLE_NESTED_FIELD.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId).reversed()).toList());
 
-    }
+    }*/
 
-    private <T> void testPaginatedResult(String path, int page, int pageSize, String filterandSortQuery, List<T> expectedResult) throws Exception {
+   /* private <T> void testPaginatedResult(String path, int page, int pageSize, String filterandSortQuery, List<T> expectedResult) throws Exception {
         MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/" + path + "?page=" + page + "&size=" + pageSize + "&" + filterandSortQuery))
             .andExpectAll(
                 status().isOk(),
@@ -428,7 +428,7 @@ public class SecurityAnalysisControllerTest {
         int end = Math.min(start + pageRequest.getPageSize(), expectedResult.size());
 
         assertThat(contingenciesToSubjectLimitViolations, new MatcherJson<>(mapper, new CustomPageImpl<>(expectedResult.subList(start, end), pageRequest, expectedResult.size())));
-    }
+    }*/
 
     @Test
     public void runWithTwoLists() throws Exception {

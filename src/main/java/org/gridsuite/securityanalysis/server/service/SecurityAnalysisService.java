@@ -9,11 +9,7 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.security.results.PreContingencyResult;
-
-import org.gridsuite.securityanalysis.server.dto.ResultsSelectorDTO;
-import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationResultDTO;
-import org.gridsuite.securityanalysis.server.dto.ContingencyResultDTO;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
+import org.gridsuite.securityanalysis.server.dto.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -66,8 +62,8 @@ public class SecurityAnalysisService {
         return securityAnalysisResultService.findNResult(resultUuid);
     }
 
-    public Page<ContingencyResultDTO> getNmKContingenciesResult(UUID resultUuid, ResultsSelectorDTO resultsSelector, Pageable pageable) {
-        return securityAnalysisResultService.findNmKContingenciesResult(resultUuid, resultsSelector, pageable);
+    public Page<ContingencyResultDTO> getNmKContingenciesResult(UUID resultUuid, List<FilterDTO> filters, Pageable pageable) {
+        return securityAnalysisResultService.findNmKContingenciesResult(resultUuid, filters, pageable);
     }
 
     public Page<SubjectLimitViolationResultDTO> getNmKConstraintsResult(UUID resultUuid, ResultsSelectorDTO resultsSelector, Pageable pageable) {
