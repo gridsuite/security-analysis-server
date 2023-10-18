@@ -1,6 +1,5 @@
 package org.gridsuite.securityanalysis.server;
 
-import com.powsybl.security.LimitViolationType;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
