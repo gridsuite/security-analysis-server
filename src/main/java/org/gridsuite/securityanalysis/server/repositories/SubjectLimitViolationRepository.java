@@ -55,7 +55,7 @@ public interface SubjectLimitViolationRepository extends JpaRepository<SubjectLi
     }
 
     private static void addPredicate(CriteriaBuilder criteriaBuilder,
-                                     Path path,
+                                     Root<SubjectLimitViolationEntity> path,
                                      List<Predicate> predicates,
                                      FilterDTO filter) {
 

@@ -12,7 +12,7 @@ public final class CriteriaUtils {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
 
-    public static <T> void addPredicate(CriteriaBuilder criteriaBuilder,
+    public static void addPredicate(CriteriaBuilder criteriaBuilder,
                                      Path<?> path,
                                      List<Predicate> predicates,
                                      FilterDTO filter,
@@ -20,7 +20,7 @@ public final class CriteriaUtils {
         addPredicate(criteriaBuilder, path, predicates, filter, fieldName, null);
     }
 
-    public static <T> void addPredicate(CriteriaBuilder criteriaBuilder,
+    public static void addPredicate(CriteriaBuilder criteriaBuilder,
                                      Path<?> path,
                                      List<Predicate> predicates,
                                      FilterDTO filter,
@@ -33,7 +33,7 @@ public final class CriteriaUtils {
     }
 
     // add condition on <joinPath>
-    public static <T> void addJoinFilter(CriteriaBuilder criteriaBuilder,
+    public static void addJoinFilter(CriteriaBuilder criteriaBuilder,
                                          Join<?, ?> joinPath,
                                          FilterDTO filter,
                                          String fieldName,
@@ -52,13 +52,13 @@ public final class CriteriaUtils {
      * returns predicate depending on filter.value() type
      * if it's a Collection, it will use "OR" operator between each value
      */
-    private static <T> Predicate filterToPredicate(CriteriaBuilder criteriaBuilder,
+    private static Predicate filterToPredicate(CriteriaBuilder criteriaBuilder,
                                                 Path<?> path,
                                                 FilterDTO filter,
                                                 String fieldName,
                                                 String subFieldName) {
         // expression targets field to filter on
-        Expression<?> expression = subFieldName == null ? path.get(fieldName) : path.get(fieldName).get(subFieldName);
+        Expression<String> expression = subFieldName == null ? path.get(fieldName) : path.get(fieldName).get(subFieldName);
 
         // collection values are filtered with "or" operator
         if (filter.value() instanceof Collection<?> filterCollection) {
@@ -78,7 +78,7 @@ public final class CriteriaUtils {
     /**
      * returns atomic predicate depending on filter.dataType() and filter.type()
      */
-    private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder, Expression expression, FilterDTO filter, Object value) {
+    private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder, Expression<String> expression, FilterDTO filter, Object value) {
         if (filter.dataType().equals(FilterDTO.DataType.TEXT)) {
             String filterValue = (String) value;
             if (filter.type().equals(FilterDTO.Type.STARTS_WITH)) {

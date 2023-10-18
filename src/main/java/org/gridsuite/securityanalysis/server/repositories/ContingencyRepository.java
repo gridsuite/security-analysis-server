@@ -59,7 +59,7 @@ public interface ContingencyRepository extends JpaRepository<ContingencyEntity, 
     }
 
     private static void addPredicate(CriteriaBuilder criteriaBuilder,
-                                      Path path,
+                                      Root<ContingencyEntity> path,
                                       List<Predicate> predicates,
                                       FilterDTO filter) {
 

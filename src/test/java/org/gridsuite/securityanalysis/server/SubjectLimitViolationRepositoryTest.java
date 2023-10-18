@@ -29,7 +29,7 @@ import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock
 
 @SpringBootTest // would be better with @DataJpaTest but does not work here
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // improve tests speed as we only read DB
-public class SubjectLimitViolationRepositoryTest {
+class SubjectLimitViolationRepositoryTest {
     @Autowired
     SubjectLimitViolationRepository subjectLimitViolationRepository;
 
