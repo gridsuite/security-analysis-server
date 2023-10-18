@@ -54,7 +54,8 @@ class SubjectLimitViolationRepositoryTest {
         "providePageableOnly",
         "providePageableAndSort",
         "provideParentFilter",
-        "provideNestedFilter"
+        "provideNestedFilter",
+        "provideEachColumnFilter"
     })
     void findFilteredSubjectLimitViolationResultsTest(List<FilterDTO> filters, Pageable pageable, List<SubjectLimitViolationResultDTO> expectedResult) {
         Specification<SubjectLimitViolationEntity> specification = SubjectLimitViolationRepository.getSpecification(resultEntity.getId(), filters);
@@ -103,6 +104,19 @@ class SubjectLimitViolationRepositoryTest {
                 getResultConstraintsFilteredByStartsWithNestedContingencyId("3")),
             Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.STARTS_WITH, "l", FilterDTO.FilterColumn.CONTINGENCY_ID)), PageRequest.of(0, 30),
                 getResultConstraintsFilteredByStartsWithNestedContingencyId("l"))
+        );
+    }
+
+    private Stream<Arguments> provideEachColumnFilter() {
+        return Stream.of(
+            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "CO", FilterDTO.FilterColumn.STATUS)), PageRequest.of(0, 30),
+                getResultConstraintsWithNestedFilter(lm -> lm.getContingency().getComputationStatus().contains("CO"))),
+            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "l1", FilterDTO.FilterColumn.LIMIT_NAME)), PageRequest.of(0, 30),
+                getResultConstraintsWithNestedFilter(lm -> lm.getLimitViolation().getLimitName().contains("l1"))),
+            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "GH", FilterDTO.FilterColumn.LIMIT_TYPE)), PageRequest.of(0, 30),
+                getResultConstraintsWithNestedFilter(lm -> lm.getLimitViolation().getLimitType().name().contains("GH"))),
+            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "ON", FilterDTO.FilterColumn.SIDE)), PageRequest.of(0, 30),
+                getResultConstraintsWithNestedFilter(lm -> lm.getLimitViolation().getSide() != null && lm.getLimitViolation().getSide().name().contains("ON")))
         );
     }
 
