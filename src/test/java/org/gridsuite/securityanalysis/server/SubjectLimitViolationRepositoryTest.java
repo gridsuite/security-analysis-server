@@ -1,5 +1,6 @@
 package org.gridsuite.securityanalysis.server;
 
+import com.powsybl.security.LimitViolationType;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
@@ -97,13 +98,13 @@ class SubjectLimitViolationRepositoryTest {
     private Stream<Arguments> provideNestedFilter() {
         return Stream.of(
             Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "3", FilterDTO.FilterColumn.CONTINGENCY_ID)), PageRequest.of(0, 30),
-                getResultConstraintsFilteredByContainsNestedContingencyId("3")),
+                getResultConstraintsWithNestedFilter(lm -> lm.getContingency().getContingencyId().contains("3"))),
             Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "l", FilterDTO.FilterColumn.CONTINGENCY_ID)), PageRequest.of(0, 30),
-                getResultConstraintsFilteredByContainsNestedContingencyId("l")),
+                getResultConstraintsWithNestedFilter(lm -> lm.getContingency().getContingencyId().contains("l"))),
             Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.STARTS_WITH, "3", FilterDTO.FilterColumn.CONTINGENCY_ID)), PageRequest.of(0, 30),
-                getResultConstraintsFilteredByStartsWithNestedContingencyId("3")),
+                getResultConstraintsWithNestedFilter(lm -> lm.getContingency().getContingencyId().startsWith("3"))),
             Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.STARTS_WITH, "l", FilterDTO.FilterColumn.CONTINGENCY_ID)), PageRequest.of(0, 30),
-                getResultConstraintsFilteredByStartsWithNestedContingencyId("l"))
+                getResultConstraintsWithNestedFilter(lm -> lm.getContingency().getContingencyId().startsWith("l")))
         );
     }
 

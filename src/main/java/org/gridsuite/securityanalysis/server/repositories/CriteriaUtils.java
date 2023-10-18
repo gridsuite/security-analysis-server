@@ -78,14 +78,16 @@ public final class CriteriaUtils {
     /**
      * returns atomic predicate depending on filter.dataType() and filter.type()
      */
-    private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder, Expression<String> expression, FilterDTO filter, Object value) {
+    private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder, Expression<?> expression, FilterDTO filter, Object value) {
         if (filter.dataType().equals(FilterDTO.DataType.TEXT)) {
             String filterValue = (String) value;
-            if (filter.type().equals(FilterDTO.Type.STARTS_WITH)) {
-                return criteriaBuilder.like(expression, filterValue + "%");
-            } else {
-                return criteriaBuilder.like(expression, "%" + filterValue + "%");
-            }
+            // this makes contains/startsWith query work with enum values
+            Expression<String> stringExpression = expression.as(String.class);
+            return switch (filter.type()) {
+                case CONTAINS -> criteriaBuilder.like(stringExpression, "%" + filterValue + "%");
+                case STARTS_WITH -> criteriaBuilder.like(stringExpression, filterValue + "%");
+                case EQUALS -> criteriaBuilder.equal(stringExpression, filterValue);
+            };
         }
 
         throw new UnsupportedOperationException("Not implemented");

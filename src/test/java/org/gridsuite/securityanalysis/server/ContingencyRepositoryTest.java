@@ -55,7 +55,10 @@ class ContingencyRepositoryTest {
         "providePageableOnly",
         "providePageableAndSort",
         "provideParentFilter",
-        "provideNestedFilter"
+        "provideNestedFilter",
+        "provideEachColumnFilter",
+        "provideCollectionFilter",
+        "provideCollectionOfFilters"
     })
     void findFilteredContingencyResultsTest(List<FilterDTO> filters, Pageable pageable, List<ContingencyResultDTO> expectedResult) {
         Specification<ContingencyEntity> specification = ContingencyRepository.getSpecification(resultEntity.getId(), filters);
@@ -98,13 +101,47 @@ class ContingencyRepositoryTest {
     private Stream<Arguments> provideNestedFilter() {
         return Stream.of(
             Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "3", FilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30),
-                getResultContingenciesFilteredByContainsNestedSubjectId("3")),
+                getResultContingenciesWithNestedFilter(c -> c.getSubjectId().contains("3"))),
             Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "l", FilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30),
-                getResultContingenciesFilteredByContainsNestedSubjectId("l")),
+                getResultContingenciesWithNestedFilter(slv -> slv.getSubjectId().contains("l"))),
             Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.STARTS_WITH, "3", FilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30),
-                getResultContingenciesFilteredByStartsWithNestedSubjectId("3")),
+                getResultContingenciesWithNestedFilter(slv -> slv.getSubjectId().startsWith("3"))),
             Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.STARTS_WITH, "l", FilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30),
-                getResultContingenciesFilteredByStartsWithNestedSubjectId("l"))
+                getResultContingenciesWithNestedFilter(slv -> slv.getSubjectId().startsWith("l")))
+        );
+    }
+
+    private Stream<Arguments> provideEachColumnFilter() {
+        return Stream.of(
+            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "CO", FilterDTO.FilterColumn.STATUS)), PageRequest.of(0, 30),
+                RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getComputationStatus().contains("CO")).toList()),
+            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "l1", FilterDTO.FilterColumn.LIMIT_NAME)), PageRequest.of(0, 30),
+                getResultContingenciesWithNestedFilter(lm -> lm.getLimitViolation().getLimitName().contains("l1"))),
+            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "GH", FilterDTO.FilterColumn.LIMIT_TYPE)), PageRequest.of(0, 30),
+                getResultContingenciesWithNestedFilter(lm -> lm.getLimitViolation().getLimitType().name().contains("GH"))),
+            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "ON", FilterDTO.FilterColumn.SIDE)), PageRequest.of(0, 30),
+                getResultContingenciesWithNestedFilter(lm -> lm.getLimitViolation().getSide() != null && lm.getLimitViolation().getSide().name().contains("ON")))
+        );
+    }
+
+    private Stream<Arguments> provideCollectionFilter() {
+        return Stream.of(
+            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, List.of("1", "3"), FilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30),
+                getResultContingenciesWithNestedFilter(lm -> lm.getSubjectId().contains("1") || lm.getSubjectId().contains("3"))),
+            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, List.of("GH", "CUR"), FilterDTO.FilterColumn.LIMIT_TYPE)), PageRequest.of(0, 30),
+                getResultContingenciesWithNestedFilter(lm -> lm.getLimitViolation().getLimitType().name().contains("GH") || lm.getLimitViolation().getLimitType().name().contains("CUR")))
+        );
+    }
+
+    private Stream<Arguments> provideCollectionOfFilters() {
+        return Stream.of(
+            Arguments.of(
+                List.of(
+                    new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, List.of("1", "3"), FilterDTO.FilterColumn.SUBJECT_ID),
+                    new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, List.of("HIGH"), FilterDTO.FilterColumn.LIMIT_TYPE)
+                ),
+                PageRequest.of(0, 30),
+                getResultContingenciesWithNestedFilter(lm -> (lm.getSubjectId().contains("1") || lm.getSubjectId().contains("3")) && lm.getLimitViolation().getLimitType().name().contains("HIGH")))
         );
     }
 

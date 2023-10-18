@@ -33,6 +33,8 @@ public record FilterDTO(DataType dataType, Type type, Object value, FilterColumn
         CONTAINS,
         @JsonProperty("startsWith")
         STARTS_WITH,
+        @JsonProperty("equals")
+        EQUALS,
     }
 
     public enum FilterColumn {

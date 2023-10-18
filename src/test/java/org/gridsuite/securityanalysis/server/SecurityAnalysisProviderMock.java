@@ -98,76 +98,31 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         FAILED_CONTINGENCIES.stream().map(c -> toContingencyResultDTO(c, LoadFlowResult.ComponentResult.Status.FAILED.name(), RESULT_LIMIT_VIOLATIONS))
     ).toList();
 
-    /**
-     * RESULT_CONTINGENCIES filtered with different criterias START
-     */
-    static List<ContingencyResultDTO> getResultContingenciesFilteredByContainsNestedSubjectId(String subjectId) {
+    static List<ContingencyResultDTO> getResultContingenciesWithNestedFilter(Function<SubjectLimitViolationDTO, Boolean> filterMethod) {
         return RESULT_CONTINGENCIES.stream().map(r ->
             new ContingencyResultDTO(
                 r.getContingency(),
                 r.getSubjectLimitViolations().stream()
-                    .filter(s -> s.getSubjectId().contains(subjectId))
+                    .filter(filterMethod::apply)
                     .toList()
             )
         ).toList();
     }
-
-    static List<ContingencyResultDTO> getResultContingenciesFilteredByStartsWithNestedSubjectId(String subjectId) {
-        return RESULT_CONTINGENCIES.stream().map(r ->
-            new ContingencyResultDTO(
-                r.getContingency(),
-                r.getSubjectLimitViolations().stream()
-                    .filter(s -> s.getSubjectId().startsWith(subjectId))
-                    .toList()
-            )
-        ).toList();
-    }
-    /**
-     * RESULT_CONTINGENCIES filtered with different criterias END
-     */
 
     static final List<SubjectLimitViolationResultDTO> RESULT_CONSTRAINTS = RESULT_LIMIT_VIOLATIONS.stream()
         .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, CONTINGENCIES, FAILED_CONTINGENCIES))
         .toList();
 
-    /**
-     * RESULT_CONSTRAINTS filtered with different criterias START
-     */
-    static List<SubjectLimitViolationResultDTO> getResultConstraintsFilteredByContainsNestedContingencyId(String contingencyId) {
+    static List<SubjectLimitViolationResultDTO> getResultConstraintsWithNestedFilter(Function<ContingencyLimitViolationDTO, Boolean> filterMethod) {
         return RESULT_CONSTRAINTS.stream().map(r ->
             new SubjectLimitViolationResultDTO(
                 r.getSubjectId(),
                 r.getContingencies().stream()
-                    .filter(s -> s.getContingency().getContingencyId().contains(contingencyId))
+                    .filter(filterMethod::apply)
                     .toList()
             )
         ).toList();
     }
-
-    static List<SubjectLimitViolationResultDTO> getResultConstraintsFilteredByStartsWithNestedContingencyId(String contingencyId) {
-        return RESULT_CONSTRAINTS.stream().map(r ->
-            new SubjectLimitViolationResultDTO(
-                r.getSubjectId(),
-                r.getContingencies().stream()
-                    .filter(s -> s.getContingency().getContingencyId().startsWith(contingencyId))
-                    .toList()
-            )
-        ).toList();
-    }
-
-    static List<SubjectLimitViolationResultDTO> getResultConstraintsWithNestedFilter(Function<ContingencyLimitViolationDTO, Boolean> shouldFilter) {
-        return RESULT_CONSTRAINTS.stream().map(r ->
-            new SubjectLimitViolationResultDTO(
-                r.getSubjectId(),
-                r.getContingencies().stream()
-                    .filter(shouldFilter::apply)
-                    .toList()
-            )
-        ).toList();
-    }
-    /**
-     * RESULT_CONSTRAINTS filtered with different criterias END
-     */
 
     static final SecurityAnalysisReport REPORT = new SecurityAnalysisReport(RESULT);
     static final SecurityAnalysisReport REPORT_VARIANT = new SecurityAnalysisReport(RESULT_VARIANT);
