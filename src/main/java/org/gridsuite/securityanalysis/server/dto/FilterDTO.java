@@ -52,7 +52,7 @@ public record FilterDTO(DataType dataType, Type type, Object value, FilterColumn
 
     public static List<FilterDTO> fromStringToList(String filters) throws JsonProcessingException {
         if (filters == null || filters.isEmpty()) {
-            return null;
+            return List.of();
         }
         ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.readValue(filters, new TypeReference<>() {
