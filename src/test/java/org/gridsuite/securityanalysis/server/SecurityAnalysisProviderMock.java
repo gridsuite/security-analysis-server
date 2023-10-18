@@ -121,38 +121,6 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
             )
         ).toList();
     }
-
-    static final List<ContingencyResultDTO> RESULT_CONTINGENCIES_FILTERED_BY_NESTED_INTEGER_FIELD = RESULT_CONTINGENCIES.stream().map(r ->
-        new ContingencyResultDTO(
-            r.getContingency(),
-            r.getSubjectLimitViolations().stream().filter(s -> s.getLimitViolation().getAcceptableDuration() == LIMIT_VIOLATION_1.getAcceptableDuration()).toList()
-        )
-    ).toList();
-
-    static final List<ContingencyResultDTO> RESULT_CONTINGENCIES_FILTERED_BY_MULTIPLE_NESTED_FIELD = RESULT_CONTINGENCIES.stream().map(r ->
-        new ContingencyResultDTO(
-            r.getContingency(),
-            r.getSubjectLimitViolations().stream()
-                .filter(s ->
-                    s.getLimitViolation().getAcceptableDuration() == LIMIT_VIOLATION_1.getAcceptableDuration()
-                    && s.getSubjectId().equals(LIMIT_VIOLATION_1.getSubjectId()))
-                .toList()
-        )
-    ).toList();
-
-    static final List<ContingencyResultDTO> RESULT_CONTINGENCIES_FILTERED_BY_NESTED_ENUM_FIELD = RESULT_CONTINGENCIES.stream().map(r ->
-        new ContingencyResultDTO(
-            r.getContingency(),
-            r.getSubjectLimitViolations().stream().filter(s -> s.getLimitViolation().getLimitType().equals(LimitViolationType.HIGH_VOLTAGE)).toList()
-        )
-    ).toList();
-
-    static final List<ContingencyResultDTO> RESULT_CONTINGENCIES_FILTERED_BY_DEEPLY_NESTED_FIELD = RESULT_CONTINGENCIES.stream().map(r ->
-        new ContingencyResultDTO(
-            r.getContingency(),
-            r.getSubjectLimitViolations().stream().filter(s -> s.getSubjectId().equals(LIMIT_VIOLATION_1.getSubjectId())).toList()
-        )
-    ).toList();
     /**
      * RESULT_CONTINGENCIES filtered with different criterias END
      */
@@ -164,36 +132,27 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     /**
      * RESULT_CONSTRAINTS filtered with different criterias START
      */
-    static final List<SubjectLimitViolationResultDTO> RESULT_CONSTRAINTS_FILTERED_BY_NESTED_INTEGER_FIELD = RESULT_CONSTRAINTS.stream().map(r ->
-        new SubjectLimitViolationResultDTO(
-            r.getSubjectId(),
-            r.getContingencies().stream().filter(c -> c.getLimitViolation().getAcceptableDuration() == LIMIT_VIOLATION_1.getAcceptableDuration()).toList()
-        )
-    ).toList();
+    static List<SubjectLimitViolationResultDTO> getResultConstraintsFilteredByContainsNestedContingencyId(String contingencyId) {
+        return RESULT_CONSTRAINTS.stream().map(r ->
+            new SubjectLimitViolationResultDTO(
+                r.getSubjectId(),
+                r.getContingencies().stream()
+                    .filter(s -> s.getContingency().getContingencyId().contains(contingencyId))
+                    .toList()
+            )
+        ).toList();
+    }
 
-    static final List<SubjectLimitViolationResultDTO> RESULT_CONSTRAINTS_FILTERED_BY_DEEPLY_NESTED_FIELD = RESULT_CONSTRAINTS.stream().map(r ->
-        new SubjectLimitViolationResultDTO(
-            r.getSubjectId(),
-            r.getContingencies().stream().filter(c -> c.getContingency().getComputationStatus().equals(LoadFlowResult.ComponentResult.Status.CONVERGED.name())).toList()
-        )
-    ).toList();
-
-    static final List<SubjectLimitViolationResultDTO> RESULT_CONSTRAINTS_FILTERED_BY_NESTED_ENUM_FIELD = RESULT_CONSTRAINTS.stream().map(r ->
-        new SubjectLimitViolationResultDTO(
-            r.getSubjectId(),
-            r.getContingencies().stream().filter(c -> c.getLimitViolation().getLimitType() == LimitViolationType.HIGH_VOLTAGE).toList()
-        )
-    ).toList();
-
-    static final List<SubjectLimitViolationResultDTO> RESULT_CONSTRAINTS_FILTERED_BY_MULTIPLE_NESTED_FIELD = RESULT_CONSTRAINTS.stream().map(r ->
-        new SubjectLimitViolationResultDTO(
-            r.getSubjectId(),
-            r.getContingencies().stream()
-                .filter(c -> c.getLimitViolation().getAcceptableDuration() == LIMIT_VIOLATION_1.getAcceptableDuration()
-                && c.getContingency().getContingencyId() == CONTINGENCIES.get(0).getId())
-                .toList()
-        )
-    ).toList();
+    static List<SubjectLimitViolationResultDTO> getResultConstraintsFilteredByStartsWithNestedContingencyId(String contingencyId) {
+        return RESULT_CONSTRAINTS.stream().map(r ->
+            new SubjectLimitViolationResultDTO(
+                r.getSubjectId(),
+                r.getContingencies().stream()
+                    .filter(s -> s.getContingency().getContingencyId().startsWith(contingencyId))
+                    .toList()
+            )
+        ).toList();
+    }
     /**
      * RESULT_CONSTRAINTS filtered with different criterias END
      */

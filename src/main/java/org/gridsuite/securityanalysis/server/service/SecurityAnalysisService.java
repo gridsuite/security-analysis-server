@@ -66,8 +66,8 @@ public class SecurityAnalysisService {
         return securityAnalysisResultService.findNmKContingenciesResult(resultUuid, filters, pageable);
     }
 
-    public Page<SubjectLimitViolationResultDTO> getNmKConstraintsResult(UUID resultUuid, ResultsSelectorDTO resultsSelector, Pageable pageable) {
-        return securityAnalysisResultService.findNmKConstraintsResult(resultUuid, resultsSelector, pageable);
+    public Page<SubjectLimitViolationResultDTO> getNmKConstraintsResult(UUID resultUuid, List<FilterDTO> filters, Pageable pageable) {
+        return securityAnalysisResultService.findNmKConstraintsResult(resultUuid, filters, pageable);
     }
 
     public void deleteResult(UUID resultUuid) {

@@ -74,20 +74,11 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public Page<SubjectLimitViolationResultDTO> findNmKConstraintsResult(UUID resultUuid, ResultsSelectorDTO resultsSelector, Pageable pageable) {
+    public Page<SubjectLimitViolationResultDTO> findNmKConstraintsResult(UUID resultUuid, List<FilterDTO> filters, Pageable pageable) {
         assertResultExists(resultUuid);
         Specification<SubjectLimitViolationEntity> specification = SubjectLimitViolationRepository.getSpecification(
             resultUuid,
-            resultsSelector.getSubjectId(),
-            resultsSelector.getContingencyId(),
-            resultsSelector.getStatus(),
-            resultsSelector.getLimitType(),
-            resultsSelector.getLimitName(),
-            resultsSelector.getSide(),
-            resultsSelector.getAcceptableDuration(),
-            resultsSelector.getLimit(),
-            resultsSelector.getLimitReduction(),
-            resultsSelector.getValue());
+            filters);
 
         Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = subjectLimitViolationRepository.findAll(specification, pageable);
 

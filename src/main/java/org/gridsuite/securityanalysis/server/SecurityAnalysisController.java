@@ -127,10 +127,10 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<Page<SubjectLimitViolationResultDTO>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
-                                                                                           @Parameter ResultsSelectorDTO resultsSelector,
-                                                                                           Pageable pageable) {
-
-        Page<SubjectLimitViolationResultDTO> result = service.getNmKConstraintsResult(resultUuid, resultsSelector, pageable);
+                                                                                        @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
+                                                                                        Pageable pageable) throws JsonProcessingException {
+        List<FilterDTO> filters = FilterDTO.fromStringToList(stringFilters);
+        Page<SubjectLimitViolationResultDTO> result = service.getNmKConstraintsResult(resultUuid, filters, pageable);
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
             : ResponseEntity.notFound().build();
