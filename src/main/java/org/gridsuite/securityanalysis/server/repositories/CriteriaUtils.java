@@ -2,6 +2,7 @@ package org.gridsuite.securityanalysis.server.repositories;
 
 import jakarta.persistence.criteria.*;
 import org.gridsuite.securityanalysis.server.dto.FilterDTO;
+import org.springframework.data.jpa.repository.query.EscapeCharacter;
 import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
@@ -84,8 +85,8 @@ public final class CriteriaUtils {
             // this makes contains/startsWith query work with enum values
             Expression<String> stringExpression = expression.as(String.class);
             return switch (filter.type()) {
-                case CONTAINS -> criteriaBuilder.like(stringExpression, "%" + filterValue + "%");
-                case STARTS_WITH -> criteriaBuilder.like(stringExpression, filterValue + "%");
+                case CONTAINS -> criteriaBuilder.like(stringExpression, "%" + EscapeCharacter.DEFAULT.escape(filterValue) + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
+                case STARTS_WITH -> criteriaBuilder.like(stringExpression, EscapeCharacter.DEFAULT.escape(filterValue) + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
                 case EQUALS -> criteriaBuilder.equal(stringExpression, filterValue);
             };
         }
