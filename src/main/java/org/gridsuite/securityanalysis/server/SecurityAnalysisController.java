@@ -26,7 +26,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -85,7 +84,6 @@ public class SecurityAnalysisController {
                                                  @RequestBody(required = false) SecurityAnalysisParametersInfos parameters) {
         String providerToUse = provider != null ? provider : service.getDefaultProvider();
         UUID resultUuid = service.runAndSaveResult(new SecurityAnalysisRunContext(networkUuid, variantId, contigencyListNames, receiver, providerToUse, parameters, reportUuid, reporterId));
-        
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(resultUuid);
     }
 
