@@ -9,6 +9,11 @@ import java.util.List;
 import java.util.UUID;
 
 public interface CommonLimitViolationRepository<T> {
+    /**
+     * Returns specification depending on {filters}
+     * This method is common for both SubjectLimitViolationRepository and ContingencyRepository
+     * except for <i>addPredicate</i>, <i>addJoinFilter</i> and <i>isParentFilter</i> which need to be implemented
+      */
     default Specification<T> getSpecification(
         UUID resultUuid,
         List<FilterDTO> filters
@@ -21,7 +26,7 @@ public interface CommonLimitViolationRepository<T> {
             predicates.add(criteriaBuilder.equal(root.get("result").get("id"), resultUuid));
 
             // user filters
-            List<FilterDTO> parentFilters = filters.stream().filter(f -> isParentFilter(f)).toList();
+            List<FilterDTO> parentFilters = filters.stream().filter(this::isParentFilter).toList();
             parentFilters.forEach(filter -> addPredicate(criteriaBuilder, root, predicates, filter));
 
             // pageable makes a count request which should only count contingency results, not joined rows

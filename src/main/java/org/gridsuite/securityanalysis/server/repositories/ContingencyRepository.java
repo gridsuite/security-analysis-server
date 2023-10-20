@@ -28,7 +28,6 @@ import java.util.UUID;
 public interface ContingencyRepository extends CommonLimitViolationRepository<ContingencyEntity>, JpaRepository<ContingencyEntity, UUID>, JpaSpecificationExecutor<ContingencyEntity> {
     Page<ContingencyEntity> findAll(Specification<ContingencyEntity> specification, Pageable pageable);
 
-    @Override
     default void addPredicate(CriteriaBuilder criteriaBuilder,
                                       Root<ContingencyEntity> path,
                                       List<Predicate> predicates,
@@ -43,7 +42,6 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
         CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, fieldName);
     }
 
-    @Override
     default void addJoinFilter(CriteriaBuilder criteriaBuilder,
                                       Join<?, ?> joinPath,
                                       FilterDTO filter) {
@@ -64,7 +62,6 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
         CriteriaUtils.addJoinFilter(criteriaBuilder, joinPath, filter, fieldName, subFieldName);
     }
 
-    @Override
     default boolean isParentFilter(FilterDTO filter) {
         return List.of(FilterDTO.FilterColumn.CONTINGENCY_ID, FilterDTO.FilterColumn.STATUS).contains(filter.column());
     }
