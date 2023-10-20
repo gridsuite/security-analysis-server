@@ -12,7 +12,6 @@ import com.powsybl.commons.PowsyblException;
 import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.commons.reporter.ReporterModel;
 import com.powsybl.contingency.Contingency;
-import com.powsybl.iidm.mergingview.MergingView;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.loadflow.LoadFlowResult;
@@ -39,7 +38,6 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.util.function.Tuple2;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -124,27 +122,6 @@ public class SecurityAnalysisWorkerService {
                 .subscribeOn(Schedulers.boundedElastic());
     }
 
-    private Mono<Network> getNetwork(UUID networkUuid, List<UUID> otherNetworkUuids) {
-        Mono<Network> network = getNetwork(networkUuid);
-        if (otherNetworkUuids.isEmpty()) {
-            return network;
-        } else {
-            Mono<List<Network>> otherNetworks = Flux.fromIterable(otherNetworkUuids)
-                    .flatMap(this::getNetwork)
-                    .collectList();
-            return Mono.zip(network, otherNetworks)
-                    .map(t -> {
-                        // creation of the merging view
-                        List<Network> networks = new ArrayList<>();
-                        networks.add(t.getT1());
-                        networks.addAll(t.getT2());
-                        MergingView mergingView = MergingView.create("merge", "iidm");
-                        mergingView.merge(networks.toArray(new Network[0]));
-                        return mergingView;
-                    });
-        }
-    }
-
     public Mono<SecurityAnalysisResult> run(SecurityAnalysisRunContext context) {
         return run(context, null);
     }
@@ -212,7 +189,7 @@ public class SecurityAnalysisWorkerService {
 
         LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(LogUtils::sanitizeParam).collect(Collectors.toList()));
 
-        Mono<Network> network = getNetwork(context.getNetworkUuid(), context.getOtherNetworkUuids());
+        Mono<Network> network = getNetwork(context.getNetworkUuid());
 
         Mono<List<Contingency>> contingencies = Flux.fromIterable(context.getContingencyListNames())
                 .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid(), context.getVariantId()))

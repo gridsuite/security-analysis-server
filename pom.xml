@@ -45,7 +45,7 @@
         <jaxb-api.version>2.4.0-b180830.0359</jaxb-api.version>
         <jaxb-runtime.version>2.4.0-b180830.0438</jaxb-runtime.version>
         <jib.from.image>gridsuite/java-simulator:2.0.0</jib.from.image>
-        <gridsuite-dependencies.version>26</gridsuite-dependencies.version>
+        <gridsuite-dependencies.version>27</gridsuite-dependencies.version>
         <liquibase-hibernate-package>org.gridsuite.securityanalysis.server</liquibase-hibernate-package>
     </properties>
 
@@ -117,10 +117,6 @@
         <dependency>
             <groupId>com.powsybl</groupId>
             <artifactId>powsybl-contingency-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.powsybl</groupId>
-            <artifactId>powsybl-iidm-mergingview</artifactId>
         </dependency>
         <dependency>
             <groupId>com.powsybl</groupId>

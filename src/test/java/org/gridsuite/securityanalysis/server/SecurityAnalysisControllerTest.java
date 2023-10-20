@@ -78,8 +78,6 @@ public class SecurityAnalysisControllerTest {
     private static final UUID RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5d");
     private static final UUID REPORT_UUID = UUID.fromString("0c4de370-3e6a-4d72-b292-d355a97e0d53");
     private static final UUID OTHER_RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5a");
-    private static final UUID NETWORK_FOR_MERGING_VIEW_UUID = UUID.fromString("11111111-7977-4592-ba19-88027e4254e4");
-    private static final UUID OTHER_NETWORK_FOR_MERGING_VIEW_UUID = UUID.fromString("22222222-7977-4592-ba19-88027e4254e4");
 
     private static final int TIMEOUT = 1000;
 
@@ -121,12 +119,6 @@ public class SecurityAnalysisControllerTest {
 
         given(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).willReturn(network);
 
-        Network networkForMergingView = new NetworkFactoryImpl().createNetwork("mergingView", "test");
-        given(networkStoreService.getNetwork(NETWORK_FOR_MERGING_VIEW_UUID, PreloadingStrategy.COLLECTION)).willReturn(networkForMergingView);
-
-        Network otherNetworkForMergingView = new NetworkFactoryImpl().createNetwork("other", "test 2");
-        given(networkStoreService.getNetwork(OTHER_NETWORK_FOR_MERGING_VIEW_UUID, PreloadingStrategy.COLLECTION)).willReturn(otherNetworkForMergingView);
-
         when(networkStoreService.getNetwork(NETWORK_STOP_UUID, PreloadingStrategy.COLLECTION)).thenAnswer((Answer) invocation -> {
             //Needed so the stop call doesn't arrive too late
             Thread.sleep(2000);
@@ -152,10 +144,6 @@ public class SecurityAnalysisControllerTest {
                 .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES));
         given(actionsService.getContingencyList(CONTINGENCY_LIST_ERROR_NAME, NETWORK_UUID, VARIANT_1_ID))
                 .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES).thenMany(Flux.error(new RuntimeException(ERROR_MESSAGE))));
-        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_FOR_MERGING_VIEW_UUID, null))
-            .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES));
-        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, OTHER_NETWORK_FOR_MERGING_VIEW_UUID, null))
-            .willReturn(Flux.fromIterable(SecurityAnalysisProviderMock.CONTINGENCIES));
 
         // UUID service mocking to always generate the same result UUID
         given(uuidGeneratorService.generate()).willReturn(RESULT_UUID);
@@ -324,17 +312,6 @@ public class SecurityAnalysisControllerTest {
                 .uri("/" + VERSION + "/results/" + RESULT_UUID)
                 .exchange()
                 .expectStatus().isNotFound();
-    }
-
-    @Test
-    public void mergingViewTest() {
-        webTestClient.post()
-                .uri("/" + VERSION + "/networks/" + NETWORK_FOR_MERGING_VIEW_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME + "&networkUuid=" + OTHER_NETWORK_FOR_MERGING_VIEW_UUID)
-                .exchange()
-                .expectStatus().isOk()
-                .expectHeader().contentType(MediaType.APPLICATION_JSON)
-                .expectBody(SecurityAnalysisResult.class)
-            .value(new MatcherJson<>(mapper, RESULT));
     }
 
     @Test
