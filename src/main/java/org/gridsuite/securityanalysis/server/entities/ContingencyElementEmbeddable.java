@@ -6,11 +6,12 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
+import com.powsybl.contingency.ContingencyElement;
+import com.powsybl.contingency.ContingencyElementType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-
-import com.powsybl.contingency.ContingencyElementType;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -18,6 +19,7 @@ import lombok.NoArgsConstructor;
  * @author Laurent GARNIER <laurent.garnier at rte-france.com>
  */
 @Getter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Embeddable
@@ -28,4 +30,11 @@ public class ContingencyElementEmbeddable {
 
     @Column
     private String elementId;
+
+    public static ContingencyElementEmbeddable toEntity(ContingencyElement contingencyElement) {
+        return ContingencyElementEmbeddable.builder()
+            .elementType(contingencyElement.getType())
+            .elementId(contingencyElement.getId())
+            .build();
+    }
 }

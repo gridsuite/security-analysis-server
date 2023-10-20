@@ -6,9 +6,10 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import com.powsybl.commons.reporter.Reporter;
@@ -16,6 +17,7 @@ import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.security.*;
 import com.powsybl.security.action.Action;
 import com.powsybl.security.strategy.OperatorStrategy;
+import org.gridsuite.securityanalysis.server.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,9 +83,30 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         CONTINGENCIES_VARIANT.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, List.of(LIMIT_VIOLATION_4)))
             .collect(Collectors.toList()));
 
-    static final SecurityAnalysisResult RESULT_FILTERED = new SecurityAnalysisResult(new LimitViolationsResult(List.of(LIMIT_VIOLATION_1)), LoadFlowResult.ComponentResult.Status.CONVERGED,
-        CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, Collections.emptyList()))
-            .collect(Collectors.toList()));
+    static final List<ContingencyResultDTO> RESULT_CONTINGENCIES = CONTINGENCIES.stream().map(c ->
+        new ContingencyResultDTO(
+            new ContingencyDTO(
+                c.getId(),
+                LoadFlowResult.ComponentResult.Status.CONVERGED.name(),
+                c.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).collect(Collectors.toList())
+            ),
+            List.of(new SubjectLimitViolationDTO(
+                LIMIT_VIOLATION_2.getSubjectId(),
+                toLimitViolationDTO(LIMIT_VIOLATION_2)
+            )
+        ))).collect(Collectors.toList()
+    );
+
+    static final List<SubjectLimitViolationResultDTO> RESULT_CONSTRAINTS = List.of(
+        new SubjectLimitViolationResultDTO(LIMIT_VIOLATION_1.getSubjectId(), List.of()),
+        new SubjectLimitViolationResultDTO(
+            LIMIT_VIOLATION_2.getSubjectId(),
+            CONTINGENCIES.stream().map(c -> new ContingencyLimitViolationDTO(
+                    new ContingencyDTO(c.getId(), LoadFlowResult.ComponentResult.Status.CONVERGED.name(), c.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).collect(Collectors.toList())),
+                    toLimitViolationDTO(LIMIT_VIOLATION_2)
+                )
+            ).collect(Collectors.toList())
+        ));
 
     static final SecurityAnalysisReport REPORT = new SecurityAnalysisReport(RESULT);
     static final SecurityAnalysisReport REPORT_VARIANT = new SecurityAnalysisReport(RESULT_VARIANT);
@@ -91,6 +114,9 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     static final String VARIANT_1_ID = "variant_1";
     static final String VARIANT_2_ID = "variant_2";
     static final String VARIANT_3_ID = "variant_3";
+    static final String VARIANT_TO_STOP_ID = "variant_to_stop";
+
+    static CountDownLatch countDownLatch;
 
     public CompletableFuture<SecurityAnalysisReport> run(Network network,
                                                          String workingVariantId,
@@ -105,10 +131,17 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                                                          List<StateMonitor> monitors,
                                                          Reporter reporter) {
         LOGGER.info("Run security analysis mock");
-        if (workingVariantId.equals(VARIANT_3_ID)) {
-            return CompletableFuture.completedFuture(REPORT_VARIANT);
+        switch (workingVariantId) {
+            case VARIANT_3_ID:
+                return CompletableFuture.completedFuture(REPORT_VARIANT);
+            case VARIANT_TO_STOP_ID:
+                countDownLatch.countDown();
+                // creating a long completable future which is here to be canceled
+                return new CompletableFuture<SecurityAnalysisReport>().completeOnTimeout(REPORT, 3, TimeUnit.SECONDS);
+            default:
+                return CompletableFuture.completedFuture(REPORT);
         }
-        return CompletableFuture.completedFuture(REPORT);
+
     }
 
     @Override
@@ -119,5 +152,21 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     @Override
     public String getVersion() {
         return "1";
+    }
+
+    private static LimitViolationDTO toLimitViolationDTO(LimitViolation limitViolation) {
+        Double computedLoading = limitViolation.getLimitType().equals(LimitViolationType.CURRENT)
+            ? (100 * limitViolation.getValue()) / (limitViolation.getLimit() * limitViolation.getLimitReduction())
+            : null;
+        return new LimitViolationDTO(
+            limitViolation.getLimitType(),
+            limitViolation.getLimitName(),
+            limitViolation.getSide(),
+            limitViolation.getAcceptableDuration(),
+            limitViolation.getLimit(),
+            limitViolation.getLimitReduction(),
+            limitViolation.getValue(),
+            computedLoading
+        );
     }
 }
