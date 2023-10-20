@@ -87,7 +87,6 @@ public final class CriteriaUtils {
             return switch (filter.type()) {
                 case CONTAINS -> criteriaBuilder.like(stringExpression, "%" + EscapeCharacter.DEFAULT.escape(filterValue) + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
                 case STARTS_WITH -> criteriaBuilder.like(stringExpression, EscapeCharacter.DEFAULT.escape(filterValue) + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
-                case EQUALS -> criteriaBuilder.equal(stringExpression, filterValue);
             };
         }
 

@@ -58,7 +58,8 @@ class ContingencyRepositoryTest {
         "provideNestedFilter",
         "provideEachColumnFilter",
         "provideCollectionFilter",
-        "provideCollectionOfFilters"
+        "provideCollectionOfFilters",
+        "provideEdgeCasesFilters"
     })
     void findFilteredContingencyResultsTest(List<FilterDTO> filters, Pageable pageable, List<ContingencyResultDTO> expectedResult) {
         Specification<ContingencyEntity> specification = contingencyRepository.getSpecification(resultEntity.getId(), filters);
@@ -142,6 +143,13 @@ class ContingencyRepositoryTest {
                 ),
                 PageRequest.of(0, 30),
                 getResultContingenciesWithNestedFilter(lm -> (lm.getSubjectId().contains("1") || lm.getSubjectId().contains("3")) && lm.getLimitViolation().getLimitType().name().contains("HIGH")))
+        );
+    }
+
+    private Stream<Arguments> provideEdgeCasesFilters() {
+        return Stream.of(
+            Arguments.of(List.of(), PageRequest.of(0, 30), RESULT_CONTINGENCIES),
+            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.STARTS_WITH, List.of(), FilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30), RESULT_CONTINGENCIES)
         );
     }
 
