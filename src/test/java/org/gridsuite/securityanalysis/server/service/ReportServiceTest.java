@@ -6,7 +6,6 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.commons.reporter.ReporterModel;
 import okhttp3.HttpUrl;
@@ -14,57 +13,43 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.gridsuite.securityanalysis.server.WebFluxConfig;
+import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.codec.json.Jackson2JsonDecoder;
-import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.web.reactive.function.client.ExchangeStrategies;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
 import java.util.Objects;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
+@SpringBootTest
 @RunWith(SpringRunner.class)
+@ContextConfigurationWithTestChannel
 public class ReportServiceTest {
 
     private static final UUID REPORT_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e4");
 
     private static final String REPORT_JSON = "{\"version\":\"1.0\",\"reportTree\":{\"taskKey\":\"test\"},\"dics\":{\"default\":{\"test\":\"a test\"}}}";
 
-    private final ObjectMapper objectMapper = WebFluxConfig.createObjectMapper();
-
-    private WebClient.Builder webClientBuilder;
-
     private MockWebServer server;
 
+    @Autowired
     private ReportService reportService;
 
     @Before
     public void setUp() throws IOException {
-        webClientBuilder = WebClient.builder();
-        ExchangeStrategies strategies = ExchangeStrategies
-                .builder()
-                .codecs(clientDefaultCodecsConfigurer -> {
-                    clientDefaultCodecsConfigurer.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(objectMapper, MediaType.APPLICATION_JSON));
-                    clientDefaultCodecsConfigurer.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper, MediaType.APPLICATION_JSON));
-
-                }).build();
-        webClientBuilder.exchangeStrategies(strategies);
-
-        reportService = new ReportService(webClientBuilder, initMockWebServer());
+        String mockServerUri = initMockWebServer();
+        reportService.setReportServiceBaseUri(mockServerUri);
     }
 
     @After
@@ -104,6 +89,6 @@ public class ReportServiceTest {
     @Test
     public void test() {
         Reporter reporter = new ReporterModel("test", "a test");
-        assertNull(reportService.sendReport(REPORT_UUID, reporter).block());
+        reportService.sendReport(REPORT_UUID, reporter);
     }
 }

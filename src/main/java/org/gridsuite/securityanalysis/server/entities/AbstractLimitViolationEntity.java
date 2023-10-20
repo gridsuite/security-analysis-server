@@ -10,8 +10,8 @@ import com.powsybl.iidm.network.Branch;
 import com.powsybl.security.LimitViolation;
 import com.powsybl.security.LimitViolationType;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 import java.util.UUID;
 /**
@@ -19,6 +19,8 @@ import java.util.UUID;
  */
 
 @NoArgsConstructor
+@AllArgsConstructor
+@SuperBuilder
 @Getter
 @MappedSuperclass
 public abstract class AbstractLimitViolationEntity {
@@ -29,8 +31,6 @@ public abstract class AbstractLimitViolationEntity {
 
     @ManyToOne
     private SubjectLimitViolationEntity subjectLimitViolation;
-
-    private String subjectName;
 
     @Column(name = "limitValue")
     private double limit;
@@ -49,18 +49,6 @@ public abstract class AbstractLimitViolationEntity {
 
     @Enumerated(EnumType.STRING)
     private Branch.Side side;
-
-    protected AbstractLimitViolationEntity(SubjectLimitViolationEntity subjectLimitViolation, String subjectName, double limit, String limitName, LimitViolationType limitType, int acceptableDuration, float limitReduction, double value, Branch.Side side) {
-        this.subjectLimitViolation = subjectLimitViolation;
-        this.subjectName = subjectName;
-        this.limit = limit;
-        this.limitName = limitName;
-        this.limitType = limitType;
-        this.acceptableDuration = acceptableDuration;
-        this.limitReduction = limitReduction;
-        this.value = value;
-        this.side = side;
-    }
 
     public static LimitViolation toLimitViolation(AbstractLimitViolationEntity limitViolationEntity) {
         String subjectId = limitViolationEntity.getSubjectLimitViolation() != null

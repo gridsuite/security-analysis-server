@@ -22,8 +22,9 @@ import java.util.UUID;
 @Entity
 @Table(name = "subject_limit_violation")
 public class SubjectLimitViolationEntity {
-    public SubjectLimitViolationEntity(String subjectId) {
+    public SubjectLimitViolationEntity(String subjectId, String subjectName) {
         this.subjectId = subjectId;
+        this.subjectName = subjectName;
     }
 
     @Id
@@ -32,6 +33,8 @@ public class SubjectLimitViolationEntity {
 
     @Getter
     public String subjectId;
+
+    private String subjectName;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @Setter

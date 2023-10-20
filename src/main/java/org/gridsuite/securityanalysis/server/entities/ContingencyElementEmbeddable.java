@@ -11,6 +11,7 @@ import com.powsybl.contingency.ContingencyElementType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -18,6 +19,7 @@ import lombok.NoArgsConstructor;
  * @author Laurent GARNIER <laurent.garnier at rte-france.com>
  */
 @Getter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Embeddable
@@ -30,6 +32,9 @@ public class ContingencyElementEmbeddable {
     private String elementId;
 
     public static ContingencyElementEmbeddable toEntity(ContingencyElement contingencyElement) {
-        return new ContingencyElementEmbeddable(contingencyElement.getType(), contingencyElement.getId());
+        return ContingencyElementEmbeddable.builder()
+            .elementType(contingencyElement.getType())
+            .elementId(contingencyElement.getId())
+            .build();
     }
 }

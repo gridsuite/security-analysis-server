@@ -15,8 +15,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationToContingencyDTO;
-import org.gridsuite.securityanalysis.server.dto.ContingencyToSubjectLimitViolationDTO;
+import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationResultDTO;
+import org.gridsuite.securityanalysis.server.dto.ContingencyResultDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisRunContext;
@@ -25,7 +25,6 @@ import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerServi
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Mono;
 
 import java.util.Collections;
 import java.util.List;
@@ -61,7 +60,7 @@ public class SecurityAnalysisController {
                                         description = "The security analysis has been performed",
                                         content = {@Content(mediaType = APPLICATION_JSON_VALUE,
                                                             schema = @Schema(implementation = SecurityAnalysisResult.class))})})
-    public ResponseEntity<Mono<SecurityAnalysisResult>> run(@Parameter(description = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
+    public ResponseEntity<SecurityAnalysisResult> run(@Parameter(description = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
                                                             @Parameter(description = "Variant Id") @RequestParam(name = "variantId", required = false) String variantId,
                                                             @Parameter(description = "Other networks UUID (to merge with main one))") @RequestParam(name = "networkUuid", required = false) List<UUID> otherNetworkUuids,
                                                             @Parameter(description = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
@@ -71,7 +70,7 @@ public class SecurityAnalysisController {
                                                             @RequestBody(required = false) SecurityAnalysisParametersInfos parameters) {
         String providerToUse = provider != null ? provider : service.getDefaultProvider();
         List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
-        Mono<SecurityAnalysisResult> result = workerService.run(new SecurityAnalysisRunContext(networkUuid, variantId, nonNullOtherNetworkUuids, contigencyListNames, null, providerToUse, parameters, reportUuid, reporterId));
+        SecurityAnalysisResult result = workerService.run(new SecurityAnalysisRunContext(networkUuid, variantId, nonNullOtherNetworkUuids, contigencyListNames, null, providerToUse, parameters, reportUuid, reporterId));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
     }
 
@@ -81,7 +80,7 @@ public class SecurityAnalysisController {
                                         description = "The security analysis has been performed and results have been saved to database",
                                         content = {@Content(mediaType = APPLICATION_JSON_VALUE,
                                                             schema = @Schema(implementation = SecurityAnalysisResult.class))})})
-    public ResponseEntity<Mono<UUID>> runAndSave(@Parameter(description = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
+    public ResponseEntity<UUID> runAndSave(@Parameter(description = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
                                                  @Parameter(description = "Variant Id") @RequestParam(name = "variantId", required = false) String variantId,
                                                  @Parameter(description = "Other networks UUID (to merge with main one))") @RequestParam(name = "networkUuid", required = false) List<UUID> otherNetworkUuids,
                                                  @Parameter(description = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
@@ -92,7 +91,7 @@ public class SecurityAnalysisController {
                                                  @RequestBody(required = false) SecurityAnalysisParametersInfos parameters) {
         String providerToUse = provider != null ? provider : service.getDefaultProvider();
         List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
-        Mono<UUID> resultUuid = service.runAndSaveResult(new SecurityAnalysisRunContext(networkUuid, variantId, nonNullOtherNetworkUuids, contigencyListNames, receiver, providerToUse, parameters, reportUuid, reporterId));
+        UUID resultUuid = service.runAndSaveResult(new SecurityAnalysisRunContext(networkUuid, variantId, nonNullOtherNetworkUuids, contigencyListNames, receiver, providerToUse, parameters, reportUuid, reporterId));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(resultUuid);
     }
 
@@ -100,73 +99,77 @@ public class SecurityAnalysisController {
     @Operation(summary = "Get a security analysis result from the database - N result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public Mono<ResponseEntity<PreContingencyResult>> getNResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+    public ResponseEntity<PreContingencyResult> getNResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        PreContingencyResult result = service.getNResult(resultUuid);
 
-        Mono<PreContingencyResult> result = service.getNResult(resultUuid);
-        return result.map(r -> ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(r))
-            .defaultIfEmpty(ResponseEntity.notFound().build());
+        return result != null
+            ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
+            : ResponseEntity.notFound().build();
     }
 
     @GetMapping(value = "/results/{resultUuid}/nmk-contingencies-result", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get a security analysis result from the database - NMK contingencies result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public Mono<ResponseEntity<List<ContingencyToSubjectLimitViolationDTO>>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+    public ResponseEntity<List<ContingencyResultDTO>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        List<ContingencyResultDTO> result = service.getNmKContingenciesResult(resultUuid);
 
-        Mono<List<ContingencyToSubjectLimitViolationDTO>> result = service.getNmKContingenciesResult(resultUuid);
-        return result.map(r -> ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(r))
-            .defaultIfEmpty(ResponseEntity.notFound().build());
+        return result != null
+            ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
+            : ResponseEntity.notFound().build();
     }
 
     @GetMapping(value = "/results/{resultUuid}/nmk-constraints-result", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get a security analysis result from the database - NMK contingencies result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public Mono<ResponseEntity<List<SubjectLimitViolationToContingencyDTO>>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+    public ResponseEntity<List<SubjectLimitViolationResultDTO>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
 
-        Mono<List<SubjectLimitViolationToContingencyDTO>> result = service.getNmKConstraintsResult(resultUuid);
-        return result.map(r -> ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(r))
-            .defaultIfEmpty(ResponseEntity.notFound().build());
+        List<SubjectLimitViolationResultDTO> result = service.getNmKConstraintsResult(resultUuid);
+        return result != null
+            ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
+            : ResponseEntity.notFound().build();
     }
 
     @DeleteMapping(value = "/results/{resultUuid}", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Delete a security analysis result from the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result has been deleted")})
-    public ResponseEntity<Mono<Void>> deleteResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
-        Mono<Void> result = service.deleteResult(resultUuid);
-        return ResponseEntity.ok().body(result);
+    public ResponseEntity<Void> deleteResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        service.deleteResult(resultUuid);
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping(value = "/results", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Delete all security analysis results from the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "All security analysis results have been deleted")})
-    public ResponseEntity<Mono<Void>> deleteResults() {
-        Mono<Void> result = service.deleteResults();
-        return ResponseEntity.ok().body(result);
+    public ResponseEntity<Void> deleteResults() {
+        service.deleteResults();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping(value = "/results/{resultUuid}/status", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get the security analysis status from the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis status")})
-    public ResponseEntity<Mono<SecurityAnalysisStatus>> getStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
-        Mono<SecurityAnalysisStatus> result = service.getStatus(resultUuid);
+    public ResponseEntity<SecurityAnalysisStatus> getStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        SecurityAnalysisStatus result = service.getStatus(resultUuid);
         return ResponseEntity.ok().body(result);
     }
 
     @PutMapping(value = "/results/invalidate-status", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Invalidate the security analysis status from the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis status has been invalidated")})
-    public ResponseEntity<Mono<Void>> invalidateStatus(@Parameter(description = "Result uuids") @RequestParam(name = "resultUuid") List<UUID> resultUuids) {
-        return ResponseEntity.ok().body(service.setStatus(resultUuids, SecurityAnalysisStatus.NOT_DONE));
+    public ResponseEntity<Void> invalidateStatus(@Parameter(description = "Result uuids") @RequestParam(name = "resultUuid") List<UUID> resultUuids) {
+        service.setStatus(resultUuids, SecurityAnalysisStatus.NOT_DONE);
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping(value = "/results/{resultUuid}/stop", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Stop a security analysis computation")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis has been stopped")})
-    public ResponseEntity<Mono<Void>> stop(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+    public ResponseEntity<Void> stop(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                            @Parameter(description = "Result receiver") @RequestParam(name = "receiver", required = false) String receiver) {
-        Mono<Void> result = service.stop(resultUuid, receiver);
-        return ResponseEntity.ok().body(result);
+        service.stop(resultUuid, receiver);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping(value = "/providers", produces = APPLICATION_JSON_VALUE)

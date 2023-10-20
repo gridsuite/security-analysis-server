@@ -14,6 +14,7 @@ import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.*;
 import org.gridsuite.securityanalysis.server.repositories.*;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
+import org.jgrapht.alg.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,36 +61,18 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public List<ContingencyToSubjectLimitViolationDTO> findNmKContingenciesResult(UUID resultUuid) {
+    public List<ContingencyResultDTO> findNmKContingenciesResult(UUID resultUuid) {
         assertResultExists(resultUuid);
         List<ContingencyEntity> contingencies = contingencyRepository.findByResultIdAndStatusOrderByContingencyId(resultUuid, LoadFlowResult.ComponentResult.Status.CONVERGED.name());
-        return contingencies.stream().map(contingency -> {
-            List<SubjectLimitViolationFromContingencyDTO> subjectLimitViolations = contingency.getContingencyLimitViolations().stream()
-                .map(SubjectLimitViolationFromContingencyDTO::toDto)
-                .toList();
-            return new ContingencyToSubjectLimitViolationDTO(
-                contingency.getContingencyId(),
-                contingency.getStatus(),
-                contingency.getContingencyElements().stream().map(ContingencyElementDTO::toDto).toList(),
-                subjectLimitViolations
-            );
-        }).toList();
+        return contingencies.stream().map(ContingencyResultDTO::toDto).toList();
     }
 
     @Transactional(readOnly = true)
-    public List<SubjectLimitViolationToContingencyDTO> findNmKConstraintsResult(UUID resultUuid) {
+    public List<SubjectLimitViolationResultDTO> findNmKConstraintsResult(UUID resultUuid) {
         assertResultExists(resultUuid);
         List<SubjectLimitViolationEntity> subjectLimitViolations = subjectLimitViolationRepository.findByResultIdOrderBySubjectId(resultUuid);
 
-        return subjectLimitViolations.stream().map(subjectLimitViolation -> {
-            // we only keep converged contingencies here
-            List<ContingencyFromSubjectLimitViolationDTO> contingencies = subjectLimitViolation.getContingencyLimitViolations().stream()
-                .filter(lm -> LoadFlowResult.ComponentResult.Status.CONVERGED.name().equals(lm.getContingency().getStatus()))
-                .map(ContingencyFromSubjectLimitViolationDTO::toDto)
-                .toList();
-
-            return new SubjectLimitViolationToContingencyDTO(subjectLimitViolation.getSubjectId(), contingencies);
-        }).toList();
+        return subjectLimitViolations.stream().map(SubjectLimitViolationResultDTO::toDto).toList();
     }
 
     public void assertResultExists(UUID resultUuid) {
@@ -143,10 +126,9 @@ public class SecurityAnalysisResultService {
         return Stream.concat(
                 securityAnalysisResult.getPostContingencyResults().stream().flatMap(pcr -> pcr.getLimitViolationsResult().getLimitViolations().stream()),
                 securityAnalysisResult.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().stream())
-            .map(LimitViolation::getSubjectId)
+            .map(lm -> new Pair<>(lm.getSubjectId(), lm.getSubjectName()))
             .distinct()
-            .map(SubjectLimitViolationEntity::new)
+            .map(pair -> new SubjectLimitViolationEntity(pair.getFirst(), pair.getSecond()))
             .toList();
     }
-
 }

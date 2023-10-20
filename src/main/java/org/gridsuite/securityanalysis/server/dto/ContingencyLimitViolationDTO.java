@@ -6,28 +6,28 @@
  */
 package org.gridsuite.securityanalysis.server.dto;
 
-import com.powsybl.contingency.ContingencyElementType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.gridsuite.securityanalysis.server.entities.ContingencyElementEmbeddable;
+import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationEntity;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
 
 @Getter
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ContingencyElementDTO {
-    private String id;
-    private ContingencyElementType elementType;
+@Builder
+public class ContingencyLimitViolationDTO {
+    private ContingencyDTO contingency;
 
-    public static ContingencyElementDTO toDto(ContingencyElementEmbeddable contingencyElement) {
-        return ContingencyElementDTO.builder()
-            .id(contingencyElement.getElementId())
-            .elementType(contingencyElement.getElementType())
+    private LimitViolationDTO limitViolation;
+
+    public static ContingencyLimitViolationDTO toDto(ContingencyLimitViolationEntity limitViolation) {
+        return ContingencyLimitViolationDTO.builder()
+            .contingency(ContingencyDTO.toDto(limitViolation.getContingency()))
+            .limitViolation(LimitViolationDTO.toDto(limitViolation))
             .build();
     }
 }
