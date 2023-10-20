@@ -1,5 +1,31 @@
 <?xml version="1.1" encoding="UTF-8" standalone="no"?>
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="lesaulnierkev (generated)" id="1697104537367-20">
+        <dropTable tableName="COMPUTATION_STATUS"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1697104537367-21">
+        <dropTable tableName="GLOBAL_STATUS"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1697104537367-22">
+        <dropTable tableName="LIMIT_VIOLATION"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1697104537367-101">
+        <dropTable tableName="contingency_entity_contingency_elements"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1697104537367-102">
+        <createTable tableName="contingency_entity_contingency_elements">
+            <column name="element_id" type="VARCHAR(255)"/>
+            <column name="element_type" type="tinyint"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1697104537367-103">
+        <dropTable tableName="contingency"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1697104537367-104">
+        <createTable tableName="contingency">
+            <column name="contingency_id" type="VARCHAR(255)"/>
+        </createTable>
+    </changeSet>
     <changeSet author="lesaulnierkev (generated)" id="1697104537367-3">
         <createTable tableName="contingency_limit_violation">
             <column name="id" type="UUID">
@@ -83,15 +109,6 @@
             </column>
         </addColumn>
     </changeSet>
-    <changeSet author="lesaulnierkev (generated)" id="1697104537367-19">
-        <dropForeignKeyConstraint baseTableName="contingency_entity_contingency_elements" constraintName="FKpnmuij3qki9u4kf7omme39ugn"/>
-    </changeSet>
-    <changeSet author="lesaulnierkev (generated)" id="1697104537367-100">
-        <dropIndex indexName="contingency_entity_elements_idx" tableName="contingency_entity_contingency_elements"/>
-    </changeSet>
-    <changeSet author="lesaulnierkev (generated)" id="1697104537367-1">
-        <dropPrimaryKey tableName="contingency"/>
-    </changeSet>
     <changeSet author="lesaulnierkev (generated)" id="1697104537367-2">
         <addPrimaryKey columnNames="uuid" constraintName="contingencyPK" tableName="contingency"/>
     </changeSet>
@@ -120,23 +137,5 @@
     </changeSet>
     <changeSet author="lesaulnierkev (generated)" id="1697104537367-18">
         <addForeignKeyConstraint baseColumnNames="result_id" baseTableName="pre_contingency_limit_violation" constraintName="FKs49qjye9k7squgtn63kidym64" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="security_analysis_result" validate="true"/>
-    </changeSet>
-    <changeSet author="lesaulnierkev (generated)" id="1697104537367-20">
-        <dropTable tableName="COMPUTATION_STATUS"/>
-    </changeSet>
-    <changeSet author="lesaulnierkev (generated)" id="1697104537367-21">
-        <dropTable tableName="GLOBAL_STATUS"/>
-    </changeSet>
-    <changeSet author="lesaulnierkev (generated)" id="1697104537367-22">
-        <dropTable tableName="LIMIT_VIOLATION"/>
-    </changeSet>
-    <changeSet author="lesaulnierkev (generated)" id="1697104537367-23">
-        <dropColumn columnName="CONTINGENCY_ENTITY_CONTINGENCY_ID" tableName="CONTINGENCY_ENTITY_CONTINGENCY_ELEMENTS"/>
-    </changeSet>
-    <changeSet author="lesaulnierkev (generated)" id="1697104537367-24">
-        <dropColumn columnName="CONTINGENCY_ENTITY_RESULT_UUID" tableName="CONTINGENCY_ENTITY_CONTINGENCY_ELEMENTS"/>
-    </changeSet>
-    <changeSet author="lesaulnierkev (generated)" id="1697104537367-25">
-        <dropColumn columnName="RESULT_UUID" tableName="contingency"/>
     </changeSet>
 </databaseChangeLog>
