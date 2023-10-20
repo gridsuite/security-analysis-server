@@ -7,18 +7,16 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisProvider;
-import com.powsybl.security.SecurityAnalysisResult;
+import com.powsybl.security.results.PreContingencyResult;
+import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationResultDTO;
+import org.gridsuite.securityanalysis.server.dto.ContingencyResultDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
-import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -28,7 +26,7 @@ import java.util.stream.Collectors;
  */
 @Service
 public class SecurityAnalysisService {
-    private final SecurityAnalysisResultRepository resultRepository;
+    private final SecurityAnalysisResultService securityAnalysisResultService;
 
     private final UuidGeneratorService uuidGeneratorService;
 
@@ -38,52 +36,58 @@ public class SecurityAnalysisService {
 
     private final String defaultProvider;
 
-    public SecurityAnalysisService(SecurityAnalysisResultRepository resultRepository,
+    public SecurityAnalysisService(SecurityAnalysisResultService securityAnalysisResultService,
                                    UuidGeneratorService uuidGeneratorService,
                                    ObjectMapper objectMapper,
                                    NotificationService notificationService,
                                    @Value("${security-analysis.default-provider}") String defaultProvider) {
-        this.resultRepository = Objects.requireNonNull(resultRepository);
+        this.securityAnalysisResultService = Objects.requireNonNull(securityAnalysisResultService);
         this.uuidGeneratorService = Objects.requireNonNull(uuidGeneratorService);
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.notificationService = Objects.requireNonNull(notificationService);
         this.defaultProvider = Objects.requireNonNull(defaultProvider);
     }
 
-    public Mono<UUID> runAndSaveResult(SecurityAnalysisRunContext runContext) {
+    public UUID runAndSaveResult(SecurityAnalysisRunContext runContext) {
         Objects.requireNonNull(runContext);
         var resultUuid = uuidGeneratorService.generate();
-
         // update status to running status
-        return setStatus(List.of(resultUuid), SecurityAnalysisStatus.RUNNING).then(
-                Mono.fromRunnable(() ->
-                    notificationService.emitRunAnalysisMessage(new SecurityAnalysisResultContext(resultUuid, runContext).toMessage(objectMapper))
-                )
-                .thenReturn(resultUuid));
+        setStatus(List.of(resultUuid), SecurityAnalysisStatus.RUNNING);
+        notificationService.emitRunAnalysisMessage(new SecurityAnalysisResultContext(resultUuid, runContext).toMessage(objectMapper));
+
+        return resultUuid;
     }
 
-    public Mono<SecurityAnalysisResult> getResult(UUID resultUuid, Set<LimitViolationType> limitTypes) {
-        return Mono.fromCallable(() -> resultRepository.find(resultUuid, limitTypes));
+    public PreContingencyResult getNResult(UUID resultUuid) {
+        return securityAnalysisResultService.findNResult(resultUuid);
     }
 
-    public Mono<Void> deleteResult(UUID resultUuid) {
-        return Mono.fromRunnable(() -> resultRepository.delete(resultUuid));
+    public List<ContingencyResultDTO> getNmKContingenciesResult(UUID resultUuid) {
+        return securityAnalysisResultService.findNmKContingenciesResult(resultUuid);
     }
 
-    public Mono<Void> deleteResults() {
-        return Mono.fromRunnable(() -> resultRepository.deleteAll());
+    public List<SubjectLimitViolationResultDTO> getNmKConstraintsResult(UUID resultUuid) {
+        return securityAnalysisResultService.findNmKConstraintsResult(resultUuid);
     }
 
-    public Mono<SecurityAnalysisStatus> getStatus(UUID resultUuid) {
-        return Mono.fromCallable(() -> resultRepository.findStatus(resultUuid));
+    public void deleteResult(UUID resultUuid) {
+        securityAnalysisResultService.delete(resultUuid);
     }
 
-    public Mono<Void> setStatus(List<UUID> resultUuids, SecurityAnalysisStatus status) {
-        return Mono.fromRunnable(() -> resultRepository.insertStatus(resultUuids, status));
+    public void deleteResults() {
+        securityAnalysisResultService.deleteAll();
     }
 
-    public Mono<Void> stop(UUID resultUuid, String receiver) {
-        return Mono.fromRunnable(() -> notificationService.emitCancelAnalysisMessage(new SecurityAnalysisCancelContext(resultUuid, receiver).toMessage())).then();
+    public SecurityAnalysisStatus getStatus(UUID resultUuid) {
+        return securityAnalysisResultService.findStatus(resultUuid);
+    }
+
+    public void setStatus(List<UUID> resultUuids, SecurityAnalysisStatus status) {
+        securityAnalysisResultService.insertStatus(resultUuids, status);
+    }
+
+    public void stop(UUID resultUuid, String receiver) {
+        notificationService.emitCancelAnalysisMessage(new SecurityAnalysisCancelContext(resultUuid, receiver).toMessage());
     }
 
     public List<String> getProviders() {

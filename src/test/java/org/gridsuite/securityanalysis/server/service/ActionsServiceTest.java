@@ -14,18 +14,15 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.gridsuite.securityanalysis.server.WebFluxConfig;
+import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.codec.json.Jackson2JsonDecoder;
-import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.web.reactive.function.client.ExchangeStrategies;
-import org.springframework.web.reactive.function.client.WebClient;
 
 import java.io.IOException;
 import java.util.List;
@@ -40,7 +37,9 @@ import static org.junit.Assert.assertEquals;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  * @author Slimane Amar <slimane.amar at rte-france.com>
  */
+@SpringBootTest
 @RunWith(SpringRunner.class)
+@ContextConfigurationWithTestChannel
 public class ActionsServiceTest {
 
     private static final int DATA_BUFFER_LIMIT = 256 * 1024; // AbstractJackson2Decoder.maxInMemorySize
@@ -57,27 +56,18 @@ public class ActionsServiceTest {
 
     private static final Contingency CONTINGENCY_VARIANT = new Contingency("c2", new BranchContingency("b2"));
 
-    private final ObjectMapper objectMapper = WebFluxConfig.createObjectMapper();
-
-    private WebClient.Builder webClientBuilder;
+    @Autowired
+    private ObjectMapper objectMapper;
 
     private MockWebServer server;
 
+    @Autowired
     private ActionsService actionsService;
 
     @Before
     public void setUp() throws IOException {
-        webClientBuilder = WebClient.builder();
-        ExchangeStrategies strategies = ExchangeStrategies
-                .builder()
-                .codecs(clientDefaultCodecsConfigurer -> {
-                    clientDefaultCodecsConfigurer.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(objectMapper, MediaType.APPLICATION_JSON));
-                    clientDefaultCodecsConfigurer.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper, MediaType.APPLICATION_JSON));
-
-                }).build();
-        webClientBuilder.exchangeStrategies(strategies);
-
-        actionsService = new ActionsService(webClientBuilder, initMockWebServer());
+        String mockServerUri = initMockWebServer();
+        actionsService.setActionServiceBaseUri(mockServerUri);
     }
 
     @After
@@ -134,18 +124,18 @@ public class ActionsServiceTest {
 
     @Test
     public void test() {
-        List<Contingency> list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), null).collectList().block();
+        List<Contingency> list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), null);
         assertEquals(List.of(CONTINGENCY), list);
-        list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID).collectList().block();
+        list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID);
         assertEquals(List.of(CONTINGENCY_VARIANT), list);
     }
 
     @Test
     public void testVeryLargeList() {
         // DataBufferLimitException should not be thrown with this message : "Exceeded limit on max bytes to buffer : DATA_BUFFER_LIMIT"
-        List<Contingency> list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), null).collectList().block();
+        List<Contingency> list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), null);
         assertEquals(createVeryLargeList(), list);
-        list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID).collectList().block();
+        list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID);
         assertEquals(createVeryLargeList(), list);
     }
 }
