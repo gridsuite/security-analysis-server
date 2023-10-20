@@ -58,7 +58,7 @@ class SubjectLimitViolationRepositoryTest {
         "provideEachColumnFilter"
     })
     void findFilteredSubjectLimitViolationResultsTest(List<FilterDTO> filters, Pageable pageable, List<SubjectLimitViolationResultDTO> expectedResult) {
-        Specification<SubjectLimitViolationEntity> specification = SubjectLimitViolationRepository.getSpecification(resultEntity.getId(), filters);
+        Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getSpecification(resultEntity.getId(), filters);
         Page<SubjectLimitViolationEntity> subjectLimitViolationPage = subjectLimitViolationRepository.findAll(specification, pageable);
         // assert subject ids to check parent filters
         assertThat(subjectLimitViolationPage.getContent()).extracting("subjectId").containsExactlyElementsOf(expectedResult.stream().map(c -> c.getSubjectId()).toList());

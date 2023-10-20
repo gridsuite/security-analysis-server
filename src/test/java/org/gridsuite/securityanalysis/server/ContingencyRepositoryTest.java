@@ -61,7 +61,7 @@ class ContingencyRepositoryTest {
         "provideCollectionOfFilters"
     })
     void findFilteredContingencyResultsTest(List<FilterDTO> filters, Pageable pageable, List<ContingencyResultDTO> expectedResult) {
-        Specification<ContingencyEntity> specification = ContingencyRepository.getSpecification(resultEntity.getId(), filters);
+        Specification<ContingencyEntity> specification = contingencyRepository.getSpecification(resultEntity.getId(), filters);
         Page<ContingencyEntity> contingenciesPage = contingencyRepository.findAll(specification, pageable);
         // assert contingency ids to check parent filters
         assertThat(contingenciesPage.getContent()).extracting("contingencyId").containsExactlyElementsOf(expectedResult.stream().map(c -> c.getContingency().getContingencyId()).toList());

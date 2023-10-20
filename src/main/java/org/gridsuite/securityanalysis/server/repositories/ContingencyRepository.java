@@ -17,7 +17,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,39 +25,11 @@ import java.util.UUID;
  */
 
 @Repository
-public interface ContingencyRepository extends JpaRepository<ContingencyEntity, UUID>, JpaSpecificationExecutor<ContingencyEntity> {
+public interface ContingencyRepository extends CommonLimitViolationRepository<ContingencyEntity>, JpaRepository<ContingencyEntity, UUID>, JpaSpecificationExecutor<ContingencyEntity> {
     Page<ContingencyEntity> findAll(Specification<ContingencyEntity> specification, Pageable pageable);
 
-    static Specification<ContingencyEntity> getSpecification(
-        UUID resultUuid,
-        List<FilterDTO> filters
-    ) {
-        return (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
-
-            // criteria in contingencyEntity
-            // filter by resultUuid
-            predicates.add(criteriaBuilder.equal(root.get("result").get("id"), resultUuid));
-
-            // user filters
-            List<FilterDTO> parentFilters = filters.stream().filter(f -> isParentFilter(f)).toList();
-            parentFilters.forEach(filter -> addPredicate(criteriaBuilder, root, predicates, filter));
-
-            // pageable makes a count request which should only count contingency results, not joined rows
-            if (!CriteriaUtils.currentQueryIsCountRecords(query)) {
-                // join fetch contingencyLimitViolation table
-                Join<Object, Object> contingencyLimitViolation = (Join<Object, Object>) root.fetch("contingencyLimitViolations", JoinType.LEFT);
-
-                // criteria in contingencyLimitViolationEntity
-                List<FilterDTO> nestedFilters = filters.stream().filter(f -> !isParentFilter(f)).toList();
-                nestedFilters.forEach(filter -> addJoinFilter(criteriaBuilder, contingencyLimitViolation, filter));
-            }
-
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
-    }
-
-    private static void addPredicate(CriteriaBuilder criteriaBuilder,
+    @Override
+    default void addPredicate(CriteriaBuilder criteriaBuilder,
                                       Root<ContingencyEntity> path,
                                       List<Predicate> predicates,
                                       FilterDTO filter) {
@@ -72,7 +43,8 @@ public interface ContingencyRepository extends JpaRepository<ContingencyEntity, 
         CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, fieldName);
     }
 
-    private static void addJoinFilter(CriteriaBuilder criteriaBuilder,
+    @Override
+    default void addJoinFilter(CriteriaBuilder criteriaBuilder,
                                       Join<?, ?> joinPath,
                                       FilterDTO filter) {
         String fieldName;
@@ -92,7 +64,8 @@ public interface ContingencyRepository extends JpaRepository<ContingencyEntity, 
         CriteriaUtils.addJoinFilter(criteriaBuilder, joinPath, filter, fieldName, subFieldName);
     }
 
-    private static boolean isParentFilter(FilterDTO filter) {
+    @Override
+    default boolean isParentFilter(FilterDTO filter) {
         return List.of(FilterDTO.FilterColumn.CONTINGENCY_ID, FilterDTO.FilterColumn.STATUS).contains(filter.column());
     }
 }
