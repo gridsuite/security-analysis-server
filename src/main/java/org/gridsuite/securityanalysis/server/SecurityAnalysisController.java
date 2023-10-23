@@ -95,7 +95,7 @@ public class SecurityAnalysisController {
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(resultUuid);
     }
 
-    @GetMapping(value = "/results/{resultUuid}/n-result", produces = APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/results/{resultUuid}/n-result/paged", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get a security analysis result from the database - N result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
@@ -107,7 +107,7 @@ public class SecurityAnalysisController {
             : ResponseEntity.notFound().build();
     }
 
-    @GetMapping(value = "/results/{resultUuid}/nmk-contingencies-result", produces = APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/results/{resultUuid}/nmk-contingencies-result/paged", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get a security analysis result from the database - NMK contingencies result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
@@ -122,7 +122,7 @@ public class SecurityAnalysisController {
             : ResponseEntity.notFound().build();
     }
 
-    @GetMapping(value = "/results/{resultUuid}/nmk-constraints-result", produces = APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/results/{resultUuid}/nmk-constraints-result/paged", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get a security analysis result from the database - NMK contingencies result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
