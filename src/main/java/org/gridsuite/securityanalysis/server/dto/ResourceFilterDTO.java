@@ -12,6 +12,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -57,7 +59,7 @@ public record ResourceFilterDTO(DataType dataType, Type type, Object value, Filt
             return List.of();
         }
         ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.readValue(filters, new TypeReference<>() {
+        return objectMapper.readValue(URLDecoder.decode(filters, StandardCharsets.UTF_8), new TypeReference<>() {
         });
     }
 }
