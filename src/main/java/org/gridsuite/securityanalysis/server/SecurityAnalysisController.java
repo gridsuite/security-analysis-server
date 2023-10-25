@@ -22,6 +22,7 @@ import org.gridsuite.securityanalysis.server.service.SecurityAnalysisService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -98,13 +99,16 @@ public class SecurityAnalysisController {
     @GetMapping(value = "/results/{resultUuid}/n-result/paged", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get a security analysis result from the database - N result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
-        @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public ResponseEntity<PreContingencyResult> getNResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
-        PreContingencyResult result = service.getNResult(resultUuid);
+            @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
+    public ResponseEntity<PreContingencyResult> getNResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                                           @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
+                                                           Pageable pageable) throws JsonProcessingException {
+        List<FilterDTO> filters = FilterDTO.fromStringToList(stringFilters);
+        PreContingencyResult result = service.getNResult(resultUuid, filters, pageable.getSort());
 
         return result != null
-            ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
-            : ResponseEntity.notFound().build();
+                ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
+                : ResponseEntity.notFound().build();
     }
 
     @GetMapping(value = "/results/{resultUuid}/nmk-contingencies-result/paged", produces = APPLICATION_JSON_VALUE)

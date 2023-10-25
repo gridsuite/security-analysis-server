@@ -16,6 +16,7 @@ import org.gridsuite.securityanalysis.server.repositories.*;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.jgrapht.alg.util.Pair;
 import org.springframework.stereotype.Service;
@@ -45,14 +46,17 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public PreContingencyResult findNResult(UUID resultUuid) {
+    public PreContingencyResult findNResult(UUID resultUuid, List<FilterDTO> filters, Sort sort) {
+
+
         Optional<SecurityAnalysisResultEntity> securityAnalysisResult = securityAnalysisResultRepository.findById(resultUuid);
         if (securityAnalysisResult.isEmpty()) {
             return null;
         }
-        List<PreContingencyLimitViolationEntity> preContingencyLimitViolationEntities = preContingencyLimitViolationRepository.findByResultId(resultUuid);
 
-        List<LimitViolation> preContingencyLimitViolations = preContingencyLimitViolationEntities.stream()
+        Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationRepository.getSpecification(resultUuid, filters);
+        List<PreContingencyLimitViolationEntity> preContingencyLimitViolationPaged = preContingencyLimitViolationRepository.findAll(specification, sort);
+        List<LimitViolation> preContingencyLimitViolations = preContingencyLimitViolationPaged.stream()
             .map(AbstractLimitViolationEntity::toLimitViolation)
             .toList();
 

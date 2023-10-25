@@ -13,6 +13,7 @@ import org.gridsuite.securityanalysis.server.dto.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -58,8 +59,8 @@ public class SecurityAnalysisService {
         return resultUuid;
     }
 
-    public PreContingencyResult getNResult(UUID resultUuid) {
-        return securityAnalysisResultService.findNResult(resultUuid);
+    public PreContingencyResult getNResult(UUID resultUuid, List<FilterDTO> filters, Sort sort) {
+        return securityAnalysisResultService.findNResult(resultUuid, filters, sort);
     }
 
     public Page<ContingencyResultDTO> getNmKContingenciesResult(UUID resultUuid, List<FilterDTO> filters, Pageable pageable) {
