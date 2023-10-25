@@ -57,7 +57,7 @@ class SubjectLimitViolationRepositoryTest {
         "provideNestedFilter",
         "provideEachColumnFilter"
     })
-    void findFilteredSubjectLimitViolationResultsTest(List<FilterDTO> filters, Pageable pageable, List<SubjectLimitViolationResultDTO> expectedResult) {
+    void findFilteredSubjectLimitViolationResultsTest(List<ResourceFilterDTO> filters, Pageable pageable, List<SubjectLimitViolationResultDTO> expectedResult) {
         Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getSpecification(resultEntity.getId(), filters);
         Page<SubjectLimitViolationEntity> subjectLimitViolationPage = subjectLimitViolationRepository.findAll(specification, pageable);
         // assert subject ids to check parent filters
@@ -85,37 +85,37 @@ class SubjectLimitViolationRepositoryTest {
 
     private Stream<Arguments> provideParentFilter() {
         return Stream.of(
-            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "3", FilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", ResourceFilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30),
                 RESULT_CONSTRAINTS.stream().filter(c -> c.getSubjectId().contains("3")).toList()),
-            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.STARTS_WITH, "l", FilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "l", ResourceFilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30),
                 RESULT_CONSTRAINTS.stream().filter(c -> c.getSubjectId().startsWith("l")).toList()),
-            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.STARTS_WITH, "3", FilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", ResourceFilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30),
                 RESULT_CONSTRAINTS.stream().filter(c -> c.getSubjectId().startsWith("3")).toList())
         );
     }
 
     private Stream<Arguments> provideNestedFilter() {
         return Stream.of(
-            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "3", FilterDTO.FilterColumn.CONTINGENCY_ID)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", ResourceFilterDTO.FilterColumn.CONTINGENCY_ID)), PageRequest.of(0, 30),
                 getResultConstraintsWithNestedFilter(lm -> lm.getContingency().getContingencyId().contains("3"))),
-            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "l", FilterDTO.FilterColumn.CONTINGENCY_ID)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "l", ResourceFilterDTO.FilterColumn.CONTINGENCY_ID)), PageRequest.of(0, 30),
                 getResultConstraintsWithNestedFilter(lm -> lm.getContingency().getContingencyId().contains("l"))),
-            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.STARTS_WITH, "3", FilterDTO.FilterColumn.CONTINGENCY_ID)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", ResourceFilterDTO.FilterColumn.CONTINGENCY_ID)), PageRequest.of(0, 30),
                 getResultConstraintsWithNestedFilter(lm -> lm.getContingency().getContingencyId().startsWith("3"))),
-            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.STARTS_WITH, "l", FilterDTO.FilterColumn.CONTINGENCY_ID)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "l", ResourceFilterDTO.FilterColumn.CONTINGENCY_ID)), PageRequest.of(0, 30),
                 getResultConstraintsWithNestedFilter(lm -> lm.getContingency().getContingencyId().startsWith("l")))
         );
     }
 
     private Stream<Arguments> provideEachColumnFilter() {
         return Stream.of(
-            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "CO", FilterDTO.FilterColumn.STATUS)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "CO", ResourceFilterDTO.FilterColumn.STATUS)), PageRequest.of(0, 30),
                 getResultConstraintsWithNestedFilter(lm -> lm.getContingency().getComputationStatus().contains("CO"))),
-            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "l1", FilterDTO.FilterColumn.LIMIT_NAME)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "l1", ResourceFilterDTO.FilterColumn.LIMIT_NAME)), PageRequest.of(0, 30),
                 getResultConstraintsWithNestedFilter(lm -> lm.getLimitViolation().getLimitName().contains("l1"))),
-            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "GH", FilterDTO.FilterColumn.LIMIT_TYPE)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "GH", ResourceFilterDTO.FilterColumn.LIMIT_TYPE)), PageRequest.of(0, 30),
                 getResultConstraintsWithNestedFilter(lm -> lm.getLimitViolation().getLimitType().name().contains("GH"))),
-            Arguments.of(List.of(new FilterDTO(FilterDTO.DataType.TEXT, FilterDTO.Type.CONTAINS, "ON", FilterDTO.FilterColumn.SIDE)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "ON", ResourceFilterDTO.FilterColumn.SIDE)), PageRequest.of(0, 30),
                 getResultConstraintsWithNestedFilter(lm -> lm.getLimitViolation().getSide() != null && lm.getLimitViolation().getSide().name().contains("ON")))
         );
     }

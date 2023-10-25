@@ -114,7 +114,7 @@ public class SecurityAnalysisController {
     public ResponseEntity<Page<ContingencyResultDTO>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                                                       @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
                                                                                       Pageable pageable) throws JsonProcessingException {
-        List<FilterDTO> filters = FilterDTO.fromStringToList(stringFilters);
+        List<ResourceFilterDTO> filters = ResourceFilterDTO.fromStringToList(stringFilters);
         Page<ContingencyResultDTO> result = service.getNmKContingenciesResult(resultUuid, filters, pageable);
 
         return result != null
@@ -129,7 +129,7 @@ public class SecurityAnalysisController {
     public ResponseEntity<Page<SubjectLimitViolationResultDTO>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                                                         @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
                                                                                         Pageable pageable) throws JsonProcessingException {
-        List<FilterDTO> filters = FilterDTO.fromStringToList(stringFilters);
+        List<ResourceFilterDTO> filters = ResourceFilterDTO.fromStringToList(stringFilters);
         Page<SubjectLimitViolationResultDTO> result = service.getNmKConstraintsResult(resultUuid, filters, pageable);
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)

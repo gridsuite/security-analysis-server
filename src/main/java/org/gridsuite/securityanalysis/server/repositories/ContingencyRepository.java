@@ -8,7 +8,7 @@
 package org.gridsuite.securityanalysis.server.repositories;
 
 import jakarta.persistence.criteria.*;
-import org.gridsuite.securityanalysis.server.dto.FilterDTO;
+import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,7 +31,7 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
     default void addPredicate(CriteriaBuilder criteriaBuilder,
                                       Root<ContingencyEntity> path,
                                       List<Predicate> predicates,
-                                      FilterDTO filter) {
+                                      ResourceFilterDTO filter) {
 
         String fieldName = switch (filter.column()) {
             case CONTINGENCY_ID -> "contingencyId";
@@ -44,7 +44,7 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
 
     default void addJoinFilter(CriteriaBuilder criteriaBuilder,
                                       Join<?, ?> joinPath,
-                                      FilterDTO filter) {
+                                      ResourceFilterDTO filter) {
         String fieldName;
         String subFieldName = null;
 
@@ -62,7 +62,7 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
         CriteriaUtils.addJoinFilter(criteriaBuilder, joinPath, filter, fieldName, subFieldName);
     }
 
-    default boolean isParentFilter(FilterDTO filter) {
-        return List.of(FilterDTO.FilterColumn.CONTINGENCY_ID, FilterDTO.FilterColumn.STATUS).contains(filter.column());
+    default boolean isParentFilter(ResourceFilterDTO filter) {
+        return List.of(ResourceFilterDTO.FilterColumn.CONTINGENCY_ID, ResourceFilterDTO.FilterColumn.STATUS).contains(filter.column());
     }
 }
