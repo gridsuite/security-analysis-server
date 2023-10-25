@@ -110,7 +110,7 @@ class SubjectLimitViolationRepositoryTest {
     private Stream<Arguments> provideEachColumnFilter() {
         return Stream.of(
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "CO", ResourceFilterDTO.FilterColumn.STATUS)), PageRequest.of(0, 30),
-                getResultConstraintsWithNestedFilter(lm -> lm.getContingency().getComputationStatus().contains("CO"))),
+                getResultConstraintsWithNestedFilter(lm -> lm.getContingency().getStatus().contains("CO"))),
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "l1", ResourceFilterDTO.FilterColumn.LIMIT_NAME)), PageRequest.of(0, 30),
                 getResultConstraintsWithNestedFilter(lm -> lm.getLimitViolation().getLimitName().contains("l1"))),
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "GH", ResourceFilterDTO.FilterColumn.LIMIT_TYPE)), PageRequest.of(0, 30),

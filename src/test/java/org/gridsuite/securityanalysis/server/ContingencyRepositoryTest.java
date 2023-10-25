@@ -115,7 +115,7 @@ class ContingencyRepositoryTest {
     private Stream<Arguments> provideEachColumnFilter() {
         return Stream.of(
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "CO", ResourceFilterDTO.FilterColumn.STATUS)), PageRequest.of(0, 30),
-                RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getComputationStatus().contains("CO")).toList()),
+                RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getStatus().contains("CO")).toList()),
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "l1", ResourceFilterDTO.FilterColumn.LIMIT_NAME)), PageRequest.of(0, 30),
                 getResultContingenciesWithNestedFilter(lm -> lm.getLimitViolation().getLimitName().contains("l1"))),
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "HIGH_VOLTAGE", ResourceFilterDTO.FilterColumn.LIMIT_TYPE)), PageRequest.of(0, 30),
