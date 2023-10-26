@@ -7,6 +7,10 @@
 package org.gridsuite.securityanalysis.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.powsybl.iidm.network.Branch;
+import com.powsybl.loadflow.LoadFlow;
+import com.powsybl.loadflow.LoadFlowResult;
+import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.results.PreContingencyResult;
 import io.swagger.v3.oas.annotations.Operation;
@@ -190,5 +194,26 @@ public class SecurityAnalysisController {
     @ApiResponses(@ApiResponse(responseCode = "200", description = "The security analysis default provider has been found"))
     public ResponseEntity<String> getDefaultProvider() {
         return ResponseEntity.ok().body(service.getDefaultProvider());
+    }
+
+    @GetMapping(value = "/limit-types", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get available limit types")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "List of available limit types"))
+    public ResponseEntity<LimitViolationType[]> getLimitTypes() {
+        return ResponseEntity.ok().body(LimitViolationType.values());
+    }
+
+    @GetMapping(value = "/branch-sides", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get available branch sides")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "List of available branch sides"))
+    public ResponseEntity<Branch.Side[]> getBranchSides() {
+        return ResponseEntity.ok().body(Branch.Side.values());
+    }
+
+    @GetMapping(value = "/computation-status", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get available computation status")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "List of available computation status"))
+    public ResponseEntity<LoadFlowResult.ComponentResult.Status[]> getComputationStatus() {
+        return ResponseEntity.ok().body(LoadFlowResult.ComponentResult.Status.values());
     }
 }
