@@ -8,7 +8,6 @@ package org.gridsuite.securityanalysis.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.powsybl.iidm.network.Branch;
-import com.powsybl.loadflow.LoadFlow;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
@@ -116,8 +115,8 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<Page<ContingencyResultDTO>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
-                                                                                      @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
-                                                                                      Pageable pageable) throws JsonProcessingException {
+                                                                                    @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
+                                                                                    @Parameter(description = "Pagination parameters") Pageable pageable) throws JsonProcessingException {
         List<ResourceFilterDTO> filters = ResourceFilterDTO.fromStringToList(stringFilters);
         Page<ContingencyResultDTO> result = service.getNmKContingenciesResult(resultUuid, filters, pageable);
 
@@ -132,7 +131,7 @@ public class SecurityAnalysisController {
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<Page<SubjectLimitViolationResultDTO>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                                                         @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
-                                                                                        Pageable pageable) throws JsonProcessingException {
+                                                                                        @Parameter(description = "Pagination parameters") Pageable pageable) throws JsonProcessingException {
         List<ResourceFilterDTO> filters = ResourceFilterDTO.fromStringToList(stringFilters);
         Page<SubjectLimitViolationResultDTO> result = service.getNmKConstraintsResult(resultUuid, filters, pageable);
         return result != null
