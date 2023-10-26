@@ -63,11 +63,11 @@ public class SecurityAnalysisService {
         return securityAnalysisResultService.findNResult(resultUuid, filters, sort);
     }
 
-    public Page<ContingencyResultDTO> getNmKContingenciesResult(UUID resultUuid, List<FilterDTO> filters, Pageable pageable) {
+    public Page<ContingencyResultDTO> getNmKContingenciesResult(UUID resultUuid, List<ResourceFilterDTO> filters, Pageable pageable) {
         return securityAnalysisResultService.findNmKContingenciesResult(resultUuid, filters, pageable);
     }
 
-    public Page<SubjectLimitViolationResultDTO> getNmKConstraintsResult(UUID resultUuid, List<FilterDTO> filters, Pageable pageable) {
+    public Page<SubjectLimitViolationResultDTO> getNmKConstraintsResult(UUID resultUuid, List<ResourceFilterDTO> filters, Pageable pageable) {
         return securityAnalysisResultService.findNmKConstraintsResult(resultUuid, filters, pageable);
     }
 

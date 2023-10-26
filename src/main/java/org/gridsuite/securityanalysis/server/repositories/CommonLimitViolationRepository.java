@@ -1,7 +1,7 @@
 package org.gridsuite.securityanalysis.server.repositories;
 
 import jakarta.persistence.criteria.*;
-import org.gridsuite.securityanalysis.server.dto.FilterDTO;
+import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ public interface CommonLimitViolationRepository<T> {
       */
     default Specification<T> getSpecification(
         UUID resultUuid,
-        List<FilterDTO> filters
+        List<ResourceFilterDTO> filters
     ) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -26,7 +26,7 @@ public interface CommonLimitViolationRepository<T> {
             predicates.add(criteriaBuilder.equal(root.get("result").get("id"), resultUuid));
 
             // user filters
-            List<FilterDTO> parentFilters = filters.stream().filter(this::isParentFilter).toList();
+            List<ResourceFilterDTO> parentFilters = filters.stream().filter(this::isParentFilter).toList();
             parentFilters.forEach(filter -> addPredicate(criteriaBuilder, root, predicates, filter));
 
             // pageable makes a count request which should only count contingency results, not joined rows
@@ -35,7 +35,7 @@ public interface CommonLimitViolationRepository<T> {
                 Join<Object, Object> contingencyLimitViolation = (Join<Object, Object>) root.fetch("contingencyLimitViolations", JoinType.LEFT);
 
                 // criteria in contingencyLimitViolationEntity
-                List<FilterDTO> nestedFilters = filters.stream().filter(f -> !isParentFilter(f)).toList();
+                List<ResourceFilterDTO> nestedFilters = filters.stream().filter(f -> !isParentFilter(f)).toList();
                 nestedFilters.forEach(filter -> addJoinFilter(criteriaBuilder, contingencyLimitViolation, filter));
             }
 
@@ -46,11 +46,11 @@ public interface CommonLimitViolationRepository<T> {
     void addPredicate(CriteriaBuilder criteriaBuilder,
                                      Root<T> path,
                                      List<Predicate> predicates,
-                                     FilterDTO filter);
+                                     ResourceFilterDTO filter);
 
     void addJoinFilter(CriteriaBuilder criteriaBuilder,
                                       Join<?, ?> joinPath,
-                                      FilterDTO filter);
+                                      ResourceFilterDTO filter);
 
-    boolean isParentFilter(FilterDTO filter);
+    boolean isParentFilter(ResourceFilterDTO filter);
 }

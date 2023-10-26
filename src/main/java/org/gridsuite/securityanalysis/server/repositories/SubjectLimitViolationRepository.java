@@ -7,7 +7,7 @@
 package org.gridsuite.securityanalysis.server.repositories;
 
 import jakarta.persistence.criteria.*;
-import org.gridsuite.securityanalysis.server.dto.FilterDTO;
+import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,7 +27,7 @@ public interface SubjectLimitViolationRepository extends CommonLimitViolationRep
     default void addPredicate(CriteriaBuilder criteriaBuilder,
                                      Root<SubjectLimitViolationEntity> path,
                                      List<Predicate> predicates,
-                                     FilterDTO filter) {
+                                     ResourceFilterDTO filter) {
 
         String fieldName = switch (filter.column()) {
             case SUBJECT_ID -> "subjectId";
@@ -39,7 +39,7 @@ public interface SubjectLimitViolationRepository extends CommonLimitViolationRep
 
     default void addJoinFilter(CriteriaBuilder criteriaBuilder,
                                       Join<?, ?> joinPath,
-                                      FilterDTO filter) {
+                                      ResourceFilterDTO filter) {
         String fieldName;
         String subFieldName = null;
 
@@ -61,7 +61,7 @@ public interface SubjectLimitViolationRepository extends CommonLimitViolationRep
         CriteriaUtils.addJoinFilter(criteriaBuilder, joinPath, filter, fieldName, subFieldName);
     }
 
-    default boolean isParentFilter(FilterDTO filter) {
-        return List.of(FilterDTO.FilterColumn.SUBJECT_ID).contains(filter.column());
+    default boolean isParentFilter(ResourceFilterDTO filter) {
+        return List.of(ResourceFilterDTO.FilterColumn.SUBJECT_ID).contains(filter.column());
     }
 }

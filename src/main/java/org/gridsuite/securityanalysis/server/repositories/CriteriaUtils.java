@@ -1,7 +1,7 @@
 package org.gridsuite.securityanalysis.server.repositories;
 
 import jakarta.persistence.criteria.*;
-import org.gridsuite.securityanalysis.server.dto.FilterDTO;
+import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.springframework.data.jpa.repository.query.EscapeCharacter;
 import org.springframework.util.CollectionUtils;
 
@@ -16,7 +16,7 @@ public final class CriteriaUtils {
     public static void addPredicate(CriteriaBuilder criteriaBuilder,
                                      Path<?> path,
                                      List<Predicate> predicates,
-                                     FilterDTO filter,
+                                     ResourceFilterDTO filter,
                                      String fieldName) {
         addPredicate(criteriaBuilder, path, predicates, filter, fieldName, null);
     }
@@ -24,7 +24,7 @@ public final class CriteriaUtils {
     public static void addPredicate(CriteriaBuilder criteriaBuilder,
                                      Path<?> path,
                                      List<Predicate> predicates,
-                                     FilterDTO filter,
+                                     ResourceFilterDTO filter,
                                      String fieldName,
                                      String subFieldName) {
         Predicate predicate = filterToPredicate(criteriaBuilder, path, filter, fieldName, subFieldName);
@@ -36,7 +36,7 @@ public final class CriteriaUtils {
     // add condition on <joinPath>
     public static void addJoinFilter(CriteriaBuilder criteriaBuilder,
                                          Join<?, ?> joinPath,
-                                         FilterDTO filter,
+                                         ResourceFilterDTO filter,
                                          String fieldName,
                                          String subFieldName) {
         Predicate predicate = filterToPredicate(criteriaBuilder, joinPath, filter, fieldName, subFieldName);
@@ -55,7 +55,7 @@ public final class CriteriaUtils {
      */
     private static Predicate filterToPredicate(CriteriaBuilder criteriaBuilder,
                                                 Path<?> path,
-                                                FilterDTO filter,
+                                                ResourceFilterDTO filter,
                                                 String fieldName,
                                                 String subFieldName) {
         // expression targets field to filter on
@@ -79,14 +79,15 @@ public final class CriteriaUtils {
     /**
      * returns atomic predicate depending on filter.dataType() and filter.type()
      */
-    private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder, Expression<?> expression, FilterDTO filter, Object value) {
-        if (filter.dataType().equals(FilterDTO.DataType.TEXT)) {
+    private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder, Expression<?> expression, ResourceFilterDTO filter, Object value) {
+        if (filter.dataType().equals(ResourceFilterDTO.DataType.TEXT)) {
             String filterValue = (String) value;
-            // this makes contains/startsWith query work with enum values
+            // this makes equals query work with enum values
             Expression<String> stringExpression = expression.as(String.class);
             return switch (filter.type()) {
                 case CONTAINS -> criteriaBuilder.like(stringExpression, "%" + EscapeCharacter.DEFAULT.escape(filterValue) + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
                 case STARTS_WITH -> criteriaBuilder.like(stringExpression, EscapeCharacter.DEFAULT.escape(filterValue) + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
+                case EQUALS -> criteriaBuilder.equal(stringExpression, filterValue);
             };
         }
 

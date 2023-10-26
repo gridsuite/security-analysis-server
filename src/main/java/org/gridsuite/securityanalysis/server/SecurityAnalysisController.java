@@ -7,6 +7,9 @@
 package org.gridsuite.securityanalysis.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.powsybl.iidm.network.Branch;
+import com.powsybl.loadflow.LoadFlowResult;
+import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.results.PreContingencyResult;
 import io.swagger.v3.oas.annotations.Operation;
@@ -96,7 +99,7 @@ public class SecurityAnalysisController {
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(resultUuid);
     }
 
-    @GetMapping(value = "/results/{resultUuid}/n-result/paged", produces = APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/results/{resultUuid}/n-result", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get a security analysis result from the database - N result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
             @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
@@ -116,9 +119,9 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<Page<ContingencyResultDTO>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
-                                                                                      @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
-                                                                                      Pageable pageable) throws JsonProcessingException {
-        List<FilterDTO> filters = FilterDTO.fromStringToList(stringFilters);
+                                                                                    @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
+                                                                                    @Parameter(description = "Pagination parameters") Pageable pageable) throws JsonProcessingException {
+        List<ResourceFilterDTO> filters = ResourceFilterDTO.fromStringToList(stringFilters);
         Page<ContingencyResultDTO> result = service.getNmKContingenciesResult(resultUuid, filters, pageable);
 
         return result != null
@@ -132,8 +135,8 @@ public class SecurityAnalysisController {
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<Page<SubjectLimitViolationResultDTO>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                                                         @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
-                                                                                        Pageable pageable) throws JsonProcessingException {
-        List<FilterDTO> filters = FilterDTO.fromStringToList(stringFilters);
+                                                                                        @Parameter(description = "Pagination parameters") Pageable pageable) throws JsonProcessingException {
+        List<ResourceFilterDTO> filters = ResourceFilterDTO.fromStringToList(stringFilters);
         Page<SubjectLimitViolationResultDTO> result = service.getNmKConstraintsResult(resultUuid, filters, pageable);
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
@@ -194,5 +197,26 @@ public class SecurityAnalysisController {
     @ApiResponses(@ApiResponse(responseCode = "200", description = "The security analysis default provider has been found"))
     public ResponseEntity<String> getDefaultProvider() {
         return ResponseEntity.ok().body(service.getDefaultProvider());
+    }
+
+    @GetMapping(value = "/limit-types", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get available limit types")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "List of available limit types"))
+    public ResponseEntity<LimitViolationType[]> getLimitTypes() {
+        return ResponseEntity.ok().body(LimitViolationType.values());
+    }
+
+    @GetMapping(value = "/branch-sides", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get available branch sides")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "List of available branch sides"))
+    public ResponseEntity<Branch.Side[]> getBranchSides() {
+        return ResponseEntity.ok().body(Branch.Side.values());
+    }
+
+    @GetMapping(value = "/computation-status", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get available computation status")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "List of available computation status"))
+    public ResponseEntity<LoadFlowResult.ComponentResult.Status[]> getComputationStatus() {
+        return ResponseEntity.ok().body(LoadFlowResult.ComponentResult.Status.values());
     }
 }

@@ -68,7 +68,7 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ContingencyResultDTO> findNmKContingenciesResult(UUID resultUuid, List<FilterDTO> filters, Pageable pageable) {
+    public Page<ContingencyResultDTO> findNmKContingenciesResult(UUID resultUuid, List<ResourceFilterDTO> filters, Pageable pageable) {
         assertResultExists(resultUuid);
 
         Specification<ContingencyEntity> specification = contingencyRepository.getSpecification(resultUuid, filters);
@@ -78,7 +78,7 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public Page<SubjectLimitViolationResultDTO> findNmKConstraintsResult(UUID resultUuid, List<FilterDTO> filters, Pageable pageable) {
+    public Page<SubjectLimitViolationResultDTO> findNmKConstraintsResult(UUID resultUuid, List<ResourceFilterDTO> filters, Pageable pageable) {
         assertResultExists(resultUuid);
         Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getSpecification(
             resultUuid,

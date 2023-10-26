@@ -12,6 +12,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
@@ -21,7 +23,7 @@ import java.util.List;
  * @param value the value of the filter
  * @param column the column / field on which the filter will be applied
  */
-public record FilterDTO(DataType dataType, Type type, Object value, FilterColumn column) {
+public record ResourceFilterDTO(DataType dataType, Type type, Object value, FilterColumn column) {
 
     public enum DataType {
         @JsonProperty("text")
@@ -33,6 +35,8 @@ public record FilterDTO(DataType dataType, Type type, Object value, FilterColumn
         CONTAINS,
         @JsonProperty("startsWith")
         STARTS_WITH,
+        @JsonProperty("equals")
+        EQUALS
     }
 
     public enum FilterColumn {
@@ -50,12 +54,12 @@ public record FilterDTO(DataType dataType, Type type, Object value, FilterColumn
         SIDE
     }
 
-    public static List<FilterDTO> fromStringToList(String filters) throws JsonProcessingException {
+    public static List<ResourceFilterDTO> fromStringToList(String filters) throws JsonProcessingException {
         if (filters == null || filters.isEmpty()) {
             return List.of();
         }
         ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.readValue(filters, new TypeReference<>() {
+        return objectMapper.readValue(URLDecoder.decode(filters, StandardCharsets.UTF_8), new TypeReference<>() {
         });
     }
 }
