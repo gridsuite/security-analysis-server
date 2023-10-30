@@ -46,7 +46,7 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public PreContingencyResult findNResult(UUID resultUuid, List<FilterDTO> filters, Sort sort) {
+    public PreContingencyResult findNResult(UUID resultUuid, List<ResourceFilterDTO> filters, Sort sort) {
 
 
         Optional<SecurityAnalysisResultEntity> securityAnalysisResult = securityAnalysisResultRepository.findById(resultUuid);

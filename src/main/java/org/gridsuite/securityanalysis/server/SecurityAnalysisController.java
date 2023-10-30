@@ -106,7 +106,7 @@ public class SecurityAnalysisController {
     public ResponseEntity<PreContingencyResult> getNResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                            @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
                                                            Pageable pageable) throws JsonProcessingException {
-        List<FilterDTO> filters = FilterDTO.fromStringToList(stringFilters);
+        List<ResourceFilterDTO> filters = ResourceFilterDTO.fromStringToList(stringFilters);
         PreContingencyResult result = service.getNResult(resultUuid, filters, pageable.getSort());
 
         return result != null

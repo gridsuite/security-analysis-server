@@ -50,6 +50,8 @@ public record ResourceFilterDTO(DataType dataType, Type type, Object value, Filt
         LIMIT_TYPE,
         @JsonProperty("limitName")
         LIMIT_NAME,
+        @JsonProperty("limitValue")
+        LIMIT_VALUE,
         @JsonProperty("side")
         SIDE
     }

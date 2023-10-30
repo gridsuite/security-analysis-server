@@ -59,7 +59,7 @@ public class SecurityAnalysisService {
         return resultUuid;
     }
 
-    public PreContingencyResult getNResult(UUID resultUuid, List<FilterDTO> filters, Sort sort) {
+    public PreContingencyResult getNResult(UUID resultUuid, List<ResourceFilterDTO> filters, Sort sort) {
         return securityAnalysisResultService.findNResult(resultUuid, filters, sort);
     }
 
