@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static java.util.function.Predicate.not;
+
 public interface CommonLimitViolationRepository<T> {
     /**
      * Returns specification depending on {filters}
@@ -26,8 +28,8 @@ public interface CommonLimitViolationRepository<T> {
             predicates.add(criteriaBuilder.equal(root.get("result").get("id"), resultUuid));
 
             // user filters
-            List<ResourceFilterDTO> parentFilters = filters.stream().filter(this::isParentFilter).toList();
-            parentFilters.forEach(filter -> addPredicate(criteriaBuilder, root, predicates, filter));
+            filters.stream().filter(this::isParentFilter)
+                .forEach(filter -> addPredicate(criteriaBuilder, root, predicates, filter));
 
             // pageable makes a count request which should only count contingency results, not joined rows
             if (!CriteriaUtils.currentQueryIsCountRecords(query)) {
@@ -35,11 +37,11 @@ public interface CommonLimitViolationRepository<T> {
                 Join<Object, Object> contingencyLimitViolation = (Join<Object, Object>) root.fetch("contingencyLimitViolations", JoinType.LEFT);
 
                 // criteria in contingencyLimitViolationEntity
-                List<ResourceFilterDTO> nestedFilters = filters.stream().filter(f -> !isParentFilter(f)).toList();
-                nestedFilters.forEach(filter -> addJoinFilter(criteriaBuilder, contingencyLimitViolation, filter));
+                filters.stream().filter(not(this::isParentFilter))
+                    .forEach(filter -> addJoinFilter(criteriaBuilder, contingencyLimitViolation, filter));
             }
 
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+            return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         };
     }
 

@@ -90,46 +90,46 @@ class ContingencyRepositoryTest {
 
     private Stream<Arguments> provideParentFilter() {
         return Stream.of(
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", ResourceFilterDTO.FilterColumn.CONTINGENCY_ID)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", ResourceFilterDTO.Column.CONTINGENCY_ID)), PageRequest.of(0, 30),
                 RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getContingencyId().contains("3")).toList()),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "l", ResourceFilterDTO.FilterColumn.CONTINGENCY_ID)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "l", ResourceFilterDTO.Column.CONTINGENCY_ID)), PageRequest.of(0, 30),
                 RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getContingencyId().startsWith("l")).toList()),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", ResourceFilterDTO.FilterColumn.CONTINGENCY_ID)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", ResourceFilterDTO.Column.CONTINGENCY_ID)), PageRequest.of(0, 30),
                 RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getContingencyId().startsWith("3")).toList())
         );
     }
 
     private Stream<Arguments> provideNestedFilter() {
         return Stream.of(
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", ResourceFilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30),
                 getResultContingenciesWithNestedFilter(c -> c.getSubjectId().contains("3"))),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "l", ResourceFilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "l", ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30),
                 getResultContingenciesWithNestedFilter(slv -> slv.getSubjectId().contains("l"))),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", ResourceFilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30),
                 getResultContingenciesWithNestedFilter(slv -> slv.getSubjectId().startsWith("3"))),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "l", ResourceFilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "l", ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30),
                 getResultContingenciesWithNestedFilter(slv -> slv.getSubjectId().startsWith("l")))
         );
     }
 
     private Stream<Arguments> provideEachColumnFilter() {
         return Stream.of(
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "CO", ResourceFilterDTO.FilterColumn.STATUS)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "CO", ResourceFilterDTO.Column.STATUS)), PageRequest.of(0, 30),
                 RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getStatus().contains("CO")).toList()),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "l1", ResourceFilterDTO.FilterColumn.LIMIT_NAME)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "l1", ResourceFilterDTO.Column.LIMIT_NAME)), PageRequest.of(0, 30),
                 getResultContingenciesWithNestedFilter(lm -> lm.getLimitViolation().getLimitName().contains("l1"))),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "HIGH_VOLTAGE", ResourceFilterDTO.FilterColumn.LIMIT_TYPE)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "HIGH_VOLTAGE", ResourceFilterDTO.Column.LIMIT_TYPE)), PageRequest.of(0, 30),
                 getResultContingenciesWithNestedFilter(lm -> lm.getLimitViolation().getLimitType().name().equals("HIGH_VOLTAGE"))),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "ONE", ResourceFilterDTO.FilterColumn.SIDE)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "ONE", ResourceFilterDTO.Column.SIDE)), PageRequest.of(0, 30),
                 getResultContingenciesWithNestedFilter(lm -> lm.getLimitViolation().getSide() != null && lm.getLimitViolation().getSide().name().equals("ONE")))
         );
     }
 
     private Stream<Arguments> provideCollectionFilter() {
         return Stream.of(
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, List.of("1", "3"), ResourceFilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, List.of("1", "3"), ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30),
                 getResultContingenciesWithNestedFilter(lm -> lm.getSubjectId().contains("1") || lm.getSubjectId().contains("3"))),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, List.of("HIGH_VOLTAGE", "CURRENT"), ResourceFilterDTO.FilterColumn.LIMIT_TYPE)), PageRequest.of(0, 30),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, List.of("HIGH_VOLTAGE", "CURRENT"), ResourceFilterDTO.Column.LIMIT_TYPE)), PageRequest.of(0, 30),
                 getResultContingenciesWithNestedFilter(lm -> lm.getLimitViolation().getLimitType().name().equals("HIGH_VOLTAGE") || lm.getLimitViolation().getLimitType().name().equals("CURRENT")))
         );
     }
@@ -138,8 +138,8 @@ class ContingencyRepositoryTest {
         return Stream.of(
             Arguments.of(
                 List.of(
-                    new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, List.of("1", "3"), ResourceFilterDTO.FilterColumn.SUBJECT_ID),
-                    new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, List.of("HIGH_VOLTAGE"), ResourceFilterDTO.FilterColumn.LIMIT_TYPE)
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, List.of("1", "3"), ResourceFilterDTO.Column.SUBJECT_ID),
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, List.of("HIGH_VOLTAGE"), ResourceFilterDTO.Column.LIMIT_TYPE)
                 ),
                 PageRequest.of(0, 30),
                 getResultContingenciesWithNestedFilter(lm -> (lm.getSubjectId().contains("1") || lm.getSubjectId().contains("3")) && lm.getLimitViolation().getLimitType().name().equals("HIGH_VOLTAGE")))
@@ -149,7 +149,7 @@ class ContingencyRepositoryTest {
     private Stream<Arguments> provideEdgeCasesFilters() {
         return Stream.of(
             Arguments.of(List.of(), PageRequest.of(0, 30), RESULT_CONTINGENCIES),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, List.of(), ResourceFilterDTO.FilterColumn.SUBJECT_ID)), PageRequest.of(0, 30), RESULT_CONTINGENCIES)
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, List.of(), ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30), RESULT_CONTINGENCIES)
         );
     }
 

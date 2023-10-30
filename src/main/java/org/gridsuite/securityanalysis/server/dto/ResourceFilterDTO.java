@@ -8,13 +8,6 @@
 package org.gridsuite.securityanalysis.server.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 /**
  * An object that can be used to filter data with the JPA Criteria API (via Spring Specification)
@@ -23,7 +16,7 @@ import java.util.List;
  * @param value the value of the filter
  * @param column the column / field on which the filter will be applied
  */
-public record ResourceFilterDTO(DataType dataType, Type type, Object value, FilterColumn column) {
+public record ResourceFilterDTO(DataType dataType, Type type, Object value, Column column) {
 
     public enum DataType {
         @JsonProperty("text")
@@ -31,18 +24,15 @@ public record ResourceFilterDTO(DataType dataType, Type type, Object value, Filt
     }
 
     public enum Type {
-        @JsonProperty("contains")
         CONTAINS,
         @JsonProperty("startsWith")
         STARTS_WITH,
-        @JsonProperty("equals")
         EQUALS
     }
 
-    public enum FilterColumn {
+    public enum Column {
         @JsonProperty("contingencyId")
         CONTINGENCY_ID,
-        @JsonProperty("status")
         STATUS,
         @JsonProperty("subjectId")
         SUBJECT_ID,
@@ -50,16 +40,6 @@ public record ResourceFilterDTO(DataType dataType, Type type, Object value, Filt
         LIMIT_TYPE,
         @JsonProperty("limitName")
         LIMIT_NAME,
-        @JsonProperty("side")
         SIDE
-    }
-
-    public static List<ResourceFilterDTO> fromStringToList(String filters) throws JsonProcessingException {
-        if (filters == null || filters.isEmpty()) {
-            return List.of();
-        }
-        ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.readValue(URLDecoder.decode(filters, StandardCharsets.UTF_8), new TypeReference<>() {
-        });
     }
 }
