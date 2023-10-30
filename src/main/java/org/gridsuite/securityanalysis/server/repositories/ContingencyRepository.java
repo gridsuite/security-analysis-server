@@ -24,11 +24,6 @@ import java.util.UUID;
 
 @Repository
 public interface ContingencyRepository extends CommonLimitViolationRepository<ContingencyEntity>, JpaRepository<ContingencyEntity, UUID>, JpaSpecificationExecutor<ContingencyEntity> {
-
-    EnumSet<ResourceFilterDTO.Column> PARENT_FILTER_TYPES = EnumSet.of(
-        ResourceFilterDTO.Column.CONTINGENCY_ID, ResourceFilterDTO.Column.STATUS
-    );
-
     @Override
     default void addPredicate(CriteriaBuilder criteriaBuilder,
                                       Root<ContingencyEntity> path,
@@ -61,6 +56,6 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
 
     @Override
     default boolean isParentFilter(ResourceFilterDTO filter) {
-        return PARENT_FILTER_TYPES.contains(filter.column());
+        return List.of(ResourceFilterDTO.Column.CONTINGENCY_ID, ResourceFilterDTO.Column.STATUS).contains(filter.column());
     }
 }
