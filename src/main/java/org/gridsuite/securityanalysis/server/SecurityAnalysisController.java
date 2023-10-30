@@ -122,7 +122,8 @@ public class SecurityAnalysisController {
     public ResponseEntity<Page<ContingencyResultDTO>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                                                     @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
                                                                                     @Parameter(description = "Pagination parameters") Pageable pageable) {
-        Page<ContingencyResultDTO> result = securityAnalysisResultService.findNmKContingenciesResult(resultUuid, URLDecoder.decode(stringFilters, StandardCharsets.UTF_8), pageable);
+        String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
+        Page<ContingencyResultDTO> result = securityAnalysisResultService.findNmKContingenciesResult(resultUuid, decodedStringFilters, pageable);
 
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
@@ -136,7 +137,8 @@ public class SecurityAnalysisController {
     public ResponseEntity<Page<SubjectLimitViolationResultDTO>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                                                         @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
                                                                                         @Parameter(description = "Pagination parameters") Pageable pageable) {
-        Page<SubjectLimitViolationResultDTO> result = securityAnalysisResultService.findNmKConstraintsResult(resultUuid, URLDecoder.decode(stringFilters, StandardCharsets.UTF_8), pageable);
+        String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
+        Page<SubjectLimitViolationResultDTO> result = securityAnalysisResultService.findNmKConstraintsResult(resultUuid, decodedStringFilters, pageable);
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
             : ResponseEntity.notFound().build();
