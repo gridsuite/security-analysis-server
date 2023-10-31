@@ -32,7 +32,6 @@ public class NotificationService {
     public static final String MESSAGE_HEADER = "message";
     public static final String NETWORK_UUID_HEADER = "networkUuid";
     public static final String VARIANT_ID_HEADER = "variantId";
-    public static final String OTHER_NETWORK_UUIDS_HEADER = "otherNetworkUuids";
     public static final String CONTINGENCY_LIST_NAMES_HEADER = "contingencyListNames";
     public static final String PROVIDER_HEADER = "provider";
     public static final String REPORT_UUID_HEADER = "reportUuid";

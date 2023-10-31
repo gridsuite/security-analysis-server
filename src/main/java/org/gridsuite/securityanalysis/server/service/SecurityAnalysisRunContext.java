@@ -26,8 +26,6 @@ public class SecurityAnalysisRunContext {
 
     private final String variantId;
 
-    private final List<UUID> otherNetworkUuids;
-
     private final List<String> contingencyListNames;
 
     private final String receiver;
@@ -40,16 +38,15 @@ public class SecurityAnalysisRunContext {
 
     private final String reporterId;
 
-    public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<UUID> otherNetworkUuids, List<String> contingencyListNames,
+    public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParametersInfos parameters, UUID reportUuid, String reporterId) {
-        this(networkUuid, variantId, otherNetworkUuids, contingencyListNames, receiver, provider, buildParameters(parameters, provider), reportUuid, reporterId);
+        this(networkUuid, variantId, contingencyListNames, receiver, provider, buildParameters(parameters, provider), reportUuid, reporterId);
     }
 
-    public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<UUID> otherNetworkUuids, List<String> contingencyListNames,
+    public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParameters parameters, UUID reportUuid, String reporterId) {
         this.networkUuid = Objects.requireNonNull(networkUuid);
         this.variantId = variantId;
-        this.otherNetworkUuids = Objects.requireNonNull(otherNetworkUuids);
         this.contingencyListNames = Objects.requireNonNull(contingencyListNames);
         this.receiver = receiver;
         this.provider = provider;
@@ -79,10 +76,6 @@ public class SecurityAnalysisRunContext {
 
     public String getVariantId() {
         return variantId;
-    }
-
-    public List<UUID> getOtherNetworkUuids() {
-        return otherNetworkUuids;
     }
 
     public List<String> getContingencyListNames() {
