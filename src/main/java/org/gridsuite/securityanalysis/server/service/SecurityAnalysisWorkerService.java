@@ -135,7 +135,11 @@ public class SecurityAnalysisWorkerService {
     }
 
     public SecurityAnalysisResult run(SecurityAnalysisRunContext context) {
-        return run(context, null);
+        try {
+            return run(context, null);
+        } catch (ExecutionException e) {
+            throw new SecurityAnalysisException(SecurityAnalysisException.Type.COMPUTATION_RUN_ERROR);
+        }
     }
 
     private CompletableFuture<SecurityAnalysisResult> runASAsync(SecurityAnalysisRunContext context,
@@ -197,7 +201,7 @@ public class SecurityAnalysisWorkerService {
         LOGGER.info(CANCEL_MESSAGE + " (resultUuid='{}')", resultUuid);
     }
 
-    private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) {
+    private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) throws ExecutionException {
         Objects.requireNonNull(context);
 
         LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(LogUtils::sanitizeParam).collect(Collectors.toList()));
@@ -223,9 +227,7 @@ public class SecurityAnalysisWorkerService {
         SecurityAnalysisResult result;
         try {
             result = future == null ? null : future.get();
-        } catch (ExecutionException e) {
-            throw new SecurityAnalysisException(SecurityAnalysisException.Type.COMPUTATION_RUN_ERROR);
-        } catch (InterruptedException e) {
+        }  catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new SecurityAnalysisException(SecurityAnalysisException.Type.COMPUTATION_RUN_ERROR);
         }
