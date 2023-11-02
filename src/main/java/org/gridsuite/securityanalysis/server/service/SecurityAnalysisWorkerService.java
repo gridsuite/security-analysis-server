@@ -201,6 +201,8 @@ public class SecurityAnalysisWorkerService {
         LOGGER.info(CANCEL_MESSAGE + " (resultUuid='{}')", resultUuid);
     }
 
+    @SuppressWarnings("java:S2142") // "InterruptedException" and "ThreadDeath" should not be ignored
+    // we should not interrupt this thread, otherwise consumer is interrupted, and no security analysis can be run anymore
     private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) throws ExecutionException {
         Objects.requireNonNull(context);
 

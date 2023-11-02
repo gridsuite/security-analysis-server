@@ -18,6 +18,7 @@ import com.powsybl.security.*;
 import com.powsybl.security.action.Action;
 import com.powsybl.security.strategy.OperatorStrategy;
 import org.gridsuite.securityanalysis.server.dto.*;
+import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,7 +116,9 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     static final String VARIANT_2_ID = "variant_2";
     static final String VARIANT_3_ID = "variant_3";
     static final String VARIANT_TO_STOP_ID = "variant_to_stop";
-
+    static final String VARIANT_SHOULD_FAIL = "variant_should_fail";
+    static final String VARIANT_SHOULD_INTERRUPT = "variant_should_interrupt";
+    
     static CountDownLatch countDownLatch;
 
     public CompletableFuture<SecurityAnalysisReport> run(Network network,
@@ -138,6 +141,10 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                 countDownLatch.countDown();
                 // creating a long completable future which is here to be canceled
                 return new CompletableFuture<SecurityAnalysisReport>().completeOnTimeout(REPORT, 3, TimeUnit.SECONDS);
+            case VARIANT_SHOULD_FAIL:
+                return new CompletableFuture<SecurityAnalysisReport>().completeAsync(() -> {
+                    throw new SecurityAnalysisException(SecurityAnalysisException.Type.COMPUTATION_RUN_ERROR);
+                });
             default:
                 return CompletableFuture.completedFuture(REPORT);
         }

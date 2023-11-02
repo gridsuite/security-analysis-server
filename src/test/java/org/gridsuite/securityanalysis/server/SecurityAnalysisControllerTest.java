@@ -255,6 +255,10 @@ public class SecurityAnalysisControllerTest {
         resultAsString = mvcResult.getResponse().getContentAsString();
         securityAnalysisResult = mapper.readValue(resultAsString, SecurityAnalysisResult.class);
         assertThat(RESULT, new MatcherJson<>(mapper, securityAnalysisResult));
+
+        // run with error during execution
+        mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?contingencyListName=" + CONTINGENCY_LIST_NAME_VARIANT + "&variantId=" + VARIANT_SHOULD_FAIL + "&provider=OpenLoadFlow"))
+            .andExpect(status().isInternalServerError());
     }
 
     @Test
@@ -484,7 +488,7 @@ public class SecurityAnalysisControllerTest {
         when(completableFuture.thenApply(any())).thenReturn(completableFuture);
         when(securityAnalysisProvider.run(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(completableFuture);
         mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_STOP_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
-            + "&receiver=me&variantId=" + "variant_should_interrupt"));
+            + "&receiver=me&variantId=" + VARIANT_SHOULD_INTERRUPT));
     }
 
     @Test
