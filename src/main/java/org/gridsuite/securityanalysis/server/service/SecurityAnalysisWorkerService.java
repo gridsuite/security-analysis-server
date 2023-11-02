@@ -12,7 +12,6 @@ import com.powsybl.commons.PowsyblException;
 import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.commons.reporter.ReporterModel;
 import com.powsybl.contingency.Contingency;
-import com.powsybl.iidm.mergingview.MergingView;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.loadflow.LoadFlowResult;
@@ -35,7 +34,6 @@ import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -113,27 +111,6 @@ public class SecurityAnalysisWorkerService {
         }
     }
 
-    private Network getNetwork(UUID networkUuid, List<UUID> otherNetworkUuids) {
-        Network network = getNetwork(networkUuid);
-        if (otherNetworkUuids.isEmpty()) {
-            return network;
-        } else {
-            List<Network> networks = new ArrayList<>();
-            List<Network> otherNetworks = otherNetworkUuids
-                .stream()
-                .map(this::getNetwork)
-                .collect(Collectors.toList());
-
-            networks.add(network);
-            networks.addAll(otherNetworks);
-
-            MergingView mergingView = MergingView.create("merge", "iidm");
-            mergingView.merge(networks.toArray(new Network[0]));
-
-            return mergingView;
-        }
-    }
-
     public SecurityAnalysisResult run(SecurityAnalysisRunContext context) {
         try {
             return run(context, null);
@@ -208,7 +185,7 @@ public class SecurityAnalysisWorkerService {
 
         LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(LogUtils::sanitizeParam).collect(Collectors.toList()));
 
-        Network network = getNetwork(context.getNetworkUuid(), context.getOtherNetworkUuids());
+        Network network = getNetwork(context.getNetworkUuid());
 
         List<Contingency> contingencies = context.getContingencyListNames().stream()
             .map(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid(), context.getVariantId()))
