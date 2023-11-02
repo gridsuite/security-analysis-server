@@ -13,7 +13,8 @@ import java.util.Objects;
 
 public class SecurityAnalysisException extends RuntimeException {
     public enum Type {
-        RESULT_NOT_FOUND
+        RESULT_NOT_FOUND,
+        COMPUTATION_RUN_ERROR
     }
 
     private final Type type;

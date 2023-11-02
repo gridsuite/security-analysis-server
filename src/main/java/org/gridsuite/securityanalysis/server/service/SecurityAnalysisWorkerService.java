@@ -25,6 +25,7 @@ import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.ws.commons.LogUtils;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
+import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -134,11 +135,7 @@ public class SecurityAnalysisWorkerService {
     }
 
     public SecurityAnalysisResult run(SecurityAnalysisRunContext context) {
-        try {
-            return run(context, null);
-        } catch (ExecutionException | InterruptedException e) {
-            throw new CancellationException(e.getMessage());
-        }
+        return run(context, null);
     }
 
     private CompletableFuture<SecurityAnalysisResult> runASAsync(SecurityAnalysisRunContext context,
@@ -200,7 +197,7 @@ public class SecurityAnalysisWorkerService {
         LOGGER.info(CANCEL_MESSAGE + " (resultUuid='{}')", resultUuid);
     }
 
-    private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) throws ExecutionException, InterruptedException {
+    private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) {
         Objects.requireNonNull(context);
 
         LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(LogUtils::sanitizeParam).collect(Collectors.toList()));
@@ -223,8 +220,16 @@ public class SecurityAnalysisWorkerService {
         }
 
         CompletableFuture<SecurityAnalysisResult> future = runASAsync(context, securityAnalysisRunner, network, contingencies, reporter, resultUuid);
+        SecurityAnalysisResult result;
+        try {
+            result = future == null ? null : future.get();
+        } catch (ExecutionException e) {
+            throw new SecurityAnalysisException(SecurityAnalysisException.Type.COMPUTATION_RUN_ERROR);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new SecurityAnalysisException(SecurityAnalysisException.Type.COMPUTATION_RUN_ERROR);
+        }
 
-        SecurityAnalysisResult result = future == null ? null : future.get();
         if (context.getReportUuid() != null) {
             Reporter finalRootReporter = rootReporter;
             reportService.sendReport(context.getReportUuid(), finalRootReporter);
@@ -263,8 +268,6 @@ public class SecurityAnalysisWorkerService {
                         cleanASResultsAndPublishCancel(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
                     }
                 }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
             } catch (Exception e) {
                 LOGGER.error(FAIL_MESSAGE, e);
                 if (!(e instanceof CancellationException)) {
