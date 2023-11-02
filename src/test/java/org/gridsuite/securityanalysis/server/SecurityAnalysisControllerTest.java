@@ -35,6 +35,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +45,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.Message;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -53,6 +55,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
@@ -465,6 +468,24 @@ public class SecurityAnalysisControllerTest {
         assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
         assertEquals("me", message.getHeaders().get("receiver"));
         assertEquals(CANCEL_MESSAGE, message.getHeaders().get("message"));
+    }
+
+    @Test
+    public void interruptRun() throws Exception {
+        Constructor<SecurityAnalysis.Runner> constructor = SecurityAnalysis.Runner.class.getDeclaredConstructor(SecurityAnalysisProvider.class);
+        constructor.setAccessible(true);
+
+        SecurityAnalysisProvider securityAnalysisProvider = Mockito.mock(SecurityAnalysisProvider.class);
+        SecurityAnalysis.Runner runner = constructor.newInstance(securityAnalysisProvider);
+        // mock the powsybl security analysis
+        workerService.setSecurityAnalysisFactorySupplier(provider -> runner);
+
+        CompletableFuture completableFuture = Mockito.mock(CompletableFuture.class);
+        when(completableFuture.get()).thenThrow(new InterruptedException());
+        when(completableFuture.thenApply(any())).thenReturn(completableFuture);
+        when(securityAnalysisProvider.run(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(completableFuture);
+        mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_STOP_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
+            + "&receiver=me&variantId=" + "variant_should_interrupt"));
     }
 
     @Test

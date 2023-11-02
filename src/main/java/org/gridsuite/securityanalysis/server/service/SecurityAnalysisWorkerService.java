@@ -228,7 +228,6 @@ public class SecurityAnalysisWorkerService {
         try {
             result = future == null ? null : future.get();
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
             throw new SecurityAnalysisException(SecurityAnalysisException.Type.COMPUTATION_RUN_ERROR);
         }
 
