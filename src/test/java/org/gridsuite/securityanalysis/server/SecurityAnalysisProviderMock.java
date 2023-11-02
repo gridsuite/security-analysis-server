@@ -118,7 +118,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     static final String VARIANT_TO_STOP_ID = "variant_to_stop";
     static final String VARIANT_SHOULD_FAIL = "variant_should_fail";
     static final String VARIANT_SHOULD_INTERRUPT = "variant_should_interrupt";
-    
+
     static CountDownLatch countDownLatch;
 
     public CompletableFuture<SecurityAnalysisReport> run(Network network,

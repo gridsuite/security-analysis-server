@@ -486,9 +486,13 @@ public class SecurityAnalysisControllerTest {
         CompletableFuture completableFuture = Mockito.mock(CompletableFuture.class);
         when(completableFuture.get()).thenThrow(new InterruptedException());
         when(completableFuture.thenApply(any())).thenReturn(completableFuture);
+
         when(securityAnalysisProvider.run(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any())).thenReturn(completableFuture);
+
         mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_STOP_UUID + "/run-and-save?contingencyListName=" + CONTINGENCY_LIST_NAME
             + "&receiver=me&variantId=" + VARIANT_SHOULD_INTERRUPT));
+
+        assertResultNotFound(RESULT_UUID);
     }
 
     @Test
