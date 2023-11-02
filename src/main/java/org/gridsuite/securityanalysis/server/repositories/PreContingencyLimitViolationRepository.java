@@ -82,16 +82,16 @@ public interface PreContingencyLimitViolationRepository extends  CommonLimitViol
         String subFieldName = null;
 
         switch (filter.column()) {
-            case SUBJECT_ID -> fieldName = "subjectId";
+            case SUBJECT_ID -> fieldName = "subjectLimitViolation.subjectId";
             default -> throw new UnsupportedOperationException("This method should be called for nested filters only");
         }
 
-        CriteriaUtils.addJoinFilter(criteriaBuilder, joinPath, filter, fieldName, subFieldName);
+        CriteriaUtils.addJoinFilter(criteriaBuilder, joinPath, filter, fieldName);
     }
 
     @Override
     default boolean isParentFilter(ResourceFilterDTO filter) {
-        return List.of(ResourceFilterDTO.FilterColumn.SUBJECT_ID).contains(filter.column());
+        return ResourceFilterDTO.Column.SUBJECT_ID == filter.column();
 
     }
 }

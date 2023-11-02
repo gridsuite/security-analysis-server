@@ -8,12 +8,8 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisProvider;
-import com.powsybl.security.results.PreContingencyResult;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -57,18 +53,6 @@ public class SecurityAnalysisService {
         notificationService.emitRunAnalysisMessage(new SecurityAnalysisResultContext(resultUuid, runContext).toMessage(objectMapper));
 
         return resultUuid;
-    }
-
-    public PreContingencyResult getNResult(UUID resultUuid, List<ResourceFilterDTO> filters, Sort sort) {
-        return securityAnalysisResultService.findNResult(resultUuid, filters, sort);
-    }
-
-    public Page<ContingencyResultDTO> getNmKContingenciesResult(UUID resultUuid, List<ResourceFilterDTO> filters, Pageable pageable) {
-        return securityAnalysisResultService.findNmKContingenciesResult(resultUuid, filters, pageable);
-    }
-
-    public Page<SubjectLimitViolationResultDTO> getNmKConstraintsResult(UUID resultUuid, List<ResourceFilterDTO> filters, Pageable pageable) {
-        return securityAnalysisResultService.findNmKConstraintsResult(resultUuid, filters, pageable);
     }
 
     public void deleteResult(UUID resultUuid) {

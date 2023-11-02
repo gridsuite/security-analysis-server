@@ -6,7 +6,6 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.powsybl.iidm.network.Branch;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.security.LimitViolationType;
@@ -20,6 +19,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.gridsuite.securityanalysis.server.dto.*;
+import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisRunContext;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
@@ -30,6 +30,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -45,13 +47,16 @@ import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 @RequestMapping(value = "/" + SecurityAnalysisApi.API_VERSION)
 @Tag(name = "Security analysis server")
 public class SecurityAnalysisController {
-    private final SecurityAnalysisService service;
+    private final SecurityAnalysisService securityAnalysisService;
+
+    private final SecurityAnalysisResultService securityAnalysisResultService;
 
     private final SecurityAnalysisWorkerService workerService;
 
-    public SecurityAnalysisController(SecurityAnalysisService service, SecurityAnalysisWorkerService workerService) {
-        this.service = service;
+    public SecurityAnalysisController(SecurityAnalysisService securityAnalysisService, SecurityAnalysisWorkerService workerService, SecurityAnalysisResultService securityAnalysisResultService) {
+        this.securityAnalysisService = securityAnalysisService;
         this.workerService = workerService;
+        this.securityAnalysisResultService = securityAnalysisResultService;
     }
 
     private static List<UUID> getNonNullOtherNetworkUuids(List<UUID> otherNetworkUuids) {
@@ -72,7 +77,7 @@ public class SecurityAnalysisController {
                                                             @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
                                                             @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
                                                             @RequestBody(required = false) SecurityAnalysisParametersInfos parameters) {
-        String providerToUse = provider != null ? provider : service.getDefaultProvider();
+        String providerToUse = provider != null ? provider : securityAnalysisService.getDefaultProvider();
         List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
         SecurityAnalysisResult result = workerService.run(new SecurityAnalysisRunContext(networkUuid, variantId, nonNullOtherNetworkUuids, contigencyListNames, null, providerToUse, parameters, reportUuid, reporterId));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
@@ -93,21 +98,21 @@ public class SecurityAnalysisController {
                                                  @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
                                                  @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
                                                  @RequestBody(required = false) SecurityAnalysisParametersInfos parameters) {
-        String providerToUse = provider != null ? provider : service.getDefaultProvider();
+        String providerToUse = provider != null ? provider : securityAnalysisService.getDefaultProvider();
         List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
-        UUID resultUuid = service.runAndSaveResult(new SecurityAnalysisRunContext(networkUuid, variantId, nonNullOtherNetworkUuids, contigencyListNames, receiver, providerToUse, parameters, reportUuid, reporterId));
+        UUID resultUuid = securityAnalysisService.runAndSaveResult(new SecurityAnalysisRunContext(networkUuid, variantId, nonNullOtherNetworkUuids, contigencyListNames, receiver, providerToUse, parameters, reportUuid, reporterId));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(resultUuid);
     }
 
     @GetMapping(value = "/results/{resultUuid}/n-result", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get a security analysis result from the database - N result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
-            @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
+        @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<PreContingencyResult> getNResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                            @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
-                                                           Pageable pageable) throws JsonProcessingException {
-        List<ResourceFilterDTO> filters = ResourceFilterDTO.fromStringToList(stringFilters);
-        PreContingencyResult result = service.getNResult(resultUuid, filters, pageable.getSort());
+                                                           Pageable pageable) {
+        String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
+        PreContingencyResult result = securityAnalysisResultService.findNResult(resultUuid, decodedStringFilters, pageable.getSort());
 
         return result != null
                 ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
@@ -120,9 +125,9 @@ public class SecurityAnalysisController {
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<Page<ContingencyResultDTO>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                                                     @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
-                                                                                    @Parameter(description = "Pagination parameters") Pageable pageable) throws JsonProcessingException {
-        List<ResourceFilterDTO> filters = ResourceFilterDTO.fromStringToList(stringFilters);
-        Page<ContingencyResultDTO> result = service.getNmKContingenciesResult(resultUuid, filters, pageable);
+                                                                                    @Parameter(description = "Pagination parameters") Pageable pageable) {
+        String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
+        Page<ContingencyResultDTO> result = securityAnalysisResultService.findNmKContingenciesResult(resultUuid, decodedStringFilters, pageable);
 
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
@@ -135,9 +140,9 @@ public class SecurityAnalysisController {
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<Page<SubjectLimitViolationResultDTO>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                                                         @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
-                                                                                        @Parameter(description = "Pagination parameters") Pageable pageable) throws JsonProcessingException {
-        List<ResourceFilterDTO> filters = ResourceFilterDTO.fromStringToList(stringFilters);
-        Page<SubjectLimitViolationResultDTO> result = service.getNmKConstraintsResult(resultUuid, filters, pageable);
+                                                                                        @Parameter(description = "Pagination parameters") Pageable pageable) {
+        String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
+        Page<SubjectLimitViolationResultDTO> result = securityAnalysisResultService.findNmKConstraintsResult(resultUuid, decodedStringFilters, pageable);
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
             : ResponseEntity.notFound().build();
@@ -147,7 +152,7 @@ public class SecurityAnalysisController {
     @Operation(summary = "Delete a security analysis result from the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result has been deleted")})
     public ResponseEntity<Void> deleteResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
-        service.deleteResult(resultUuid);
+        securityAnalysisService.deleteResult(resultUuid);
         return ResponseEntity.ok().build();
     }
 
@@ -155,7 +160,7 @@ public class SecurityAnalysisController {
     @Operation(summary = "Delete all security analysis results from the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "All security analysis results have been deleted")})
     public ResponseEntity<Void> deleteResults() {
-        service.deleteResults();
+        securityAnalysisService.deleteResults();
         return ResponseEntity.ok().build();
     }
 
@@ -163,7 +168,7 @@ public class SecurityAnalysisController {
     @Operation(summary = "Get the security analysis status from the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis status")})
     public ResponseEntity<SecurityAnalysisStatus> getStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
-        SecurityAnalysisStatus result = service.getStatus(resultUuid);
+        SecurityAnalysisStatus result = securityAnalysisService.getStatus(resultUuid);
         return ResponseEntity.ok().body(result);
     }
 
@@ -171,7 +176,7 @@ public class SecurityAnalysisController {
     @Operation(summary = "Invalidate the security analysis status from the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis status has been invalidated")})
     public ResponseEntity<Void> invalidateStatus(@Parameter(description = "Result uuids") @RequestParam(name = "resultUuid") List<UUID> resultUuids) {
-        service.setStatus(resultUuids, SecurityAnalysisStatus.NOT_DONE);
+        securityAnalysisService.setStatus(resultUuids, SecurityAnalysisStatus.NOT_DONE);
         return ResponseEntity.ok().build();
     }
 
@@ -180,7 +185,7 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis has been stopped")})
     public ResponseEntity<Void> stop(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                            @Parameter(description = "Result receiver") @RequestParam(name = "receiver", required = false) String receiver) {
-        service.stop(resultUuid, receiver);
+        securityAnalysisService.stop(resultUuid, receiver);
         return ResponseEntity.ok().build();
     }
 
@@ -189,14 +194,14 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Security analysis providers have been found")})
     public ResponseEntity<List<String>> getProviders() {
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
-                .body(service.getProviders());
+                .body(securityAnalysisService.getProviders());
     }
 
     @GetMapping(value = "/default-provider", produces = TEXT_PLAIN_VALUE)
     @Operation(summary = "Get security analysis default provider")
     @ApiResponses(@ApiResponse(responseCode = "200", description = "The security analysis default provider has been found"))
     public ResponseEntity<String> getDefaultProvider() {
-        return ResponseEntity.ok().body(service.getDefaultProvider());
+        return ResponseEntity.ok().body(securityAnalysisService.getDefaultProvider());
     }
 
     @GetMapping(value = "/limit-types", produces = APPLICATION_JSON_VALUE)

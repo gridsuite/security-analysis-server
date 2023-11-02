@@ -80,8 +80,6 @@ public class SecurityAnalysisControllerTest {
     private static final UUID OTHER_RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5a");
     private static final UUID NETWORK_FOR_MERGING_VIEW_UUID = UUID.fromString("11111111-7977-4592-ba19-88027e4254e4");
     private static final UUID OTHER_NETWORK_FOR_MERGING_VIEW_UUID = UUID.fromString("22222222-7977-4592-ba19-88027e4254e4");
-    private static final String NMK_CONTINGENCIES_PATH = "nmk-contingencies-result";
-    private static final String NMK_CONSTRAINTS_PATH = "nmk-constraints-result";
 
     private static final int TIMEOUT = 1000;
 

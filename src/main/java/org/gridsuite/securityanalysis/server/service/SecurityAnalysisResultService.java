@@ -6,6 +6,9 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.security.*;
 import com.powsybl.security.results.NetworkResult;
@@ -34,27 +37,29 @@ public class SecurityAnalysisResultService {
     private final ContingencyRepository contingencyRepository;
     private final PreContingencyLimitViolationRepository preContingencyLimitViolationRepository;
     private final SubjectLimitViolationRepository subjectLimitViolationRepository;
+    private final ObjectMapper objectMapper;
 
     public SecurityAnalysisResultService(SecurityAnalysisResultRepository securityAnalysisResultRepository,
                                          ContingencyRepository contingencyRepository,
                                          PreContingencyLimitViolationRepository preContingencyLimitViolationRepository,
-                                         SubjectLimitViolationRepository subjectLimitViolationRepository) {
+                                         SubjectLimitViolationRepository subjectLimitViolationRepository,
+                                         ObjectMapper objectMapper) {
         this.securityAnalysisResultRepository = securityAnalysisResultRepository;
         this.contingencyRepository = contingencyRepository;
         this.preContingencyLimitViolationRepository = preContingencyLimitViolationRepository;
         this.subjectLimitViolationRepository = subjectLimitViolationRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Transactional(readOnly = true)
-    public PreContingencyResult findNResult(UUID resultUuid, List<ResourceFilterDTO> filters, Sort sort) {
-
+    public PreContingencyResult findNResult(UUID resultUuid, String stringFilters, Sort sort) {
 
         Optional<SecurityAnalysisResultEntity> securityAnalysisResult = securityAnalysisResultRepository.findById(resultUuid);
         if (securityAnalysisResult.isEmpty()) {
             return null;
         }
 
-        Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationRepository.getSpecification(resultUuid, filters);
+        Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationRepository.getSpecification(resultUuid, fromStringFiltersToDTO(stringFilters));
         List<PreContingencyLimitViolationEntity> preContingencyLimitViolationPaged = preContingencyLimitViolationRepository.findAll(specification, sort);
         List<LimitViolation> preContingencyLimitViolations = preContingencyLimitViolationPaged.stream()
             .map(AbstractLimitViolationEntity::toLimitViolation)
@@ -68,25 +73,38 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ContingencyResultDTO> findNmKContingenciesResult(UUID resultUuid, List<ResourceFilterDTO> filters, Pageable pageable) {
+    public Page<ContingencyResultDTO> findNmKContingenciesResult(UUID resultUuid, String stringFilters, Pageable pageable) {
         assertResultExists(resultUuid);
 
-        Specification<ContingencyEntity> specification = contingencyRepository.getSpecification(resultUuid, filters);
+        Specification<ContingencyEntity> specification = contingencyRepository.getSpecification(resultUuid, fromStringFiltersToDTO(stringFilters));
 
         Page<ContingencyEntity> contingenciesPage = contingencyRepository.findAll(specification, pageable);
         return contingenciesPage.map(ContingencyResultDTO::toDto);
     }
 
     @Transactional(readOnly = true)
-    public Page<SubjectLimitViolationResultDTO> findNmKConstraintsResult(UUID resultUuid, List<ResourceFilterDTO> filters, Pageable pageable) {
+    public Page<SubjectLimitViolationResultDTO> findNmKConstraintsResult(UUID resultUuid, String stringFilters, Pageable pageable) {
         assertResultExists(resultUuid);
+
         Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getSpecification(
             resultUuid,
-            filters);
+            fromStringFiltersToDTO(stringFilters));
 
         Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = subjectLimitViolationRepository.findAll(specification, pageable);
 
         return subjectLimitViolationsPage.map(SubjectLimitViolationResultDTO::toDto);
+    }
+
+    private List<ResourceFilterDTO> fromStringFiltersToDTO(String stringFilters) {
+        if (stringFilters == null || stringFilters.isEmpty()) {
+            return List.of();
+        }
+        try {
+            return objectMapper.readValue(stringFilters, new TypeReference<>() {
+            });
+        } catch (JsonProcessingException e) {
+            throw new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_FILTER_FORMAT);
+        }
     }
 
     public void assertResultExists(UUID resultUuid) {
