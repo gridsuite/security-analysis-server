@@ -27,6 +27,7 @@ public class SubjectLimitViolationEntity {
         this.subjectName = subjectName;
     }
 
+    @Getter
     @Id
     @GeneratedValue
     public UUID id;

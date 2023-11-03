@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -203,8 +204,11 @@ public class SecurityAnalysisController {
     @GetMapping(value = "/limit-types", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get available limit types")
     @ApiResponses(@ApiResponse(responseCode = "200", description = "List of available limit types"))
-    public ResponseEntity<LimitViolationType[]> getLimitTypes() {
-        return ResponseEntity.ok().body(LimitViolationType.values());
+    public ResponseEntity<List<LimitViolationType>> getLimitTypes() {
+        List<LimitViolationType> limitViolationTypesToRemove = List.of(LimitViolationType.HIGH_SHORT_CIRCUIT_CURRENT, LimitViolationType.LOW_SHORT_CIRCUIT_CURRENT);
+        return ResponseEntity.ok().body(Arrays.stream(LimitViolationType.values())
+            .filter(lm -> !limitViolationTypesToRemove.contains(lm))
+            .toList());
     }
 
     @GetMapping(value = "/branch-sides", produces = APPLICATION_JSON_VALUE)

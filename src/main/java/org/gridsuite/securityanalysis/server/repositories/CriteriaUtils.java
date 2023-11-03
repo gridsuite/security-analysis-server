@@ -35,10 +35,6 @@ public final class CriteriaUtils {
         }
     }
 
-    public static boolean currentQueryIsCountRecords(CriteriaQuery<?> criteriaQuery) {
-        return criteriaQuery.getResultType() == Long.class || criteriaQuery.getResultType() == long.class;
-    }
-
     /**
      * returns predicate depending on filter.value() type
      * if it's a Collection, it will use "OR" operator between each value

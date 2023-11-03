@@ -3,8 +3,8 @@ package org.gridsuite.securityanalysis.server;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
-import org.gridsuite.securityanalysis.server.repositories.ContingencyRepository;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
+import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -17,7 +17,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -30,14 +29,14 @@ import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock
 
 @SpringBootTest // would be better with @DataJpaTest but does not work here
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // improve tests speed as we only read DB
-class ContingencyRepositoryTest {
-    @Autowired
-    ContingencyRepository contingencyRepository;
-
+class FindContingenciesTest {
     @Autowired
     SecurityAnalysisResultRepository securityAnalysisResultRepository;
 
     SecurityAnalysisResultEntity resultEntity;
+
+    @Autowired
+    SecurityAnalysisResultService securityAnalysisResultService;
 
     @BeforeAll
     void setUp() {
@@ -62,8 +61,7 @@ class ContingencyRepositoryTest {
         "provideEdgeCasesFilters"
     })
     void findFilteredContingencyResultsTest(List<ResourceFilterDTO> filters, Pageable pageable, List<ContingencyResultDTO> expectedResult) {
-        Specification<ContingencyEntity> specification = contingencyRepository.getSpecification(resultEntity.getId(), filters);
-        Page<ContingencyEntity> contingenciesPage = contingencyRepository.findAll(specification, pageable);
+        Page<ContingencyEntity> contingenciesPage = securityAnalysisResultService.findContingenciesPage(resultEntity.getId(), filters, pageable);
         // assert contingency ids to check parent filters
         assertThat(contingenciesPage.getContent()).extracting("contingencyId").containsExactlyElementsOf(expectedResult.stream().map(c -> c.getContingency().getContingencyId()).toList());
         // assert subject limit violation ids to check nested filters

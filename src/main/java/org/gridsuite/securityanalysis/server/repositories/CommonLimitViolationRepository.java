@@ -8,22 +8,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static java.util.function.Predicate.not;
-
 public interface CommonLimitViolationRepository<T> {
     /**
      * Returns specification depending on {filters}
-     * This method is common for both SubjectLimitViolationRepository and ContingencyRepository
-     * except for <i>addPredicate</i>, <i>addJoinFilter</i> and <i>isParentFilter</i> which need to be implemented
+     * This interface is common for both SubjectLimitViolationRepository and ContingencyRepository
+     * except for <i>getLimitViolationsSpecifications</i>, <i>addPredicate</i>, <i>addJoinFilter</i> and <i>isParentFilter</i> which need to be implemented
       */
-    default Specification<T> getSpecification(
+    default Specification<T> getParentsSpecifications(
         UUID resultUuid,
         List<ResourceFilterDTO> filters
     ) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // criteria in contingencyEntity
+            // criteria in main entity
             // filter by resultUuid
             predicates.add(criteriaBuilder.equal(root.get("result").get("id"), resultUuid));
 
@@ -31,19 +29,14 @@ public interface CommonLimitViolationRepository<T> {
             filters.stream().filter(this::isParentFilter)
                 .forEach(filter -> addPredicate(criteriaBuilder, root, predicates, filter));
 
-            // pageable makes a count request which should only count contingency results, not joined rows
-            if (!CriteriaUtils.currentQueryIsCountRecords(query)) {
-                // join fetch contingencyLimitViolation table
-                Join<Object, Object> contingencyLimitViolation = (Join<Object, Object>) root.fetch("contingencyLimitViolations", JoinType.LEFT);
-
-                // criteria in contingencyLimitViolationEntity
-                filters.stream().filter(not(this::isParentFilter))
-                    .forEach(filter -> addJoinFilter(criteriaBuilder, contingencyLimitViolation, filter));
-            }
-
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         };
     }
+
+    Specification<T> getLimitViolationsSpecifications(
+        List<UUID> parentsUuid,
+        List<ResourceFilterDTO> filters
+    );
 
     void addPredicate(CriteriaBuilder criteriaBuilder,
                                      Root<T> path,

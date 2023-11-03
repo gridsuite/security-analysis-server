@@ -10,12 +10,14 @@ package org.gridsuite.securityanalysis.server.repositories;
 import jakarta.persistence.criteria.*;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+
+import static java.util.function.Predicate.not;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
@@ -23,6 +25,27 @@ import java.util.UUID;
 
 @Repository
 public interface ContingencyRepository extends CommonLimitViolationRepository<ContingencyEntity>, JpaRepository<ContingencyEntity, UUID>, JpaSpecificationExecutor<ContingencyEntity> {
+    @Override
+    default Specification<ContingencyEntity> getLimitViolationsSpecifications(
+        List<UUID> contingenciesUuid,
+        List<ResourceFilterDTO> filters
+    ) {
+        return (root, query, criteriaBuilder) -> {
+            // join fetch contingencyLimitViolation table
+            Join<Object, Object> contingencyLimitViolation = (Join<Object, Object>) root.fetch("contingencyLimitViolations", JoinType.LEFT);
+
+            // criteria in contingencyLimitViolationEntity
+            // filter by contingenciesUuid
+            contingencyLimitViolation.on(contingencyLimitViolation.get("contingency").get("uuid").in(contingenciesUuid));
+
+            // user filters
+            filters.stream().filter(not(this::isParentFilter))
+                .forEach(filter -> addJoinFilter(criteriaBuilder, contingencyLimitViolation, filter));
+
+            return null;
+        };
+    }
+
     @Override
     default void addPredicate(CriteriaBuilder criteriaBuilder,
                                       Root<ContingencyEntity> path,

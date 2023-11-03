@@ -4,7 +4,7 @@ import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
-import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationRepository;
+import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -17,7 +17,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.jpa.domain.Specification;
 
 import java.util.Comparator;
 import java.util.List;
@@ -29,14 +28,14 @@ import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock
 
 @SpringBootTest // would be better with @DataJpaTest but does not work here
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // improve tests speed as we only read DB
-class SubjectLimitViolationRepositoryTest {
-    @Autowired
-    SubjectLimitViolationRepository subjectLimitViolationRepository;
-
+class FindSubjectLimitViolationsTest {
     @Autowired
     SecurityAnalysisResultRepository securityAnalysisResultRepository;
 
     SecurityAnalysisResultEntity resultEntity;
+
+    @Autowired
+    SecurityAnalysisResultService securityAnalysisResultService;
 
     @BeforeAll
     void setUp() {
@@ -58,8 +57,7 @@ class SubjectLimitViolationRepositoryTest {
         "provideEachColumnFilter"
     })
     void findFilteredSubjectLimitViolationResultsTest(List<ResourceFilterDTO> filters, Pageable pageable, List<SubjectLimitViolationResultDTO> expectedResult) {
-        Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getSpecification(resultEntity.getId(), filters);
-        Page<SubjectLimitViolationEntity> subjectLimitViolationPage = subjectLimitViolationRepository.findAll(specification, pageable);
+        Page<SubjectLimitViolationEntity> subjectLimitViolationPage = securityAnalysisResultService.findSubjectLimitViolationsPage(resultEntity.getId(), filters, pageable);
         // assert subject ids to check parent filters
         assertThat(subjectLimitViolationPage.getContent()).extracting("subjectId").containsExactlyElementsOf(expectedResult.stream().map(c -> c.getSubjectId()).toList());
         // assert limit violation contingency ids to check nested filters

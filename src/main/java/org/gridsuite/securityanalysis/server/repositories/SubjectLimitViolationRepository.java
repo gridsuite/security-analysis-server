@@ -9,18 +9,43 @@ package org.gridsuite.securityanalysis.server.repositories;
 import jakarta.persistence.criteria.*;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.UUID;
+
+import static java.util.function.Predicate.not;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
 
 @Repository
 public interface SubjectLimitViolationRepository extends CommonLimitViolationRepository<SubjectLimitViolationEntity>, JpaRepository<SubjectLimitViolationEntity, UUID>, JpaSpecificationExecutor<SubjectLimitViolationEntity> {
+    @Override
+    default Specification<SubjectLimitViolationEntity> getLimitViolationsSpecifications(
+        List<UUID> subjectLimitViolationsUuid,
+        List<ResourceFilterDTO> filters
+    ) {
+        return (root, query, criteriaBuilder) -> {
+            // join fetch contingencyLimitViolation table
+            Join<Object, Object> contingencyLimitViolation = (Join<Object, Object>) root.fetch("contingencyLimitViolations", JoinType.LEFT);
+
+            // criteria in contingencyLimitViolationEntity
+            // filter by subjectLimitViolation id
+            contingencyLimitViolation.on(contingencyLimitViolation.get("subjectLimitViolation").get("id").in(subjectLimitViolationsUuid));
+
+            // user filters
+            filters.stream().filter(not(this::isParentFilter))
+                .forEach(filter -> addJoinFilter(criteriaBuilder, contingencyLimitViolation, filter));
+
+            return null;
+        };
+    }
+
     @Override
     default void addPredicate(CriteriaBuilder criteriaBuilder,
                                      Root<SubjectLimitViolationEntity> path,
