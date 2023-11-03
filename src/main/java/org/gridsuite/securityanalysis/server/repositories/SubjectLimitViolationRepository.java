@@ -33,16 +33,15 @@ public interface SubjectLimitViolationRepository extends CommonLimitViolationRep
         return (root, query, criteriaBuilder) -> {
             // join fetch contingencyLimitViolation table
             Join<Object, Object> contingencyLimitViolation = (Join<Object, Object>) root.fetch("contingencyLimitViolations", JoinType.LEFT);
+            contingencyLimitViolation.fetch("contingency", JoinType.LEFT);
 
             // criteria in contingencyLimitViolationEntity
-            // filter by subjectLimitViolation id
-            contingencyLimitViolation.on(contingencyLimitViolation.get("subjectLimitViolation").get("id").in(subjectLimitViolationsUuid));
-
             // user filters
             filters.stream().filter(not(this::isParentFilter))
                 .forEach(filter -> addJoinFilter(criteriaBuilder, contingencyLimitViolation, filter));
 
-            return null;
+            // filter on subjectLimitViolationUuid
+            return root.get("id").in(subjectLimitViolationsUuid);
         };
     }
 
