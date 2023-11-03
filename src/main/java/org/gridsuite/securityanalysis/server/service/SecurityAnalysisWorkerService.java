@@ -111,7 +111,15 @@ public class SecurityAnalysisWorkerService {
     }
 
     public SecurityAnalysisResult run(SecurityAnalysisRunContext context) {
-        return run(context, null);
+        try {
+            return run(context, null);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (Exception e) {
+            LOGGER.error(FAIL_MESSAGE, e);
+            return null;
+        }
     }
 
     private CompletableFuture<SecurityAnalysisResult> runASAsync(SecurityAnalysisRunContext context,
@@ -173,7 +181,7 @@ public class SecurityAnalysisWorkerService {
         LOGGER.info(CANCEL_MESSAGE + " (resultUuid='{}')", resultUuid);
     }
 
-    private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) {
+    private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) throws ExecutionException, InterruptedException {
         Objects.requireNonNull(context);
 
         LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(LogUtils::sanitizeParam).collect(Collectors.toList()));
@@ -197,13 +205,7 @@ public class SecurityAnalysisWorkerService {
 
         CompletableFuture<SecurityAnalysisResult> future = runASAsync(context, securityAnalysisRunner, network, contingencies, reporter, resultUuid);
 
-        SecurityAnalysisResult result;
-        try {
-            result = future == null ? null : future.get();
-        } catch (CancellationException | InterruptedException | ExecutionException e) {
-            Thread.currentThread().interrupt();
-            throw new CancellationException(e.getMessage());
-        }
+        SecurityAnalysisResult result = future == null ? null : future.get();
         if (context.getReportUuid() != null) {
             Reporter finalRootReporter = rootReporter;
             reportService.sendReport(context.getReportUuid(), finalRootReporter);
@@ -242,6 +244,8 @@ public class SecurityAnalysisWorkerService {
                         cleanASResultsAndPublishCancel(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
                     }
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             } catch (Exception e) {
                 if (!(e instanceof CancellationException)) {
                     LOGGER.error(FAIL_MESSAGE, e);
