@@ -59,10 +59,6 @@ public class SecurityAnalysisController {
         this.securityAnalysisResultService = securityAnalysisResultService;
     }
 
-    private static List<UUID> getNonNullOtherNetworkUuids(List<UUID> otherNetworkUuids) {
-        return otherNetworkUuids != null ? otherNetworkUuids : Collections.emptyList();
-    }
-
     @PostMapping(value = "/networks/{networkUuid}/run", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     @Operation(summary = "Run a security analysis on a network")
     @ApiResponses(value = {@ApiResponse(responseCode = "200",
@@ -71,15 +67,14 @@ public class SecurityAnalysisController {
                                                             schema = @Schema(implementation = SecurityAnalysisResult.class))})})
     public ResponseEntity<SecurityAnalysisResult> run(@Parameter(description = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
                                                             @Parameter(description = "Variant Id") @RequestParam(name = "variantId", required = false) String variantId,
-                                                            @Parameter(description = "Other networks UUID (to merge with main one))") @RequestParam(name = "networkUuid", required = false) List<UUID> otherNetworkUuids,
                                                             @Parameter(description = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
                                                             @Parameter(description = "Provider") @RequestParam(name = "provider", required = false) String provider,
                                                             @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
                                                             @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
                                                             @RequestBody(required = false) SecurityAnalysisParametersInfos parameters) {
         String providerToUse = provider != null ? provider : securityAnalysisService.getDefaultProvider();
-        List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
-        SecurityAnalysisResult result = workerService.run(new SecurityAnalysisRunContext(networkUuid, variantId, nonNullOtherNetworkUuids, contigencyListNames, null, providerToUse, parameters, reportUuid, reporterId));
+        SecurityAnalysisResult result = workerService.run(new SecurityAnalysisRunContext(networkUuid, variantId, contigencyListNames, null, providerToUse, parameters, reportUuid, reporterId));
+
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
     }
 
@@ -91,7 +86,6 @@ public class SecurityAnalysisController {
                                                             schema = @Schema(implementation = SecurityAnalysisResult.class))})})
     public ResponseEntity<UUID> runAndSave(@Parameter(description = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
                                                  @Parameter(description = "Variant Id") @RequestParam(name = "variantId", required = false) String variantId,
-                                                 @Parameter(description = "Other networks UUID (to merge with main one))") @RequestParam(name = "networkUuid", required = false) List<UUID> otherNetworkUuids,
                                                  @Parameter(description = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
                                                  @Parameter(description = "Result receiver") @RequestParam(name = "receiver", required = false) String receiver,
                                                  @Parameter(description = "Provider") @RequestParam(name = "provider", required = false) String provider,
@@ -99,8 +93,7 @@ public class SecurityAnalysisController {
                                                  @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
                                                  @RequestBody(required = false) SecurityAnalysisParametersInfos parameters) {
         String providerToUse = provider != null ? provider : securityAnalysisService.getDefaultProvider();
-        List<UUID> nonNullOtherNetworkUuids = getNonNullOtherNetworkUuids(otherNetworkUuids);
-        UUID resultUuid = securityAnalysisService.runAndSaveResult(new SecurityAnalysisRunContext(networkUuid, variantId, nonNullOtherNetworkUuids, contigencyListNames, receiver, providerToUse, parameters, reportUuid, reporterId));
+        UUID resultUuid = securityAnalysisService.runAndSaveResult(new SecurityAnalysisRunContext(networkUuid, variantId, contigencyListNames, receiver, providerToUse, parameters, reportUuid, reporterId));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(resultUuid);
     }
 
