@@ -111,15 +111,15 @@ public class SecurityAnalysisWorkerService {
     }
 
     public SecurityAnalysisResult run(SecurityAnalysisRunContext context) {
-        SecurityAnalysisResult result = null;
         try {
-            result = run(context, null);
+            return run(context, null);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            return null;
         } catch (Exception e) {
             LOGGER.error(FAIL_MESSAGE, e);
+            return null;
         }
-        return result;
     }
 
     private CompletableFuture<SecurityAnalysisResult> runASAsync(SecurityAnalysisRunContext context,
