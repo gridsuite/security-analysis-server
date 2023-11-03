@@ -146,8 +146,10 @@ class FindContingenciesTest {
 
     private Stream<Arguments> provideEdgeCasesFilters() {
         return Stream.of(
-            Arguments.of(List.of(), PageRequest.of(0, 30), RESULT_CONTINGENCIES),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, List.of(), ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30), RESULT_CONTINGENCIES)
+            Arguments.of(List.of(), PageRequest.of(0, 30), RESULT_CONTINGENCIES), // empty list of filter
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, List.of(), ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30), RESULT_CONTINGENCIES), // empty list of values in filter
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "co", ResourceFilterDTO.Column.STATUS)), PageRequest.of(0, 30),
+                RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getStatus().contains("CO")).toList()) // case insensitive search test
         );
     }
 

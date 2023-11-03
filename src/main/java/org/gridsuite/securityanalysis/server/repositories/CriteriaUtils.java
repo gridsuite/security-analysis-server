@@ -70,9 +70,9 @@ public final class CriteriaUtils {
             // this makes equals query work with enum values
             Expression<String> stringExpression = expression.as(String.class);
             return switch (filter.type()) {
-                case CONTAINS -> criteriaBuilder.like(stringExpression, "%" + EscapeCharacter.DEFAULT.escape(filterValue) + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
-                case STARTS_WITH -> criteriaBuilder.like(stringExpression, EscapeCharacter.DEFAULT.escape(filterValue) + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
-                case EQUALS -> criteriaBuilder.equal(stringExpression, filterValue);
+                case CONTAINS -> criteriaBuilder.like(criteriaBuilder.upper(stringExpression), "%" + EscapeCharacter.DEFAULT.escape(filterValue).toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
+                case STARTS_WITH -> criteriaBuilder.like(criteriaBuilder.upper(stringExpression), EscapeCharacter.DEFAULT.escape(filterValue).toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
+                case EQUALS -> criteriaBuilder.equal(criteriaBuilder.upper(stringExpression), filterValue.toUpperCase());
             };
         } else {
             throw new UnsupportedOperationException("Not implemented");
