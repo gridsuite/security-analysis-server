@@ -198,7 +198,7 @@ public class SecurityAnalysisController {
     @Operation(summary = "Get available limit types")
     @ApiResponses(@ApiResponse(responseCode = "200", description = "List of available limit types"))
     public ResponseEntity<List<LimitViolationType>> getLimitTypes() {
-        List<LimitViolationType> limitViolationTypesToRemove = List.of(LimitViolationType.HIGH_SHORT_CIRCUIT_CURRENT, LimitViolationType.LOW_SHORT_CIRCUIT_CURRENT);
+        List<LimitViolationType> limitViolationTypesToRemove = List.of(LimitViolationType.HIGH_SHORT_CIRCUIT_CURRENT, LimitViolationType.LOW_SHORT_CIRCUIT_CURRENT, LimitViolationType.LOW_SHORT_CIRCUIT_CURRENT, LimitViolationType.HIGH_SHORT_CIRCUIT_CURRENT);
         return ResponseEntity.ok().body(Arrays.stream(LimitViolationType.values())
             .filter(lm -> !limitViolationTypesToRemove.contains(lm))
             .toList());
