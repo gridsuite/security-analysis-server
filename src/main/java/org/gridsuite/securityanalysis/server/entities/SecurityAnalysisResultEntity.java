@@ -10,7 +10,7 @@ import com.powsybl.security.SecurityAnalysisResult;
 import jakarta.persistence.*;
 import lombok.*;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
-import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
+import org.jgrapht.alg.util.Pair;
 
 import java.util.List;
 import java.util.Map;
@@ -51,7 +51,7 @@ public class SecurityAnalysisResultEntity {
     }
 
     public static SecurityAnalysisResultEntity toEntity(UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
-        Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId = SecurityAnalysisResultService.getUniqueSubjectLimitViolationsFromResult(securityAnalysisResult)
+        Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId = getUniqueSubjectLimitViolationsFromResult(securityAnalysisResult)
             .stream().collect(Collectors.toMap(
                 SubjectLimitViolationEntity::getSubjectId,
                 subjectLimitViolation -> subjectLimitViolation)
@@ -84,5 +84,17 @@ public class SecurityAnalysisResultEntity {
         preContingencyLimitViolations.forEach(lm -> lm.setResult(securityAnalysisResultEntity));
         subjectLimitViolations.forEach(subjectLimitViolation -> subjectLimitViolation.setResult(securityAnalysisResultEntity));
         return securityAnalysisResultEntity;
+    }
+
+
+
+    private static List<SubjectLimitViolationEntity> getUniqueSubjectLimitViolationsFromResult(SecurityAnalysisResult securityAnalysisResult) {
+        return Stream.concat(
+                securityAnalysisResult.getPostContingencyResults().stream().flatMap(pcr -> pcr.getLimitViolationsResult().getLimitViolations().stream()),
+                securityAnalysisResult.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().stream())
+            .map(lm -> new Pair<>(lm.getSubjectId(), lm.getSubjectName()))
+            .distinct()
+            .map(pair -> new SubjectLimitViolationEntity(pair.getFirst(), pair.getSecond()))
+            .toList();
     }
 }

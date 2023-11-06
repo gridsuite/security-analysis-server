@@ -66,11 +66,11 @@ public final class CriteriaUtils {
      */
     private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder, Expression<?> expression, ResourceFilterDTO filter, Object value) {
         if (ResourceFilterDTO.DataType.TEXT == filter.dataType()) {
-            String stringValue = (String) value;
-            String escapedStringValue = EscapeCharacter.DEFAULT.escape(stringValue);
-            if (escapedStringValue == null) {
+            if (value == null) {
                 throw new UnsupportedOperationException("Filter text values can not be null");
             }
+            String stringValue = (String) value;
+            String escapedStringValue = EscapeCharacter.DEFAULT.escape(stringValue);
             // this makes equals query work with enum values
             Expression<String> stringExpression = expression.as(String.class);
             return switch (filter.type()) {

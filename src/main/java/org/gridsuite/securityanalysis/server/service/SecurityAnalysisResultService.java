@@ -17,15 +17,15 @@ import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.*;
 import org.gridsuite.securityanalysis.server.repositories.*;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.jgrapht.alg.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -37,20 +37,21 @@ public class SecurityAnalysisResultService {
     private final PreContingencyLimitViolationRepository preContingencyLimitViolationRepository;
     private final SubjectLimitViolationRepository subjectLimitViolationRepository;
     private final ObjectMapper objectMapper;
-    private final SecurityAnalysisResultService self;
+    private SecurityAnalysisResultService self;
 
+    @Autowired
     public SecurityAnalysisResultService(SecurityAnalysisResultRepository securityAnalysisResultRepository,
                                          ContingencyRepository contingencyRepository,
                                          PreContingencyLimitViolationRepository preContingencyLimitViolationRepository,
                                          SubjectLimitViolationRepository subjectLimitViolationRepository,
-                                         SecurityAnalysisResultService securityAnalysisResultService,
+                                         @Lazy SecurityAnalysisResultService self,
                                          ObjectMapper objectMapper) {
         this.securityAnalysisResultRepository = securityAnalysisResultRepository;
         this.contingencyRepository = contingencyRepository;
         this.preContingencyLimitViolationRepository = preContingencyLimitViolationRepository;
         this.subjectLimitViolationRepository = subjectLimitViolationRepository;
         this.objectMapper = objectMapper;
-        this.self = securityAnalysisResultService;
+        this.self = self;
     }
 
     @Transactional(readOnly = true)
@@ -157,7 +158,7 @@ public class SecurityAnalysisResultService {
         // We must separate in two requests, one with pagination the other one with Join Fetch
         Page<ContingencyEntity> contingenciesPage = contingencyRepository.findAll(specification, pageable);
         if (contingenciesPage.hasContent()) {
-            this.appendLimitViolationsToContingenciesResult(contingenciesPage, resourceFilters);
+            appendLimitViolationsToContingenciesResult(contingenciesPage, resourceFilters);
         }
         return contingenciesPage;
     }
@@ -201,15 +202,5 @@ public class SecurityAnalysisResultService {
             Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getLimitViolationsSpecifications(subjectLimitViolationsUuids, resourceFilters);
             subjectLimitViolationRepository.findAll(specification);
         }
-    }
-
-    public static List<SubjectLimitViolationEntity> getUniqueSubjectLimitViolationsFromResult(SecurityAnalysisResult securityAnalysisResult) {
-        return Stream.concat(
-                securityAnalysisResult.getPostContingencyResults().stream().flatMap(pcr -> pcr.getLimitViolationsResult().getLimitViolations().stream()),
-                securityAnalysisResult.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().stream())
-            .map(lm -> new Pair<>(lm.getSubjectId(), lm.getSubjectName()))
-            .distinct()
-            .map(pair -> new SubjectLimitViolationEntity(pair.getFirst(), pair.getSecond()))
-            .toList();
     }
 }
