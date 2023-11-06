@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static java.util.function.Predicate.not;
+
 public interface CommonLimitViolationRepository<T> {
     /**
      * Returns specification depending on {filters}
@@ -20,10 +22,21 @@ public interface CommonLimitViolationRepository<T> {
     ) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
+            List<ResourceFilterDTO> nestedFieldsFilters = filters.stream().filter(not(this::isParentFilter)).toList();
 
             // criteria in main entity
             // filter by resultUuid
             predicates.add(criteriaBuilder.equal(root.get("result").get("id"), resultUuid));
+
+            // filter parents by nested fields
+            if (!nestedFieldsFilters.isEmpty()) {
+                // if there are some filters on nested fields, we check if parents have corresponding children
+                Path<?> nestedObjectPath = root.join(getNestedObjectPath());
+                nestedFieldsFilters.forEach(filter -> addPredicate(criteriaBuilder, nestedObjectPath, predicates, filter));
+            } else {
+                // if there is not any filter, we only check if they have at least one children
+                predicates.add(criteriaBuilder.isNotEmpty(root.get(getNestedObjectPath())));
+            }
 
             // user filters
             filters.stream().filter(this::isParentFilter)
@@ -39,7 +52,7 @@ public interface CommonLimitViolationRepository<T> {
     );
 
     void addPredicate(CriteriaBuilder criteriaBuilder,
-                                     Root<T> path,
+                                     Path<?> path,
                                      List<Predicate> predicates,
                                      ResourceFilterDTO filter);
 
@@ -48,4 +61,6 @@ public interface CommonLimitViolationRepository<T> {
                                       ResourceFilterDTO filter);
 
     boolean isParentFilter(ResourceFilterDTO filter);
+
+    String getNestedObjectPath();
 }

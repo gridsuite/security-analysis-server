@@ -100,7 +100,7 @@ class FindContingenciesTest {
     private Stream<Arguments> provideNestedFilter() {
         return Stream.of(
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30),
-                getResultContingenciesWithNestedFilter(c -> c.getSubjectId().contains("3"))),
+                getResultContingenciesWithNestedFilter(slv -> slv.getSubjectId().contains("3"))),
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "l", ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30),
                 getResultContingenciesWithNestedFilter(slv -> slv.getSubjectId().contains("l"))),
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30),
