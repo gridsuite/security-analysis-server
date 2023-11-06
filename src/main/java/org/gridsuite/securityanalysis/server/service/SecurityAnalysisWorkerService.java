@@ -200,7 +200,9 @@ public class SecurityAnalysisWorkerService {
         if (context.getReportUuid() != null) {
             String rootReporterId = context.getReporterId() == null ? AS_TYPE_REPORT : context.getReporterId() + "@" + AS_TYPE_REPORT;
             rootReporter = new ReporterModel(rootReporterId, rootReporterId);
-            reporter = rootReporter.createSubReporter(AS_TYPE_REPORT, AS_TYPE_REPORT + " (${providerToUse})", "providerToUse", securityAnalysisRunner.getName());
+            reporter = rootReporter.createSubReporter(AS_TYPE_REPORT, AS_TYPE_REPORT +" (${providerToUse})", "providerToUse", securityAnalysisRunner.getName());
+            // Delete any previous SA computation logs
+            reportService.deleteReport(context.getReportUuid(), AS_TYPE_REPORT);
         }
 
         CompletableFuture<SecurityAnalysisResult> future = runASAsync(context, securityAnalysisRunner, network, contingencies, reporter, resultUuid);
