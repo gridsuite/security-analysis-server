@@ -37,17 +37,20 @@ public class SecurityAnalysisResultService {
     private final PreContingencyLimitViolationRepository preContingencyLimitViolationRepository;
     private final SubjectLimitViolationRepository subjectLimitViolationRepository;
     private final ObjectMapper objectMapper;
+    private final SecurityAnalysisResultService self;
 
     public SecurityAnalysisResultService(SecurityAnalysisResultRepository securityAnalysisResultRepository,
                                          ContingencyRepository contingencyRepository,
                                          PreContingencyLimitViolationRepository preContingencyLimitViolationRepository,
                                          SubjectLimitViolationRepository subjectLimitViolationRepository,
+                                         SecurityAnalysisResultService securityAnalysisResultService,
                                          ObjectMapper objectMapper) {
         this.securityAnalysisResultRepository = securityAnalysisResultRepository;
         this.contingencyRepository = contingencyRepository;
         this.preContingencyLimitViolationRepository = preContingencyLimitViolationRepository;
         this.subjectLimitViolationRepository = subjectLimitViolationRepository;
         this.objectMapper = objectMapper;
+        this.self = securityAnalysisResultService;
     }
 
     @Transactional(readOnly = true)
@@ -73,7 +76,7 @@ public class SecurityAnalysisResultService {
     public Page<ContingencyResultDTO> findNmKContingenciesResult(UUID resultUuid, String stringFilters, Pageable pageable) {
         assertResultExists(resultUuid);
 
-        Page<ContingencyEntity> contingencyPageBis = findContingenciesPage(resultUuid, fromStringFiltersToDTO(stringFilters), pageable);
+        Page<ContingencyEntity> contingencyPageBis = self.findContingenciesPage(resultUuid, fromStringFiltersToDTO(stringFilters), pageable);
         return contingencyPageBis.map(ContingencyResultDTO::toDto);
     }
 
@@ -81,7 +84,7 @@ public class SecurityAnalysisResultService {
     public Page<SubjectLimitViolationResultDTO> findNmKConstraintsResult(UUID resultUuid, String stringFilters, Pageable pageable) {
         assertResultExists(resultUuid);
 
-        Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = findSubjectLimitViolationsPage(resultUuid, fromStringFiltersToDTO(stringFilters), pageable);
+        Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = self.findSubjectLimitViolationsPage(resultUuid, fromStringFiltersToDTO(stringFilters), pageable);
         return subjectLimitViolationsPage.map(SubjectLimitViolationResultDTO::toDto);
     }
 
