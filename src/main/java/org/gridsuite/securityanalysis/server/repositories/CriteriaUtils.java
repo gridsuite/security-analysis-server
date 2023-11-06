@@ -66,16 +66,16 @@ public final class CriteriaUtils {
      */
     private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder, Expression<?> expression, ResourceFilterDTO filter, Object value) {
         if (ResourceFilterDTO.DataType.TEXT == filter.dataType()) {
-            if (value == null) {
+            String stringValue = (String) value;
+            String escapedFilterValue = EscapeCharacter.DEFAULT.escape(stringValue);
+            if (escapedFilterValue == null) {
                 throw new UnsupportedOperationException("Filter text values can not be null");
             }
-            String stringValue = (String) value;
-            String escapedStringValue = EscapeCharacter.DEFAULT.escape(stringValue);
             // this makes equals query work with enum values
             Expression<String> stringExpression = expression.as(String.class);
             return switch (filter.type()) {
-                case CONTAINS -> criteriaBuilder.like(criteriaBuilder.upper(stringExpression), "%" + escapedStringValue.toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
-                case STARTS_WITH -> criteriaBuilder.like(criteriaBuilder.upper(stringExpression), escapedStringValue.toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
+                case CONTAINS -> criteriaBuilder.like(criteriaBuilder.upper(stringExpression), "%" + escapedFilterValue.toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
+                case STARTS_WITH -> criteriaBuilder.like(criteriaBuilder.upper(stringExpression), escapedFilterValue.toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
                 case EQUALS -> criteriaBuilder.equal(criteriaBuilder.upper(stringExpression), stringValue.toUpperCase());
             };
         } else {
