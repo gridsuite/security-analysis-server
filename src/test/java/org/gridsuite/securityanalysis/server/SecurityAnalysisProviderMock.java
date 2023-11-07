@@ -10,7 +10,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import com.powsybl.commons.reporter.Reporter;
@@ -98,31 +97,9 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         FAILED_CONTINGENCIES.stream().map(c -> toContingencyResultDTO(c, LoadFlowResult.ComponentResult.Status.FAILED.name(), RESULT_LIMIT_VIOLATIONS))
     ).toList();
 
-    static List<ContingencyResultDTO> getResultContingenciesWithNestedFilter(Function<SubjectLimitViolationDTO, Boolean> filterMethod) {
-        return RESULT_CONTINGENCIES.stream().map(r ->
-            new ContingencyResultDTO(
-                r.getContingency(),
-                r.getSubjectLimitViolations().stream()
-                    .filter(filterMethod::apply)
-                    .toList()
-            )
-        ).toList();
-    }
-
     static final List<SubjectLimitViolationResultDTO> RESULT_CONSTRAINTS = RESULT_LIMIT_VIOLATIONS.stream()
         .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, CONTINGENCIES, FAILED_CONTINGENCIES))
         .toList();
-
-    static List<SubjectLimitViolationResultDTO> getResultConstraintsWithNestedFilter(Function<ContingencyLimitViolationDTO, Boolean> filterMethod) {
-        return RESULT_CONSTRAINTS.stream().map(r ->
-            new SubjectLimitViolationResultDTO(
-                r.getSubjectId(),
-                r.getContingencies().stream()
-                    .filter(filterMethod::apply)
-                    .toList()
-            )
-        ).toList();
-    }
 
     static final SecurityAnalysisReport REPORT = new SecurityAnalysisReport(RESULT);
     static final SecurityAnalysisReport REPORT_VARIANT = new SecurityAnalysisReport(RESULT_VARIANT);

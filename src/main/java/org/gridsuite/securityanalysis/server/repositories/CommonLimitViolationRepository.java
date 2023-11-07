@@ -12,7 +12,7 @@ public interface CommonLimitViolationRepository<T> {
     /**
      * Returns specification depending on {filters}
      * This interface is common for both SubjectLimitViolationRepository and ContingencyRepository
-     * except for <i>getLimitViolationsSpecifications</i>, <i>addPredicate</i>, <i>addJoinFilter</i> and <i>isParentFilter</i> which need to be implemented
+     * except for <i>addPredicate</i> which need to be implemented
       */
     default Specification<T> getParentsSpecifications(
         UUID resultUuid,
@@ -26,26 +26,15 @@ public interface CommonLimitViolationRepository<T> {
             predicates.add(criteriaBuilder.equal(root.get("result").get("id"), resultUuid));
 
             // user filters
-            filters.stream().filter(this::isParentFilter)
+            filters.stream()
                 .forEach(filter -> addPredicate(criteriaBuilder, root, predicates, filter));
 
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         };
     }
 
-    Specification<T> getLimitViolationsSpecifications(
-        List<UUID> parentsUuid,
-        List<ResourceFilterDTO> filters
-    );
-
     void addPredicate(CriteriaBuilder criteriaBuilder,
                                      Root<T> path,
                                      List<Predicate> predicates,
                                      ResourceFilterDTO filter);
-
-    void addJoinFilter(CriteriaBuilder criteriaBuilder,
-                                      Join<?, ?> joinPath,
-                                      ResourceFilterDTO filter);
-
-    boolean isParentFilter(ResourceFilterDTO filter);
 }
