@@ -23,7 +23,7 @@ import java.util.UUID;
 
 @Repository
 public interface SubjectLimitViolationRepository extends CommonLimitViolationRepository<SubjectLimitViolationEntity>, JpaRepository<SubjectLimitViolationEntity, UUID>, JpaSpecificationExecutor<SubjectLimitViolationEntity> {
-    @EntityGraph(attributePaths = {"contingencyLimitViolations"}, type = EntityGraph.EntityGraphType.LOAD)
+    @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.contingency"}, type = EntityGraph.EntityGraphType.LOAD)
     List<SubjectLimitViolationEntity> findAllWithContingencyLimitViolationsByIdIn(List<UUID> subjectLimitViolationUuids);
 
     @Override
