@@ -12,6 +12,7 @@ import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
+import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
@@ -44,6 +45,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -496,14 +498,27 @@ public class SecurityAnalysisControllerTest {
             );
     }
 
+    @Test
+    public void getComputationStatus() throws Exception {
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/computation-status"))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON)
+            ).andReturn();
+
+        String resultAsString = mvcResult.getResponse().getContentAsString();
+        List<LoadFlowResult.ComponentResult.Status> status = mapper.readValue(resultAsString, new TypeReference<>() { });
+        assertEquals(status, Arrays.asList(LoadFlowResult.ComponentResult.Status.values()));
+    }
+
     private void assertResultNotFound(UUID resultUuid) throws Exception {
-        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/n-result"))
+        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/n-result/paged"))
                 .andExpect(status().isNotFound());
 
-        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-contingencies-result"))
+        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-contingencies-result/paged"))
             .andExpect(status().isNotFound());
 
-        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-constraints-result"))
+        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-constraints-result/paged"))
             .andExpect(status().isNotFound());
     }
 }
