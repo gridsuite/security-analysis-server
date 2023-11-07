@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
+import static com.vladmihalcea.sql.SQLStatementCountValidator.assertSelectCount;
+import static com.vladmihalcea.sql.SQLStatementCountValidator.reset;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 /**
@@ -62,8 +64,15 @@ class FindSubjectLimitViolationsTest {
         "providePageableAndSort",
         "provideParentFilter"
     })
-    void findFilteredSubjectLimitViolationResultsTest(List<ResourceFilterDTO> filters, Pageable pageable, List<SubjectLimitViolationResultDTO> expectedResult) {
+    void findFilteredSubjectLimitViolationResultsTest(List<ResourceFilterDTO> filters, Pageable pageable, List<SubjectLimitViolationResultDTO> expectedResult, Integer selectCount) {
+        reset();
         Page<SubjectLimitViolationEntity> subjectLimitViolationPage = securityAnalysisResultService.findSubjectLimitViolationsPage(resultEntity.getId(), filters, pageable);
+        // select count check to prevent potential n+1 problems
+        // 1 -> parent ; empty parents, no count or children request
+        // 2 -> parent + children ; no count (number of element < page size)
+        // 3 -> parent + count + children
+        assertSelectCount(selectCount);
+
         // assert subject ids to check parent filters
         assertThat(subjectLimitViolationPage.getContent()).extracting("subjectId").containsExactlyElementsOf(expectedResult.stream().map(c -> c.getSubjectId()).toList());
         // assert limit violation contingency ids to check nested filters
@@ -74,27 +83,27 @@ class FindSubjectLimitViolationsTest {
 
     private Stream<Arguments> providePageableOnly() {
         return Stream.of(
-            Arguments.of(List.of(), PageRequest.of(0, 30), RESULT_CONSTRAINTS),
-            Arguments.of(List.of(), PageRequest.of(0, 2), RESULT_CONSTRAINTS.subList(0, 2)),
-            Arguments.of(List.of(), PageRequest.of(1, 2), RESULT_CONSTRAINTS.subList(2, Math.min(RESULT_CONSTRAINTS.size(), 4)))
+            Arguments.of(List.of(), PageRequest.of(0, 30), RESULT_CONSTRAINTS, 2),
+            Arguments.of(List.of(), PageRequest.of(0, 2), RESULT_CONSTRAINTS.subList(0, 2), 3),
+            Arguments.of(List.of(), PageRequest.of(1, 2), RESULT_CONSTRAINTS.subList(2, Math.min(RESULT_CONSTRAINTS.size(), 4)), 2)
         );
     }
 
     private Stream<Arguments> providePageableAndSort() {
         return Stream.of(
-            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")), RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList()),
-            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "subjectId")), RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId).reversed()).toList())
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")), RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 2),
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "subjectId")), RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId).reversed()).toList(), 2)
         );
     }
 
     private Stream<Arguments> provideParentFilter() {
         return Stream.of(
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30),
-                RESULT_CONSTRAINTS.stream().filter(c -> c.getSubjectId().contains("3")).toList()),
+                RESULT_CONSTRAINTS.stream().filter(c -> c.getSubjectId().contains("3")).toList(), 2),
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "l", ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30),
-                RESULT_CONSTRAINTS.stream().filter(c -> c.getSubjectId().startsWith("l")).toList()),
+                RESULT_CONSTRAINTS.stream().filter(c -> c.getSubjectId().startsWith("l")).toList(), 2),
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30),
-                RESULT_CONSTRAINTS.stream().filter(c -> c.getSubjectId().startsWith("3")).toList())
+                RESULT_CONSTRAINTS.stream().filter(c -> c.getSubjectId().startsWith("3")).toList(), 1)
         );
     }
 
