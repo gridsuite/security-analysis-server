@@ -32,7 +32,7 @@ public interface SubjectLimitViolationRepository extends CommonLimitViolationRep
     ) {
         return (root, query, criteriaBuilder) -> {
             // join fetch contingencyLimitViolation table
-            Join<Object, Object> contingencyLimitViolation = (Join<Object, Object>) root.fetch(getNestedObjectPath(), JoinType.LEFT);
+            Join<Object, Object> contingencyLimitViolation = (Join<Object, Object>) root.fetch("contingencyLimitViolations", JoinType.LEFT);
             contingencyLimitViolation.fetch("contingency", JoinType.LEFT);
 
             // criteria in contingencyLimitViolationEntity
@@ -47,20 +47,15 @@ public interface SubjectLimitViolationRepository extends CommonLimitViolationRep
 
     @Override
     default void addPredicate(CriteriaBuilder criteriaBuilder,
-                                     Path<?> path,
+                                     Root<SubjectLimitViolationEntity> path,
                                      List<Predicate> predicates,
                                      ResourceFilterDTO filter) {
 
-        String dotSeparatedFields = switch (filter.column()) {
-            case CONTINGENCY_ID -> "contingency.contingencyId";
-            case STATUS -> "contingency.status";
-            case LIMIT_TYPE -> "limitType";
-            case LIMIT_NAME -> "limitName";
-            case SIDE -> "side";
-            case SUBJECT_ID -> "subjectId";
-        };
-
-        CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, dotSeparatedFields);
+        if (ResourceFilterDTO.Column.SUBJECT_ID != filter.column()) {
+            throw new UnsupportedOperationException("This method should be called for parent filters only");
+        } else {
+            CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, "subjectId");
+        }
     }
 
     @Override
@@ -82,10 +77,5 @@ public interface SubjectLimitViolationRepository extends CommonLimitViolationRep
     @Override
     default boolean isParentFilter(ResourceFilterDTO filter) {
         return ResourceFilterDTO.Column.SUBJECT_ID == filter.column();
-    }
-
-    @Override
-    default String getNestedObjectPath() {
-        return "contingencyLimitViolations";
     }
 }

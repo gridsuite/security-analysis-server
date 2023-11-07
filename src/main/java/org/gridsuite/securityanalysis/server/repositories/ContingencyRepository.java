@@ -47,17 +47,14 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
 
     @Override
     default void addPredicate(CriteriaBuilder criteriaBuilder,
-                                      Path<?> path,
+                                      Root<ContingencyEntity> path,
                                       List<Predicate> predicates,
                                       ResourceFilterDTO filter) {
 
         String fieldName = switch (filter.column()) {
             case CONTINGENCY_ID -> "contingencyId";
             case STATUS -> "status";
-            case SUBJECT_ID -> "subjectLimitViolation.subjectId";
-            case LIMIT_TYPE -> "limitType";
-            case LIMIT_NAME -> "limitName";
-            case SIDE -> "side";
+            default -> throw new UnsupportedOperationException("This method should be called for parent filters only");
         };
 
         CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, fieldName);
@@ -81,10 +78,5 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
     @Override
     default boolean isParentFilter(ResourceFilterDTO filter) {
         return List.of(ResourceFilterDTO.Column.CONTINGENCY_ID, ResourceFilterDTO.Column.STATUS).contains(filter.column());
-    }
-
-    @Override
-    default String getNestedObjectPath() {
-        return "contingencyLimitViolations";
     }
 }
