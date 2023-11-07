@@ -6,9 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import com.powsybl.iidm.network.Branch;
 import com.powsybl.loadflow.LoadFlowResult;
-import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.results.PreContingencyResult;
 import io.swagger.v3.oas.annotations.Operation;
@@ -31,7 +29,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
