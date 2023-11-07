@@ -158,7 +158,7 @@ public class SecurityAnalysisResultService {
         // We must separate in two requests, one with pagination the other one with Join Fetch
         Page<ContingencyEntity> contingenciesPage = contingencyRepository.findAll(specification, pageable);
         if (contingenciesPage.hasContent()) {
-            appendLimitViolationsToContingenciesResult(contingenciesPage, resourceFilters);
+            appendLimitViolationsToContingenciesResult(contingenciesPage);
         }
         return contingenciesPage;
     }
@@ -173,12 +173,12 @@ public class SecurityAnalysisResultService {
         // We must separate in two requests, one with pagination the other one with Join Fetch
         Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = subjectLimitViolationRepository.findAll(specification, pageable);
         if (subjectLimitViolationsPage.hasContent()) {
-            appendLimitViolationsToSubjectLimitViolationsResult(subjectLimitViolationsPage, resourceFilters);
+            appendLimitViolationsToSubjectLimitViolationsResult(subjectLimitViolationsPage);
         }
         return subjectLimitViolationsPage;
     }
 
-    private void appendLimitViolationsToContingenciesResult(Page<ContingencyEntity> contingencies, List<ResourceFilterDTO> resourceFilters) {
+    private void appendLimitViolationsToContingenciesResult(Page<ContingencyEntity> contingencies) {
 
         // using the the Hibernate First-Level Cache or Persistence Context
         // cf.https://vladmihalcea.com/spring-data-jpa-multiplebagfetchexception/
@@ -190,7 +190,7 @@ public class SecurityAnalysisResultService {
         }
     }
 
-    private void appendLimitViolationsToSubjectLimitViolationsResult(Page<SubjectLimitViolationEntity> subjectLimitViolations, List<ResourceFilterDTO> resourceFilters) {
+    private void appendLimitViolationsToSubjectLimitViolationsResult(Page<SubjectLimitViolationEntity> subjectLimitViolations) {
 
         // using the the Hibernate First-Level Cache or Persistence Context
         // cf.https://vladmihalcea.com/spring-data-jpa-multiplebagfetchexception/
@@ -198,7 +198,6 @@ public class SecurityAnalysisResultService {
             List<UUID> subjectLimitViolationsUuids = subjectLimitViolations.stream()
                 .map(c -> c.getId())
                 .toList();
-//            Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getLimitViolationsSpecifications(subjectLimitViolationsUuids);
             subjectLimitViolationRepository.findAllWithContingencyLimitViolationsByIdIn(subjectLimitViolationsUuids);
         }
     }
