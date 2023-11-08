@@ -9,22 +9,21 @@ package org.gridsuite.securityanalysis.server.repositories;
 import jakarta.persistence.criteria.*;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
-import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
 
-public interface PreContingencyLimitViolationRepository extends CommonLimitViolationRepository<PreContingencyLimitViolationEntity>, JpaRepository<PreContingencyLimitViolationEntity, UUID>, JpaSpecificationExecutor<PreContingencyLimitViolationEntity>{
+public interface PreContingencyLimitViolationRepository extends CommonLimitViolationRepository<PreContingencyLimitViolationEntity>, JpaRepository<PreContingencyLimitViolationEntity, UUID>, JpaSpecificationExecutor<PreContingencyLimitViolationEntity> {
 
     Page<PreContingencyLimitViolationEntity> findAll(Specification<PreContingencyLimitViolationEntity> specification, Pageable pageable);
 
@@ -47,8 +46,8 @@ public interface PreContingencyLimitViolationRepository extends CommonLimitViola
             // pageable makes a count request which should only count preContingency results, not joined rows
             if (!CriteriaUtils.currentQueryIsCountRecords(query)) {
                 // criteria in preContingencyLimitViolationEntity
-                 List<ResourceFilterDTO> nestedFilters = filters.stream().filter(f -> !isParentFilter(f)).toList();
-                nestedFilters.forEach(filter -> addPredicate(criteriaBuilder, root,predicates , filter));
+                List<ResourceFilterDTO> nestedFilters = filters.stream().filter(f -> !isParentFilter(f)).toList();
+                nestedFilters.forEach(filter -> addPredicate(criteriaBuilder, root, predicates, filter));
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
@@ -75,9 +74,9 @@ public interface PreContingencyLimitViolationRepository extends CommonLimitViola
 
     @Override
     default void addPredicate(CriteriaBuilder criteriaBuilder,
-                                Root<PreContingencyLimitViolationEntity> path,
-                                List<Predicate> predicates,
-                                ResourceFilterDTO filter) {
+                              Root<PreContingencyLimitViolationEntity> path,
+                              List<Predicate> predicates,
+                              ResourceFilterDTO filter) {
 
         String fieldName = switch (filter.column()) {
             case SUBJECT_ID -> "subjectLimitViolation.subjectId";
@@ -86,6 +85,7 @@ public interface PreContingencyLimitViolationRepository extends CommonLimitViola
             case LIMIT -> "limit";
             case VALUE -> "value";
             case SIDE -> "side";
+            case LOADING -> "loading";
             default -> throw new UnsupportedOperationException("This method should be called for parent filters only");
         };
         CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, fieldName);

@@ -1,6 +1,5 @@
 package org.gridsuite.securityanalysis.server.dto;
 
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -19,13 +18,13 @@ public class PreContingencyLimitViolationResultDTO {
 
     public static PreContingencyLimitViolationResultDTO toDto(PreContingencyLimitViolationEntity preContingencyLimitViolation) {
         String subjectId = preContingencyLimitViolation.getSubjectLimitViolation() != null
-            ? preContingencyLimitViolation.getSubjectLimitViolation().getSubjectId()
-            : null;
+                ? preContingencyLimitViolation.getSubjectLimitViolation().getSubjectId()
+                : null;
 
         return PreContingencyLimitViolationResultDTO.builder()
-            .subjectId(subjectId)
+                .subjectId(subjectId)
                 .status(preContingencyLimitViolation.getResult().getPreContingencyStatus())
-            .limitViolation(LimitViolationDTO.toDto(preContingencyLimitViolation))
-            .build();
+                .limitViolation(LimitViolationDTO.toDto(preContingencyLimitViolation))
+                .build();
     }
 }

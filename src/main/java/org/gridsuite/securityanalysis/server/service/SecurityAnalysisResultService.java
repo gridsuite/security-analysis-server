@@ -65,20 +65,20 @@ public class SecurityAnalysisResultService {
         List<PreContingencyLimitViolationEntity> preContingencyLimitViolation = preContingencyLimitViolationRepository.findAll(specification, newSort);
 
         return preContingencyLimitViolation.stream()
-            .map(PreContingencyLimitViolationResultDTO::toDto)
-            .toList();
+                .map(PreContingencyLimitViolationResultDTO::toDto)
+                .toList();
     }
 
     private Sort createSort(Sort sort) {
         List<Sort.Order> newOrders = new ArrayList<>();
         sort.forEach(order -> {
-            if(preContingencyLimitViolationRepository.isParentFilter(order.getProperty())){
+            if (preContingencyLimitViolationRepository.isParentFilter(order.getProperty())) {
                 newOrders.add(new Sort.Order(order.getDirection(), "subjectLimitViolation.subjectId"));
             } else {
                 newOrders.add(order);
             }
         });
-       return Sort.by(newOrders);
+        return Sort.by(newOrders);
     }
 
     @Transactional(readOnly = true)
@@ -192,8 +192,8 @@ public class SecurityAnalysisResultService {
         // cf.https://vladmihalcea.com/spring-data-jpa-multiplebagfetchexception/
         if (!contingencies.isEmpty()) {
             List<UUID> contingencyUuids = contingencies.stream()
-                .map(c -> c.getUuid())
-                .toList();
+                    .map(c -> c.getUuid())
+                    .toList();
             contingencyRepository.findAllWithContingencyLimitViolationsByUuidIn(contingencyUuids);
         }
     }
@@ -204,8 +204,8 @@ public class SecurityAnalysisResultService {
         // cf.https://vladmihalcea.com/spring-data-jpa-multiplebagfetchexception/
         if (!subjectLimitViolations.isEmpty()) {
             List<UUID> subjectLimitViolationsUuids = subjectLimitViolations.stream()
-                .map(c -> c.getId())
-                .toList();
+                    .map(c -> c.getId())
+                    .toList();
             subjectLimitViolationRepository.findAllWithContingencyLimitViolationsByIdIn(subjectLimitViolationsUuids);
         }
     }

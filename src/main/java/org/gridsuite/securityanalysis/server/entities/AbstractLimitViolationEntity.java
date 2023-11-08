@@ -14,6 +14,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.util.UUID;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
@@ -50,12 +51,21 @@ public abstract class AbstractLimitViolationEntity {
     @Enumerated(EnumType.STRING)
     private Branch.Side side;
 
+    @Column(name = "loading")
+    private Double loading;
+
     public static LimitViolation toLimitViolation(AbstractLimitViolationEntity limitViolationEntity) {
         String subjectId = limitViolationEntity.getSubjectLimitViolation() != null
-            ? limitViolationEntity.getSubjectLimitViolation().getSubjectId()
-            : null;
+                ? limitViolationEntity.getSubjectLimitViolation().getSubjectId()
+                : null;
 
         return new LimitViolation(subjectId, limitViolationEntity.getLimitType(), limitViolationEntity.getLimitName(), limitViolationEntity.getAcceptableDuration(),
-            limitViolationEntity.getLimit(), limitViolationEntity.getLimitReduction(), limitViolationEntity.getValue(), limitViolationEntity.getSide());
+                limitViolationEntity.getLimit(), limitViolationEntity.getLimitReduction(), limitViolationEntity.getValue(), limitViolationEntity.getSide());
+    }
+
+    public static Double computeLoading(LimitViolation limitViolation) {
+        return LimitViolationType.CURRENT.equals(limitViolation.getLimitType())
+                ? (100 * limitViolation.getValue()) / (limitViolation.getLimit() * limitViolation.getLimitReduction())
+                : null;
     }
 }

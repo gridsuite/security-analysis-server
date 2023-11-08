@@ -35,6 +35,7 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
             .limitReduction(limitViolation.getLimitReduction())
             .value(limitViolation.getValue())
             .side(limitViolation.getSide())
+            .loading(computeLoading(limitViolation))
             .subjectLimitViolation(subjectLimitViolation)
             .build();
 

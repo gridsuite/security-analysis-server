@@ -13,6 +13,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
 import java.util.List;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
@@ -23,10 +24,10 @@ public final class CriteriaUtils {
     }
 
     public static void addPredicate(CriteriaBuilder criteriaBuilder,
-                                     Path<?> path,
-                                     List<Predicate> predicates,
-                                     ResourceFilterDTO filter,
-                                     String fieldName) {
+                                    Path<?> path,
+                                    List<Predicate> predicates,
+                                    ResourceFilterDTO filter,
+                                    String fieldName) {
         Predicate predicate = filterToPredicate(criteriaBuilder, path, filter, fieldName);
         if (predicate != null) {
             predicates.add(predicate);
@@ -52,9 +53,9 @@ public final class CriteriaUtils {
      * if it's a Collection, it will use "OR" operator between each value
      */
     private static Predicate filterToPredicate(CriteriaBuilder criteriaBuilder,
-                                                Path<?> path,
-                                                ResourceFilterDTO filter,
-                                                String field) {
+                                               Path<?> path,
+                                               ResourceFilterDTO filter,
+                                               String field) {
         // expression targets field to filter on
         Expression<String> expression = path.get(field);
 
@@ -64,19 +65,19 @@ public final class CriteriaUtils {
                 return null;
             }
             return criteriaBuilder.or(
-                filterCollection.stream().map(value ->
-                    filterToAtomicPredicate(criteriaBuilder, expression, filter, value)
-                ).toArray(Predicate[]::new)
+                    filterCollection.stream().map(value ->
+                            filterToAtomicPredicate(criteriaBuilder, path, expression, filter, value)
+                    ).toArray(Predicate[]::new)
             );
         } else {
-            return filterToAtomicPredicate(criteriaBuilder, expression, filter, filter.value());
+            return filterToAtomicPredicate(criteriaBuilder, path, expression, filter, filter.value());
         }
     }
 
     /**
      * returns atomic predicate depending on filter.dataType() and filter.type()
      */
-    private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder, Expression<?> expression, ResourceFilterDTO filter, Object value) {
+    private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder, Path<?> path, Expression<String> expression, ResourceFilterDTO filter, Object value) {
 
         if (ResourceFilterDTO.DataType.TEXT == filter.dataType()) {
             String stringValue = (String) value;
@@ -87,22 +88,54 @@ public final class CriteriaUtils {
             // this makes equals query work with enum values
             Expression<String> stringExpression = expression.as(String.class);
             return switch (filter.type()) {
-                case CONTAINS -> criteriaBuilder.like(criteriaBuilder.upper(stringExpression), "%" + escapedFilterValue.toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
-                case STARTS_WITH -> criteriaBuilder.like(criteriaBuilder.upper(stringExpression), escapedFilterValue.toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
-                case EQUALS -> criteriaBuilder.equal(criteriaBuilder.upper(stringExpression), stringValue.toUpperCase());
-                default -> throw new UnsupportedOperationException("This type of filter is not supported for text data type");
+                case CONTAINS ->
+                        criteriaBuilder.like(criteriaBuilder.upper(stringExpression), "%" + escapedFilterValue.toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
+                case STARTS_WITH ->
+                        criteriaBuilder.like(criteriaBuilder.upper(stringExpression), escapedFilterValue.toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
+                case EQUALS ->
+                        criteriaBuilder.equal(criteriaBuilder.upper(stringExpression), stringValue.toUpperCase());
+                default ->
+                        throw new UnsupportedOperationException("This type of filter is not supported for text data type");
             };
         }
+
         if (ResourceFilterDTO.DataType.NUMBER == filter.dataType()) {
             return switch (filter.type()) {
                 case NOT_EQUAL -> criteriaBuilder.notEqual(expression, value);
-                /*case LESS_THAN_OR_EQUAL -> criteriaBuilder.lessThanOrEqualTo(expression, value);
-                case GREATER_THAN_OR_EQUAL -> criteriaBuilder.greaterThanOrEqualTo(expression, value);*/
-                default -> throw new UnsupportedOperationException("This type of filter is not supported for number data type");
+                case LESS_THAN_OR_EQUAL ->
+                        criteriaBuilder.lessThanOrEqualTo(getColumnPath(path, filter.column().columnName()), Double.valueOf((String) value));
+                case GREATER_THAN_OR_EQUAL ->
+                        criteriaBuilder.greaterThanOrEqualTo(getColumnPath(path, filter.column().columnName()), Double.valueOf((String) value));
+                default ->
+                        throw new UnsupportedOperationException("This type of filter is not supported for number data type");
             };
         }
         throw new IllegalArgumentException("The filter type " + filter.type() + " is not supported with the data type " + filter.dataType());
 
+    }
+
+    /**
+     * This method allow to query eventually dot separated fields with the Criteria API
+     * Ex : from 'fortescueCurrent.positiveMagnitude' we create the query path
+     * path.get("fortescueCurrent").get("positiveMagnitude") to access to the correct nested field
+     *
+     * @param originPath         the origin path
+     * @param dotSeparatedFields dot separated fields (can be only one field without any dot)
+     * @param <X>                the entity type referenced by the origin path
+     * @param <Y>                the type referenced by the path
+     * @return path for the query
+     */
+    private static <X, Y> Path<Y> getColumnPath(Path<X> originPath, String dotSeparatedFields) {
+        if (dotSeparatedFields.contains(".")) {
+            String[] fields = dotSeparatedFields.split("\\.");
+            Path<Y> path = originPath.get(fields[0]);
+            for (int i = 1; i < fields.length; i++) {
+                path = path.get(fields[i]);
+            }
+            return path;
+        } else {
+            return originPath.get(dotSeparatedFields);
+        }
     }
 
 }
