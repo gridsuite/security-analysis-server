@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static org.gridsuite.securityanalysis.server.service.NotificationService.*;
 
@@ -68,10 +67,6 @@ public class SecurityAnalysisResultContext {
         UUID resultUuid = UUID.fromString(getNonNullHeader(headers, RESULT_UUID_HEADER));
         UUID networkUuid = UUID.fromString(getNonNullHeader(headers, NETWORK_UUID_HEADER));
         String variantId = (String) headers.get(VARIANT_ID_HEADER);
-        List<UUID> otherNetworkUuids = getHeaderList(headers, OTHER_NETWORK_UUIDS_HEADER)
-                .stream()
-                .map(UUID::fromString)
-                .collect(Collectors.toList());
         List<String> contingencyListNames = getHeaderList(headers, CONTINGENCY_LIST_NAMES_HEADER);
         String receiver = (String) headers.get(RECEIVER_HEADER);
         String provider = (String) headers.get(PROVIDER_HEADER);
@@ -83,7 +78,7 @@ public class SecurityAnalysisResultContext {
         }
         UUID reportUuid = headers.containsKey(REPORT_UUID_HEADER) ? UUID.fromString((String) headers.get(REPORT_UUID_HEADER)) : null;
         String reporterId = headers.containsKey(REPORTER_ID_HEADER) ? (String) headers.get(REPORTER_ID_HEADER) : null;
-        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, variantId, otherNetworkUuids, contingencyListNames, receiver, provider, parameters, reportUuid, reporterId);
+        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, variantId, contingencyListNames, receiver, provider, parameters, reportUuid, reporterId);
         return new SecurityAnalysisResultContext(resultUuid, runContext);
     }
 
@@ -98,8 +93,6 @@ public class SecurityAnalysisResultContext {
                 .setHeader(RESULT_UUID_HEADER, resultUuid.toString())
                 .setHeader(NETWORK_UUID_HEADER, runContext.getNetworkUuid().toString())
                 .setHeader(VARIANT_ID_HEADER, runContext.getVariantId())
-                .setHeader(OTHER_NETWORK_UUIDS_HEADER, runContext.getOtherNetworkUuids().stream()
-                        .map(UUID::toString).collect(Collectors.joining(",")))
                 .setHeader(CONTINGENCY_LIST_NAMES_HEADER, String.join(",", runContext.getContingencyListNames()))
                 .setHeader(RECEIVER_HEADER, runContext.getReceiver())
                 .setHeader(PROVIDER_HEADER, runContext.getProvider())

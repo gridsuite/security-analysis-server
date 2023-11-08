@@ -12,7 +12,6 @@ import com.powsybl.commons.PowsyblException;
 import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.commons.reporter.ReporterModel;
 import com.powsybl.contingency.Contingency;
-import com.powsybl.iidm.mergingview.MergingView;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.loadflow.LoadFlowResult;
@@ -34,7 +33,6 @@ import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -112,29 +110,16 @@ public class SecurityAnalysisWorkerService {
         }
     }
 
-    private Network getNetwork(UUID networkUuid, List<UUID> otherNetworkUuids) {
-        Network network = getNetwork(networkUuid);
-        if (otherNetworkUuids.isEmpty()) {
-            return network;
-        } else {
-            List<Network> networks = new ArrayList<>();
-            List<Network> otherNetworks = otherNetworkUuids
-                .stream()
-                .map(this::getNetwork)
-                .collect(Collectors.toList());
-
-            networks.add(network);
-            networks.addAll(otherNetworks);
-
-            MergingView mergingView = MergingView.create("merge", "iidm");
-            mergingView.merge(networks.toArray(new Network[0]));
-
-            return mergingView;
-        }
-    }
-
     public SecurityAnalysisResult run(SecurityAnalysisRunContext context) {
-        return run(context, null);
+        try {
+            return run(context, null);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (Exception e) {
+            LOGGER.error(FAIL_MESSAGE, e);
+            return null;
+        }
     }
 
     private CompletableFuture<SecurityAnalysisResult> runASAsync(SecurityAnalysisRunContext context,
@@ -196,12 +181,12 @@ public class SecurityAnalysisWorkerService {
         LOGGER.info(CANCEL_MESSAGE + " (resultUuid='{}')", resultUuid);
     }
 
-    private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) {
+    private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) throws ExecutionException, InterruptedException {
         Objects.requireNonNull(context);
 
         LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(LogUtils::sanitizeParam).collect(Collectors.toList()));
 
-        Network network = getNetwork(context.getNetworkUuid(), context.getOtherNetworkUuids());
+        Network network = getNetwork(context.getNetworkUuid());
 
         List<Contingency> contingencies = context.getContingencyListNames().stream()
             .map(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid(), context.getVariantId()))
@@ -220,13 +205,7 @@ public class SecurityAnalysisWorkerService {
 
         CompletableFuture<SecurityAnalysisResult> future = runASAsync(context, securityAnalysisRunner, network, contingencies, reporter, resultUuid);
 
-        SecurityAnalysisResult result;
-        try {
-            result = future == null ? null : future.get();
-        } catch (CancellationException | InterruptedException | ExecutionException e) {
-            Thread.currentThread().interrupt();
-            throw new CancellationException(e.getMessage());
-        }
+        SecurityAnalysisResult result = future == null ? null : future.get();
         if (context.getReportUuid() != null) {
             Reporter finalRootReporter = rootReporter;
             reportService.sendReport(context.getReportUuid(), finalRootReporter);
@@ -265,6 +244,8 @@ public class SecurityAnalysisWorkerService {
                         cleanASResultsAndPublishCancel(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
                     }
                 }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             } catch (Exception e) {
                 if (!(e instanceof CancellationException)) {
                     LOGGER.error(FAIL_MESSAGE, e);

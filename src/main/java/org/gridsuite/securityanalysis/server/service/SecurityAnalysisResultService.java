@@ -14,16 +14,16 @@ import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.*;
 import org.gridsuite.securityanalysis.server.repositories.*;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.jgrapht.alg.util.Pair;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -35,17 +35,21 @@ public class SecurityAnalysisResultService {
     private final PreContingencyLimitViolationRepository preContingencyLimitViolationRepository;
     private final SubjectLimitViolationRepository subjectLimitViolationRepository;
     private final ObjectMapper objectMapper;
+    private SecurityAnalysisResultService self;
 
+    @Autowired
     public SecurityAnalysisResultService(SecurityAnalysisResultRepository securityAnalysisResultRepository,
                                          ContingencyRepository contingencyRepository,
                                          PreContingencyLimitViolationRepository preContingencyLimitViolationRepository,
                                          SubjectLimitViolationRepository subjectLimitViolationRepository,
+                                         @Lazy SecurityAnalysisResultService self,
                                          ObjectMapper objectMapper) {
         this.securityAnalysisResultRepository = securityAnalysisResultRepository;
         this.contingencyRepository = contingencyRepository;
         this.preContingencyLimitViolationRepository = preContingencyLimitViolationRepository;
         this.subjectLimitViolationRepository = subjectLimitViolationRepository;
         this.objectMapper = objectMapper;
+        this.self = self;
     }
 
     @Transactional(readOnly = true)
@@ -81,22 +85,15 @@ public class SecurityAnalysisResultService {
     public Page<ContingencyResultDTO> findNmKContingenciesResult(UUID resultUuid, String stringFilters, Pageable pageable) {
         assertResultExists(resultUuid);
 
-        Specification<ContingencyEntity> specification = contingencyRepository.getSpecification(resultUuid, fromStringFiltersToDTO(stringFilters));
-
-        Page<ContingencyEntity> contingenciesPage = contingencyRepository.findAll(specification, pageable);
-        return contingenciesPage.map(ContingencyResultDTO::toDto);
+        Page<ContingencyEntity> contingencyPageBis = self.findContingenciesPage(resultUuid, fromStringFiltersToDTO(stringFilters), pageable);
+        return contingencyPageBis.map(ContingencyResultDTO::toDto);
     }
 
     @Transactional(readOnly = true)
     public Page<SubjectLimitViolationResultDTO> findNmKConstraintsResult(UUID resultUuid, String stringFilters, Pageable pageable) {
         assertResultExists(resultUuid);
 
-        Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getSpecification(
-            resultUuid,
-            fromStringFiltersToDTO(stringFilters));
-
-        Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = subjectLimitViolationRepository.findAll(specification, pageable);
-
+        Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = self.findSubjectLimitViolationsPage(resultUuid, fromStringFiltersToDTO(stringFilters), pageable);
         return subjectLimitViolationsPage.map(SubjectLimitViolationResultDTO::toDto);
     }
 
@@ -159,13 +156,57 @@ public class SecurityAnalysisResultService {
         return securityAnalysisResult.get().getStatus();
     }
 
-    public static List<SubjectLimitViolationEntity> getUniqueSubjectLimitViolationsFromResult(SecurityAnalysisResult securityAnalysisResult) {
-        return Stream.concat(
-                securityAnalysisResult.getPostContingencyResults().stream().flatMap(pcr -> pcr.getLimitViolationsResult().getLimitViolations().stream()),
-                securityAnalysisResult.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().stream())
-            .map(lm -> new Pair<>(lm.getSubjectId(), lm.getSubjectName()))
-            .distinct()
-            .map(pair -> new SubjectLimitViolationEntity(pair.getFirst(), pair.getSecond()))
-            .toList();
+    @Transactional(readOnly = true)
+    public Page<ContingencyEntity> findContingenciesPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
+        Objects.requireNonNull(resultUuid);
+        Specification<ContingencyEntity> specification = contingencyRepository.getParentsSpecifications(resultUuid, resourceFilters);
+        // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
+        // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
+        // cf. https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/
+        // We must separate in two requests, one with pagination the other one with Join Fetch
+        Page<ContingencyEntity> contingenciesPage = contingencyRepository.findAll(specification, pageable);
+        if (contingenciesPage.hasContent()) {
+            appendLimitViolationsToContingenciesResult(contingenciesPage);
+        }
+        return contingenciesPage;
+    }
+
+    @Transactional(readOnly = true)
+    public Page<SubjectLimitViolationEntity> findSubjectLimitViolationsPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
+        Objects.requireNonNull(resultUuid);
+        Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters);
+        // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
+        // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
+        // cf. https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/
+        // We must separate in two requests, one with pagination the other one with Join Fetch
+        Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = subjectLimitViolationRepository.findAll(specification, pageable);
+        if (subjectLimitViolationsPage.hasContent()) {
+            appendLimitViolationsToSubjectLimitViolationsResult(subjectLimitViolationsPage);
+        }
+        return subjectLimitViolationsPage;
+    }
+
+    private void appendLimitViolationsToContingenciesResult(Page<ContingencyEntity> contingencies) {
+
+        // using the the Hibernate First-Level Cache or Persistence Context
+        // cf.https://vladmihalcea.com/spring-data-jpa-multiplebagfetchexception/
+        if (!contingencies.isEmpty()) {
+            List<UUID> contingencyUuids = contingencies.stream()
+                .map(c -> c.getUuid())
+                .toList();
+            contingencyRepository.findAllWithContingencyLimitViolationsByUuidIn(contingencyUuids);
+        }
+    }
+
+    private void appendLimitViolationsToSubjectLimitViolationsResult(Page<SubjectLimitViolationEntity> subjectLimitViolations) {
+
+        // using the the Hibernate First-Level Cache or Persistence Context
+        // cf.https://vladmihalcea.com/spring-data-jpa-multiplebagfetchexception/
+        if (!subjectLimitViolations.isEmpty()) {
+            List<UUID> subjectLimitViolationsUuids = subjectLimitViolations.stream()
+                .map(c -> c.getId())
+                .toList();
+            subjectLimitViolationRepository.findAllWithContingencyLimitViolationsByIdIn(subjectLimitViolationsUuids);
+        }
     }
 }

@@ -28,7 +28,6 @@ public interface PreContingencyLimitViolationRepository extends CommonLimitViola
 
     Page<PreContingencyLimitViolationEntity> findAll(Specification<PreContingencyLimitViolationEntity> specification, Pageable pageable);
 
-    @Override
     default Specification<PreContingencyLimitViolationEntity> getSpecification(
             UUID resultUuid,
             List<ResourceFilterDTO> filters
@@ -92,9 +91,6 @@ public interface PreContingencyLimitViolationRepository extends CommonLimitViola
         CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, fieldName);
     }
 
-
-
-    @Override
     default void addJoinFilter(CriteriaBuilder criteriaBuilder,
                                Join<?, ?> joinPath,
                                ResourceFilterDTO filter) {
@@ -108,7 +104,6 @@ public interface PreContingencyLimitViolationRepository extends CommonLimitViola
         CriteriaUtils.addJoinFilter(criteriaBuilder, joinPath, filter, fieldName);
     }
 
-    @Override
     default boolean isParentFilter(ResourceFilterDTO filter) {
         return ResourceFilterDTO.Column.SUBJECT_ID == filter.column();
     }
