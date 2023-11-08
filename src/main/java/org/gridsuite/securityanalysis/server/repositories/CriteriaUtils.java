@@ -69,6 +69,7 @@ public final class CriteriaUtils {
      * returns atomic predicate depending on filter.dataType() and filter.type()
      */
     private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder, Expression<?> expression, ResourceFilterDTO filter, Object value) {
+
         if (ResourceFilterDTO.DataType.TEXT == filter.dataType()) {
             String filterValue = (String) value;
             // this makes equals query work with enum values
@@ -77,10 +78,19 @@ public final class CriteriaUtils {
                 case CONTAINS -> criteriaBuilder.like(stringExpression, "%" + EscapeCharacter.DEFAULT.escape(filterValue) + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
                 case STARTS_WITH -> criteriaBuilder.like(stringExpression, EscapeCharacter.DEFAULT.escape(filterValue) + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
                 case EQUALS -> criteriaBuilder.equal(stringExpression, filterValue);
+                default -> throw new UnsupportedOperationException("This type of filter is not supported for text data type");
             };
-        } else {
-            throw new UnsupportedOperationException("Not implemented");
         }
+        if (ResourceFilterDTO.DataType.NUMBER == filter.dataType()) {
+            return switch (filter.type()) {
+                case NOT_EQUAL -> criteriaBuilder.notEqual(expression, value);
+                /*case LESS_THAN_OR_EQUAL -> criteriaBuilder.lessThanOrEqualTo(expression, value);
+                case GREATER_THAN_OR_EQUAL -> criteriaBuilder.greaterThanOrEqualTo(expression, value);*/
+                default -> throw new UnsupportedOperationException("This type of filter is not supported for number data type");
+            };
+        }
+        throw new IllegalArgumentException("The filter type " + filter.type() + " is not supported with the data type " + filter.dataType());
+
     }
 
     /**
@@ -106,4 +116,5 @@ public final class CriteriaUtils {
             return originPath.get(dotSeparatedFields);
         }
     }
+
 }

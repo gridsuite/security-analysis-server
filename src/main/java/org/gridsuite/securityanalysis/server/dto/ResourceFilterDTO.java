@@ -21,13 +21,23 @@ public record ResourceFilterDTO(DataType dataType, Type type, Object value, Colu
     public enum DataType {
         @JsonProperty("text")
         TEXT,
+
+        @JsonProperty("number")
+        NUMBER,
     }
 
     public enum Type {
         CONTAINS,
         @JsonProperty("startsWith")
         STARTS_WITH,
-        EQUALS
+        EQUALS,
+
+        @JsonProperty("notEqual")
+        NOT_EQUAL,
+        @JsonProperty("lessThanOrEqual")
+        LESS_THAN_OR_EQUAL,
+        @JsonProperty("greaterThanOrEqual")
+        GREATER_THAN_OR_EQUAL
     }
 
     public enum Column {
@@ -40,8 +50,10 @@ public record ResourceFilterDTO(DataType dataType, Type type, Object value, Colu
         LIMIT_TYPE,
         @JsonProperty("limitName")
         LIMIT_NAME,
-        @JsonProperty("limitValue")
-        LIMIT_VALUE,
+        @JsonProperty("limit")
+        LIMIT,
+        @JsonProperty("value")
+        VALUE,
         @JsonProperty("side")
         SIDE
     }

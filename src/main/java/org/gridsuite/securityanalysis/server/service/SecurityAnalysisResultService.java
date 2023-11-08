@@ -9,10 +9,7 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.security.*;
-import com.powsybl.security.results.NetworkResult;
-import com.powsybl.security.results.PreContingencyResult;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.*;
 import org.gridsuite.securityanalysis.server.repositories.*;
@@ -52,24 +49,32 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public PreContingencyResult findNResult(UUID resultUuid, String stringFilters, Sort sort) {
-
+    public List<PreContingencyLimitViolationResultDTO> findNResult(UUID resultUuid, String stringFilters, Sort sort) {
         Optional<SecurityAnalysisResultEntity> securityAnalysisResult = securityAnalysisResultRepository.findById(resultUuid);
         if (securityAnalysisResult.isEmpty()) {
             return null;
         }
 
         Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationRepository.getSpecification(resultUuid, fromStringFiltersToDTO(stringFilters));
-        List<PreContingencyLimitViolationEntity> preContingencyLimitViolationPaged = preContingencyLimitViolationRepository.findAll(specification, sort);
-        List<LimitViolation> preContingencyLimitViolations = preContingencyLimitViolationPaged.stream()
-            .map(AbstractLimitViolationEntity::toLimitViolation)
-            .toList();
 
-        return new PreContingencyResult(
-            LoadFlowResult.ComponentResult.Status.valueOf(securityAnalysisResult.get().getPreContingencyStatus()),
-            new LimitViolationsResult(preContingencyLimitViolations),
-            new NetworkResult(Collections.emptyList(), Collections.emptyList(), Collections.emptyList())
-        );
+        Sort newSort = createSort(sort);
+        List<PreContingencyLimitViolationEntity> preContingencyLimitViolation = preContingencyLimitViolationRepository.findAll(specification, newSort);
+
+        return preContingencyLimitViolation.stream()
+            .map(PreContingencyLimitViolationResultDTO::toDto)
+            .toList();
+    }
+
+    private Sort createSort(Sort sort) {
+        List<Sort.Order> newOrders = new ArrayList<>();
+        sort.forEach(order -> {
+            if(preContingencyLimitViolationRepository.isParentFilter(order.getProperty())){
+                newOrders.add(new Sort.Order(order.getDirection(), "subjectLimitViolation.subjectId"));
+            } else {
+                newOrders.add(order);
+            }
+        });
+       return Sort.by(newOrders);
     }
 
     @Transactional(readOnly = true)

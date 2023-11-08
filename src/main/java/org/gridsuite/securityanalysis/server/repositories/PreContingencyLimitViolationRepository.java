@@ -24,7 +24,7 @@ import java.util.UUID;
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
 
-public interface PreContingencyLimitViolationRepository extends  CommonLimitViolationRepository<PreContingencyLimitViolationEntity>, JpaRepository<PreContingencyLimitViolationEntity, UUID>, JpaSpecificationExecutor<PreContingencyLimitViolationEntity>{
+public interface PreContingencyLimitViolationRepository extends CommonLimitViolationRepository<PreContingencyLimitViolationEntity>, JpaRepository<PreContingencyLimitViolationEntity, UUID>, JpaSpecificationExecutor<PreContingencyLimitViolationEntity>{
 
     Page<PreContingencyLimitViolationEntity> findAll(Specification<PreContingencyLimitViolationEntity> specification, Pageable pageable);
 
@@ -56,14 +56,14 @@ public interface PreContingencyLimitViolationRepository extends  CommonLimitViol
         };
     }
 
-    @Override
+  /*  @Override
     default void addPredicate(CriteriaBuilder criteriaBuilder,
                               Root<PreContingencyLimitViolationEntity> path,
                               List<Predicate> predicates,
                               ResourceFilterDTO filter) {
 
         String fieldName = switch (filter.column()) {
-            case SUBJECT_ID -> "subjectId";
+            case SUBJECT_ID -> "subjectLimitViolation.subjectId";
             case LIMIT_TYPE -> "limitType";
             case LIMIT_NAME -> "limitName";
             case LIMIT_VALUE -> "limit";
@@ -72,17 +72,36 @@ public interface PreContingencyLimitViolationRepository extends  CommonLimitViol
         };
 
         CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, fieldName);
+    }*/
+
+    @Override
+    default void addPredicate(CriteriaBuilder criteriaBuilder,
+                                Root<PreContingencyLimitViolationEntity> path,
+                                List<Predicate> predicates,
+                                ResourceFilterDTO filter) {
+
+        String fieldName = switch (filter.column()) {
+            case SUBJECT_ID -> "subjectLimitViolation.subjectId";
+            case LIMIT_TYPE -> "limitType";
+            case LIMIT_NAME -> "limitName";
+            case LIMIT -> "limit";
+            case VALUE -> "value";
+            case SIDE -> "side";
+            default -> throw new UnsupportedOperationException("This method should be called for parent filters only");
+        };
+        CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, fieldName);
     }
+
+
 
     @Override
     default void addJoinFilter(CriteriaBuilder criteriaBuilder,
                                Join<?, ?> joinPath,
                                ResourceFilterDTO filter) {
         String fieldName;
-        String subFieldName = null;
 
         switch (filter.column()) {
-            case SUBJECT_ID -> fieldName = "subjectLimitViolation.subjectId";
+            case SUBJECT_ID -> fieldName = "subjectId";
             default -> throw new UnsupportedOperationException("This method should be called for nested filters only");
         }
 
@@ -92,6 +111,9 @@ public interface PreContingencyLimitViolationRepository extends  CommonLimitViol
     @Override
     default boolean isParentFilter(ResourceFilterDTO filter) {
         return ResourceFilterDTO.Column.SUBJECT_ID == filter.column();
+    }
 
+    default boolean isParentFilter(String filter) {
+        return filter.equals("subjectId");
     }
 }
