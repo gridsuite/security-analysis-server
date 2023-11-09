@@ -36,6 +36,7 @@ public class NotificationService {
     public static final String PROVIDER_HEADER = "provider";
     public static final String REPORT_UUID_HEADER = "reportUuid";
     public static final String REPORTER_ID_HEADER = "reporterId";
+    public static final String REPORT_TYPE_HEADER = "reportType";
 
     @Autowired
     private StreamBridge publisher;

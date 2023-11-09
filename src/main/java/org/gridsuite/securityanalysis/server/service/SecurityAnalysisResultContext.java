@@ -78,7 +78,8 @@ public class SecurityAnalysisResultContext {
         }
         UUID reportUuid = headers.containsKey(REPORT_UUID_HEADER) ? UUID.fromString((String) headers.get(REPORT_UUID_HEADER)) : null;
         String reporterId = headers.containsKey(REPORTER_ID_HEADER) ? (String) headers.get(REPORTER_ID_HEADER) : null;
-        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, variantId, contingencyListNames, receiver, provider, parameters, reportUuid, reporterId);
+        String reportType = headers.containsKey(REPORT_TYPE_HEADER) ? (String) headers.get(REPORT_TYPE_HEADER) : null;
+        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, variantId, contingencyListNames, receiver, provider, parameters, reportUuid, reporterId, reportType);
         return new SecurityAnalysisResultContext(resultUuid, runContext);
     }
 
@@ -98,6 +99,7 @@ public class SecurityAnalysisResultContext {
                 .setHeader(PROVIDER_HEADER, runContext.getProvider())
                 .setHeader(REPORT_UUID_HEADER, runContext.getReportUuid())
                 .setHeader(REPORTER_ID_HEADER, runContext.getReporterId())
+                .setHeader(REPORT_TYPE_HEADER, runContext.getReportType())
                 .build();
     }
 }
