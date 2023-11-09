@@ -7,17 +7,37 @@
 
 package org.gridsuite.securityanalysis.server.repositories;
 
+import jakarta.persistence.criteria.*;
+import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
 
 @Repository
-public interface ContingencyRepository extends JpaRepository<ContingencyEntity, UUID> {
-    List<ContingencyEntity> findByResultIdAndStatusOrderByContingencyId(UUID resultUuid, String status);
+public interface ContingencyRepository extends CommonLimitViolationRepository<ContingencyEntity>, JpaRepository<ContingencyEntity, UUID>, JpaSpecificationExecutor<ContingencyEntity> {
+    @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.subjectLimitViolation"}, type = EntityGraph.EntityGraphType.LOAD)
+    List<ContingencyEntity> findAllWithContingencyLimitViolationsByUuidIn(List<UUID> contingencyUuids);
+
+    @Override
+    default void addPredicate(CriteriaBuilder criteriaBuilder,
+                                      Root<ContingencyEntity> path,
+                                      List<Predicate> predicates,
+                                      ResourceFilterDTO filter) {
+
+        String fieldName = switch (filter.column()) {
+            case CONTINGENCY_ID -> "contingencyId";
+            case STATUS -> "status";
+            default -> throw new UnsupportedOperationException("This method should be called for parent filters only");
+        };
+
+        CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, fieldName);
+    }
 }

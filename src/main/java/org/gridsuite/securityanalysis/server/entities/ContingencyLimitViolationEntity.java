@@ -22,7 +22,7 @@ import lombok.experimental.SuperBuilder;
 @Entity
 @Table(name = "contingency_limit_violation")
 public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntity {
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @Setter
     private ContingencyEntity contingency;
 
