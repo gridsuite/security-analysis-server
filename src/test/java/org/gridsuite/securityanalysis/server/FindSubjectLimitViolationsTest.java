@@ -33,6 +33,7 @@ import static com.vladmihalcea.sql.SQLStatementCountValidator.assertSelectCount;
 import static com.vladmihalcea.sql.SQLStatementCountValidator.reset;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */

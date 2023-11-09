@@ -13,6 +13,7 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.Collection;
 import java.util.List;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
@@ -34,8 +35,8 @@ public final class CriteriaUtils {
     }
 
     /**
-     * returns predicate depending on filter.value() type
-     * if it's a Collection, it will use "OR" operator between each value
+     * Returns {@link Predicate} depending on {@code filter.value()} type:
+     * if it's a {@link Collection}, it will use "OR" operator between each value
      */
     private static Predicate filterToPredicate(CriteriaBuilder criteriaBuilder,
                                                 Path<?> path,
@@ -60,7 +61,8 @@ public final class CriteriaUtils {
     }
 
     /**
-     * returns atomic predicate depending on filter.dataType() and filter.type()
+     * Returns atomic {@link Predicate} depending on {@code filter.dataType()} and {@code filter.type()}
+     * @throws UnsupportedOperationException if {@link ResourceFilterDTO.DataType filter.type} not supported or {@code filter.value} is {@code null}
      */
     private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder, Expression<?> expression, ResourceFilterDTO filter, Object value) {
         if (ResourceFilterDTO.DataType.TEXT == filter.dataType()) {
@@ -77,7 +79,7 @@ public final class CriteriaUtils {
                 case EQUALS -> criteriaBuilder.equal(criteriaBuilder.upper(stringExpression), stringValue.toUpperCase());
             };
         } else {
-            throw new UnsupportedOperationException("Not implemented");
+            throw new UnsupportedOperationException("Not supported type " + filter.dataType());
         }
     }
 }
