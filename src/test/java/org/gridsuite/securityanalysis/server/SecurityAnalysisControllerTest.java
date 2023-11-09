@@ -12,19 +12,14 @@ import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
+import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
-import com.powsybl.security.SecurityAnalysis;
-import com.powsybl.security.SecurityAnalysisParameters;
-import com.powsybl.security.SecurityAnalysisProvider;
-import com.powsybl.security.SecurityAnalysisResult;
+import com.powsybl.security.*;
 import com.powsybl.security.results.PreContingencyResult;
 import lombok.SneakyThrows;
-import org.gridsuite.securityanalysis.server.dto.ContingencyResultDTO;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
-import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationResultDTO;
+import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.ReportService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
@@ -50,6 +45,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.lang.reflect.Constructor;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -273,25 +269,17 @@ public class SecurityAnalysisControllerTest {
         PreContingencyResult preContingencyResult = mapper.readValue(resultAsString, PreContingencyResult.class);
         assertThat(RESULT.getPreContingencyResult(), new MatcherJson<>(mapper, preContingencyResult));
 
-        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result"))
+        mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result/paged"))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON)
+            );
+
+        mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged"))
             .andExpectAll(
                 status().isOk(),
                 content().contentType(MediaType.APPLICATION_JSON)
             ).andReturn();
-
-        resultAsString = mvcResult.getResponse().getContentAsString();
-        List<ContingencyResultDTO> contingenciesToConstraints = mapper.readValue(resultAsString, new TypeReference<List<ContingencyResultDTO>>() { });
-        assertThat(RESULT_CONTINGENCIES, new MatcherJson<>(mapper, contingenciesToConstraints));
-
-        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result"))
-            .andExpectAll(
-                status().isOk(),
-                content().contentType(MediaType.APPLICATION_JSON)
-            ).andReturn();
-
-        resultAsString = mvcResult.getResponse().getContentAsString();
-        List<SubjectLimitViolationResultDTO> constraintsToContingencies = mapper.readValue(resultAsString, new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
-        assertThat(RESULT_CONSTRAINTS, new MatcherJson<>(mapper, constraintsToContingencies));
 
         // should throw not found if result does not exist
         assertResultNotFound(OTHER_RESULT_UUID);
@@ -510,14 +498,27 @@ public class SecurityAnalysisControllerTest {
             );
     }
 
+    @Test
+    public void getComputationStatus() throws Exception {
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/computation-status"))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON)
+            ).andReturn();
+
+        String resultAsString = mvcResult.getResponse().getContentAsString();
+        List<LoadFlowResult.ComponentResult.Status> status = mapper.readValue(resultAsString, new TypeReference<>() { });
+        assertEquals(status, Arrays.asList(LoadFlowResult.ComponentResult.Status.values()));
+    }
+
     private void assertResultNotFound(UUID resultUuid) throws Exception {
-        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/n-result"))
+        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/n-result/paged"))
                 .andExpect(status().isNotFound());
 
-        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-contingencies-result"))
+        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-contingencies-result/paged"))
             .andExpect(status().isNotFound());
 
-        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-constraints-result"))
+        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-constraints-result/paged"))
             .andExpect(status().isNotFound());
     }
 }

@@ -15,13 +15,13 @@ import java.util.stream.Collectors;
 @Builder
 public class ContingencyDTO {
     private String contingencyId;
-    private String computationStatus;
+    private String status;
     private List<ContingencyElementDTO> elements;
 
     public static ContingencyDTO toDto(ContingencyEntity contingency) {
         return ContingencyDTO.builder()
             .contingencyId(contingency.getContingencyId())
-            .computationStatus(contingency.getStatus())
+            .status(contingency.getStatus())
             .elements(contingency.getContingencyElements().stream().map(ContingencyElementDTO::toDto).collect(Collectors.toList()))
             .build();
     }
