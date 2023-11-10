@@ -84,6 +84,7 @@ public interface PreContingencyLimitViolationRepository extends CommonLimitViola
             case LIMIT_NAME -> "limitName";
             case LIMIT -> "limit";
             case VALUE -> "value";
+            case ACCEPTABLE_DURATION -> "acceptableDuration";
             case SIDE -> "side";
             case LOADING -> "loading";
             default -> throw new UnsupportedOperationException("This method should be called for parent filters only");

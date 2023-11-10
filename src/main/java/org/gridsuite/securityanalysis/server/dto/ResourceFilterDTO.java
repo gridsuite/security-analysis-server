@@ -53,6 +53,8 @@ public record ResourceFilterDTO(DataType dataType, Type type, Object value, Colu
         LIMIT_NAME("limitName"),
         @JsonProperty("limit")
         LIMIT("limit"),
+        @JsonProperty("acceptableDuration")
+        ACCEPTABLE_DURATION("acceptableDuration"),
         @JsonProperty("value")
         VALUE("value"),
         @JsonProperty("side")
