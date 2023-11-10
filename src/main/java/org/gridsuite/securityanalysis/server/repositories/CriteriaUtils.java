@@ -24,10 +24,10 @@ public final class CriteriaUtils {
     }
 
     public static void addPredicate(CriteriaBuilder criteriaBuilder,
-                                    Path<?> path,
-                                    List<Predicate> predicates,
-                                    ResourceFilterDTO filter,
-                                    String fieldName) {
+                                     Path<?> path,
+                                     List<Predicate> predicates,
+                                     ResourceFilterDTO filter,
+                                     String fieldName) {
         Predicate predicate = filterToPredicate(criteriaBuilder, path, filter, fieldName);
         if (predicate != null) {
             predicates.add(predicate);
@@ -49,8 +49,8 @@ public final class CriteriaUtils {
     }
 
     /**
-     * returns predicate depending on filter.value() type
-     * if it's a Collection, it will use "OR" operator between each value
+     * Returns {@link Predicate} depending on {@code filter.value()} type:
+     * if it's a {@link Collection}, it will use "OR" operator between each value
      */
     private static Predicate filterToPredicate(CriteriaBuilder criteriaBuilder,
                                                Path<?> path,
@@ -65,20 +65,20 @@ public final class CriteriaUtils {
                 return null;
             }
             return criteriaBuilder.or(
-                    filterCollection.stream().map(value ->
-                            filterToAtomicPredicate(criteriaBuilder, path, expression, filter, value)
-                    ).toArray(Predicate[]::new)
+                filterCollection.stream().map(value ->
+                    filterToAtomicPredicate(criteriaBuilder,path, expression, filter, value)
+                ).toArray(Predicate[]::new)
             );
         } else {
-            return filterToAtomicPredicate(criteriaBuilder, path, expression, filter, filter.value());
+            return filterToAtomicPredicate(criteriaBuilder,path, expression, filter, filter.value());
         }
     }
 
     /**
-     * returns atomic predicate depending on filter.dataType() and filter.type()
+     * Returns atomic {@link Predicate} depending on {@code filter.dataType()} and {@code filter.type()}
+     * @throws UnsupportedOperationException if {@link ResourceFilterDTO.DataType filter.type} not supported or {@code filter.value} is {@code null}
      */
-    private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder, Path<?> path, Expression<String> expression, ResourceFilterDTO filter, Object value) {
-
+    private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder,Path path, Expression<?> expression, ResourceFilterDTO filter, Object value) {
         if (ResourceFilterDTO.DataType.TEXT == filter.dataType()) {
             String stringValue = (String) value;
             String escapedFilterValue = EscapeCharacter.DEFAULT.escape(stringValue);
@@ -88,12 +88,9 @@ public final class CriteriaUtils {
             // this makes equals query work with enum values
             Expression<String> stringExpression = expression.as(String.class);
             return switch (filter.type()) {
-                case CONTAINS ->
-                        criteriaBuilder.like(criteriaBuilder.upper(stringExpression), "%" + escapedFilterValue.toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
-                case STARTS_WITH ->
-                        criteriaBuilder.like(criteriaBuilder.upper(stringExpression), escapedFilterValue.toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
-                case EQUALS ->
-                        criteriaBuilder.equal(criteriaBuilder.upper(stringExpression), stringValue.toUpperCase());
+                case CONTAINS -> criteriaBuilder.like(criteriaBuilder.upper(stringExpression), "%" + escapedFilterValue.toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
+                case STARTS_WITH -> criteriaBuilder.like(criteriaBuilder.upper(stringExpression), escapedFilterValue.toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
+                case EQUALS -> criteriaBuilder.equal(criteriaBuilder.upper(stringExpression), stringValue.toUpperCase());
                 default ->
                         throw new UnsupportedOperationException("This type of filter is not supported for text data type");
             };
@@ -137,5 +134,4 @@ public final class CriteriaUtils {
             return originPath.get(dotSeparatedFields);
         }
     }
-
 }

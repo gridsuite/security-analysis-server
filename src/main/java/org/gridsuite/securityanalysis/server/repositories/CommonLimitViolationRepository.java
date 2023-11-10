@@ -13,19 +13,21 @@ import org.springframework.data.jpa.domain.Specification;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
 
 public interface CommonLimitViolationRepository<T> {
     /**
-     * Returns specification depending on {filters}
+
+     * Returns specification depending on {@code filters} <br/>
      * This interface is common for both SubjectLimitViolationRepository and ContingencyRepository
-     * except for <i>addPredicate</i> which need to be implemented
+     * except for <i>addPredicate</i> which needs to be implemented
      */
     default Specification<T> getParentsSpecifications(
-            UUID resultUuid,
-            List<ResourceFilterDTO> filters
+        UUID resultUuid,
+        List<ResourceFilterDTO> filters
     ) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -36,14 +38,14 @@ public interface CommonLimitViolationRepository<T> {
 
             // user filters
             filters.stream()
-                    .forEach(filter -> addPredicate(criteriaBuilder, root, predicates, filter));
+                .forEach(filter -> addPredicate(criteriaBuilder, root, predicates, filter));
 
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         };
     }
 
     void addPredicate(CriteriaBuilder criteriaBuilder,
-                      Root<T> path,
-                      List<Predicate> predicates,
-                      ResourceFilterDTO filter);
+                                     Root<T> path,
+                                     List<Predicate> predicates,
+                                     ResourceFilterDTO filter);
 }

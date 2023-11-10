@@ -9,6 +9,7 @@ package org.gridsuite.securityanalysis.server;
 import com.powsybl.iidm.network.Branch;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.security.LimitViolationType;
+
 import com.powsybl.security.SecurityAnalysisResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -104,6 +105,7 @@ public class SecurityAnalysisController {
                                                                                   Pageable pageable) {
         String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
         List<PreContingencyLimitViolationResultDTO> result = securityAnalysisResultService.findNResult(resultUuid, decodedStringFilters, pageable.getSort());
+
 
         return result != null
                 ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
@@ -212,7 +214,6 @@ public class SecurityAnalysisController {
     public ResponseEntity<Branch.Side[]> getBranchSides() {
         return ResponseEntity.ok().body(Branch.Side.values());
     }
-
 
     @GetMapping(value = "/computation-status", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get available computation status")

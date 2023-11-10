@@ -9,6 +9,8 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.security.*;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.*;
@@ -18,7 +20,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
 import org.springframework.data.domain.Sort;
+
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -192,8 +196,8 @@ public class SecurityAnalysisResultService {
         // cf.https://vladmihalcea.com/spring-data-jpa-multiplebagfetchexception/
         if (!contingencies.isEmpty()) {
             List<UUID> contingencyUuids = contingencies.stream()
-                    .map(c -> c.getUuid())
-                    .toList();
+                .map(c -> c.getUuid())
+                .toList();
             contingencyRepository.findAllWithContingencyLimitViolationsByUuidIn(contingencyUuids);
         }
     }
@@ -204,8 +208,8 @@ public class SecurityAnalysisResultService {
         // cf.https://vladmihalcea.com/spring-data-jpa-multiplebagfetchexception/
         if (!subjectLimitViolations.isEmpty()) {
             List<UUID> subjectLimitViolationsUuids = subjectLimitViolations.stream()
-                    .map(c -> c.getId())
-                    .toList();
+                .map(c -> c.getId())
+                .toList();
             subjectLimitViolationRepository.findAllWithContingencyLimitViolationsByIdIn(subjectLimitViolationsUuids);
         }
     }
