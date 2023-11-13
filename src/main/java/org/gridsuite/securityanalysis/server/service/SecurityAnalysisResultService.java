@@ -9,20 +9,22 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import com.powsybl.loadflow.LoadFlowResult;
-import com.powsybl.security.*;
+import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.dto.*;
-import org.gridsuite.securityanalysis.server.entities.*;
-import org.gridsuite.securityanalysis.server.repositories.*;
+import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
+import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
+import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.repositories.ContingencyRepository;
+import org.gridsuite.securityanalysis.server.repositories.PreContingencyLimitViolationRepository;
+import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
+import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationRepository;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-
 import org.springframework.data.domain.Sort;
-
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

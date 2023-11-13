@@ -106,7 +106,6 @@ public class SecurityAnalysisController {
         String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
         List<PreContingencyLimitViolationResultDTO> result = securityAnalysisResultService.findNResult(resultUuid, decodedStringFilters, pageable.getSort());
 
-
         return result != null
                 ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
                 : ResponseEntity.notFound().build();
@@ -206,7 +205,6 @@ public class SecurityAnalysisController {
                 .filter(lm -> !limitViolationTypesToRemove.contains(lm))
                 .toList());
     }
-
 
     @GetMapping(value = "/branch-sides", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get available branch sides")

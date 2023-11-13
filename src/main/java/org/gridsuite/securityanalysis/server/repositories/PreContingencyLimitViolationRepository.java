@@ -43,7 +43,6 @@ public interface PreContingencyLimitViolationRepository extends CommonLimitViola
             Join<Object, Object> subjectLimitViolations = (Join<Object, Object>) root.fetch("subjectLimitViolation", JoinType.INNER);
             parentFilters.forEach(filter -> addJoinFilter(criteriaBuilder, subjectLimitViolations, filter));
 
-            // pageable makes a count request which should only count preContingency results, not joined rows
             if (!CriteriaUtils.currentQueryIsCountRecords(query)) {
                 // criteria in preContingencyLimitViolationEntity
                 List<ResourceFilterDTO> nestedFilters = filters.stream().filter(f -> !isParentFilter(f)).toList();
@@ -53,24 +52,6 @@ public interface PreContingencyLimitViolationRepository extends CommonLimitViola
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }
-
-  /*  @Override
-    default void addPredicate(CriteriaBuilder criteriaBuilder,
-                              Root<PreContingencyLimitViolationEntity> path,
-                              List<Predicate> predicates,
-                              ResourceFilterDTO filter) {
-
-        String fieldName = switch (filter.column()) {
-            case SUBJECT_ID -> "subjectLimitViolation.subjectId";
-            case LIMIT_TYPE -> "limitType";
-            case LIMIT_NAME -> "limitName";
-            case LIMIT_VALUE -> "limit";
-            case SIDE -> "side";
-            default -> throw new UnsupportedOperationException("This method should be called for parent filters only");
-        };
-
-        CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, fieldName);
-    }*/
 
     @Override
     default void addPredicate(CriteriaBuilder criteriaBuilder,

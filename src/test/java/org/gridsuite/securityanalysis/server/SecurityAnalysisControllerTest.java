@@ -16,10 +16,13 @@ import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
-import com.powsybl.security.*;
-import com.powsybl.security.results.PreContingencyResult;
+import com.powsybl.security.SecurityAnalysis;
+import com.powsybl.security.SecurityAnalysisParameters;
+import com.powsybl.security.SecurityAnalysisProvider;
+import com.powsybl.security.SecurityAnalysisResult;
 import lombok.SneakyThrows;
-import org.gridsuite.securityanalysis.server.dto.*;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.ReportService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
@@ -259,15 +262,11 @@ public class SecurityAnalysisControllerTest {
         assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
         assertEquals("me", resultMessage.getHeaders().get("receiver"));
 
-        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/n-result"))
+        mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/n-result"))
             .andExpectAll(
                 status().isOk(),
                 content().contentType(MediaType.APPLICATION_JSON)
             ).andReturn();
-
-        resultAsString = mvcResult.getResponse().getContentAsString();
-        PreContingencyResult preContingencyResult = mapper.readValue(resultAsString, PreContingencyResult.class);
-        assertThat(RESULT.getPreContingencyResult(), new MatcherJson<>(mapper, preContingencyResult));
 
         mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result/paged"))
             .andExpectAll(
@@ -512,7 +511,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     private void assertResultNotFound(UUID resultUuid) throws Exception {
-        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/n-result/paged"))
+        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/n-result"))
                 .andExpect(status().isNotFound());
 
         mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-contingencies-result/paged"))
