@@ -43,33 +43,24 @@ public record ResourceFilterDTO(DataType dataType, Type type, Object value, Colu
 
     public enum Column {
         @JsonProperty("contingencyId")
-        CONTINGENCY_ID("contingencyId"),
-        STATUS("status"),
+        CONTINGENCY_ID,
+        STATUS,
         @JsonProperty("subjectId")
-        SUBJECT_ID("subjectId"),
+        SUBJECT_ID,
         @JsonProperty("limitType")
-        LIMIT_TYPE("limitType"),
+        LIMIT_TYPE,
         @JsonProperty("limitName")
-        LIMIT_NAME("limitName"),
+        LIMIT_NAME,
         @JsonProperty("limit")
-        LIMIT("limit"),
+        LIMIT,
         @JsonProperty("acceptableDuration")
-        ACCEPTABLE_DURATION("acceptableDuration"),
+        ACCEPTABLE_DURATION,
         @JsonProperty("value")
-        VALUE("value"),
+        VALUE,
         @JsonProperty("side")
-        SIDE("side"),
+        SIDE,
         @JsonProperty("loading")
-        LOADING("loading");
+        LOADING
 
-        private final String columnName;
-
-        Column(String columnName) {
-            this.columnName = columnName;
-        }
-
-        public String columnName() {
-            return columnName;
-        }
     }
 }

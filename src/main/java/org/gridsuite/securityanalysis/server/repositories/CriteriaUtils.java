@@ -66,11 +66,11 @@ public final class CriteriaUtils {
             }
             return criteriaBuilder.or(
                 filterCollection.stream().map(value ->
-                        filterToAtomicPredicate(criteriaBuilder, path, expression, filter, value)
+                        filterToAtomicPredicate(criteriaBuilder, path, expression, filter, field, value)
                 ).toArray(Predicate[]::new)
             );
         } else {
-            return filterToAtomicPredicate(criteriaBuilder, path, expression, filter, filter.value());
+            return filterToAtomicPredicate(criteriaBuilder, path, expression, filter, field, filter.value());
         }
     }
 
@@ -78,7 +78,7 @@ public final class CriteriaUtils {
      * Returns atomic {@link Predicate} depending on {@code filter.dataType()} and {@code filter.type()}
      * @throws UnsupportedOperationException if {@link ResourceFilterDTO.DataType filter.type} not supported or {@code filter.value} is {@code null}
      */
-    private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder, Path path, Expression<?> expression, ResourceFilterDTO filter, Object value) {
+    private static Predicate filterToAtomicPredicate(CriteriaBuilder criteriaBuilder, Path path, Expression<?> expression, ResourceFilterDTO filter, String field, Object value) {
         if (ResourceFilterDTO.DataType.TEXT == filter.dataType()) {
             String stringValue = (String) value;
             String escapedFilterValue = EscapeCharacter.DEFAULT.escape(stringValue);
@@ -98,11 +98,11 @@ public final class CriteriaUtils {
 
         if (ResourceFilterDTO.DataType.NUMBER == filter.dataType()) {
             return switch (filter.type()) {
-                case NOT_EQUAL -> criteriaBuilder.notEqual(getColumnPath(path, filter.column().columnName()), Double.valueOf((String) value));
+                case NOT_EQUAL -> criteriaBuilder.notEqual(getColumnPath(path, field), Double.valueOf((String) value));
                 case LESS_THAN_OR_EQUAL ->
-                        criteriaBuilder.lessThanOrEqualTo(getColumnPath(path, filter.column().columnName()), Double.valueOf((String) value));
+                        criteriaBuilder.lessThanOrEqualTo(getColumnPath(path, field), Double.valueOf((String) value));
                 case GREATER_THAN_OR_EQUAL ->
-                        criteriaBuilder.greaterThanOrEqualTo(getColumnPath(path, filter.column().columnName()), Double.valueOf((String) value));
+                        criteriaBuilder.greaterThanOrEqualTo(getColumnPath(path, field), Double.valueOf((String) value));
                 default ->
                         throw new UnsupportedOperationException("This type of filter is not supported for number data type");
             };
