@@ -31,6 +31,7 @@ public class ReportService {
 
     private static final String DELIMITER = "/";
     private static final String QUERY_PARAM_REPORT_TASKKEY_TYPE_FILTER = "taskKeyTypeFilter";
+    private static final String QUERY_PARAM_REPORT_THROW_ERROR = "errorOnReportNotFound";
 
     private String baseUri;
 
@@ -61,6 +62,7 @@ public class ReportService {
 
         var path = UriComponentsBuilder.fromPath(DELIMITER + REPORT_API_VERSION + "/reports/{reportUuid}")
                 .queryParam(QUERY_PARAM_REPORT_TASKKEY_TYPE_FILTER, taskKeyTypeFilter)
+                .queryParam(QUERY_PARAM_REPORT_THROW_ERROR, false)
                 .buildAndExpand(reportUuid)
                 .toUriString();
         var headers = new HttpHeaders();
