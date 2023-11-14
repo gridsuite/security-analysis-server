@@ -21,6 +21,8 @@ import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.security.SecurityAnalysisResult;
 import lombok.SneakyThrows;
+import org.gridsuite.securityanalysis.server.dto.PreContingencyLimitViolationResultDTO;
+import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
@@ -47,6 +49,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.lang.reflect.Constructor;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -263,22 +266,21 @@ public class SecurityAnalysisControllerTest {
         assertEquals("me", resultMessage.getHeaders().get("receiver"));
 
         mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/n-result"))
-            .andExpectAll(
-                status().isOk(),
-                content().contentType(MediaType.APPLICATION_JSON)
-            ).andReturn();
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON));
+
+        assertFiltredResultN();
 
         mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result/paged"))
-            .andExpectAll(
-                status().isOk(),
-                content().contentType(MediaType.APPLICATION_JSON)
-            );
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON));
 
         mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged"))
-            .andExpectAll(
-                status().isOk(),
-                content().contentType(MediaType.APPLICATION_JSON)
-            ).andReturn();
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON));
 
         // should throw not found if result does not exist
         assertResultNotFound(OTHER_RESULT_UUID);
@@ -288,6 +290,39 @@ public class SecurityAnalysisControllerTest {
                 .andExpect(status().isOk());
 
         assertResultNotFound(RESULT_UUID);
+    }
+
+    private String buildFilterUrl() {
+        String filterUrl = "";
+        try {
+
+            List<ResourceFilterDTO> filters = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "vl1", ResourceFilterDTO.Column.SUBJECT_ID),
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, new String[]{"HIGH_VOLTAGE"}, ResourceFilterDTO.Column.LIMIT_TYPE),
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.GREATER_THAN_OR_EQUAL, "399", ResourceFilterDTO.Column.LIMIT),
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, "420", ResourceFilterDTO.Column.VALUE)
+            );
+
+            String jsonFilters = new ObjectMapper().writeValueAsString(filters);
+
+            filterUrl = "filters=" + URLEncoder.encode(jsonFilters, StandardCharsets.UTF_8.toString());
+
+            return filterUrl;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return filterUrl;
+    }
+
+    private void assertFiltredResultN() throws Exception {
+
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/n-result?" + buildFilterUrl()))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON)
+                ).andReturn();
+        String resultAsString = mvcResult.getResponse().getContentAsString();
+        List<PreContingencyLimitViolationResultDTO> preContingencyResult = mapper.readValue(resultAsString, new TypeReference<List<PreContingencyLimitViolationResultDTO>>() { });
+        assertEquals(1, preContingencyResult.size());
     }
 
     @Test
