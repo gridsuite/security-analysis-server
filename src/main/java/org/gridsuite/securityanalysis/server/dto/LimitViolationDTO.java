@@ -27,7 +27,7 @@ public class LimitViolationDTO {
             .limitType(limitViolation.getLimitType())
             .limitName(limitViolation.getLimitName())
             .side(limitViolation.getSide())
-            .acceptableDuration(limitViolation.getAcceptableDuration())
+            .acceptableDuration((int) limitViolation.getAcceptableDuration())
             .limit(limitViolation.getLimit())
             .limitReduction(limitViolation.getLimitReduction())
             .value(limitViolation.getValue())

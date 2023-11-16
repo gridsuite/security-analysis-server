@@ -41,7 +41,7 @@ public abstract class AbstractLimitViolationEntity {
     @Enumerated(EnumType.STRING)
     private LimitViolationType limitType;
 
-    private int acceptableDuration;
+    private long acceptableDuration;
 
     private float limitReduction;
 
@@ -53,15 +53,6 @@ public abstract class AbstractLimitViolationEntity {
 
     @Column(name = "loading")
     private Double loading;
-
-    public static LimitViolation toLimitViolation(AbstractLimitViolationEntity limitViolationEntity) {
-        String subjectId = limitViolationEntity.getSubjectLimitViolation() != null
-                ? limitViolationEntity.getSubjectLimitViolation().getSubjectId()
-                : null;
-
-        return new LimitViolation(subjectId, limitViolationEntity.getLimitType(), limitViolationEntity.getLimitName(), limitViolationEntity.getAcceptableDuration(),
-                limitViolationEntity.getLimit(), limitViolationEntity.getLimitReduction(), limitViolationEntity.getValue(), limitViolationEntity.getSide());
-    }
 
     public static Double computeLoading(LimitViolation limitViolation) {
         return LimitViolationType.CURRENT.equals(limitViolation.getLimitType())
