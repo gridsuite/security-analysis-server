@@ -8,11 +8,14 @@ package org.gridsuite.securityanalysis.server.repositories;
 
 import jakarta.persistence.criteria.*;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
+import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import static java.util.function.Predicate.not;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
@@ -36,15 +39,51 @@ public interface CommonLimitViolationRepository<T> {
             predicates.add(criteriaBuilder.equal(root.get("result").get("id"), resultUuid));
 
             // user filters
-            filters.stream()
+            filters.stream().filter(this::isParentFilter)
                 .forEach(filter -> addPredicate(criteriaBuilder, root, predicates, filter));
+            filters.stream().filter(not(this::isParentFilter))
+                .forEach(filter -> addPredicate(criteriaBuilder, getFilterPath(root), predicates, filter));
+
+            query.distinct(true);
 
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         };
     }
 
+    default Specification<ContingencyEntity> getLimitViolationsSpecifications(
+        List<UUID> contingenciesUuid,
+        List<ResourceFilterDTO> filters
+    ) {
+        return (root, query, criteriaBuilder) -> {
+            // join fetch contingencyLimitViolation table
+            Join<Object, Object> contingencyLimitViolation = (Join<Object, Object>) root.fetch("contingencyLimitViolations", JoinType.LEFT);
+
+            // criteria in contingencyLimitViolationEntity
+            // user filters
+            filters.stream().filter(not(this::isParentFilter))
+                .forEach(filter -> addJoinFilter(criteriaBuilder, contingencyLimitViolation, filter));
+
+            // filter on contingencyUuid
+            return root.get("uuid").in(contingenciesUuid);
+        };
+    }
+
     void addPredicate(CriteriaBuilder criteriaBuilder,
-                                     Root<T> path,
-                                     List<Predicate> predicates,
-                                     ResourceFilterDTO filter);
+                      Path<?> path,
+                      List<Predicate> predicates,
+                      ResourceFilterDTO filter);
+
+    void addJoinFilter(CriteriaBuilder criteriaBuilder,
+                       Join<?, ?> joinPath,
+                       ResourceFilterDTO filter);
+
+    boolean isParentFilter(ResourceFilterDTO filter);
+
+    Path<?> getFilterPath(Root<?> root);
+
+
+
+    interface ContingencyUuid {
+        UUID getUuid();
+    }
 }

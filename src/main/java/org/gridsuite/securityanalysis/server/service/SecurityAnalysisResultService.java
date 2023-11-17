@@ -20,6 +20,7 @@ import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -156,9 +157,19 @@ public class SecurityAnalysisResultService {
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
         // cf. https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/
         // We must separate in two requests, one with pagination the other one with Join Fetch
-        Page<ContingencyEntity> contingenciesPage = contingencyRepository.findAll(specification, pageable);
+        Page<ContingencyRepository.ContingencyUuid> uuidPage = contingencyRepository.findBy(specification, q ->
+            q.project("uuid")
+                .as(ContingencyRepository.ContingencyUuid.class)
+                .sortBy(pageable.getSort())
+                .page(pageable)
+        );
+        List<UUID> uuids = uuidPage.map(u -> u.getUuid()).toList();
+        List<ContingencyEntity> contingencies = contingencyRepository.findAllByUuidIn(uuids);
+        contingencies.sort(Comparator.comparing(c -> uuids.indexOf(c.getUuid())));
+        Page<ContingencyEntity> contingenciesPage = new PageImpl<>(contingencies, pageable, uuidPage.getTotalElements());
+
         if (contingenciesPage.hasContent()) {
-            appendLimitViolationsToContingenciesResult(contingenciesPage);
+            appendLimitViolationsToContingenciesResult(contingenciesPage, resourceFilters);
         }
         return contingenciesPage;
     }
@@ -178,7 +189,7 @@ public class SecurityAnalysisResultService {
         return subjectLimitViolationsPage;
     }
 
-    private void appendLimitViolationsToContingenciesResult(Page<ContingencyEntity> contingencies) {
+    private void appendLimitViolationsToContingenciesResult(Page<ContingencyEntity> contingencies, List<ResourceFilterDTO> resourceFilters) {
 
         // using the the Hibernate First-Level Cache or Persistence Context
         // cf.https://vladmihalcea.com/spring-data-jpa-multiplebagfetchexception/
@@ -186,7 +197,9 @@ public class SecurityAnalysisResultService {
             List<UUID> contingencyUuids = contingencies.stream()
                 .map(c -> c.getUuid())
                 .toList();
-            contingencyRepository.findAllWithContingencyLimitViolationsByUuidIn(contingencyUuids);
+            Specification<ContingencyEntity> specification = contingencyRepository.getLimitViolationsSpecifications(contingencyUuids, resourceFilters);
+            contingencyRepository.findAll(specification);
+            //contingencyRepository.findAllWithContingencyLimitViolationsByUuidIn(contingencyUuids);
         }
     }
 

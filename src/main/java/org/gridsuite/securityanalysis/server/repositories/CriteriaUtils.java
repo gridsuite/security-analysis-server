@@ -34,6 +34,16 @@ public final class CriteriaUtils {
         }
     }
 
+    public static void addJoinFilter(CriteriaBuilder criteriaBuilder,
+                                     Join<?, ?> joinPath,
+                                     ResourceFilterDTO filter,
+                                     String dotSeparatedFields) {
+        Predicate predicate = filterToPredicate(criteriaBuilder, joinPath, filter, dotSeparatedFields);
+        if (predicate != null) {
+            joinPath.on(predicate);
+        }
+    }
+
     /**
      * Returns {@link Predicate} depending on {@code filter.value()} type:
      * if it's a {@link Collection}, it will use "OR" operator between each value
@@ -43,7 +53,7 @@ public final class CriteriaUtils {
                                                 ResourceFilterDTO filter,
                                                 String field) {
         // expression targets field to filter on
-        Expression<String> expression = path.get(field);
+        Expression<String> expression = getColumnPath(path, field);
 
         // collection values are filtered with "or" operator
         if (filter.value() instanceof Collection<?> filterCollection) {
@@ -80,6 +90,30 @@ public final class CriteriaUtils {
             };
         } else {
             throw new UnsupportedOperationException("Not supported type " + filter.dataType());
+        }
+    }
+
+    /**
+     * This method allow to query eventually dot separated fields with the Criteria API
+     * Ex : from 'fortescueCurrent.positiveMagnitude' we create the query path
+     * path.get("fortescueCurrent").get("positiveMagnitude") to access to the correct nested field
+     *
+     * @param originPath         the origin path
+     * @param dotSeparatedFields dot separated fields (can be only one field without any dot)
+     * @param <X>                the entity type referenced by the origin path
+     * @param <Y>                the type referenced by the path
+     * @return path for the query
+     */
+    private static <X, Y> Path<Y> getColumnPath(Path<X> originPath, String dotSeparatedFields) {
+        if (dotSeparatedFields.contains(".")) {
+            String[] fields = dotSeparatedFields.split("\\.");
+            Path<Y> path = originPath.get(fields[0]);
+            for (int i = 1; i < fields.length; i++) {
+                path = path.get(fields[i]);
+            }
+            return path;
+        } else {
+            return originPath.get(dotSeparatedFields);
         }
     }
 }

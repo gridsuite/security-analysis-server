@@ -37,6 +37,12 @@ public record ResourceFilterDTO(DataType dataType, Type type, Object value, Colu
         CONTINGENCY_ID,
         STATUS,
         @JsonProperty("subjectId")
-        SUBJECT_ID
+        SUBJECT_ID,
+        @JsonProperty("limitType")
+        LIMIT_TYPE,
+        @JsonProperty("limitName")
+        LIMIT_NAME,
+        @JsonProperty("side")
+        SIDE
     }
 }

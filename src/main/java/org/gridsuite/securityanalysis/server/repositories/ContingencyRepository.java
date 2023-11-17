@@ -10,6 +10,8 @@ package org.gridsuite.securityanalysis.server.repositories;
 import jakarta.persistence.criteria.*;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -27,17 +29,51 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
     List<ContingencyEntity> findAllWithContingencyLimitViolationsByUuidIn(List<UUID> contingencyUuids);
 
     @Override
+    @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.subjectLimitViolation"}, type = EntityGraph.EntityGraphType.LOAD)
+    List<ContingencyEntity> findAll(Specification<ContingencyEntity> spec);
+
+    List<ContingencyEntity> findAllByUuidIn(List<UUID> uuids);
+
+    @Override
     default void addPredicate(CriteriaBuilder criteriaBuilder,
-                                      Root<ContingencyEntity> path,
-                                      List<Predicate> predicates,
-                                      ResourceFilterDTO filter) {
+                              Path<?> path,
+                              List<Predicate> predicates,
+                              ResourceFilterDTO filter) {
 
         String fieldName = switch (filter.column()) {
             case CONTINGENCY_ID -> "contingencyId";
             case STATUS -> "status";
-            default -> throw new UnsupportedOperationException("This method should be called for parent filters only");
+            case SUBJECT_ID -> "subjectLimitViolation.subjectId";
+            case LIMIT_TYPE -> "limitType";
+            case LIMIT_NAME -> "limitName";
+            case SIDE -> "side";
         };
 
         CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, fieldName);
+    }
+
+    @Override
+    default void addJoinFilter(CriteriaBuilder criteriaBuilder,
+                               Join<?, ?> joinPath,
+                               ResourceFilterDTO filter) {
+        String dotSeparatedFields = switch (filter.column()) {
+            case SUBJECT_ID -> "subjectLimitViolation.subjectId";
+            case LIMIT_TYPE -> "limitType";
+            case LIMIT_NAME -> "limitName";
+            case SIDE -> "side";
+            default -> throw new UnsupportedOperationException("This method should be called for nested filters only");
+        };
+
+        CriteriaUtils.addJoinFilter(criteriaBuilder, joinPath, filter, dotSeparatedFields);
+    }
+
+    @Override
+    default boolean isParentFilter(ResourceFilterDTO filter) {
+        return List.of(ResourceFilterDTO.Column.CONTINGENCY_ID, ResourceFilterDTO.Column.STATUS).contains(filter.column());
+    }
+
+    @Override
+    default Path<?> getFilterPath(Root<?> root) {
+        return root.get("contingencyLimitViolations");
     }
 }

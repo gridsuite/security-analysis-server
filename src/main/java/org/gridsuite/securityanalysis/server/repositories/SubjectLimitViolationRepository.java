@@ -28,14 +28,40 @@ public interface SubjectLimitViolationRepository extends CommonLimitViolationRep
 
     @Override
     default void addPredicate(CriteriaBuilder criteriaBuilder,
-                                     Root<SubjectLimitViolationEntity> path,
-                                     List<Predicate> predicates,
-                                     ResourceFilterDTO filter) {
+                              Path<?> path,
+                              List<Predicate> predicates,
+                              ResourceFilterDTO filter) {
 
         if (ResourceFilterDTO.Column.SUBJECT_ID != filter.column()) {
             throw new UnsupportedOperationException("This method should be called for parent filters only");
         } else {
             CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, "subjectId");
         }
+    }
+
+    @Override
+    default void addJoinFilter(CriteriaBuilder criteriaBuilder,
+                               Join<?, ?> joinPath,
+                               ResourceFilterDTO filter) {
+        String dotSeparatedFields = switch (filter.column()) {
+            case CONTINGENCY_ID -> "contingency.contingencyId";
+            case STATUS -> "contingency.status";
+            case LIMIT_TYPE -> "limitType";
+            case LIMIT_NAME -> "limitName";
+            case SIDE -> "side";
+            default -> throw new UnsupportedOperationException("This method should be called for nested filters only");
+        };
+
+        CriteriaUtils.addJoinFilter(criteriaBuilder, joinPath, filter, dotSeparatedFields);
+    }
+
+    @Override
+    default boolean isParentFilter(ResourceFilterDTO filter) {
+        return List.of(ResourceFilterDTO.Column.CONTINGENCY_ID, ResourceFilterDTO.Column.STATUS).contains(filter.column());
+    }
+
+    @Override
+    default Path<?> getFilterPath(Root<?> root) {
+        return root.get("contingencyLimitViolations");
     }
 }
