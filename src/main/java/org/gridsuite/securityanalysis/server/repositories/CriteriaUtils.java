@@ -97,12 +97,12 @@ public final class CriteriaUtils {
         }
 
         if (ResourceFilterDTO.DataType.NUMBER == filter.dataType()) {
+            Double valueDouble = Double.valueOf((String) value);
             return switch (filter.type()) {
-                case NOT_EQUAL -> criteriaBuilder.notEqual(getColumnPath(path, field), Double.valueOf((String) value));
-                case LESS_THAN_OR_EQUAL ->
-                        criteriaBuilder.lessThanOrEqualTo(getColumnPath(path, field), Double.valueOf((String) value));
+                case NOT_EQUAL -> criteriaBuilder.notEqual(getColumnPath(path, field), valueDouble);
+                case LESS_THAN_OR_EQUAL -> criteriaBuilder.lessThanOrEqualTo(getColumnPath(path, field), valueDouble);
                 case GREATER_THAN_OR_EQUAL ->
-                        criteriaBuilder.greaterThanOrEqualTo(getColumnPath(path, field), Double.valueOf((String) value));
+                        criteriaBuilder.greaterThanOrEqualTo(getColumnPath(path, field), valueDouble);
                 default ->
                         throw new UnsupportedOperationException("This type of filter is not supported for number data type");
             };
