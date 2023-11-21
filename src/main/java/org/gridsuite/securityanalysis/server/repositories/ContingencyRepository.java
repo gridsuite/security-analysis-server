@@ -7,10 +7,8 @@
 
 package org.gridsuite.securityanalysis.server.repositories;
 
-import jakarta.persistence.criteria.*;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,21 +24,16 @@ import java.util.*;
 @Repository
 public interface ContingencyRepository extends CommonLimitViolationRepository<ContingencyEntity>, JpaRepository<ContingencyEntity, UUID>, JpaSpecificationExecutor<ContingencyEntity> {
     @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.subjectLimitViolation"}, type = EntityGraph.EntityGraphType.LOAD)
-    List<ContingencyEntity> findAllWithContingencyLimitViolationsByUuidIn(List<UUID> contingencyUuids);
-
-    @Override
-    @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.subjectLimitViolation"}, type = EntityGraph.EntityGraphType.LOAD)
     List<ContingencyEntity> findAll(Specification<ContingencyEntity> spec);
+
+    @EntityGraph(attributePaths = {"contingencyElements"}, type = EntityGraph.EntityGraphType.LOAD)
+    List<ContingencyEntity> findAllWithContingencyElementsByUuidIn(List<UUID> uuids);
 
     List<ContingencyEntity> findAllByUuidIn(List<UUID> uuids);
 
     @Override
-    default void addPredicate(CriteriaBuilder criteriaBuilder,
-                              Path<?> path,
-                              List<Predicate> predicates,
-                              ResourceFilterDTO filter) {
-
-        String fieldName = switch (filter.column()) {
+    default String columnToDotSeparatedField(ResourceFilterDTO.Column column) {
+        return switch (column) {
             case CONTINGENCY_ID -> "contingencyId";
             case STATUS -> "status";
             case SUBJECT_ID -> "subjectLimitViolation.subjectId";
@@ -48,23 +41,6 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
             case LIMIT_NAME -> "limitName";
             case SIDE -> "side";
         };
-
-        CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, fieldName);
-    }
-
-    @Override
-    default void addJoinFilter(CriteriaBuilder criteriaBuilder,
-                               Join<?, ?> joinPath,
-                               ResourceFilterDTO filter) {
-        String dotSeparatedFields = switch (filter.column()) {
-            case SUBJECT_ID -> "subjectLimitViolation.subjectId";
-            case LIMIT_TYPE -> "limitType";
-            case LIMIT_NAME -> "limitName";
-            case SIDE -> "side";
-            default -> throw new UnsupportedOperationException("This method should be called for nested filters only");
-        };
-
-        CriteriaUtils.addJoinFilter(criteriaBuilder, joinPath, filter, dotSeparatedFields);
     }
 
     @Override
@@ -72,8 +48,12 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
         return List.of(ResourceFilterDTO.Column.CONTINGENCY_ID, ResourceFilterDTO.Column.STATUS).contains(filter.column());
     }
 
+    interface EntityUuid {
+        UUID getUuid();
+    }
+
     @Override
-    default Path<?> getFilterPath(Root<?> root) {
-        return root.get("contingencyLimitViolations");
+    default String getIdFieldName() {
+        return "uuid";
     }
 }

@@ -11,6 +11,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
@@ -22,7 +23,7 @@ import lombok.experimental.SuperBuilder;
 @Entity
 @Table(name = "contingency_limit_violation")
 public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntity {
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @Setter
     private ContingencyEntity contingency;
 

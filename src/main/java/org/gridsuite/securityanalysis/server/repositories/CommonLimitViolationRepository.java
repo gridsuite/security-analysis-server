@@ -8,7 +8,6 @@ package org.gridsuite.securityanalysis.server.repositories;
 
 import jakarta.persistence.criteria.*;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
-import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.ArrayList;
@@ -33,57 +32,61 @@ public interface CommonLimitViolationRepository<T> {
     ) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
+            List<ResourceFilterDTO> childrenFilters = filters.stream().filter(not(this::isParentFilter)).toList();
 
             // criteria in main entity
             // filter by resultUuid
             predicates.add(criteriaBuilder.equal(root.get("result").get("id"), resultUuid));
 
-            // user filters
+            // user filters on main entity
             filters.stream().filter(this::isParentFilter)
                 .forEach(filter -> addPredicate(criteriaBuilder, root, predicates, filter));
-            filters.stream().filter(not(this::isParentFilter))
-                .forEach(filter -> addPredicate(criteriaBuilder, getFilterPath(root), predicates, filter));
 
+            if (!childrenFilters.isEmpty()) {
+                // user filters on OneToMany collection - needed here to filter main entities that would have empty collection when filters are applied
+                childrenFilters
+                    .forEach(filter -> addPredicate(criteriaBuilder, root.get("contingencyLimitViolations"), predicates, filter));
+            } else {
+                // filter parents with empty children even if there isn't any filter
+                predicates.add(criteriaBuilder.isNotEmpty(root.get("contingencyLimitViolations")));
+            }
+
+            // since sql joins generates duplicate results, we need to use distinct here
             query.distinct(true);
 
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         };
     }
 
-    default Specification<ContingencyEntity> getLimitViolationsSpecifications(
+    default Specification<T> getLimitViolationsSpecifications(
         List<UUID> contingenciesUuid,
         List<ResourceFilterDTO> filters
     ) {
         return (root, query, criteriaBuilder) -> {
-            // join fetch contingencyLimitViolation table
-            Join<Object, Object> contingencyLimitViolation = (Join<Object, Object>) root.fetch("contingencyLimitViolations", JoinType.LEFT);
+            List<Predicate> predicates = new ArrayList<>();
 
-            // criteria in contingencyLimitViolationEntity
-            // user filters
             filters.stream().filter(not(this::isParentFilter))
-                .forEach(filter -> addJoinFilter(criteriaBuilder, contingencyLimitViolation, filter));
+                .forEach(filter -> addPredicate(criteriaBuilder, root.get("contingencyLimitViolations"), predicates, filter));
+
+            predicates.add(root.get(getIdFieldName()).in(contingenciesUuid));
 
             // filter on contingencyUuid
-            return root.get("uuid").in(contingenciesUuid);
+            return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         };
     }
 
-    void addPredicate(CriteriaBuilder criteriaBuilder,
-                      Path<?> path,
-                      List<Predicate> predicates,
-                      ResourceFilterDTO filter);
+    default void addPredicate(CriteriaBuilder criteriaBuilder,
+                              Path<?> path,
+                              List<Predicate> predicates,
+                              ResourceFilterDTO filter) {
 
-    void addJoinFilter(CriteriaBuilder criteriaBuilder,
-                       Join<?, ?> joinPath,
-                       ResourceFilterDTO filter);
+        String dotSeparatedField = columnToDotSeparatedField(filter.column());
+        CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, dotSeparatedField);
+    }
+
+    String columnToDotSeparatedField(ResourceFilterDTO.Column column);
 
     boolean isParentFilter(ResourceFilterDTO filter);
 
-    Path<?> getFilterPath(Root<?> root);
-
-
-
-    interface ContingencyUuid {
-        UUID getUuid();
-    }
+    String getIdFieldName();
 }

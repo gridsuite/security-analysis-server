@@ -115,7 +115,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         RESULT_LIMIT_VIOLATIONS.stream()
             .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, CONTINGENCIES, LoadFlowResult.ComponentResult.Status.CONVERGED)),
         FAILED_LIMIT_VIOLATIONS.stream()
-            .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, CONTINGENCIES, LoadFlowResult.ComponentResult.Status.FAILED))
+            .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, FAILED_CONTINGENCIES, LoadFlowResult.ComponentResult.Status.FAILED))
     ).toList();
 
     static List<SubjectLimitViolationResultDTO> getResultConstraintsWithNestedFilter(Function<ContingencyLimitViolationDTO, Boolean> filterMethod) {
@@ -125,8 +125,9 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                 r.getContingencies().stream()
                     .filter(filterMethod::apply)
                     .toList()
-            )
-        ).toList();
+            ))
+            .filter(r -> !r.getContingencies().isEmpty())
+            .toList();
     }
 
     static final SecurityAnalysisReport REPORT = new SecurityAnalysisReport(RESULT);
