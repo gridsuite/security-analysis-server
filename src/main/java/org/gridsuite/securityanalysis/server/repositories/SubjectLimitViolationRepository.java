@@ -6,7 +6,6 @@
  */
 package org.gridsuite.securityanalysis.server.repositories;
 
-import jakarta.persistence.criteria.*;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.springframework.data.jpa.domain.Specification;
