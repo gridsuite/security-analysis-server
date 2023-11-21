@@ -30,7 +30,7 @@ public class ReportService {
     static final String REPORT_API_VERSION = "v1";
 
     private static final String DELIMITER = "/";
-    private static final String QUERY_PARAM_REPORT_TASKKEY_TYPE_FILTER = "taskKeyTypeFilter";
+    private static final String QUERY_PARAM_REPORT_TYPE_FILTER = "reportTypeFilter";
     private static final String QUERY_PARAM_REPORT_THROW_ERROR = "errorOnReportNotFound";
 
     private String baseUri;
@@ -57,11 +57,11 @@ public class ReportService {
         restTemplate.put(baseUri + path, reporter);
     }
 
-    public void deleteReport(UUID reportUuid, String taskKeyTypeFilter) {
+    public void deleteReport(UUID reportUuid, String reportType) {
         Objects.requireNonNull(reportUuid);
 
         var path = UriComponentsBuilder.fromPath(DELIMITER + REPORT_API_VERSION + "/reports/{reportUuid}")
-                .queryParam(QUERY_PARAM_REPORT_TASKKEY_TYPE_FILTER, taskKeyTypeFilter)
+                .queryParam(QUERY_PARAM_REPORT_TYPE_FILTER, reportType)
                 .queryParam(QUERY_PARAM_REPORT_THROW_ERROR, false)
                 .buildAndExpand(reportUuid)
                 .toUriString();

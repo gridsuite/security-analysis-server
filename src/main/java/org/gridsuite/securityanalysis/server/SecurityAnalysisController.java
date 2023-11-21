@@ -88,7 +88,7 @@ public class SecurityAnalysisController {
                                                  @Parameter(description = "Provider") @RequestParam(name = "provider", required = false) String provider,
                                                  @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
                                                  @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
-                                                 @Parameter(description = "The type of report for short-circuit") @RequestParam(name = "reportType") String reportType,
+                                           @Parameter(description = "The type name for the report") @RequestParam(name = "reportType", required = false, defaultValue = "SecurityAnalysis") String reportType,
                                                  @RequestBody(required = false) SecurityAnalysisParametersInfos parameters) {
         String providerToUse = provider != null ? provider : securityAnalysisService.getDefaultProvider();
         UUID resultUuid = securityAnalysisService.runAndSaveResult(new SecurityAnalysisRunContext(networkUuid, variantId, contigencyListNames, receiver, providerToUse, parameters, reportUuid, reporterId, reportType));
