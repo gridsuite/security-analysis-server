@@ -1,0 +1,38 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="klesaulnier" id="create_contingency_limit_violation_to_contingency_index">
+        <createIndex indexName="contingency_limit_violation_to_contingency_index" tableName="contingency_limit_violation">
+            <column name="contingency_uuid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="klesaulnier" id="create_contingency_limit_violation_to_subject_limit_violation_index">
+        <createIndex indexName="contingency_limit_violation_to_subject_limit_violation_index" tableName="contingency_limit_violation">
+            <column name="subject_limit_violation_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="klesaulnier" id="create_contingency_element_to_contingency_index">
+        <createIndex indexName="contingency_element_to_contingency_index" tableName="contingency_entity_contingency_elements">
+            <column name="contingency_entity_uuid"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="klesaulnier" id="create_subject_limit_violation_to_result_index">
+        <createIndex indexName="subject_limit_violation_to_result_index" tableName="subject_limit_violation">
+            <column name="result_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="klesaulnier" id="create_contingency_to_result_index">
+        <createIndex indexName="contingency_to_result_index" tableName="contingency">
+            <column name="result_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="klesaulnier" id="create_pre_contingency_limit_violation_to_result_index">
+        <createIndex indexName="pre_contingency_limit_violation_to_result_index" tableName="pre_contingency_limit_violation">
+            <column name="result_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="klesaulnier" id="create_pre_contingency_limit_violation_to_subject_limit_violation_index">
+        <createIndex indexName="pre_contingency_limit_violation_to_subject_limit_violation_index" tableName="pre_contingency_limit_violation">
+            <column name="subject_limit_violation_id"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
