@@ -112,6 +112,6 @@ public final class CriteriaUtils {
     }
 
     private static <X, Y> Path<Y> getColumnPath(Path<X> originPath, String field) {
-            return originPath.get(field);
-        }
+        return originPath.get(field);
+    }
 }
