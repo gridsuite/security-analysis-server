@@ -9,6 +9,7 @@ package org.gridsuite.securityanalysis.server;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.reporter.Reporter;
+import com.powsybl.iidm.network.Branch;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
@@ -56,7 +57,7 @@ import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock
 import static org.gridsuite.securityanalysis.server.service.NotificationService.CANCEL_MESSAGE;
 import static org.gridsuite.securityanalysis.server.service.NotificationService.FAIL_MESSAGE;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
@@ -496,6 +497,36 @@ public class SecurityAnalysisControllerTest {
                 content().contentType(new MediaType(MediaType.TEXT_PLAIN, StandardCharsets.UTF_8)),
                 content().string("OpenLoadFlow")
             );
+    }
+
+    @Test
+    public void geLimitTypesTest() throws Exception {
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/limit-types"))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON)
+            ).andReturn();
+
+        String resultAsString = mvcResult.getResponse().getContentAsString();
+        List<LimitViolationType> limitTypes = mapper.readValue(resultAsString, new TypeReference<>() { });
+        assertEquals(6, limitTypes.size());
+        assertTrue(limitTypes.contains(LimitViolationType.ACTIVE_POWER));
+        assertFalse(limitTypes.contains(LimitViolationType.HIGH_SHORT_CIRCUIT_CURRENT));
+    }
+
+    @Test
+    public void geBranchSidesTest() throws Exception {
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/branch-sides"))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON)
+            ).andReturn();
+
+        String resultAsString = mvcResult.getResponse().getContentAsString();
+        List<Branch.Side> sides = mapper.readValue(resultAsString, new TypeReference<>() { });
+        assertEquals(2, sides.size());
+        assertTrue(sides.contains(Branch.Side.ONE));
+        assertTrue(sides.contains(Branch.Side.TWO));
     }
 
     @Test
