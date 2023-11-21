@@ -77,7 +77,12 @@ public class SecurityAnalysisResultService {
 
     private Sort createSort(Sort sort) {
         List<Sort.Order> newOrders = new ArrayList<>();
+        List<String> columnNames = ResourceFilterDTO.getAllColumnNames();
         sort.forEach(order -> {
+            boolean columnExist = columnNames.stream().anyMatch(columnName -> columnName.equals(order.getProperty()));
+            if (!columnExist) {
+                throw new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_SORT_FORMAT);
+            }
             if (preContingencyLimitViolationRepository.isParentFilter(order.getProperty())) {
                 newOrders.add(new Sort.Order(order.getDirection(), "subjectLimitViolation.subjectId"));
             } else {

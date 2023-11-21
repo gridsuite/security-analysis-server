@@ -20,7 +20,6 @@ import java.util.UUID;
 
 public interface CommonLimitViolationRepository<T> {
     /**
-
      * Returns specification depending on {@code filters} <br/>
      * This interface is common for both SubjectLimitViolationRepository and ContingencyRepository
      * except for <i>addPredicate</i> which needs to be implemented

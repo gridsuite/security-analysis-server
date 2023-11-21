@@ -9,6 +9,10 @@ package org.gridsuite.securityanalysis.server.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * An object that can be used to filter data with the JPA Criteria API (via Spring Specification)
  * @param dataType the type of data we want to filter (text, number)
@@ -43,24 +47,39 @@ public record ResourceFilterDTO(DataType dataType, Type type, Object value, Colu
 
     public enum Column {
         @JsonProperty("contingencyId")
-        CONTINGENCY_ID,
-        STATUS,
+        CONTINGENCY_ID("contingencyId"),
+        STATUS("status"),
         @JsonProperty("subjectId")
-        SUBJECT_ID,
+        SUBJECT_ID("subjectId"),
         @JsonProperty("limitType")
-        LIMIT_TYPE,
+        LIMIT_TYPE("limitType"),
         @JsonProperty("limitName")
-        LIMIT_NAME,
+        LIMIT_NAME("limitName"),
         @JsonProperty("limit")
-        LIMIT,
+        LIMIT("limit"),
         @JsonProperty("acceptableDuration")
-        ACCEPTABLE_DURATION,
+        ACCEPTABLE_DURATION("acceptableDuration"),
         @JsonProperty("value")
-        VALUE,
+        VALUE("value"),
         @JsonProperty("side")
-        SIDE,
+        SIDE("side"),
         @JsonProperty("loading")
-        LOADING
+        LOADING("loading");
 
+        private final String columnName;
+
+        Column(String columnName) {
+            this.columnName = columnName;
+        }
+
+        public String getColumnName() {
+            return columnName;
+        }
+
+    }
+    public static List<String> getAllColumnNames() {
+        return Arrays.stream(Column.values())
+                .map(Column::getColumnName)
+                .collect(Collectors.toList());
     }
 }
