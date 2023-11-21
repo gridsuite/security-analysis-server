@@ -111,27 +111,7 @@ public final class CriteriaUtils {
 
     }
 
-    /**
-     * This method allow to query eventually dot separated fields with the Criteria API
-     * Ex : from 'fortescueCurrent.positiveMagnitude' we create the query path
-     * path.get("fortescueCurrent").get("positiveMagnitude") to access to the correct nested field
-     *
-     * @param originPath         the origin path
-     * @param dotSeparatedFields dot separated fields (can be only one field without any dot)
-     * @param <X>                the entity type referenced by the origin path
-     * @param <Y>                the type referenced by the path
-     * @return path for the query
-     */
-    private static <X, Y> Path<Y> getColumnPath(Path<X> originPath, String dotSeparatedFields) {
-        if (dotSeparatedFields.contains(".")) {
-            String[] fields = dotSeparatedFields.split("\\.");
-            Path<Y> path = originPath.get(fields[0]);
-            for (int i = 1; i < fields.length; i++) {
-                path = path.get(fields[i]);
-            }
-            return path;
-        } else {
-            return originPath.get(dotSeparatedFields);
+    private static <X, Y> Path<Y> getColumnPath(Path<X> originPath, String field) {
+            return originPath.get(field);
         }
-    }
 }

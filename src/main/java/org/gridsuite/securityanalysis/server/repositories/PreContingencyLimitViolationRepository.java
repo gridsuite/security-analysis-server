@@ -83,7 +83,7 @@ public interface PreContingencyLimitViolationRepository extends CommonLimitViola
             default -> throw new UnsupportedOperationException("This method should be called for nested filters only");
         }
 
-        CriteriaUtils.addJoinFilter(criteriaBuilder, joinPath, filter, fieldName);
+        CriteriaUtils.addJoinFilter(criteriaBuilder, joinPath, filter, filter.column().getColumnName());
     }
 
     default boolean isParentFilter(ResourceFilterDTO filter) {
