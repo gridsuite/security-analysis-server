@@ -23,9 +23,7 @@ public class RestResponseEntityExceptionHandler {
         switch (exception.getType()) {
             case RESULT_NOT_FOUND :
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getType());
-            case INVALID_FILTER_FORMAT:
-            case INVALID_FILTER:
-            case INVALID_SORT_FORMAT:
+            case INVALID_FILTER_FORMAT,INVALID_FILTER, INVALID_SORT_FORMAT:
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getType());
             default:
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
