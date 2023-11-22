@@ -92,7 +92,7 @@ public class SecurityAnalysisResultService {
     }
 
     private void assertNmKContingenciesSortAllowed(Sort sort) {
-        List<String> allowedSortProperties =  List.of(ResourceFilterDTO.Column.CONTINGENCY_ID, ResourceFilterDTO.Column.STATUS)
+        List<String> allowedSortProperties = List.of(ResourceFilterDTO.Column.CONTINGENCY_ID, ResourceFilterDTO.Column.STATUS)
             .stream().map(ResourceFilterDTO.Column::getColumnName)
             .toList();
         assertSortAllowed(sort, allowedSortProperties);
@@ -110,7 +110,6 @@ public class SecurityAnalysisResultService {
             throw new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_SORT_FORMAT);
         }
     }
-
 
     private List<ResourceFilterDTO> fromStringFiltersToDTO(String stringFilters) {
         if (stringFilters == null || stringFilters.isEmpty()) {

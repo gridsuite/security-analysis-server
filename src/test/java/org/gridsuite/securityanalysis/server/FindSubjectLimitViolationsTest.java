@@ -97,7 +97,7 @@ class FindSubjectLimitViolationsTest {
         "provideForbiddenFilter"
     })
     void testSortAndFilterErrors(List<ResourceFilterDTO> filters, Pageable pageable, Exception expectedException) {
-        Exception exception = assertThrows(expectedException.getClass(), () ->  securityAnalysisResultService.findSubjectLimitViolationsPage(resultEntity.getId(), filters, pageable));
+        Exception exception = assertThrows(expectedException.getClass(), () -> securityAnalysisResultService.findSubjectLimitViolationsPage(resultEntity.getId(), filters, pageable));
         assertEquals(expectedException.getMessage(), exception.getMessage());
     }
 

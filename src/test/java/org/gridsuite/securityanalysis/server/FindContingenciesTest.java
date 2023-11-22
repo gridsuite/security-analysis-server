@@ -94,14 +94,13 @@ class FindContingenciesTest {
         assertSelectCount(expectedSelectCount);
     }
 
-
     @ParameterizedTest
     @MethodSource({
         "provideForbiddenSort",
         "provideForbiddenFilter"
     })
     void testSortAndFilterErrors(List<ResourceFilterDTO> filters, Pageable pageable, Exception expectedException) {
-        Exception exception = assertThrows(expectedException.getClass(), () ->  securityAnalysisResultService.findContingenciesPage(resultEntity.getId(), filters, pageable));
+        Exception exception = assertThrows(expectedException.getClass(), () -> securityAnalysisResultService.findContingenciesPage(resultEntity.getId(), filters, pageable));
         assertEquals(expectedException.getMessage(), exception.getMessage());
     }
 
