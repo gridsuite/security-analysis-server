@@ -68,7 +68,7 @@ public class SecurityAnalysisResultService {
             .toList();
 
         return new PreContingencyResult(
-            (securityAnalysisResult.isPresent() && securityAnalysisResult.get().getPreContingencyStatus() != null) ? LoadFlowResult.ComponentResult.Status.valueOf(securityAnalysisResult.get().getPreContingencyStatus()) : LoadFlowResult.ComponentResult.Status.CONVERGED,
+            LoadFlowResult.ComponentResult.Status.valueOf(securityAnalysisResult.get().getPreContingencyStatus()),
             new LimitViolationsResult(preContingencyLimitViolations),
             new NetworkResult(Collections.emptyList(), Collections.emptyList(), Collections.emptyList())
         );
@@ -207,7 +207,7 @@ public class SecurityAnalysisResultService {
             Page<SubjectLimitViolationEntity> subjectLimitViolationPage = new PageImpl<>(subjectLimitViolations, pageable, uuidPage.getTotalElements());
 
             // then we append the missing data, and filter some of the Lazy Loaded collections
-            appendLimitViolationsToSubjectLimitViolationsResult(subjectLimitViolationPage, resourceFilters);
+            appendLimitViolationsAndContingencyElementsToSubjectLimitViolationsResult(subjectLimitViolationPage, resourceFilters);
 
             return subjectLimitViolationPage;
         }
@@ -223,11 +223,12 @@ public class SecurityAnalysisResultService {
                 .toList();
             Specification<ContingencyEntity> specification = contingencyRepository.getLimitViolationsSpecifications(contingencyUuids, resourceFilters);
             contingencyRepository.findAll(specification);
+            // we fetch contingencyElements here to prevent N+1 query
             contingencyRepository.findAllWithContingencyElementsByUuidIn(contingencyUuids);
         }
     }
 
-    private void appendLimitViolationsToSubjectLimitViolationsResult(Page<SubjectLimitViolationEntity> subjectLimitViolations, List<ResourceFilterDTO> resourceFilters) {
+    private void appendLimitViolationsAndContingencyElementsToSubjectLimitViolationsResult(Page<SubjectLimitViolationEntity> subjectLimitViolations, List<ResourceFilterDTO> resourceFilters) {
 
         // using the the Hibernate First-Level Cache or Persistence Context
         // cf.https://vladmihalcea.com/spring-data-jpa-multiplebagfetchexception/
@@ -241,6 +242,7 @@ public class SecurityAnalysisResultService {
             List<UUID> contingencyUuids = subjectLimitViolations.map(SubjectLimitViolationEntity::getContingencyLimitViolations).flatMap(List::stream)
                 .map(lm -> lm.getContingency().getUuid())
                 .toList();
+            // we fetch contingencyElements for each contingency here to prevent N+1 query
             contingencyRepository.findAllWithContingencyElementsByUuidIn(contingencyUuids);
         }
     }
