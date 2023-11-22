@@ -8,6 +8,7 @@ package org.gridsuite.securityanalysis.server.repositories;
 
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -37,6 +38,7 @@ public interface SubjectLimitViolationRepository extends CommonLimitViolationRep
             case LIMIT_NAME -> "limitName";
             case SIDE -> "side";
             case SUBJECT_ID -> "subjectId";
+            default -> throw new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_FILTER);
         };
     }
 

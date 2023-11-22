@@ -13,6 +13,7 @@ import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEnti
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
+import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -36,6 +37,8 @@ import static com.vladmihalcea.sql.SQLStatementCountValidator.reset;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.getResultConstraintsWithNestedFilter;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
@@ -88,6 +91,16 @@ class FindSubjectLimitViolationsTest {
         assertSelectCount(expectedSelectCount);
     }
 
+    @ParameterizedTest
+    @MethodSource({
+        "provideForbiddenSort",
+        "provideForbiddenFilter"
+    })
+    void testSortAndFilterErrors(List<ResourceFilterDTO> filters, Pageable pageable, Exception expectedException) {
+        Exception exception = assertThrows(expectedException.getClass(), () ->  securityAnalysisResultService.findSubjectLimitViolationsPage(resultEntity.getId(), filters, pageable));
+        assertEquals(expectedException.getMessage(), exception.getMessage());
+    }
+
     private Stream<Arguments> providePageableAndSortOnly() {
         return Stream.of(
             Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")), RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 4),
@@ -129,6 +142,20 @@ class FindSubjectLimitViolationsTest {
                 getResultConstraintsWithNestedFilter(c -> c.getLimitViolation().getSide() != null && c.getLimitViolation().getSide().equals(Branch.Side.ONE)).stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 4),
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "l6_name", ResourceFilterDTO.Column.LIMIT_NAME)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
                 getResultConstraintsWithNestedFilter(c -> c.getLimitViolation().getLimitName().equals("l6_name")).stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 4)
+        );
+    }
+
+    private Stream<Arguments> provideForbiddenSort() {
+        return Stream.of(
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")), new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_SORT_FORMAT)),
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "side")), new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_SORT_FORMAT))
+        );
+    }
+
+    private Stream<Arguments> provideForbiddenFilter() {
+        return Stream.of(
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, List.of(), ResourceFilterDTO.Column.LIMIT)), PageRequest.of(0, 30), new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_FILTER)),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, List.of(), ResourceFilterDTO.Column.VALUE)), PageRequest.of(0, 30), new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_FILTER))
         );
     }
 

@@ -13,6 +13,7 @@ import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
+import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -36,6 +37,8 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
@@ -89,6 +92,17 @@ class FindContingenciesTest {
         // 4 -> parent UUIDs + parents + children + contingencyElements ; no count (number of element < page size)
         // 5 -> parent UUIDs + count + parents + children + contingencyElements
         assertSelectCount(expectedSelectCount);
+    }
+
+
+    @ParameterizedTest
+    @MethodSource({
+        "provideForbiddenSort",
+        "provideForbiddenFilter"
+    })
+    void testSortAndFilterErrors(List<ResourceFilterDTO> filters, Pageable pageable, Exception expectedException) {
+        Exception exception = assertThrows(expectedException.getClass(), () ->  securityAnalysisResultService.findContingenciesPage(resultEntity.getId(), filters, pageable));
+        assertEquals(expectedException.getMessage(), exception.getMessage());
     }
 
     private Stream<Arguments> providePageableAndSortOnly() {
@@ -178,11 +192,21 @@ class FindContingenciesTest {
         );
     }
 
-    private String getContingencyResultDTOId(ContingencyResultDTO contingencyResultDTO) {
-        return contingencyResultDTO.getContingency().getContingencyId();
+    private Stream<Arguments> provideForbiddenSort() {
+        return Stream.of(
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "limitType")), new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_SORT_FORMAT)),
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "side")), new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_SORT_FORMAT))
+        );
     }
 
-    private String getContingencyResultDTOStatus(ContingencyResultDTO contingencyResultDTO) {
-        return contingencyResultDTO.getContingency().getStatus();
+    private Stream<Arguments> provideForbiddenFilter() {
+        return Stream.of(
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, List.of(), ResourceFilterDTO.Column.LIMIT)), PageRequest.of(0, 30), new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_FILTER)),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, List.of(), ResourceFilterDTO.Column.VALUE)), PageRequest.of(0, 30), new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_FILTER))
+        );
+    }
+
+    private String getContingencyResultDTOId(ContingencyResultDTO contingencyResultDTO) {
+        return contingencyResultDTO.getContingency().getContingencyId();
     }
 }
