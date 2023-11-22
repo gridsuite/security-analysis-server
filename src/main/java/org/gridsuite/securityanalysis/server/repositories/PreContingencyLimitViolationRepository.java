@@ -30,25 +30,6 @@ public interface PreContingencyLimitViolationRepository extends JpaRepository<Pr
     @EntityGraph(attributePaths = {"subjectLimitViolation"}, type = EntityGraph.EntityGraphType.LOAD)
     List<PreContingencyLimitViolationEntity> findAll(Specification<PreContingencyLimitViolationEntity> specification, Sort sort);
 
-  /*  default Specification<PreContingencyLimitViolationEntity> getSpecification(
-            UUID resultUuid,
-            List<ResourceFilterDTO> filters
-    ) {
-        return (root, query, criteriaBuilder) -> {
-            List<Predicate> predicates = new ArrayList<>();
-
-            // criteria in preContingencyLimitViolationEntity
-            // filter by resultUuid
-            predicates.add(criteriaBuilder.equal(root.get("result").get("id"), resultUuid));
-
-            // user filters
-            List<ResourceFilterDTO> parentFilters = filters.stream().filter(this::isParentFilter).toList();
-            parentFilters.forEach(filter -> addPredicate(criteriaBuilder, root.get("subjectLimitViolation"), predicates, filter));
-
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
-    }*/
-
     /**
      * Returns specification depending on {@code filters} <br/>
      * This interface is common for both SubjectLimitViolationRepository and ContingencyRepository

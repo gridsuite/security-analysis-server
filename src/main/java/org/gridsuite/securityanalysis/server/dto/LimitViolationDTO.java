@@ -16,7 +16,7 @@ public class LimitViolationDTO {
     private LimitViolationType limitType;
     private String limitName;
     private Branch.Side side;
-    private int acceptableDuration;
+    private Long acceptableDuration;
     private double limit;
     private double limitReduction;
     private double value;
@@ -24,14 +24,14 @@ public class LimitViolationDTO {
 
     public static LimitViolationDTO toDto(AbstractLimitViolationEntity limitViolation) {
         return LimitViolationDTO.builder()
-            .limitType(limitViolation.getLimitType())
-            .limitName(limitViolation.getLimitName())
-            .side(limitViolation.getSide())
-            .acceptableDuration((int) limitViolation.getAcceptableDuration())
-            .limit(limitViolation.getLimit())
-            .limitReduction(limitViolation.getLimitReduction())
-            .value(limitViolation.getValue())
-            .loading(limitViolation.getLoading())
-            .build();
+                .limitType(limitViolation.getLimitType())
+                .limitName(limitViolation.getLimitName())
+                .side(limitViolation.getSide())
+                .acceptableDuration(limitViolation.getAcceptableDuration() == Integer.MAX_VALUE ? null : limitViolation.getAcceptableDuration())
+                .limit(limitViolation.getLimit())
+                .limitReduction(limitViolation.getLimitReduction())
+                .value(limitViolation.getValue())
+                .loading(limitViolation.getLoading())
+                .build();
     }
 }
