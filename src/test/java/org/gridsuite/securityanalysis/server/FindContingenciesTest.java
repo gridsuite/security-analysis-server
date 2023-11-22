@@ -6,6 +6,8 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.powsybl.iidm.network.Branch;
+import com.powsybl.security.LimitViolationType;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
@@ -62,69 +64,79 @@ class FindContingenciesTest {
 
     @ParameterizedTest
     @MethodSource({
-        "providePageableOnly",
-        "providePageableAndSort",
+        "providePageableAndSortOnly",
         "provideParentFilter",
+        "provideChildFilter",
         "provideEachColumnFilter",
         "provideCollectionFilter",
         "provideCollectionOfFilters",
         "provideEdgeCasesFilters"
     })
-    void findFilteredContingencyResultsTest(List<ResourceFilterDTO> filters, Pageable pageable, List<ContingencyResultDTO> expectedResult, Integer selectCount) {
+    void findFilteredContingencyResultsTest(List<ResourceFilterDTO> filters, Pageable pageable, List<ContingencyResultDTO> expectedResult, Integer expectedSelectCount) {
         reset();
         Page<ContingencyEntity> contingenciesPage = securityAnalysisResultService.findContingenciesPage(resultEntity.getId(), filters, pageable);
-        // select count check to prevent potential n+1 problems
-        // 1 -> parent ; empty parents, no count or children request
-        // 2 -> parent + children ; no count (number of element < page size)
-        // 3 -> parent + count + children
-        assertSelectCount(selectCount);
 
         // assert contingency ids to check parent filters
         assertThat(contingenciesPage.getContent()).extracting("contingencyId").containsExactlyElementsOf(expectedResult.stream().map(c -> c.getContingency().getContingencyId()).toList());
         // assert subject limit violation ids to check nested filters
         assertThat(contingenciesPage.getContent().stream()
-            .map(c -> c.getContingencyLimitViolations().stream().map(lm -> lm.getSubjectLimitViolation().getSubjectId()).toList()))
+            .map(c -> ContingencyResultDTO.toDto(c)) // call toDTO method to check if it provokes any more requests
+            .map(c -> c.getSubjectLimitViolations().stream().map(lm -> lm.getSubjectId()).toList()))
             .containsExactlyElementsOf(expectedResult.stream().map(c -> c.getSubjectLimitViolations().stream().map(SubjectLimitViolationDTO::getSubjectId).toList()).toList());
+
+        // select count check to prevent potential n+1 problems
+        // 1 -> parent UUIDs ; empty parents, no count or children request
+        // 4 -> parent UUIDs + parents + children + contingencyElements ; no count (number of element < page size)
+        // 5 -> parent UUIDs + count + parents + children + contingencyElements
+        assertSelectCount(expectedSelectCount);
     }
 
-    private Stream<Arguments> providePageableOnly() {
+    private Stream<Arguments> providePageableAndSortOnly() {
         return Stream.of(
-            Arguments.of(List.of(), PageRequest.of(0, 30), RESULT_CONTINGENCIES, 2),
-            Arguments.of(List.of(), PageRequest.of(0, 10), RESULT_CONTINGENCIES.subList(0, 10), 3),
-            Arguments.of(List.of(), PageRequest.of(3, 3), RESULT_CONTINGENCIES.subList(9, 12), 3),
-            Arguments.of(List.of(), PageRequest.of(1, 10), RESULT_CONTINGENCIES.subList(10, Math.min(RESULT_CONTINGENCIES.size(), 20)), 2)
-        );
-    }
-
-    private Stream<Arguments> providePageableAndSort() {
-        return Stream.of(
-            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")), RESULT_CONTINGENCIES.stream().sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList(), 2),
-            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "contingencyId")), RESULT_CONTINGENCIES.stream().sorted(Comparator.comparing(this::getContingencyResultDTOId).reversed()).toList(), 2)
+            Arguments.of(List.of(), PageRequest.of(0, 5, Sort.by(Sort.Direction.ASC, "contingencyId")), RESULT_CONTINGENCIES.stream().sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList().subList(0, 5), 5),
+            Arguments.of(List.of(), PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, "contingencyId")), RESULT_CONTINGENCIES.stream().sorted(Comparator.comparing(this::getContingencyResultDTOId).reversed()).toList().subList(0, 5), 5)
         );
     }
 
     private Stream<Arguments> provideParentFilter() {
         return Stream.of(
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", ResourceFilterDTO.Column.CONTINGENCY_ID)), PageRequest.of(0, 30),
-                RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getContingencyId().contains("3")).toList(), 2),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "l", ResourceFilterDTO.Column.CONTINGENCY_ID)), PageRequest.of(0, 30),
-                RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getContingencyId().startsWith("l")).toList(), 2),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", ResourceFilterDTO.Column.CONTINGENCY_ID)), PageRequest.of(0, 30),
-                RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getContingencyId().startsWith("3")).toList(), 1)
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", ResourceFilterDTO.Column.CONTINGENCY_ID)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")),
+                RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getContingencyId().contains("3")).sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList(), 4),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "l", ResourceFilterDTO.Column.CONTINGENCY_ID)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")),
+                RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getContingencyId().startsWith("l")).sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList(), 4),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", ResourceFilterDTO.Column.CONTINGENCY_ID)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")),
+                RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getContingencyId().startsWith("3")).sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList(), 1)
+        );
+    }
+
+    private Stream<Arguments> provideChildFilter() {
+        return Stream.of(
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "l6", ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "contingencyId")),
+                getResultContingenciesWithNestedFilter(lm -> lm.getSubjectId().equals("l6"))
+                    .stream().sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList()
+                    .subList(0, 2), 5), // find 1st page of size 2 of contingencies, filtered by SubjectId
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "CURRENT", ResourceFilterDTO.Column.LIMIT_TYPE)), PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "contingencyId")),
+                getResultContingenciesWithNestedFilter(lm -> lm.getLimitViolation().getLimitType().equals(LimitViolationType.CURRENT))
+                    .stream().sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList()
+                    .subList(0, 2), 5)
         );
     }
 
     private Stream<Arguments> provideEachColumnFilter() {
         return Stream.of(
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "CO", ResourceFilterDTO.Column.STATUS)), PageRequest.of(0, 30),
-                RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getStatus().contains("CO")).toList(), 2)
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "CO", ResourceFilterDTO.Column.STATUS)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")),
+                RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getStatus().contains("CO")).sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList(), 4),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "ONE", ResourceFilterDTO.Column.SIDE)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")),
+                getResultContingenciesWithNestedFilter(lm -> lm.getLimitViolation().getSide() != null && lm.getLimitViolation().getSide().equals(Branch.Side.ONE)).stream().sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList(), 4),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "l6_name", ResourceFilterDTO.Column.LIMIT_NAME)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")),
+                getResultContingenciesWithNestedFilter(lm -> lm.getLimitViolation().getLimitName().equals("l6_name")).stream().sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList(), 4)
         );
     }
 
     private Stream<Arguments> provideCollectionFilter() {
         return Stream.of(
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, List.of("l", "3"), ResourceFilterDTO.Column.CONTINGENCY_ID)), PageRequest.of(0, 30),
-                RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getContingencyId().contains("l") || c.getContingency().getContingencyId().contains("3")).toList(), 2)
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, List.of("l", "3"), ResourceFilterDTO.Column.CONTINGENCY_ID)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")),
+                RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getContingencyId().contains("l") || c.getContingency().getContingencyId().contains("3")).sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList(), 4)
         );
     }
 
@@ -135,22 +147,42 @@ class FindContingenciesTest {
                     new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, List.of("1", "3"), ResourceFilterDTO.Column.CONTINGENCY_ID),
                     new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, List.of("CONVERGED"), ResourceFilterDTO.Column.STATUS)
                 ),
-                PageRequest.of(0, 30),
-                RESULT_CONTINGENCIES.stream().filter(c -> (c.getContingency().getContingencyId().contains("1") || c.getContingency().getContingencyId().contains("3")) && c.getContingency().getStatus().equals("CONVERGED")).toList(),
-                2)
+                PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")),
+                RESULT_CONTINGENCIES.stream().filter(c -> (c.getContingency().getContingencyId().contains("1") || c.getContingency().getContingencyId().contains("3")) && c.getContingency().getStatus().equals("CONVERGED")).sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList(),
+                4), // list of parent filters
+            Arguments.of(
+                List.of(
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, List.of("l6"), ResourceFilterDTO.Column.SUBJECT_ID),
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, List.of("CURRENT"), ResourceFilterDTO.Column.LIMIT_TYPE)
+                ),
+                PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")),
+                getResultContingenciesWithNestedFilter(c -> c.getSubjectId().equals("l6") && c.getLimitViolation().getLimitType().equals(LimitViolationType.CURRENT)).stream().sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList(),
+                4), // list of children filters
+            Arguments.of(
+                List.of(
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, List.of("1", "3"), ResourceFilterDTO.Column.CONTINGENCY_ID),
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, List.of("CURRENT"), ResourceFilterDTO.Column.LIMIT_TYPE)
+                ),
+                PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")),
+                getResultContingenciesWithNestedFilter(c -> c.getLimitViolation().getLimitType().equals(LimitViolationType.CURRENT)).stream().filter(c -> c.getContingency().getContingencyId().contains("1") || c.getContingency().getContingencyId().contains("3")).sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList(),
+                4) // mix of children and parent filter
         );
     }
 
     private Stream<Arguments> provideEdgeCasesFilters() {
         return Stream.of(
-            Arguments.of(List.of(), PageRequest.of(0, 30), RESULT_CONTINGENCIES, 2), // empty list of filter
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, List.of(), ResourceFilterDTO.Column.CONTINGENCY_ID)), PageRequest.of(0, 30), RESULT_CONTINGENCIES, 2), // empty list of values in filter
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "co", ResourceFilterDTO.Column.STATUS)), PageRequest.of(0, 30),
-                RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getStatus().contains("CO")).toList(), 2) // case insensitive search test
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")), RESULT_CONTINGENCIES.stream().sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList(), 4), // empty list of filter
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, List.of(), ResourceFilterDTO.Column.CONTINGENCY_ID)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")), RESULT_CONTINGENCIES.stream().sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList(), 4), // empty list of values in filter
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "co", ResourceFilterDTO.Column.STATUS)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")),
+                RESULT_CONTINGENCIES.stream().filter(c -> c.getContingency().getStatus().contains("CO")).sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList(), 4) // case insensitive search test
         );
     }
 
     private String getContingencyResultDTOId(ContingencyResultDTO contingencyResultDTO) {
         return contingencyResultDTO.getContingency().getContingencyId();
+    }
+
+    private String getContingencyResultDTOStatus(ContingencyResultDTO contingencyResultDTO) {
+        return contingencyResultDTO.getContingency().getStatus();
     }
 }

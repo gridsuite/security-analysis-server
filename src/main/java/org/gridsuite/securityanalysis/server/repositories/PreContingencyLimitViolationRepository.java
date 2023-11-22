@@ -6,12 +6,14 @@
  */
 package org.gridsuite.securityanalysis.server.repositories;
 
-import jakarta.persistence.criteria.*;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Predicate;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
@@ -19,15 +21,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static java.util.function.Predicate.not;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
+public interface PreContingencyLimitViolationRepository extends JpaRepository<PreContingencyLimitViolationEntity, UUID>, JpaSpecificationExecutor<PreContingencyLimitViolationEntity> {
+    @EntityGraph(attributePaths = {"subjectLimitViolation"}, type = EntityGraph.EntityGraphType.LOAD)
+    List<PreContingencyLimitViolationEntity> findAll(Specification<PreContingencyLimitViolationEntity> specification, Sort sort);
 
-public interface PreContingencyLimitViolationRepository extends CommonLimitViolationRepository<PreContingencyLimitViolationEntity>, JpaRepository<PreContingencyLimitViolationEntity, UUID>, JpaSpecificationExecutor<PreContingencyLimitViolationEntity> {
-
-    Page<PreContingencyLimitViolationEntity> findAll(Specification<PreContingencyLimitViolationEntity> specification, Pageable pageable);
-
-    default Specification<PreContingencyLimitViolationEntity> getSpecification(
+  /*  default Specification<PreContingencyLimitViolationEntity> getSpecification(
             UUID resultUuid,
             List<ResourceFilterDTO> filters
     ) {
@@ -40,27 +43,50 @@ public interface PreContingencyLimitViolationRepository extends CommonLimitViola
 
             // user filters
             List<ResourceFilterDTO> parentFilters = filters.stream().filter(this::isParentFilter).toList();
-            Join<Object, Object> subjectLimitViolations = (Join<Object, Object>) root.fetch("subjectLimitViolation", JoinType.INNER);
-            parentFilters.forEach(filter -> addJoinFilter(criteriaBuilder, subjectLimitViolations, filter));
-
-            if (!CriteriaUtils.currentQueryIsCountRecords(query)) {
-                // criteria in preContingencyLimitViolationEntity
-                List<ResourceFilterDTO> nestedFilters = filters.stream().filter(f -> !isParentFilter(f)).toList();
-                nestedFilters.forEach(filter -> addPredicate(criteriaBuilder, root, predicates, filter));
-            }
+            parentFilters.forEach(filter -> addPredicate(criteriaBuilder, root.get("subjectLimitViolation"), predicates, filter));
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
+    }*/
+
+    /**
+     * Returns specification depending on {@code filters} <br/>
+     * This interface is common for both SubjectLimitViolationRepository and ContingencyRepository
+     * except for <i>addPredicate</i> which needs to be implemented
+     */
+    default Specification<PreContingencyLimitViolationEntity> getParentsSpecifications(
+            UUID resultUuid,
+            List<ResourceFilterDTO> filters
+    ) {
+        return (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            List<ResourceFilterDTO> childrenFilters = filters.stream().filter(not(this::isParentFilter)).toList();
+
+            // criteria in main entity
+            // filter by resultUuid
+            predicates.add(criteriaBuilder.equal(root.get("result").get("id"), resultUuid));
+
+            // user filters on main entity
+            filters.stream().filter(this::isParentFilter)
+                    .forEach(filter -> addPredicate(criteriaBuilder, root, predicates, filter));
+
+            if (!childrenFilters.isEmpty()) {
+                // user filters on OneToMany collection - needed here to filter main entities that would have empty collection when filters are applied
+                childrenFilters
+                        .forEach(filter -> addPredicate(criteriaBuilder, root.get("subjectLimitViolation"), predicates, filter));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
+        };
     }
 
-    @Override
     default void addPredicate(CriteriaBuilder criteriaBuilder,
-                              Root<PreContingencyLimitViolationEntity> path,
+                              Path<?> path,
                               List<Predicate> predicates,
                               ResourceFilterDTO filter) {
 
         String fieldName = switch (filter.column()) {
-            case SUBJECT_ID -> "subjectLimitViolation.subjectId";
+            case SUBJECT_ID -> "subjectId";
             case LIMIT_TYPE -> "limitType";
             case LIMIT_NAME -> "limitName";
             case LIMIT -> "limit";
@@ -73,21 +99,8 @@ public interface PreContingencyLimitViolationRepository extends CommonLimitViola
         CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, fieldName);
     }
 
-    default void addJoinFilter(CriteriaBuilder criteriaBuilder,
-                               Join<?, ?> joinPath,
-                               ResourceFilterDTO filter) {
-        String fieldName;
-
-        switch (filter.column()) {
-            case SUBJECT_ID -> fieldName = "subjectId";
-            default -> throw new UnsupportedOperationException("This method should be called for nested filters only");
-        }
-
-        CriteriaUtils.addJoinFilter(criteriaBuilder, joinPath, filter, filter.column().getColumnName());
-    }
-
     default boolean isParentFilter(ResourceFilterDTO filter) {
-        return ResourceFilterDTO.Column.SUBJECT_ID == filter.column();
+        return !List.of(ResourceFilterDTO.Column.SUBJECT_ID).contains(filter.column());
     }
 
     default boolean isParentFilter(String filter) {

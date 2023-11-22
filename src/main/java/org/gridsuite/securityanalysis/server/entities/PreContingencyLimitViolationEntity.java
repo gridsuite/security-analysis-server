@@ -9,6 +9,7 @@ package org.gridsuite.securityanalysis.server.entities;
 import com.powsybl.security.LimitViolation;
 import com.powsybl.security.results.PreContingencyResult;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
@@ -33,7 +34,7 @@ import java.util.stream.Collectors;
 @Table(name = "pre_contingency_limit_violation")
 public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEntity {
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @Setter
     SecurityAnalysisResultEntity result;
 
