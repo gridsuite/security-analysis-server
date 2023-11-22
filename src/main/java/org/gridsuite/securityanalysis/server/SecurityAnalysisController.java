@@ -9,7 +9,6 @@ package org.gridsuite.securityanalysis.server;
 import com.powsybl.iidm.network.Branch;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.security.LimitViolationType;
-
 import com.powsybl.security.SecurityAnalysisResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -203,8 +202,8 @@ public class SecurityAnalysisController {
     public ResponseEntity<List<LimitViolationType>> getLimitTypes() {
         List<LimitViolationType> limitViolationTypesToRemove = List.of(LimitViolationType.HIGH_SHORT_CIRCUIT_CURRENT, LimitViolationType.LOW_SHORT_CIRCUIT_CURRENT, LimitViolationType.LOW_VOLTAGE_ANGLE, LimitViolationType.HIGH_VOLTAGE_ANGLE);
         return ResponseEntity.ok().body(Arrays.stream(LimitViolationType.values())
-                .filter(lm -> !limitViolationTypesToRemove.contains(lm))
-                .toList());
+            .filter(lm -> !limitViolationTypesToRemove.contains(lm))
+            .toList());
     }
 
     @GetMapping(value = "/branch-sides", produces = APPLICATION_JSON_VALUE)
