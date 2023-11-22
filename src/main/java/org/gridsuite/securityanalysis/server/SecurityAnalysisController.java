@@ -104,7 +104,7 @@ public class SecurityAnalysisController {
                                                                                   @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
                                                                                   @Parameter(description = "Pageable parameters for pagination and sorting") Sort sort) {
         String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
-        List<PreContingencyLimitViolationResultDTO> result = securityAnalysisResultService.findNResult(resultUuid, decodedStringFilters, sort);
+        List<PreContingencyLimitViolationResultDTO> result = securityAnalysisResultService.findNResult(resultUuid, securityAnalysisResultService.fromStringFiltersToDTO(decodedStringFilters), sort);
 
         return result != null
                 ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)

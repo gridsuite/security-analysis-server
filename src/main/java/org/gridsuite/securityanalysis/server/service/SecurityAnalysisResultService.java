@@ -60,9 +60,9 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public List<PreContingencyLimitViolationResultDTO> findNResult(UUID resultUuid, String stringFilters, Sort sort) {
+    public List<PreContingencyLimitViolationResultDTO> findNResult(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Sort sort) {
         assertResultExists(resultUuid);
-        Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationRepository.getParentsSpecifications(resultUuid, fromStringFiltersToDTO(stringFilters));
+        Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters);
         Sort newSort = createNResultSort(sort);
         List<PreContingencyLimitViolationEntity> preContingencyLimitViolation = preContingencyLimitViolationRepository.findAll(specification, newSort);
 
@@ -104,7 +104,7 @@ public class SecurityAnalysisResultService {
         return subjectLimitViolationsPage.map(SubjectLimitViolationResultDTO::toDto);
     }
 
-    private List<ResourceFilterDTO> fromStringFiltersToDTO(String stringFilters) {
+    public List<ResourceFilterDTO> fromStringFiltersToDTO(String stringFilters) {
         if (stringFilters == null || stringFilters.isEmpty()) {
             return List.of();
         }
