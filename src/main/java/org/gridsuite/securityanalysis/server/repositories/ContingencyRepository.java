@@ -41,7 +41,7 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
             case LIMIT_TYPE -> "limitType";
             case LIMIT_NAME -> "limitName";
             case SIDE -> "side";
-            default -> throw new UnsupportedOperationException("This method should be called for parent filters only");
+            default -> throw new UnsupportedOperationException("Unknown filter column");
         };
     }
 

@@ -32,8 +32,6 @@ public interface PreContingencyLimitViolationRepository extends JpaRepository<Pr
 
     /**
      * Returns specification depending on {@code filters} <br/>
-     * This interface is common for both SubjectLimitViolationRepository and ContingencyRepository
-     * except for <i>addPredicate</i> which needs to be implemented
      */
     default Specification<PreContingencyLimitViolationEntity> getParentsSpecifications(
             UUID resultUuid,
@@ -75,7 +73,7 @@ public interface PreContingencyLimitViolationRepository extends JpaRepository<Pr
             case ACCEPTABLE_DURATION -> "acceptableDuration";
             case SIDE -> "side";
             case LOADING -> "loading";
-            default -> throw new UnsupportedOperationException("This method should be called for parent filters only");
+            default -> throw new UnsupportedOperationException("Unknown filter column");
         };
         CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, fieldName);
     }
