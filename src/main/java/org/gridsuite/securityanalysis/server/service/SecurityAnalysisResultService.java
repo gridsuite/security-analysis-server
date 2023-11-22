@@ -104,6 +104,26 @@ public class SecurityAnalysisResultService {
         return subjectLimitViolationsPage.map(SubjectLimitViolationResultDTO::toDto);
     }
 
+    private void assertNmKContingenciesSortAllowed(Sort sort) {
+        List<String> allowedSortProperties = List.of(ResourceFilterDTO.Column.CONTINGENCY_ID, ResourceFilterDTO.Column.STATUS)
+            .stream().map(ResourceFilterDTO.Column::getColumnName)
+            .toList();
+        assertSortAllowed(sort, allowedSortProperties);
+    }
+
+    private void assertNmKSubjectLimitViolationsSortAllowed(Sort sort) {
+        List<String> allowedSortProperties = List.of(ResourceFilterDTO.Column.SUBJECT_ID)
+            .stream().map(ResourceFilterDTO.Column::getColumnName)
+            .toList();
+        assertSortAllowed(sort, allowedSortProperties);
+    }
+
+    private void assertSortAllowed(Sort sort, List<String> allowedSortProperties) {
+        if (!sort.stream().allMatch(order -> allowedSortProperties.contains(order.getProperty()))) {
+            throw new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_SORT_FORMAT);
+        }
+    }
+
     public List<ResourceFilterDTO> fromStringFiltersToDTO(String stringFilters) {
         if (stringFilters == null || stringFilters.isEmpty()) {
             return List.of();
@@ -166,6 +186,7 @@ public class SecurityAnalysisResultService {
     @Transactional(readOnly = true)
     public Page<ContingencyEntity> findContingenciesPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
+        assertNmKContingenciesSortAllowed(pageable.getSort());
         Specification<ContingencyEntity> specification = contingencyRepository.getParentsSpecifications(resultUuid, resourceFilters);
         // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
@@ -199,6 +220,7 @@ public class SecurityAnalysisResultService {
     @Transactional(readOnly = true)
     public Page<SubjectLimitViolationEntity> findSubjectLimitViolationsPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
+        assertNmKSubjectLimitViolationsSortAllowed(pageable.getSort());
         Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters);
         // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!

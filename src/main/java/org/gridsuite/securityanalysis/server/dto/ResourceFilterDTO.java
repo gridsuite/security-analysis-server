@@ -75,7 +75,6 @@ public record ResourceFilterDTO(DataType dataType, Type type, Object value, Colu
         public String getColumnName() {
             return columnName;
         }
-
     }
     public static List<String> getAllColumnNames() {
         return Arrays.stream(Column.values())

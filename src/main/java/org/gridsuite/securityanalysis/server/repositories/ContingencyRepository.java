@@ -9,6 +9,7 @@ package org.gridsuite.securityanalysis.server.repositories;
 
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
+import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -41,7 +42,7 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
             case LIMIT_TYPE -> "limitType";
             case LIMIT_NAME -> "limitName";
             case SIDE -> "side";
-            default -> throw new UnsupportedOperationException("Unknown filter column");
+            default -> throw new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_FILTER);
         };
     }
 

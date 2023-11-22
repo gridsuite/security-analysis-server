@@ -16,6 +16,7 @@ public class SecurityAnalysisException extends RuntimeException {
         RESULT_NOT_FOUND,
         INVALID_FILTER_FORMAT,
         INVALID_SORT_FORMAT,
+        INVALID_FILTER,
     }
 
     private final Type type;
