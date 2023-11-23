@@ -29,7 +29,7 @@ public abstract class AbstractLimitViolationEntity {
     @GeneratedValue
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private SubjectLimitViolationEntity subjectLimitViolation;
 
     @Column(name = "limitValue")
