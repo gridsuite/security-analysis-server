@@ -23,19 +23,15 @@ public class LimitViolationDTO {
     private Double loading;
 
     public static LimitViolationDTO toDto(AbstractLimitViolationEntity limitViolation) {
-        Double computedLoading = LimitViolationType.CURRENT.equals(limitViolation.getLimitType())
-            ? (100 * limitViolation.getValue()) / (limitViolation.getLimit() * limitViolation.getLimitReduction())
-            : null;
-
         return LimitViolationDTO.builder()
             .limitType(limitViolation.getLimitType())
             .limitName(limitViolation.getLimitName())
             .side(limitViolation.getSide())
-            .acceptableDuration(limitViolation.getAcceptableDuration())
+            .acceptableDuration((int) limitViolation.getAcceptableDuration())
             .limit(limitViolation.getLimit())
             .limitReduction(limitViolation.getLimitReduction())
             .value(limitViolation.getValue())
-            .loading(computedLoading)
+            .loading(limitViolation.getLoading())
             .build();
     }
 }

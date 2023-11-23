@@ -9,13 +9,16 @@ package org.gridsuite.securityanalysis.server.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * An object that can be used to filter data with the JPA Criteria API (via Spring Specification)
  * @param dataType the type of data we want to filter (text, number)
  * @param type the type of filter (contains, startsWith...)
  * @param value the value of the filter
  * @param column the column / field on which the filter will be applied
- *
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
 public record ResourceFilterDTO(DataType dataType, Type type, Object value, Column column) {
@@ -23,13 +26,23 @@ public record ResourceFilterDTO(DataType dataType, Type type, Object value, Colu
     public enum DataType {
         @JsonProperty("text")
         TEXT,
+        @JsonProperty("number")
+        NUMBER,
     }
 
     public enum Type {
         CONTAINS,
         @JsonProperty("startsWith")
         STARTS_WITH,
-        EQUALS
+        EQUALS,
+        @JsonProperty("notEqual")
+        NOT_EQUAL,
+        @JsonProperty("lessThanOrEqual")
+        LESS_THAN_OR_EQUAL,
+        @JsonProperty("greaterThanOrEqual")
+        GREATER_THAN_OR_EQUAL
+
+
     }
 
     public enum Column {
@@ -62,5 +75,10 @@ public record ResourceFilterDTO(DataType dataType, Type type, Object value, Colu
         public String getColumnName() {
             return columnName;
         }
+    }
+    public static List<String> getAllColumnNames() {
+        return Arrays.stream(Column.values())
+                .map(Column::getColumnName)
+                .collect(Collectors.toList());
     }
 }

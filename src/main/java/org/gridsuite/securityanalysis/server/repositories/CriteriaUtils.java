@@ -39,9 +39,9 @@ public final class CriteriaUtils {
      * if it's a {@link Collection}, it will use "OR" operator between each value
      */
     private static Predicate filterToPredicate(CriteriaBuilder criteriaBuilder,
-                                                Path<?> path,
-                                                ResourceFilterDTO filter,
-                                                String field) {
+                                               Path<?> path,
+                                               ResourceFilterDTO filter,
+                                               String field) {
         // expression targets field to filter on
         Expression<String> expression = getColumnPath(path, field);
 
@@ -52,7 +52,7 @@ public final class CriteriaUtils {
             }
             return criteriaBuilder.or(
                 filterCollection.stream().map(value ->
-                    filterToAtomicPredicate(criteriaBuilder, expression, filter, value)
+                        filterToAtomicPredicate(criteriaBuilder, expression, filter, value)
                 ).toArray(Predicate[]::new)
             );
         } else {
@@ -77,10 +77,24 @@ public final class CriteriaUtils {
                 case CONTAINS -> criteriaBuilder.like(criteriaBuilder.upper(stringExpression), "%" + escapedFilterValue.toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
                 case STARTS_WITH -> criteriaBuilder.like(criteriaBuilder.upper(stringExpression), escapedFilterValue.toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
                 case EQUALS -> criteriaBuilder.equal(criteriaBuilder.upper(stringExpression), stringValue.toUpperCase());
+                default ->
+                        throw new UnsupportedOperationException("This type of filter is not supported for text data type");
             };
-        } else {
-            throw new UnsupportedOperationException("Not supported type " + filter.dataType());
         }
+
+        if (ResourceFilterDTO.DataType.NUMBER == filter.dataType()) {
+            Double valueDouble = Double.valueOf((String) value);
+            return switch (filter.type()) {
+                case NOT_EQUAL -> criteriaBuilder.notEqual(expression, valueDouble);
+                case LESS_THAN_OR_EQUAL -> criteriaBuilder.lessThanOrEqualTo((Expression<Double>) expression, valueDouble);
+                case GREATER_THAN_OR_EQUAL ->
+                        criteriaBuilder.greaterThanOrEqualTo((Expression<Double>) expression, valueDouble);
+                default ->
+                        throw new UnsupportedOperationException("This type of filter is not supported for number data type");
+            };
+        }
+        throw new IllegalArgumentException("The filter type " + filter.type() + " is not supported with the data type " + filter.dataType());
+
     }
 
     /**

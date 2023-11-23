@@ -52,6 +52,7 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
             .limitReduction(limitViolation.getLimitReduction())
             .value(limitViolation.getValue())
             .side(limitViolation.getSide())
+            .loading(computeLoading(limitViolation))
             .build();
     }
 }

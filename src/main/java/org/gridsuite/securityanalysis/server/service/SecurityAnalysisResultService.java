@@ -9,13 +9,16 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.powsybl.loadflow.LoadFlowResult;
-import com.powsybl.security.*;
-import com.powsybl.security.results.NetworkResult;
-import com.powsybl.security.results.PreContingencyResult;
+import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.dto.*;
-import org.gridsuite.securityanalysis.server.entities.*;
-import org.gridsuite.securityanalysis.server.repositories.*;
+import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
+import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
+import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.repositories.ContingencyRepository;
+import org.gridsuite.securityanalysis.server.repositories.PreContingencyLimitViolationRepository;
+import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
+import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationRepository;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
@@ -57,22 +60,28 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public PreContingencyResult findNResult(UUID resultUuid) {
-        Optional<SecurityAnalysisResultEntity> securityAnalysisResult = securityAnalysisResultRepository.findById(resultUuid);
-        if (securityAnalysisResult.isEmpty()) {
-            return null;
-        }
-        List<PreContingencyLimitViolationEntity> preContingencyLimitViolationEntities = preContingencyLimitViolationRepository.findByResultId(resultUuid);
+    public List<PreContingencyLimitViolationResultDTO> findNResult(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Sort sort) {
+        assertResultExists(resultUuid);
+        assertPreContingenciesSortAllowed(sort);
+        Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters);
+        Sort newSort = createNResultSort(sort);
+        List<PreContingencyLimitViolationEntity> preContingencyLimitViolation = preContingencyLimitViolationRepository.findAll(specification, newSort);
+        return preContingencyLimitViolation.stream()
+                .map(PreContingencyLimitViolationResultDTO::toDto)
+                .toList();
+    }
 
-        List<LimitViolation> preContingencyLimitViolations = preContingencyLimitViolationEntities.stream()
-            .map(AbstractLimitViolationEntity::toLimitViolation)
-            .toList();
-
-        return new PreContingencyResult(
-            LoadFlowResult.ComponentResult.Status.valueOf(securityAnalysisResult.get().getPreContingencyStatus()),
-            new LimitViolationsResult(preContingencyLimitViolations),
-            new NetworkResult(Collections.emptyList(), Collections.emptyList(), Collections.emptyList())
-        );
+    private Sort createNResultSort(Sort sort) {
+        List<Sort.Order> newOrders = new ArrayList<>();
+        sort.forEach(order -> {
+            String property = order.getProperty();
+            if (preContingencyLimitViolationRepository.isParentFilter(property)) {
+                newOrders.add(new Sort.Order(order.getDirection(), "subjectLimitViolation." + property));
+            } else {
+                newOrders.add(order);
+            }
+        });
+        return Sort.by(newOrders);
     }
 
     @Transactional(readOnly = true)
@@ -98,6 +107,14 @@ public class SecurityAnalysisResultService {
         assertSortAllowed(sort, allowedSortProperties);
     }
 
+    private void assertPreContingenciesSortAllowed(Sort sort) {
+        List<String> allowedSortProperties = ResourceFilterDTO.getAllColumnNames().stream()
+                .filter(columnName -> !columnName.equals(ResourceFilterDTO.Column.CONTINGENCY_ID.getColumnName())
+                        && !columnName.equals(ResourceFilterDTO.Column.STATUS.getColumnName()))
+                .toList();
+        assertSortAllowed(sort, allowedSortProperties);
+    }
+
     private void assertNmKSubjectLimitViolationsSortAllowed(Sort sort) {
         List<String> allowedSortProperties = List.of(ResourceFilterDTO.Column.SUBJECT_ID)
             .stream().map(ResourceFilterDTO.Column::getColumnName)
@@ -111,7 +128,7 @@ public class SecurityAnalysisResultService {
         }
     }
 
-    private List<ResourceFilterDTO> fromStringFiltersToDTO(String stringFilters) {
+    public List<ResourceFilterDTO> fromStringFiltersToDTO(String stringFilters) {
         if (stringFilters == null || stringFilters.isEmpty()) {
             return List.of();
         }

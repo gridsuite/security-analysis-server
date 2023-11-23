@@ -16,7 +16,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.stereotype.Repository;
 
-import java.util.*;
+import java.util.List;
+import java.util.UUID;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
@@ -58,4 +59,5 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
     default String getIdFieldName() {
         return "uuid";
     }
+
 }
