@@ -9,6 +9,10 @@ package org.gridsuite.securityanalysis.server.service;
 import com.powsybl.commons.reporter.Reporter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -26,6 +30,8 @@ public class ReportService {
     static final String REPORT_API_VERSION = "v1";
 
     private static final String DELIMITER = "/";
+    private static final String QUERY_PARAM_REPORT_TYPE_FILTER = "reportTypeFilter";
+    private static final String QUERY_PARAM_REPORT_THROW_ERROR = "errorOnReportNotFound";
 
     private String baseUri;
 
@@ -49,5 +55,18 @@ public class ReportService {
             .build(reportUuid);
 
         restTemplate.put(baseUri + path, reporter);
+    }
+
+    public void deleteReport(UUID reportUuid, String reportType) {
+        Objects.requireNonNull(reportUuid);
+
+        var path = UriComponentsBuilder.fromPath(DELIMITER + REPORT_API_VERSION + "/reports/{reportUuid}")
+                .queryParam(QUERY_PARAM_REPORT_TYPE_FILTER, reportType)
+                .queryParam(QUERY_PARAM_REPORT_THROW_ERROR, false)
+                .buildAndExpand(reportUuid)
+                .toUriString();
+        var headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        restTemplate.exchange(baseUri + path, HttpMethod.DELETE, new HttpEntity<>(headers), Void.class);
     }
 }

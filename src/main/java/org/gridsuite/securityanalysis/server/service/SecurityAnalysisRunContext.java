@@ -38,13 +38,15 @@ public class SecurityAnalysisRunContext {
 
     private final String reporterId;
 
+    private final String reportType;
+
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
-                                      String receiver, String provider, SecurityAnalysisParametersInfos parameters, UUID reportUuid, String reporterId) {
-        this(networkUuid, variantId, contingencyListNames, receiver, provider, buildParameters(parameters, provider), reportUuid, reporterId);
+                                      String receiver, String provider, SecurityAnalysisParametersInfos parameters, UUID reportUuid, String reporterId, String reportType) {
+        this(networkUuid, variantId, contingencyListNames, receiver, provider, buildParameters(parameters, provider), reportUuid, reporterId, reportType);
     }
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
-                                      String receiver, String provider, SecurityAnalysisParameters parameters, UUID reportUuid, String reporterId) {
+                                      String receiver, String provider, SecurityAnalysisParameters parameters, UUID reportUuid, String reporterId, String reportType) {
         this.networkUuid = Objects.requireNonNull(networkUuid);
         this.variantId = variantId;
         this.contingencyListNames = Objects.requireNonNull(contingencyListNames);
@@ -53,6 +55,7 @@ public class SecurityAnalysisRunContext {
         this.parameters = Objects.requireNonNull(parameters);
         this.reportUuid = reportUuid;
         this.reporterId = reporterId;
+        this.reportType = reportType;
     }
 
     private static SecurityAnalysisParameters buildParameters(SecurityAnalysisParametersInfos parameters, String provider) {
@@ -100,5 +103,9 @@ public class SecurityAnalysisRunContext {
 
     public String getReporterId() {
         return reporterId;
+    }
+
+    public String getReportType() {
+        return reportType;
     }
 }

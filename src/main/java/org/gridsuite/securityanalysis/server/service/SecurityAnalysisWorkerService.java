@@ -59,8 +59,6 @@ public class SecurityAnalysisWorkerService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisWorkerService.class);
 
-    private static final String AS_TYPE_REPORT = "SecurityAnalysis";
-
     private NetworkStoreService networkStoreService;
 
     private ActionsService actionsService;
@@ -198,9 +196,12 @@ public class SecurityAnalysisWorkerService {
         Reporter rootReporter = Reporter.NO_OP;
         Reporter reporter = Reporter.NO_OP;
         if (context.getReportUuid() != null) {
-            String rootReporterId = context.getReporterId() == null ? AS_TYPE_REPORT : context.getReporterId() + "@" + AS_TYPE_REPORT;
+            final String reportType = context.getReportType();
+            String rootReporterId = context.getReporterId() == null ? reportType : context.getReporterId() + "@" + reportType;
             rootReporter = new ReporterModel(rootReporterId, rootReporterId);
-            reporter = rootReporter.createSubReporter(AS_TYPE_REPORT, AS_TYPE_REPORT + " (${providerToUse})", "providerToUse", securityAnalysisRunner.getName());
+            reporter = rootReporter.createSubReporter(reportType, reportType + " (${providerToUse})", "providerToUse", securityAnalysisRunner.getName());
+            // Delete any previous SA computation logs
+            reportService.deleteReport(context.getReportUuid(), reportType);
         }
 
         CompletableFuture<SecurityAnalysisResult> future = runASAsync(context, securityAnalysisRunner, network, contingencies, reporter, resultUuid);
