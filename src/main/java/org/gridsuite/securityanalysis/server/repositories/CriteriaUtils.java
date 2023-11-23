@@ -34,16 +34,6 @@ public final class CriteriaUtils {
         }
     }
 
-    public static void addJoinFilter(CriteriaBuilder criteriaBuilder,
-                                     Join<?, ?> joinPath,
-                                     ResourceFilterDTO filter,
-                                     String dotSeparatedFields) {
-        Predicate predicate = filterToPredicate(criteriaBuilder, joinPath, filter, dotSeparatedFields);
-        if (predicate != null) {
-            joinPath.on(predicate);
-        }
-    }
-
     /**
      * Returns {@link Predicate} depending on {@code filter.value()} type:
      * if it's a {@link Collection}, it will use "OR" operator between each value

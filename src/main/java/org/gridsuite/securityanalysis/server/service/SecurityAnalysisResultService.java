@@ -62,10 +62,10 @@ public class SecurityAnalysisResultService {
     @Transactional(readOnly = true)
     public List<PreContingencyLimitViolationResultDTO> findNResult(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Sort sort) {
         assertResultExists(resultUuid);
+        assertPreContingenciesSortAllowed(sort);
         Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters);
         Sort newSort = createNResultSort(sort);
         List<PreContingencyLimitViolationEntity> preContingencyLimitViolation = preContingencyLimitViolationRepository.findAll(specification, newSort);
-
         return preContingencyLimitViolation.stream()
                 .map(PreContingencyLimitViolationResultDTO::toDto)
                 .toList();
@@ -73,14 +73,10 @@ public class SecurityAnalysisResultService {
 
     private Sort createNResultSort(Sort sort) {
         List<Sort.Order> newOrders = new ArrayList<>();
-        List<String> columnNames = ResourceFilterDTO.getAllColumnNames();
         sort.forEach(order -> {
-            boolean columnExist = columnNames.stream().anyMatch(columnName -> columnName.equals(order.getProperty()));
-            if (!columnExist) {
-                throw new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_SORT_FORMAT);
-            }
-            if (preContingencyLimitViolationRepository.isParentFilter(order.getProperty())) {
-                newOrders.add(new Sort.Order(order.getDirection(), "subjectLimitViolation.subjectId"));
+            String property = order.getProperty();
+            if (preContingencyLimitViolationRepository.isParentFilter(property)) {
+                newOrders.add(new Sort.Order(order.getDirection(), "subjectLimitViolation." + property));
             } else {
                 newOrders.add(order);
             }
@@ -108,6 +104,14 @@ public class SecurityAnalysisResultService {
         List<String> allowedSortProperties = List.of(ResourceFilterDTO.Column.CONTINGENCY_ID, ResourceFilterDTO.Column.STATUS)
             .stream().map(ResourceFilterDTO.Column::getColumnName)
             .toList();
+        assertSortAllowed(sort, allowedSortProperties);
+    }
+
+    private void assertPreContingenciesSortAllowed(Sort sort) {
+        List<String> allowedSortProperties = ResourceFilterDTO.getAllColumnNames().stream()
+                .filter(columnName -> !columnName.equals(ResourceFilterDTO.Column.CONTINGENCY_ID.getColumnName())
+                        && !columnName.equals(ResourceFilterDTO.Column.STATUS.getColumnName()))
+                .toList();
         assertSortAllowed(sort, allowedSortProperties);
     }
 
