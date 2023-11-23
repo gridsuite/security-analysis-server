@@ -22,12 +22,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.web.client.RestClientException;
 
 import java.io.IOException;
 import java.util.Objects;
 import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -38,6 +40,7 @@ import static org.junit.Assert.assertEquals;
 public class ReportServiceTest {
 
     private static final UUID REPORT_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e4");
+    private static final UUID REPORT_ERROR_UUID = UUID.fromString("9928181c-7977-4592-ba19-88027e4254e4");
 
     private static final String REPORT_JSON = "{\"version\":\"1.0\",\"reportTree\":{\"taskKey\":\"test\"},\"dics\":{\"default\":{\"test\":\"a test\"}}}";
 
@@ -72,6 +75,9 @@ public class ReportServiceTest {
                 if (requestPath.equals(String.format("/v1/reports/%s", REPORT_UUID))) {
                     assertEquals(REPORT_JSON, request.getBody().readUtf8());
                     return new MockResponse().setResponseCode(HttpStatus.OK.value());
+                } else if (requestPath.equals(String.format("/v1/reports/%s?reportTypeFilter=SecurityAnalysis&errorOnReportNotFound=false", REPORT_UUID))) {
+                    assertEquals("", request.getBody().readUtf8());
+                    return new MockResponse().setResponseCode(HttpStatus.OK.value());
                 } else {
                     return new MockResponse().setResponseCode(HttpStatus.NOT_FOUND.value()).setBody("Path not supported: " + request.getPath());
                 }
@@ -87,8 +93,15 @@ public class ReportServiceTest {
     }
 
     @Test
-    public void test() {
+    public void testSendReport() {
         Reporter reporter = new ReporterModel("test", "a test");
         reportService.sendReport(REPORT_UUID, reporter);
+        assertThrows(RestClientException.class, () -> reportService.sendReport(REPORT_ERROR_UUID, reporter));
+    }
+
+    @Test
+    public void testDeleteReport() {
+        reportService.deleteReport(REPORT_UUID, "SecurityAnalysis");
+        assertThrows(RestClientException.class, () -> reportService.deleteReport(REPORT_ERROR_UUID, "SecurityAnalysis"));
     }
 }
