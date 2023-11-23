@@ -6,7 +6,9 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.powsybl.iidm.network.Branch;
 import com.powsybl.loadflow.LoadFlowResult;
+import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.results.PreContingencyResult;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,6 +31,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -188,6 +191,23 @@ public class SecurityAnalysisController {
     @ApiResponses(@ApiResponse(responseCode = "200", description = "The security analysis default provider has been found"))
     public ResponseEntity<String> getDefaultProvider() {
         return ResponseEntity.ok().body(securityAnalysisService.getDefaultProvider());
+    }
+
+    @GetMapping(value = "/limit-types", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get available limit types")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "List of available limit types"))
+    public ResponseEntity<List<LimitViolationType>> getLimitTypes() {
+        List<LimitViolationType> limitViolationTypesToRemove = List.of(LimitViolationType.HIGH_SHORT_CIRCUIT_CURRENT, LimitViolationType.LOW_SHORT_CIRCUIT_CURRENT, LimitViolationType.LOW_VOLTAGE_ANGLE, LimitViolationType.HIGH_VOLTAGE_ANGLE);
+        return ResponseEntity.ok().body(Arrays.stream(LimitViolationType.values())
+            .filter(lm -> !limitViolationTypesToRemove.contains(lm))
+            .toList());
+    }
+
+    @GetMapping(value = "/branch-sides", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get available branch sides")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "List of available branch sides"))
+    public ResponseEntity<Branch.Side[]> getBranchSides() {
+        return ResponseEntity.ok().body(Branch.Side.values());
     }
 
     @GetMapping(value = "/computation-status", produces = APPLICATION_JSON_VALUE)
