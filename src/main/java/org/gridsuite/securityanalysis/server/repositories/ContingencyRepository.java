@@ -11,12 +11,11 @@ import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -32,6 +31,13 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
     List<ContingencyEntity> findAllWithContingencyElementsByUuidIn(List<UUID> uuids);
 
     List<ContingencyEntity> findAllByUuidIn(List<UUID> uuids);
+
+    @Query(value = "SELECT uuid FROM ContingencyEntity WHERE result.id = ?1")
+    Set<UUID> findAllUuidsByResultId(UUID resultId);
+
+    @Modifying
+    @Query(value = "DELETE FROM ContingencyEntity WHERE result.id = ?1")
+    void deleteAllByResultId(UUID resultId);
 
     @Override
     default String columnToDotSeparatedField(ResourceFilterDTO.Column column) {
