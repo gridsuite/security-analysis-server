@@ -8,7 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.UUID;
 
-import static com.vladmihalcea.sql.SQLStatementCountValidator.*;
+import static com.vladmihalcea.sql.SQLStatementCountValidator.assertDeleteCount;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.RESULT;
 
 /**
