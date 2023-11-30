@@ -9,8 +9,10 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.powsybl.commons.PowsyblException;
+import com.powsybl.commons.reporter.Report;
 import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.commons.reporter.ReporterModel;
+import com.powsybl.commons.reporter.TypedValue;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
@@ -23,6 +25,7 @@ import com.powsybl.security.SecurityAnalysisReport;
 import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.ws.commons.LogUtils;
+import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
 import org.slf4j.Logger;
@@ -31,9 +34,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -188,26 +194,58 @@ public class SecurityAnalysisWorkerService {
 
         Network network = getNetwork(context.getNetworkUuid());
 
-        List<Contingency> contingencies = context.getContingencyListNames().stream()
-            .map(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid(), context.getVariantId()))
-            .flatMap(List::stream)
-            .collect(Collectors.toList());
+        List<ContingencyInfos> contingencies = context.getContingencyListNames().stream()
+                .map(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid(), context.getVariantId()))
+                .flatMap(List::stream)
+                .toList();
 
         SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
 
         Reporter rootReporter = Reporter.NO_OP;
         Reporter reporter = Reporter.NO_OP;
+        Reporter elementNotFoundSubReporter = Reporter.NO_OP;
+        List<Report> notFoundElementReports = new ArrayList<>();
+        Map<String, String> notFE = new HashMap<>();
+        contingencies.stream()
+                .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements()))
+                .forEach(contingencyInfos -> {
+                    String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
+                    notFE.put(contingencyInfos.getContingency().getId(), elementsIds);
+                    System.out.println("================Not Found=================");
+                    System.out.println(elementsIds);
+                    System.out.println("==========================================");
+                    notFoundElementReports.add(Report.builder()
+                            .withKey("contingencyElementNotFound" + contingencyInfos.getContingency().getId())
+                            .withDefaultMessage(String.format("Cannot find the following equipments %s in contingency %s", elementsIds, contingencyInfos.getContingency().getId()))
+                            .withSeverity(TypedValue.WARN_SEVERITY)
+                            .build());
+                });
+
         if (context.getReportUuid() != null) {
             String rootReporterId = context.getReporterId() == null ? AS_TYPE_REPORT : context.getReporterId() + "@" + AS_TYPE_REPORT;
             rootReporter = new ReporterModel(rootReporterId, rootReporterId);
             reporter = rootReporter.createSubReporter(AS_TYPE_REPORT, AS_TYPE_REPORT + " (${providerToUse})", "providerToUse", securityAnalysisRunner.getName());
         }
 
-        CompletableFuture<SecurityAnalysisResult> future = runASAsync(context, securityAnalysisRunner, network, contingencies, reporter, resultUuid);
+        CompletableFuture<SecurityAnalysisResult> future = runASAsync(context,
+                securityAnalysisRunner,
+                network,
+                contingencies.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()),
+                reporter,
+                resultUuid);
 
         SecurityAnalysisResult result = future == null ? null : future.get();
         if (context.getReportUuid() != null) {
             Reporter finalRootReporter = rootReporter;
+            if (!CollectionUtils.isEmpty(notFoundElementReports)) {
+                elementNotFoundSubReporter = reporter.createSubReporter(context.getReportUuid().toString() + "notFoundElements", "Not found elements");
+                elementNotFoundSubReporter.report(Report.builder()
+                        .withKey(context.getReportUuid().toString() + "notFoundElements")
+                        .withDefaultMessage("Not found elements")
+                        .withSeverity(TypedValue.WARN_SEVERITY)
+                        .build());
+                notFoundElementReports.forEach(elementNotFoundSubReporter::report);
+            }
             reportService.sendReport(context.getReportUuid(), finalRootReporter);
         }
         return result;

@@ -14,6 +14,7 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
+import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.junit.After;
 import org.junit.Before;
@@ -124,18 +125,18 @@ public class ActionsServiceTest {
 
     @Test
     public void test() {
-        List<Contingency> list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), null);
+        List<Contingency> list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), null).stream().map(ContingencyInfos::getContingency).collect(Collectors.toList());
         assertEquals(List.of(CONTINGENCY), list);
-        list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID);
+        list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID).stream().map(ContingencyInfos::getContingency).collect(Collectors.toList());
         assertEquals(List.of(CONTINGENCY_VARIANT), list);
     }
 
     @Test
     public void testVeryLargeList() {
         // DataBufferLimitException should not be thrown with this message : "Exceeded limit on max bytes to buffer : DATA_BUFFER_LIMIT"
-        List<Contingency> list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), null);
+        List<Contingency> list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), null).stream().map(ContingencyInfos::getContingency).collect(Collectors.toList());
         assertEquals(createVeryLargeList(), list);
-        list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID);
+        list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID).stream().map(ContingencyInfos::getContingency).collect(Collectors.toList());
         assertEquals(createVeryLargeList(), list);
     }
 }

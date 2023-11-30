@@ -52,22 +52,22 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     static final String CONTINGENCY_LIST_ERROR_NAME = "listError";
     static final String CONTINGENCY_LIST_NAME_VARIANT = "listVariant";
 
-    static final List<Contingency> CONTINGENCIES = List.of(
-        new Contingency("l1", new BranchContingency("l1")),
-        new Contingency("l2", new GeneratorContingency("l2")),
-        new Contingency("l3", new BusbarSectionContingency("l3")),
-        new Contingency("l4", new LineContingency("l4")),
+    static final List<ContingencyInfos> CONTINGENCIES = List.of(
+        new ContingencyInfos(new Contingency("l1", new BranchContingency("l1"))),
+        new ContingencyInfos(new Contingency("l2", new GeneratorContingency("l2"))),
+        new ContingencyInfos(new Contingency("l3", new BusbarSectionContingency("l3"))),
+        new ContingencyInfos(new Contingency("l4", new LineContingency("l4"))),
         //new Contingency("l5", new LoadContingency("l5")), //ContingencyElementDeserializer does not handle LOAD
-        new Contingency("l6", new HvdcLineContingency("l6")),
-        new Contingency("l7", new DanglingLineContingency("l7")),
-        new Contingency("l8", new ShuntCompensatorContingency("l8")),
-        new Contingency("l9", new TwoWindingsTransformerContingency("l9")),
-        new Contingency("la", new ThreeWindingsTransformerContingency("l0")), // Contingencies are reordered by id
-        new Contingency("lb", new StaticVarCompensatorContingency("la"))
+        new ContingencyInfos(new Contingency("l6", new HvdcLineContingency("l6"))),
+        new ContingencyInfos(new Contingency("l7", new DanglingLineContingency("l7"))),
+        new ContingencyInfos(new Contingency("l8", new ShuntCompensatorContingency("l8"))),
+        new ContingencyInfos(new Contingency("l9", new TwoWindingsTransformerContingency("l9"))),
+        new ContingencyInfos(new Contingency("la", new ThreeWindingsTransformerContingency("l0"))), // Contingencies are reordered by id
+        new ContingencyInfos(new Contingency("lb", new StaticVarCompensatorContingency("la")))
     );
-    static final List<Contingency> CONTINGENCIES_VARIANT = List.of(
-        new Contingency("l3", new BusbarSectionContingency("l3")),
-        new Contingency("l4", new LineContingency("l4"))
+    static final List<ContingencyInfos> CONTINGENCIES_VARIANT = List.of(
+        new ContingencyInfos(new Contingency("l3", new BusbarSectionContingency("l3"))),
+        new ContingencyInfos(new Contingency("l4", new LineContingency("l4")))
     );
 
     static final LimitViolation LIMIT_VIOLATION_1 = new LimitViolation("l3", LimitViolationType.CURRENT, "", 20 * 60, 10, 1, 11, Branch.Side.ONE);
@@ -76,14 +76,14 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     static final LimitViolation LIMIT_VIOLATION_4 = new LimitViolation("vl7", LimitViolationType.HIGH_VOLTAGE, "", 0, 400, 1, 410, null);
 
     static final SecurityAnalysisResult RESULT = new SecurityAnalysisResult(new LimitViolationsResult(List.of(LIMIT_VIOLATION_1)), LoadFlowResult.ComponentResult.Status.CONVERGED,
-            CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, List.of(LIMIT_VIOLATION_2)))
+            CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency.getContingency(), PostContingencyComputationStatus.CONVERGED, List.of(LIMIT_VIOLATION_2)))
             .collect(Collectors.toList()));
 
     static final SecurityAnalysisResult RESULT_VARIANT = new SecurityAnalysisResult(new LimitViolationsResult(List.of(LIMIT_VIOLATION_3)), LoadFlowResult.ComponentResult.Status.CONVERGED,
-        CONTINGENCIES_VARIANT.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, List.of(LIMIT_VIOLATION_4)))
+        CONTINGENCIES_VARIANT.stream().map(contingency -> new PostContingencyResult(contingency.getContingency(), PostContingencyComputationStatus.CONVERGED, List.of(LIMIT_VIOLATION_4)))
             .collect(Collectors.toList()));
 
-    static final List<ContingencyResultDTO> RESULT_CONTINGENCIES = CONTINGENCIES.stream().map(c ->
+    static final List<ContingencyResultDTO> RESULT_CONTINGENCIES = CONTINGENCIES.stream().map(ContingencyInfos::getContingency).map(c ->
         new ContingencyResultDTO(
             new ContingencyDTO(
                 c.getId(),
@@ -101,7 +101,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         new SubjectLimitViolationResultDTO(LIMIT_VIOLATION_1.getSubjectId(), List.of()),
         new SubjectLimitViolationResultDTO(
             LIMIT_VIOLATION_2.getSubjectId(),
-            CONTINGENCIES.stream().map(c -> new ContingencyLimitViolationDTO(
+            CONTINGENCIES.stream().map(ContingencyInfos::getContingency).map(c -> new ContingencyLimitViolationDTO(
                     new ContingencyDTO(c.getId(), LoadFlowResult.ComponentResult.Status.CONVERGED.name(), c.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).collect(Collectors.toList())),
                     toLimitViolationDTO(LIMIT_VIOLATION_2)
                 )
