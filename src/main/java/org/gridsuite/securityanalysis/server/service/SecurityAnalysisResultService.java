@@ -182,6 +182,7 @@ public class SecurityAnalysisResultService {
     // We manually delete the results here using SQL queries to improve performances.
     // source : https://www.baeldung.com/spring-data-jpa-deleteby
     // "The @Query method creates a single SQL query against the database. By comparison, the deleteBy methods execute a read query, then delete each of the items one by one."
+    // Note : we use native SQL instead of JPQL because there is no cascade even on embeddable collections so we keep total control on launched queries.
     private void deleteSecurityAnalysisResult(UUID resultId) {
         Set<UUID> contingencyUuids = contingencyRepository.findAllUuidsByResultId(resultId);
         contingencyLimitViolationRepository.deleteAllByContingencyUuidIn(contingencyUuids);
