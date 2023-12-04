@@ -4,17 +4,21 @@ import com.powsybl.contingency.Contingency;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+import java.util.Map;
 import java.util.Set;
 
+@Setter
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 public class ContingencyInfos {
-    private Contingency contingency;
-    Set<String> notFoundElements;
+    Contingency contingency;
+    Map<String, Set<String>> notFoundElements;
 
     public ContingencyInfos(Contingency contingency) {
-        this(contingency, Set.of());
+        this(contingency, Map.of());
     }
 }
+

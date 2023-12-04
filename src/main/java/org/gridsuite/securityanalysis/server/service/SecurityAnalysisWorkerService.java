@@ -38,6 +38,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -203,17 +204,15 @@ public class SecurityAnalysisWorkerService {
 
         Reporter rootReporter = Reporter.NO_OP;
         Reporter reporter = Reporter.NO_OP;
-        Reporter elementNotFoundSubReporter = Reporter.NO_OP;
+        Reporter elementNotFoundSubReporter;
         List<Report> notFoundElementReports = new ArrayList<>();
         Map<String, String> notFE = new HashMap<>();
         contingencies.stream()
                 .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements()))
                 .forEach(contingencyInfos -> {
-                    String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
+                    String elementsIds = contingencyInfos.getNotFoundElements().values().stream()
+                            .flatMap(Collection::stream).collect(Collectors.joining(", "));
                     notFE.put(contingencyInfos.getContingency().getId(), elementsIds);
-                    System.out.println("================Not Found=================");
-                    System.out.println(elementsIds);
-                    System.out.println("==========================================");
                     notFoundElementReports.add(Report.builder()
                             .withKey("contingencyElementNotFound" + contingencyInfos.getContingency().getId())
                             .withDefaultMessage(String.format("Cannot find the following equipments %s in contingency %s", elementsIds, contingencyInfos.getContingency().getId()))
@@ -236,17 +235,16 @@ public class SecurityAnalysisWorkerService {
 
         SecurityAnalysisResult result = future == null ? null : future.get();
         if (context.getReportUuid() != null) {
-            Reporter finalRootReporter = rootReporter;
             if (!CollectionUtils.isEmpty(notFoundElementReports)) {
                 elementNotFoundSubReporter = reporter.createSubReporter(context.getReportUuid().toString() + "notFoundElements", "Not found elements");
                 elementNotFoundSubReporter.report(Report.builder()
                         .withKey(context.getReportUuid().toString() + "notFoundElements")
-                        .withDefaultMessage("Not found elements")
+                        .withDefaultMessage("Elements not found")
                         .withSeverity(TypedValue.WARN_SEVERITY)
                         .build());
                 notFoundElementReports.forEach(elementNotFoundSubReporter::report);
             }
-            reportService.sendReport(context.getReportUuid(), finalRootReporter);
+            reportService.sendReport(context.getReportUuid(), rootReporter);
         }
         return result;
     }
