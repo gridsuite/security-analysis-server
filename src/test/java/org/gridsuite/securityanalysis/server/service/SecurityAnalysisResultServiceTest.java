@@ -15,8 +15,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.UUID;
 
-import static com.vladmihalcea.sql.SQLStatementCountValidator.assertDeleteCount;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.RESULT;
+import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 
 /**
  * @author Florent MILLOT <florent.millot@rte-france.com>
@@ -35,7 +35,8 @@ class SecurityAnalysisResultServiceTest {
 
         securityAnalysisResultService.delete(resultUuid);
 
-        // 5 manual deletes + the list of ContingencyElementEmbeddable inside ContingencyEntity
-        assertDeleteCount(6);
+        // 6 manual delete
+        // 1 manual select to get the contingencyUuids, and 4 select at the end for the last delete when applying the cascade
+        assertRequestsCount(5, 0, 0, 6);
     }
 }
