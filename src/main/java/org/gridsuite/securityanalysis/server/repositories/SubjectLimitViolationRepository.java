@@ -55,6 +55,6 @@ public interface SubjectLimitViolationRepository extends CommonLimitViolationRep
     }
 
     @Modifying
-    @Query(value = "DELETE FROM SubjectLimitViolationEntity WHERE result.id = ?1")
+    @Query(value = "DELETE FROM subject_limit_violation WHERE result_id = ?1", nativeQuery = true)
     void deleteAllByResultId(UUID resultId);
 }

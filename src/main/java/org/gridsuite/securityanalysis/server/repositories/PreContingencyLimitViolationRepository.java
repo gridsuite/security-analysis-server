@@ -85,6 +85,6 @@ public interface PreContingencyLimitViolationRepository extends JpaRepository<Pr
     }
 
     @Modifying
-    @Query(value = "DELETE FROM PreContingencyLimitViolationEntity WHERE result.id = ?1")
+    @Query(value = "DELETE FROM pre_contingency_limit_violation WHERE result_id = ?1", nativeQuery = true)
     void deleteAllByResultId(UUID resultId);
 }

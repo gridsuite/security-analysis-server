@@ -185,6 +185,7 @@ public class SecurityAnalysisResultService {
     private void deleteSecurityAnalysisResult(UUID resultId) {
         Set<UUID> contingencyUuids = contingencyRepository.findAllUuidsByResultId(resultId);
         contingencyLimitViolationRepository.deleteAllByContingencyUuidIn(contingencyUuids);
+        contingencyRepository.deleteAllContingencyElementsByContingencyUuidIn(contingencyUuids);
         contingencyRepository.deleteAllByResultId(resultId);
         preContingencyLimitViolationRepository.deleteAllByResultId(resultId);
         subjectLimitViolationRepository.deleteAllByResultId(resultId);

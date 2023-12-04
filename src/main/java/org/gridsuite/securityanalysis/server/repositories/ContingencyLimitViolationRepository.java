@@ -22,6 +22,6 @@ import java.util.UUID;
 @Repository
 public interface ContingencyLimitViolationRepository extends JpaRepository<ContingencyLimitViolationEntity, UUID> {
     @Modifying
-    @Query(value = "DELETE FROM ContingencyLimitViolationEntity WHERE contingency.uuid IN ?1")
+    @Query(value = "DELETE FROM contingency_limit_violation WHERE contingency_uuid IN ?1", nativeQuery = true)
     void deleteAllByContingencyUuidIn(Set<UUID> uuids);
 }

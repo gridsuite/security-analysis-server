@@ -36,8 +36,12 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
     Set<UUID> findAllUuidsByResultId(UUID resultId);
 
     @Modifying
-    @Query(value = "DELETE FROM ContingencyEntity WHERE result.id = ?1")
+    @Query(value = "DELETE FROM contingency WHERE result_id = ?1", nativeQuery = true)
     void deleteAllByResultId(UUID resultId);
+
+    @Modifying
+    @Query(value = "DELETE FROM contingency_entity_contingency_elements WHERE contingency_entity_uuid IN ?1", nativeQuery = true)
+    void deleteAllContingencyElementsByContingencyUuidIn(Set<UUID> uuids);
 
     @Override
     default String columnToDotSeparatedField(ResourceFilterDTO.Column column) {
