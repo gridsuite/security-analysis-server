@@ -13,7 +13,10 @@ import java.util.Objects;
 
 public class SecurityAnalysisException extends RuntimeException {
     public enum Type {
-        RESULT_NOT_FOUND
+        RESULT_NOT_FOUND,
+        INVALID_FILTER_FORMAT,
+        INVALID_SORT_FORMAT,
+        INVALID_FILTER
     }
 
     private final Type type;

@@ -7,8 +7,7 @@ package org.gridsuite.securityanalysis.server;
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import com.fasterxml.jackson.databind.InjectableValues;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.*;
 import com.powsybl.commons.reporter.ReporterModelDeserializer;
 import com.powsybl.commons.reporter.ReporterModelJsonModule;
 import com.powsybl.contingency.json.ContingencyJsonModule;
@@ -46,7 +45,8 @@ public class RestTemplateConfig {
     }
 
     private ObjectMapper createObjectMapper() {
-        ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json().build();
+        ObjectMapper objectMapper = Jackson2ObjectMapperBuilder.json()
+            .featuresToEnable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS).build();
         objectMapper.registerModule(new ContingencyJsonModule());
         objectMapper.registerModule(new SecurityAnalysisJsonModule());
         objectMapper.registerModule(new LoadFlowParametersJsonModule());

@@ -14,6 +14,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.util.UUID;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
@@ -29,7 +30,7 @@ public abstract class AbstractLimitViolationEntity {
     @GeneratedValue
     private UUID id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     private SubjectLimitViolationEntity subjectLimitViolation;
 
     @Column(name = "limitValue")
@@ -40,7 +41,7 @@ public abstract class AbstractLimitViolationEntity {
     @Enumerated(EnumType.STRING)
     private LimitViolationType limitType;
 
-    private int acceptableDuration;
+    private long acceptableDuration;
 
     private float limitReduction;
 
@@ -50,12 +51,12 @@ public abstract class AbstractLimitViolationEntity {
     @Enumerated(EnumType.STRING)
     private Branch.Side side;
 
-    public static LimitViolation toLimitViolation(AbstractLimitViolationEntity limitViolationEntity) {
-        String subjectId = limitViolationEntity.getSubjectLimitViolation() != null
-            ? limitViolationEntity.getSubjectLimitViolation().getSubjectId()
-            : null;
+    @Column(name = "loading")
+    private Double loading;
 
-        return new LimitViolation(subjectId, limitViolationEntity.getLimitType(), limitViolationEntity.getLimitName(), limitViolationEntity.getAcceptableDuration(),
-            limitViolationEntity.getLimit(), limitViolationEntity.getLimitReduction(), limitViolationEntity.getValue(), limitViolationEntity.getSide());
+    public static Double computeLoading(LimitViolation limitViolation) {
+        return LimitViolationType.CURRENT.equals(limitViolation.getLimitType())
+                ? (100 * limitViolation.getValue()) / (limitViolation.getLimit() * limitViolation.getLimitReduction())
+                : null;
     }
 }

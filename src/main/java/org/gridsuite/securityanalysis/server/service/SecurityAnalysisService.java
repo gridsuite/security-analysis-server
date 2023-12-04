@@ -8,10 +8,7 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisProvider;
-import com.powsybl.security.results.PreContingencyResult;
-import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationResultDTO;
-import org.gridsuite.securityanalysis.server.dto.ContingencyResultDTO;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
+import org.gridsuite.securityanalysis.server.dto.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -56,18 +53,6 @@ public class SecurityAnalysisService {
         notificationService.emitRunAnalysisMessage(new SecurityAnalysisResultContext(resultUuid, runContext).toMessage(objectMapper));
 
         return resultUuid;
-    }
-
-    public PreContingencyResult getNResult(UUID resultUuid) {
-        return securityAnalysisResultService.findNResult(resultUuid);
-    }
-
-    public List<ContingencyResultDTO> getNmKContingenciesResult(UUID resultUuid) {
-        return securityAnalysisResultService.findNmKContingenciesResult(resultUuid);
-    }
-
-    public List<SubjectLimitViolationResultDTO> getNmKConstraintsResult(UUID resultUuid) {
-        return securityAnalysisResultService.findNmKConstraintsResult(resultUuid);
     }
 
     public void deleteResult(UUID resultUuid) {

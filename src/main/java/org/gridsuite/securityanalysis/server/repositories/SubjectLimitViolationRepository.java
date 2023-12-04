@@ -6,15 +6,53 @@
  */
 package org.gridsuite.securityanalysis.server.repositories;
 
+import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.UUID;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
 
-public interface SubjectLimitViolationRepository extends JpaRepository<SubjectLimitViolationEntity, UUID> {
-    List<SubjectLimitViolationEntity> findByResultIdOrderBySubjectId(UUID resultUuid);
+@Repository
+public interface SubjectLimitViolationRepository extends CommonLimitViolationRepository<SubjectLimitViolationEntity>, JpaRepository<SubjectLimitViolationEntity, UUID>, JpaSpecificationExecutor<SubjectLimitViolationEntity> {
+    @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.contingency"}, type = EntityGraph.EntityGraphType.LOAD)
+    List<SubjectLimitViolationEntity> findAll(Specification<SubjectLimitViolationEntity> spec);
+
+    List<SubjectLimitViolationEntity> findAllByIdIn(List<UUID> uuids);
+
+    @Override
+    default String columnToDotSeparatedField(ResourceFilterDTO.Column column) {
+        return switch (column) {
+            case CONTINGENCY_ID -> "contingency.contingencyId";
+            case STATUS -> "contingency.status";
+            case LIMIT_TYPE -> "limitType";
+            case LIMIT_NAME -> "limitName";
+            case SIDE -> "side";
+            case SUBJECT_ID -> "subjectId";
+            default -> throw new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_FILTER);
+        };
+    }
+
+    @Override
+    default boolean isParentFilter(ResourceFilterDTO filter) {
+        return filter.column().equals(ResourceFilterDTO.Column.SUBJECT_ID);
+    }
+
+    interface EntityId {
+        UUID getId();
+    }
+
+    @Override
+    default String getIdFieldName() {
+        return "id";
+    }
 }
