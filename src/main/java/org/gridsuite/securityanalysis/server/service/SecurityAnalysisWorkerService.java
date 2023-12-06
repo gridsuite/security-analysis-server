@@ -38,7 +38,6 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -208,8 +207,8 @@ public class SecurityAnalysisWorkerService {
         contingencies.stream()
                 .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements()))
                 .forEach(contingencyInfos -> {
-                    String elementsIds = contingencyInfos.getNotFoundElements().values().stream()
-                            .flatMap(Collection::stream).collect(Collectors.joining(", "));
+                    String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
+                    System.out.println(elementsIds);
                     notFE.put(contingencyInfos.getContingency().getId(), elementsIds);
                     notFoundElementReports.add(Report.builder()
                             .withKey("contingencyElementNotFound" + contingencyInfos.getContingency().getId())
@@ -237,7 +236,7 @@ public class SecurityAnalysisWorkerService {
         SecurityAnalysisResult result = future == null ? null : future.get();
         if (context.getReportUuid() != null) {
             if (!CollectionUtils.isEmpty(notFoundElementReports)) {
-                elementNotFoundSubReporter = reporter.createSubReporter(context.getReportUuid().toString() + "notFoundElements", "Not found elements");
+                elementNotFoundSubReporter = reporter.createSubReporter(context.getReportUuid().toString() + "notFoundElements", "Elements not foundgit");
                 elementNotFoundSubReporter.report(Report.builder()
                         .withKey(context.getReportUuid().toString() + "notFoundElements")
                         .withDefaultMessage("Elements not found")

@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.util.Map;
 import java.util.Set;
 
 @Setter
@@ -15,10 +14,10 @@ import java.util.Set;
 @AllArgsConstructor
 public class ContingencyInfos {
     Contingency contingency;
-    Map<String, Set<String>> notFoundElements;
+    Set<String> notFoundElements;
 
     public ContingencyInfos(Contingency contingency) {
-        this(contingency, Map.of());
+        this(contingency, Set.of());
     }
 }
 
