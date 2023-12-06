@@ -35,8 +35,6 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -145,6 +143,4 @@ public class ActionsServiceTest {
         list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID);
         assertEquals(createVeryLargeList().stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
     }
-
-
 }
