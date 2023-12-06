@@ -31,8 +31,12 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -53,9 +57,9 @@ public class ActionsServiceTest {
 
     private static final String VERY_LARGE_LIST_NAME = "veryLargelist";
 
-    private static final Contingency CONTINGENCY = new Contingency("c1", new BranchContingency("b1"));
+    private static final ContingencyInfos CONTINGENCY = new ContingencyInfos(new Contingency("c1", new BranchContingency("b1")));
 
-    private static final Contingency CONTINGENCY_VARIANT = new Contingency("c2", new BranchContingency("b2"));
+    private static final ContingencyInfos CONTINGENCY_VARIANT = new ContingencyInfos(new Contingency("c2", new BranchContingency("b2")));
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -119,24 +123,28 @@ public class ActionsServiceTest {
         return baseHttpUrl.toString().substring(0, baseHttpUrl.toString().length() - 1);
     }
 
-    private List<Contingency> createVeryLargeList() {
-        return IntStream.range(0, DATA_BUFFER_LIMIT).mapToObj(i -> new Contingency("l" + i, new BranchContingency("l" + i))).collect(Collectors.toList());
+    private List<ContingencyInfos> createVeryLargeList() {
+        return IntStream.range(0, DATA_BUFFER_LIMIT).mapToObj(i -> new ContingencyInfos(new Contingency("l" + i, new BranchContingency("l" + i)))).collect(Collectors.toList());
     }
 
     @Test
     public void test() {
-        List<Contingency> list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), null).stream().map(ContingencyInfos::getContingency).collect(Collectors.toList());
-        assertEquals(List.of(CONTINGENCY), list);
-        list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID).stream().map(ContingencyInfos::getContingency).collect(Collectors.toList());
-        assertEquals(List.of(CONTINGENCY_VARIANT), list);
+        List<ContingencyInfos> list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), null);
+        list.forEach(contingencyInfos -> assertArrayEquals(List.of().toArray(new Object[0]), contingencyInfos.getNotFoundElements().toArray(new String[0])));
+        assertEquals(Stream.of(CONTINGENCY).map(ContingencyInfos::getContingency).toList(), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
+        list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID);
+        assertEquals(Stream.of(CONTINGENCY_VARIANT).map(ContingencyInfos::getContingency).toList(), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
     }
 
     @Test
     public void testVeryLargeList() {
         // DataBufferLimitException should not be thrown with this message : "Exceeded limit on max bytes to buffer : DATA_BUFFER_LIMIT"
-        List<Contingency> list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), null).stream().map(ContingencyInfos::getContingency).collect(Collectors.toList());
-        assertEquals(createVeryLargeList(), list);
-        list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID).stream().map(ContingencyInfos::getContingency).collect(Collectors.toList());
-        assertEquals(createVeryLargeList(), list);
+        List<ContingencyInfos> list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), null);
+        list.forEach(contingencyInfos -> assertArrayEquals(List.of().toArray(new Object[0]), contingencyInfos.getNotFoundElements().toArray(new String[0])));
+        assertEquals(createVeryLargeList().stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
+        list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID);
+        assertEquals(createVeryLargeList().stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
     }
+
+
 }
