@@ -208,7 +208,6 @@ public class SecurityAnalysisWorkerService {
                 .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements()))
                 .forEach(contingencyInfos -> {
                     String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
-                    System.out.println(elementsIds);
                     notFE.put(contingencyInfos.getContingency().getId(), elementsIds);
                     notFoundElementReports.add(Report.builder()
                             .withKey("contingencyElementNotFound" + contingencyInfos.getContingency().getId())
