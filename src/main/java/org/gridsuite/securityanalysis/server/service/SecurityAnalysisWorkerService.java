@@ -235,7 +235,7 @@ public class SecurityAnalysisWorkerService {
         SecurityAnalysisResult result = future == null ? null : future.get();
         if (context.getReportUuid() != null) {
             if (!CollectionUtils.isEmpty(notFoundElementReports)) {
-                elementNotFoundSubReporter = reporter.createSubReporter(context.getReportUuid().toString() + "notFoundElements", "Elements not foundgit");
+                elementNotFoundSubReporter = reporter.createSubReporter(context.getReportUuid().toString() + "notFoundElements", "Elements not found");
                 elementNotFoundSubReporter.report(Report.builder()
                         .withKey(context.getReportUuid().toString() + "notFoundElements")
                         .withDefaultMessage("Elements not found")
