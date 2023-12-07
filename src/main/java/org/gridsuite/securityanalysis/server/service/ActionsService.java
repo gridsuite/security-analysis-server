@@ -52,7 +52,7 @@ public class ActionsService {
         Objects.requireNonNull(networkUuid);
 
         URI path = UriComponentsBuilder
-            .fromPath(DELIMITER + ACTIONS_API_VERSION + "/contingency-lists/{name}/export")
+            .fromPath(DELIMITER + ACTIONS_API_VERSION + "/contingency-lists/contingency-infos/{name}/export")
             .queryParam("networkUuid", networkUuid.toString())
             .queryParamIfPresent("variantId", Optional.ofNullable(variantId)).build(name);
 

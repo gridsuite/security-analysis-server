@@ -28,6 +28,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -55,7 +56,8 @@ public class ActionsServiceTest {
 
     private static final String VERY_LARGE_LIST_NAME = "veryLargelist";
 
-    private static final ContingencyInfos CONTINGENCY = new ContingencyInfos(new Contingency("c1", new BranchContingency("b1")));
+    public static final String WRONG_ID = "wrongID";
+    private static final ContingencyInfos CONTINGENCY = new ContingencyInfos(new Contingency("c1", new BranchContingency("b1")), Set.of(WRONG_ID));
 
     private static final ContingencyInfos CONTINGENCY_VARIANT = new ContingencyInfos(new Contingency("c2", new BranchContingency("b2")));
 
@@ -94,16 +96,16 @@ public class ActionsServiceTest {
             @Override
             public MockResponse dispatch(RecordedRequest request) {
                 String requestPath = Objects.requireNonNull(request.getPath());
-                if (requestPath.equals(String.format("/v1/contingency-lists/%s/export?networkUuid=%s&variantId=%s", LIST_NAME, NETWORK_UUID, VARIANT_ID))) {
+                if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/%s/export?networkUuid=%s&variantId=%s", LIST_NAME, NETWORK_UUID, VARIANT_ID))) {
                     return new MockResponse().setResponseCode(HttpStatus.OK.value())
                             .setBody(jsonVariantExpected)
                             .addHeader("Content-Type", "application/json; charset=utf-8");
-                } else if (requestPath.equals(String.format("/v1/contingency-lists/%s/export?networkUuid=%s", LIST_NAME, NETWORK_UUID))) {
+                } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/%s/export?networkUuid=%s", LIST_NAME, NETWORK_UUID))) {
                     return new MockResponse().setResponseCode(HttpStatus.OK.value())
                         .setBody(jsonExpected)
                         .addHeader("Content-Type", "application/json; charset=utf-8");
-                } else if (requestPath.equals(String.format("/v1/contingency-lists/%s/export?networkUuid=%s&variantId=%s", VERY_LARGE_LIST_NAME, NETWORK_UUID, VARIANT_ID))
-                           || requestPath.equals(String.format("/v1/contingency-lists/%s/export?networkUuid=%s", VERY_LARGE_LIST_NAME, NETWORK_UUID))) {
+                } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/%s/export?networkUuid=%s&variantId=%s", VERY_LARGE_LIST_NAME, NETWORK_UUID, VARIANT_ID))
+                           || requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/%s/export?networkUuid=%s", VERY_LARGE_LIST_NAME, NETWORK_UUID))) {
                     return new MockResponse().setResponseCode(HttpStatus.OK.value())
                             .setBody(veryLargeJsonExpected)
                             .addHeader("Content-Type", "application/json; charset=utf-8");
@@ -128,7 +130,7 @@ public class ActionsServiceTest {
     @Test
     public void test() {
         List<ContingencyInfos> list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), null);
-        list.forEach(contingencyInfos -> assertArrayEquals(List.of().toArray(new Object[0]), contingencyInfos.getNotFoundElements().toArray(new String[0])));
+        list.forEach(contingencyInfos -> assertArrayEquals(List.of(WRONG_ID).toArray(new Object[0]), contingencyInfos.getNotFoundElements().toArray(new String[0])));
         assertEquals(Stream.of(CONTINGENCY).map(ContingencyInfos::getContingency).toList(), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
         list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID);
         assertEquals(Stream.of(CONTINGENCY_VARIANT).map(ContingencyInfos::getContingency).toList(), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
