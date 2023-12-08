@@ -70,6 +70,7 @@ public class SecurityAnalysisResultContext {
         List<String> contingencyListNames = getHeaderList(headers, CONTINGENCY_LIST_NAMES_HEADER);
         String receiver = (String) headers.get(RECEIVER_HEADER);
         String provider = (String) headers.get(PROVIDER_HEADER);
+        String userId = (String) headers.get(HEADER_USER_ID);
         SecurityAnalysisParameters parameters;
         try {
             parameters = objectMapper.readValue(message.getPayload(), SecurityAnalysisParameters.class);
@@ -79,7 +80,7 @@ public class SecurityAnalysisResultContext {
         UUID reportUuid = headers.containsKey(REPORT_UUID_HEADER) ? UUID.fromString((String) headers.get(REPORT_UUID_HEADER)) : null;
         String reporterId = headers.containsKey(REPORTER_ID_HEADER) ? (String) headers.get(REPORTER_ID_HEADER) : null;
         String reportType = headers.containsKey(REPORT_TYPE_HEADER) ? (String) headers.get(REPORT_TYPE_HEADER) : null;
-        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, variantId, contingencyListNames, receiver, provider, parameters, reportUuid, reporterId, reportType);
+        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, variantId, contingencyListNames, receiver, provider, parameters, reportUuid, reporterId, reportType, userId);
         return new SecurityAnalysisResultContext(resultUuid, runContext);
     }
 
@@ -96,6 +97,7 @@ public class SecurityAnalysisResultContext {
                 .setHeader(VARIANT_ID_HEADER, runContext.getVariantId())
                 .setHeader(CONTINGENCY_LIST_NAMES_HEADER, String.join(",", runContext.getContingencyListNames()))
                 .setHeader(RECEIVER_HEADER, runContext.getReceiver())
+                .setHeader(HEADER_USER_ID, runContext.getUserId())
                 .setHeader(PROVIDER_HEADER, runContext.getProvider())
                 .setHeader(REPORT_UUID_HEADER, runContext.getReportUuid())
                 .setHeader(REPORTER_ID_HEADER, runContext.getReporterId())

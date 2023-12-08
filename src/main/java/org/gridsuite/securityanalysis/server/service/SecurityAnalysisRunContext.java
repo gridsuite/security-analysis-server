@@ -11,6 +11,7 @@ import com.powsybl.commons.extensions.Extension;
 import com.powsybl.loadflow.LoadFlowParameters;
 import com.powsybl.loadflow.LoadFlowProvider;
 import com.powsybl.security.SecurityAnalysisParameters;
+import lombok.Getter;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
 
 import java.util.List;
@@ -20,6 +21,7 @@ import java.util.UUID;
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
+@Getter
 public class SecurityAnalysisRunContext {
 
     private final UUID networkUuid;
@@ -38,15 +40,19 @@ public class SecurityAnalysisRunContext {
 
     private final String reporterId;
 
+    private final String userId;
+
     private final String reportType;
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
-                                      String receiver, String provider, SecurityAnalysisParametersInfos parameters, UUID reportUuid, String reporterId, String reportType) {
-        this(networkUuid, variantId, contingencyListNames, receiver, provider, buildParameters(parameters, provider), reportUuid, reporterId, reportType);
+                                      String receiver, String provider, SecurityAnalysisParametersInfos parameters,
+                                      UUID reportUuid, String reporterId, String reportType, String userId) {
+        this(networkUuid, variantId, contingencyListNames, receiver, provider, buildParameters(parameters, provider), reportUuid, reporterId, reportType, userId);
     }
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
-                                      String receiver, String provider, SecurityAnalysisParameters parameters, UUID reportUuid, String reporterId, String reportType) {
+                                      String receiver, String provider, SecurityAnalysisParameters parameters,
+                                      UUID reportUuid, String reporterId, String reportType, String userId) {
         this.networkUuid = Objects.requireNonNull(networkUuid);
         this.variantId = variantId;
         this.contingencyListNames = Objects.requireNonNull(contingencyListNames);
@@ -55,6 +61,7 @@ public class SecurityAnalysisRunContext {
         this.parameters = Objects.requireNonNull(parameters);
         this.reportUuid = reportUuid;
         this.reporterId = reporterId;
+        this.userId = userId;
         this.reportType = reportType;
     }
 

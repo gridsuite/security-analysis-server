@@ -59,6 +59,7 @@ import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static org.gridsuite.securityanalysis.server.service.NotificationService.CANCEL_MESSAGE;
 import static org.gridsuite.securityanalysis.server.service.NotificationService.FAIL_MESSAGE;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.HEADER_USER_ID;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -189,6 +190,7 @@ public class SecurityAnalysisControllerTest {
     public void simpleRunRequest(SecurityAnalysisParametersInfos lfParams) {
         MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME_VARIANT + "&variantId=" + VARIANT_3_ID)
                 .contentType(MediaType.APPLICATION_JSON)
+                .header(HEADER_USER_ID, "testUserId")
                 .content(mapper.writeValueAsString(lfParams)))
                 .andExpectAll(
                     status().isOk(),
@@ -221,7 +223,8 @@ public class SecurityAnalysisControllerTest {
         String resultAsString;
 
         // run with specific variant
-        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME_VARIANT + "&variantId=" + VARIANT_3_ID + "&provider=OpenLoadFlow"))
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME_VARIANT + "&variantId=" + VARIANT_3_ID + "&provider=OpenLoadFlow")
+                .header(HEADER_USER_ID, "testUserId"))
                 .andExpectAll(
                     status().isOk(),
                     content().contentType(MediaType.APPLICATION_JSON)
@@ -232,7 +235,8 @@ public class SecurityAnalysisControllerTest {
         assertThat(RESULT_VARIANT, new MatcherJson<>(mapper, securityAnalysisResult));
 
         // run with implicit initial variant
-        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME))
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME)
+           .header(HEADER_USER_ID, "testUserId"))
            .andExpectAll(
                status().isOk(),
                content().contentType(MediaType.APPLICATION_JSON)
@@ -249,7 +253,8 @@ public class SecurityAnalysisControllerTest {
         String resultAsString;
 
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME
-            + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow"))
+            + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow")
+                .header(HEADER_USER_ID, "testUserId"))
                 .andExpectAll(
                     status().isOk(),
                     content().contentType(MediaType.APPLICATION_JSON)
@@ -330,7 +335,8 @@ public class SecurityAnalysisControllerTest {
         String resultAsString;
 
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME +
-            "&contingencyListName=" + CONTINGENCY_LIST2_NAME + "&variantId=" + VARIANT_1_ID))
+            "&contingencyListName=" + CONTINGENCY_LIST2_NAME + "&variantId=" + VARIANT_1_ID)
+                .header(HEADER_USER_ID, "testUserId"))
                 .andExpectAll(
                     status().isOk(),
                     content().contentType(MediaType.APPLICATION_JSON)
@@ -345,7 +351,8 @@ public class SecurityAnalysisControllerTest {
         MvcResult mvcResult;
         String resultAsString;
 
-        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME))
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME)
+            .header(HEADER_USER_ID, "testUserId"))
             .andExpectAll(
                 status().isOk(),
                 content().contentType(MediaType.APPLICATION_JSON)
@@ -389,7 +396,8 @@ public class SecurityAnalysisControllerTest {
 
         // running computation to create result
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME
-            + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow"))
+            + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow")
+                .header(HEADER_USER_ID, "testUserId"))
                 .andExpectAll(
                     status().isOk(),
                     content().contentType(MediaType.APPLICATION_JSON)
@@ -433,7 +441,8 @@ public class SecurityAnalysisControllerTest {
                 MvcResult mvcResult;
                 String resultAsString;
                 mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_STOP_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME
-                        + "&receiver=me&variantId=" + VARIANT_TO_STOP_ID))
+                        + "&receiver=me&variantId=" + VARIANT_TO_STOP_ID)
+                    .header(HEADER_USER_ID, "testUserId"))
                     .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON)
@@ -469,7 +478,8 @@ public class SecurityAnalysisControllerTest {
             .willThrow(new RuntimeException(ERROR_MESSAGE));
 
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_ERROR_NAME
-            + "&receiver=me&variantId=" + VARIANT_1_ID))
+            + "&receiver=me&variantId=" + VARIANT_1_ID)
+                .header(HEADER_USER_ID, "testUserId"))
                 .andExpectAll(
                     status().isOk(),
                     content().contentType(MediaType.APPLICATION_JSON)
@@ -494,7 +504,8 @@ public class SecurityAnalysisControllerTest {
         MvcResult mvcResult;
         String resultAsString;
 
-        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME + "&provider=testProvider" + "&reportUuid=" + REPORT_UUID + "&reporterId=" + UUID.randomUUID()).contentType(MediaType.APPLICATION_JSON))
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME + "&provider=testProvider" + "&reportUuid=" + REPORT_UUID + "&reporterId=" + UUID.randomUUID()).contentType(MediaType.APPLICATION_JSON)
+                .header(HEADER_USER_ID, "testUserId"))
                 .andExpectAll(
                     status().isOk(),
                     content().contentType(MediaType.APPLICATION_JSON))

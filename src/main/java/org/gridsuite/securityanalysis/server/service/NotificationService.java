@@ -37,12 +37,24 @@ public class NotificationService {
     public static final String REPORT_UUID_HEADER = "reportUuid";
     public static final String REPORTER_ID_HEADER = "reporterId";
     public static final String REPORT_TYPE_HEADER = "reportType";
+    public static final String HEADER_USER_ID = "userId";
+
+    public static final int MSG_MAX_LENGTH = 256;
 
     @Autowired
     private StreamBridge publisher;
 
     private void sendMessage(Message<String> message, String bindingName) {
         OUTPUT_MESSAGE_LOGGER.debug("Sending message : {}", message);
+        // the message is shortened before being sent to the study-server.
+        // I keep the beginning and ending, it should make it easier to identify
+        String msgHeader = (String) message.getHeaders().get(MESSAGE_HEADER);
+        if (msgHeader != null && msgHeader.length() > MSG_MAX_LENGTH) {
+            msgHeader = msgHeader.substring(0, MSG_MAX_LENGTH / 2) +
+                    " ... " +
+                    msgHeader.substring(msgHeader.length() - MSG_MAX_LENGTH / 2, msgHeader.length() - 1);
+            message = MessageBuilder.fromMessage(message).setHeader(MESSAGE_HEADER, msgHeader).build();
+        }
         publisher.send(bindingName, message);
     }
 
@@ -63,10 +75,11 @@ public class NotificationService {
                 "publishStopped-out-0");
     }
 
-    public void emitFailAnalysisMessage(String resultUuid, String receiver, String causeMessage) {
+    public void emitFailAnalysisMessage(String resultUuid, String receiver, String causeMessage, String userId) {
         sendMessage(MessageBuilder.withPayload("")
                                   .setHeader(RESULT_UUID_HEADER, resultUuid)
                                   .setHeader(RECEIVER_HEADER, receiver)
+                                  .setHeader(HEADER_USER_ID, userId)
                                   .setHeader(MESSAGE_HEADER, FAIL_MESSAGE + " : " + causeMessage)
                                   .build(),
                 "publishFailed-out-0");

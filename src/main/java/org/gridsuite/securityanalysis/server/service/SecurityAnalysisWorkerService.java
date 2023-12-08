@@ -182,14 +182,14 @@ public class SecurityAnalysisWorkerService {
     private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) throws ExecutionException, InterruptedException {
         Objects.requireNonNull(context);
 
-        LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(LogUtils::sanitizeParam).collect(Collectors.toList()));
+        LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(LogUtils::sanitizeParam).toList());
 
         Network network = getNetwork(context.getNetworkUuid());
 
         List<Contingency> contingencies = context.getContingencyListNames().stream()
             .map(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid(), context.getVariantId()))
             .flatMap(List::stream)
-            .collect(Collectors.toList());
+            .toList();
 
         SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
 
@@ -252,7 +252,8 @@ public class SecurityAnalysisWorkerService {
                     LOGGER.error(FAIL_MESSAGE, e);
                     notificationService.emitFailAnalysisMessage(resultContext.getResultUuid().toString(),
                         resultContext.getRunContext().getReceiver(),
-                        e.getMessage());
+                        e.getMessage(),
+                        resultContext.getRunContext().getUserId());
                     securityAnalysisResultService.delete(resultContext.getResultUuid());
                 }
             } finally {
