@@ -46,15 +46,6 @@ public class NotificationService {
 
     private void sendMessage(Message<String> message, String bindingName) {
         OUTPUT_MESSAGE_LOGGER.debug("Sending message : {}", message);
-        // the message is shortened before being sent to the study-server.
-        // I keep the beginning and ending, it should make it easier to identify
-        String msgHeader = (String) message.getHeaders().get(MESSAGE_HEADER);
-        if (msgHeader != null && msgHeader.length() > MSG_MAX_LENGTH) {
-            msgHeader = msgHeader.substring(0, MSG_MAX_LENGTH / 2) +
-                    " ... " +
-                    msgHeader.substring(msgHeader.length() - MSG_MAX_LENGTH / 2, msgHeader.length() - 1);
-            message = MessageBuilder.fromMessage(message).setHeader(MESSAGE_HEADER, msgHeader).build();
-        }
         publisher.send(bindingName, message);
     }
 
@@ -80,7 +71,7 @@ public class NotificationService {
                                   .setHeader(RESULT_UUID_HEADER, resultUuid)
                                   .setHeader(RECEIVER_HEADER, receiver)
                                   .setHeader(HEADER_USER_ID, userId)
-                                  .setHeader(MESSAGE_HEADER, FAIL_MESSAGE + " : " + causeMessage)
+                                  .setHeader(MESSAGE_HEADER, shortenMessage(FAIL_MESSAGE + " : " + causeMessage))
                                   .build(),
                 "publishFailed-out-0");
     }
@@ -91,5 +82,21 @@ public class NotificationService {
 
     public void emitCancelAnalysisMessage(Message<String> message) {
         sendMessage(message, "publishCancel-out-0");
+    }
+
+    // prevent the message from being too long for rabbitmq
+    // the beginning and ending are both kept, it should make it easier to identify
+    public String shortenMessage(String msg) {
+        if (msg == null) {
+            return msg;
+        }
+
+        String shortMsg = msg;
+        if (shortMsg.length() > MSG_MAX_LENGTH) {
+            shortMsg = msg.substring(0, MSG_MAX_LENGTH / 2) +
+                    " ... " +
+                    msg.substring(msg.length() - MSG_MAX_LENGTH / 2, msg.length() - 1);
+        }
+        return shortMsg;
     }
 }
