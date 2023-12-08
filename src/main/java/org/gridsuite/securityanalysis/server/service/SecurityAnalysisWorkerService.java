@@ -39,7 +39,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -201,17 +200,14 @@ public class SecurityAnalysisWorkerService {
 
         Reporter rootReporter = Reporter.NO_OP;
         Reporter reporter = Reporter.NO_OP;
-        Reporter elementNotFoundSubReporter;
         List<Report> notFoundElementReports = new ArrayList<>();
-        Map<String, String> notFE = new HashMap<>();
         contingencies.stream()
                 .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements()))
                 .forEach(contingencyInfos -> {
                     String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
-                    notFE.put(contingencyInfos.getContingency().getId(), elementsIds);
                     notFoundElementReports.add(Report.builder()
-                            .withKey("contingencyElementNotFound" + contingencyInfos.getContingency().getId())
-                            .withDefaultMessage(String.format("Cannot find the following equipments %s in contingency %s", elementsIds, contingencyInfos.getContingency().getId()))
+                            .withKey("contingencyElementNotFound_" + contingencyInfos.getId() + notFoundElementReports.size())
+                            .withDefaultMessage(String.format("Cannot find the following equipments %s in contingency %s", elementsIds, contingencyInfos.getId()))
                             .withSeverity(TypedValue.WARN_SEVERITY)
                             .build());
                 });
@@ -228,19 +224,17 @@ public class SecurityAnalysisWorkerService {
         CompletableFuture<SecurityAnalysisResult> future = runASAsync(context,
                 securityAnalysisRunner,
                 network,
-                contingencies.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()),
+                contingencies.stream()
+                        .map(ContingencyInfos::getContingency)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toList()),
                 reporter,
                 resultUuid);
 
         SecurityAnalysisResult result = future == null ? null : future.get();
         if (context.getReportUuid() != null) {
             if (!CollectionUtils.isEmpty(notFoundElementReports)) {
-                elementNotFoundSubReporter = reporter.createSubReporter(context.getReportUuid().toString() + "notFoundElements", "Elements not found");
-                elementNotFoundSubReporter.report(Report.builder()
-                        .withKey(context.getReportUuid().toString() + "notFoundElements")
-                        .withDefaultMessage("Elements not found")
-                        .withSeverity(TypedValue.WARN_SEVERITY)
-                        .build());
+                Reporter elementNotFoundSubReporter = reporter.createSubReporter(context.getReportUuid().toString() + "notFoundElements", "Elements not found");
                 notFoundElementReports.forEach(elementNotFoundSubReporter::report);
             }
             reportService.sendReport(context.getReportUuid(), rootReporter);
