@@ -83,9 +83,12 @@ public class SecurityAnalysisWorkerService {
 
     private SecurityAnalysisExecutionService securityAnalysisExecutionService;
 
+    private final SecurityAnalysisObserver securityAnalysisObserver;
+
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService, ReportService reportService,
                                          SecurityAnalysisResultService resultRepository, ObjectMapper objectMapper,
-                                         SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, NotificationService notificationService, SecurityAnalysisExecutionService securityAnalysisExecutionService) {
+                                         SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, NotificationService notificationService, SecurityAnalysisExecutionService securityAnalysisExecutionService,
+                                         SecurityAnalysisObserver securityAnalysisObserver) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.reportService = Objects.requireNonNull(reportService);
@@ -94,6 +97,7 @@ public class SecurityAnalysisWorkerService {
         this.notificationService = Objects.requireNonNull(notificationService);
         this.securityAnalysisExecutionService = Objects.requireNonNull(securityAnalysisExecutionService);
         this.securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
+        this.securityAnalysisObserver = securityAnalysisObserver;
     }
 
     public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier) {
@@ -179,17 +183,18 @@ public class SecurityAnalysisWorkerService {
         LOGGER.info(CANCEL_MESSAGE + " (resultUuid='{}')", resultUuid);
     }
 
-    private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) throws ExecutionException, InterruptedException {
+    private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) throws Exception {
         Objects.requireNonNull(context);
 
         LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(LogUtils::sanitizeParam).collect(Collectors.toList()));
 
-        Network network = getNetwork(context.getNetworkUuid());
+        Network network = securityAnalysisObserver.observe("network.load", context, () -> getNetwork(context.getNetworkUuid()));
 
-        List<Contingency> contingencies = context.getContingencyListNames().stream()
-            .map(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid(), context.getVariantId()))
-            .flatMap(List::stream)
-            .collect(Collectors.toList());
+        List<Contingency> contingencies = securityAnalysisObserver.observe("contingencies.fetch", context,
+            () -> context.getContingencyListNames().stream()
+                    .map(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid(), context.getVariantId()))
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList()));
 
         SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
 
@@ -201,15 +206,15 @@ public class SecurityAnalysisWorkerService {
             rootReporter = new ReporterModel(rootReporterId, rootReporterId);
             reporter = rootReporter.createSubReporter(reportType, reportType + " (${providerToUse})", "providerToUse", securityAnalysisRunner.getName());
             // Delete any previous SA computation logs
-            reportService.deleteReport(context.getReportUuid(), reportType);
+            securityAnalysisObserver.observe("report.delete", context, () -> reportService.deleteReport(context.getReportUuid(), reportType));
         }
 
         CompletableFuture<SecurityAnalysisResult> future = runASAsync(context, securityAnalysisRunner, network, contingencies, reporter, resultUuid);
 
-        SecurityAnalysisResult result = future == null ? null : future.get();
+        SecurityAnalysisResult result = future == null ? null : securityAnalysisObserver.observe("run", context, () -> future.get());
         if (context.getReportUuid() != null) {
             Reporter finalRootReporter = rootReporter;
-            reportService.sendReport(context.getReportUuid(), finalRootReporter);
+            securityAnalysisObserver.observe("report.send", context, () -> reportService.sendReport(context.getReportUuid(), finalRootReporter));
         }
         return result;
     }
@@ -227,12 +232,12 @@ public class SecurityAnalysisWorkerService {
                 long nanoTime = System.nanoTime();
                 LOGGER.info("Just run in {}s", TimeUnit.NANOSECONDS.toSeconds(nanoTime - startTime.getAndSet(nanoTime)));
 
-                securityAnalysisResultService.insert(
+                securityAnalysisObserver.observe("result.save", resultContext.getRunContext(), () -> securityAnalysisResultService.insert(
                     resultContext.getResultUuid(),
                     result,
                     result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED
                         ? SecurityAnalysisStatus.CONVERGED
-                        : SecurityAnalysisStatus.DIVERGED);
+                        : SecurityAnalysisStatus.DIVERGED));
 
                 long finalNanoTime = System.nanoTime();
                 LOGGER.info("Stored in {}s", TimeUnit.NANOSECONDS.toSeconds(finalNanoTime - startTime.getAndSet(finalNanoTime)));
