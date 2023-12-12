@@ -91,12 +91,8 @@ public class NotificationService {
             return msg;
         }
 
-        String shortMsg = msg;
-        if (shortMsg.length() > MSG_MAX_LENGTH) {
-            shortMsg = msg.substring(0, MSG_MAX_LENGTH / 2) +
-                    " ... " +
-                    msg.substring(msg.length() - MSG_MAX_LENGTH / 2, msg.length() - 1);
-        }
-        return shortMsg;
+        return msg.length() > MSG_MAX_LENGTH ?
+                msg.substring(0, MSG_MAX_LENGTH / 2) + " ... " + msg.substring(msg.length() - MSG_MAX_LENGTH / 2, msg.length() - 1)
+                : msg;
     }
 }
