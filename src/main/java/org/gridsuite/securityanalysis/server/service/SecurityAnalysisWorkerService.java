@@ -200,17 +200,6 @@ public class SecurityAnalysisWorkerService {
 
         Reporter rootReporter = Reporter.NO_OP;
         Reporter reporter = Reporter.NO_OP;
-        List<Report> notFoundElementReports = new ArrayList<>();
-        contingencies.stream()
-                .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements()))
-                .forEach(contingencyInfos -> {
-                    String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
-                    notFoundElementReports.add(Report.builder()
-                            .withKey("contingencyElementNotFound_" + contingencyInfos.getId() + notFoundElementReports.size())
-                            .withDefaultMessage(String.format("Cannot find the following equipments %s in contingency %s", elementsIds, contingencyInfos.getId()))
-                            .withSeverity(TypedValue.WARN_SEVERITY)
-                            .build());
-                });
 
         if (context.getReportUuid() != null) {
             final String reportType = context.getReportType();
@@ -227,12 +216,23 @@ public class SecurityAnalysisWorkerService {
                 contingencies.stream()
                         .map(ContingencyInfos::getContingency)
                         .filter(Objects::nonNull)
-                        .collect(Collectors.toList()),
+                        .toList(),
                 reporter,
                 resultUuid);
 
         SecurityAnalysisResult result = future == null ? null : future.get();
         if (context.getReportUuid() != null) {
+            List<Report> notFoundElementReports = new ArrayList<>();
+            contingencies.stream()
+                    .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements()))
+                    .forEach(contingencyInfos -> {
+                        String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
+                        notFoundElementReports.add(Report.builder()
+                                .withKey("contingencyElementNotFound_" + contingencyInfos.getId() + notFoundElementReports.size())
+                                .withDefaultMessage(String.format("Cannot find the following equipments %s in contingency %s", elementsIds, contingencyInfos.getId()))
+                                .withSeverity(TypedValue.WARN_SEVERITY)
+                                .build());
+                    });
             if (!CollectionUtils.isEmpty(notFoundElementReports)) {
                 Reporter elementNotFoundSubReporter = reporter.createSubReporter(context.getReportUuid().toString() + "notFoundElements", "Elements not found");
                 notFoundElementReports.forEach(elementNotFoundSubReporter::report);
