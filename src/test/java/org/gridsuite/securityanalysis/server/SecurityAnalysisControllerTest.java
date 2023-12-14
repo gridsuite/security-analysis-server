@@ -18,6 +18,8 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.*;
+import com.vladmihalcea.sql.SQLStatementCountValidator;
+
 import lombok.SneakyThrows;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.PreContingencyLimitViolationResultDTO;
@@ -61,6 +63,7 @@ import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static org.gridsuite.securityanalysis.server.service.NotificationService.CANCEL_MESSAGE;
 import static org.gridsuite.securityanalysis.server.service.NotificationService.FAIL_MESSAGE;
+import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -250,12 +253,27 @@ public class SecurityAnalysisControllerTest {
         MvcResult mvcResult;
         String resultAsString;
 
+        SQLStatementCountValidator.reset();
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME
             + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow"))
                 .andExpectAll(
                     status().isOk(),
                     content().contentType(MediaType.APPLICATION_JSON)
                 ).andReturn();
+        // * inserts
+        // security_analysis_result
+        // contingency
+        // contingency_limit_violation
+        // pre_contingency_limit_violation
+        // subject_limit_violation
+        // contingency_entity_contingency_elements
+
+        // * updates
+        // contingency_limit_violation
+        // pre_contingency_limit_violation
+        // security_analysis_result
+        // TODO remove those useless updates if everything is well done !
+        assertRequestsCount(2, 6, 3, 0);
 
         resultAsString = mvcResult.getResponse().getContentAsString();
         UUID resultUuid = mapper.readValue(resultAsString, UUID.class);

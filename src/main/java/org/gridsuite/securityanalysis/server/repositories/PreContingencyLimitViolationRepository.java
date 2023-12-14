@@ -13,9 +13,7 @@ import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,4 +83,8 @@ public interface PreContingencyLimitViolationRepository extends JpaRepository<Pr
     default boolean isParentFilter(String filter) {
         return filter.equals("subjectId");
     }
+
+    @Modifying
+    @Query(value = "DELETE FROM pre_contingency_limit_violation WHERE result_id = ?1", nativeQuery = true)
+    void deleteAllByResultId(UUID resultId);
 }

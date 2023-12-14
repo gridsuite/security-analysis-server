@@ -10,9 +10,7 @@ import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.data.jpa.repository.EntityGraph;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -55,4 +53,8 @@ public interface SubjectLimitViolationRepository extends CommonLimitViolationRep
     default String getIdFieldName() {
         return "id";
     }
+
+    @Modifying
+    @Query(value = "DELETE FROM subject_limit_violation WHERE result_id = ?1", nativeQuery = true)
+    void deleteAllByResultId(UUID resultId);
 }

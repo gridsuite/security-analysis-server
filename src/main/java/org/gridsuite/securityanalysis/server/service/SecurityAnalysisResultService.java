@@ -15,11 +15,10 @@ import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
-import org.gridsuite.securityanalysis.server.repositories.ContingencyRepository;
-import org.gridsuite.securityanalysis.server.repositories.PreContingencyLimitViolationRepository;
-import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
-import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationRepository;
+import org.gridsuite.securityanalysis.server.repositories.*;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
@@ -31,16 +30,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @Service
 public class SecurityAnalysisResultService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisResultService.class);
     private final SecurityAnalysisResultRepository securityAnalysisResultRepository;
     private final ContingencyRepository contingencyRepository;
     private final PreContingencyLimitViolationRepository preContingencyLimitViolationRepository;
     private final SubjectLimitViolationRepository subjectLimitViolationRepository;
+    private final ContingencyLimitViolationRepository contingencyLimitViolationRepository;
     private final ObjectMapper objectMapper;
     private SecurityAnalysisResultService self;
 
@@ -49,12 +52,14 @@ public class SecurityAnalysisResultService {
                                          ContingencyRepository contingencyRepository,
                                          PreContingencyLimitViolationRepository preContingencyLimitViolationRepository,
                                          SubjectLimitViolationRepository subjectLimitViolationRepository,
+                                         ContingencyLimitViolationRepository contingencyLimitViolationRepository,
                                          @Lazy SecurityAnalysisResultService self,
                                          ObjectMapper objectMapper) {
         this.securityAnalysisResultRepository = securityAnalysisResultRepository;
         this.contingencyRepository = contingencyRepository;
         this.preContingencyLimitViolationRepository = preContingencyLimitViolationRepository;
         this.subjectLimitViolationRepository = subjectLimitViolationRepository;
+        this.contingencyLimitViolationRepository = contingencyLimitViolationRepository;
         this.objectMapper = objectMapper;
         this.self = self;
     }
@@ -167,8 +172,25 @@ public class SecurityAnalysisResultService {
 
     @Transactional
     public void delete(UUID resultUuid) {
+        AtomicReference<Long> startTime = new AtomicReference<>();
+        startTime.set(System.nanoTime());
         Objects.requireNonNull(resultUuid);
-        securityAnalysisResultRepository.deleteById(resultUuid);
+        deleteSecurityAnalysisResult(resultUuid);
+        LOGGER.info("Security analysis result '{}' has been deleted in {}ms", resultUuid, TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime.get()));
+    }
+
+    // We manually delete the results here using SQL queries to improve performances.
+    // source : https://www.baeldung.com/spring-data-jpa-deleteby
+    // "The @Query method creates a single SQL query against the database. By comparison, the deleteBy methods execute a read query, then delete each of the items one by one."
+    // Note : we use native SQL instead of JPQL because there is no cascade even on embeddable collections so we keep total control on launched queries.
+    private void deleteSecurityAnalysisResult(UUID resultId) {
+        Set<UUID> contingencyUuids = contingencyRepository.findAllUuidsByResultId(resultId);
+        contingencyLimitViolationRepository.deleteAllByContingencyUuidIn(contingencyUuids);
+        contingencyRepository.deleteAllContingencyElementsByContingencyUuidIn(contingencyUuids);
+        contingencyRepository.deleteAllByResultId(resultId);
+        preContingencyLimitViolationRepository.deleteAllByResultId(resultId);
+        subjectLimitViolationRepository.deleteAllByResultId(resultId);
+        securityAnalysisResultRepository.deleteById(resultId);
     }
 
     @Transactional
