@@ -21,6 +21,7 @@ import com.powsybl.security.*;
 import com.vladmihalcea.sql.SQLStatementCountValidator;
 
 import lombok.SneakyThrows;
+import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.PreContingencyLimitViolationResultDTO;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
@@ -56,6 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
@@ -139,7 +141,7 @@ public class SecurityAnalysisControllerTest {
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID, VARIANT_1_ID))
                 .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME_VARIANT, NETWORK_UUID, VARIANT_3_ID))
-            .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES_VARIANT);
+            .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES_VARIANT.stream().map(ContingencyInfos::new).collect(Collectors.toList()));
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID, VARIANT_2_ID))
             .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID, null))
