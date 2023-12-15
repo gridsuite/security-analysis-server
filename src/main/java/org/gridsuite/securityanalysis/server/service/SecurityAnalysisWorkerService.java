@@ -232,7 +232,7 @@ public class SecurityAnalysisWorkerService {
                 long nanoTime = System.nanoTime();
                 LOGGER.info("Just run in {}s", TimeUnit.NANOSECONDS.toSeconds(nanoTime - startTime.getAndSet(nanoTime)));
 
-                securityAnalysisObserver.observe("result.save", resultContext.getRunContext(), () -> securityAnalysisResultService.insert(
+                securityAnalysisObserver.observe("results.save", resultContext.getRunContext(), () -> securityAnalysisResultService.insert(
                     resultContext.getResultUuid(),
                     result,
                     result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED

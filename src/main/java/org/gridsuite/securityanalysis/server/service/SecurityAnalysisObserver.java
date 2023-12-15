@@ -19,8 +19,11 @@ import org.springframework.stereotype.Service;
 public class SecurityAnalysisObserver {
     private final ObservationRegistry observationRegistry;
 
-    private static final String OBSERVATION_PREFIX = "app.security-analysis.";
+    private static final String OBSERVATION_PREFIX = "app.";
     private static final String PROVIDER_TAG_NAME = "provider";
+
+    private static final String COMPUTATION_NAME_TAG_NAME = "computation.name";
+    private static final String COMPUTATION_NAME = "sa";
 
     public SecurityAnalysisObserver(@NonNull ObservationRegistry observationRegistry) {
         this.observationRegistry = observationRegistry;
@@ -36,6 +39,7 @@ public class SecurityAnalysisObserver {
 
     private Observation createSecurityAnalysisObservation(String name, SecurityAnalysisRunContext runContext) {
         return Observation.createNotStarted(OBSERVATION_PREFIX + name, observationRegistry)
-            .lowCardinalityKeyValue(PROVIDER_TAG_NAME, runContext.getProvider());
+            .lowCardinalityKeyValue(PROVIDER_TAG_NAME, runContext.getProvider())
+            .lowCardinalityKeyValue(COMPUTATION_NAME_TAG_NAME, COMPUTATION_NAME);
     }
 }
