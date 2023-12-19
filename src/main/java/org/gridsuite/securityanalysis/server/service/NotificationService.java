@@ -37,6 +37,9 @@ public class NotificationService {
     public static final String REPORT_UUID_HEADER = "reportUuid";
     public static final String REPORTER_ID_HEADER = "reporterId";
     public static final String REPORT_TYPE_HEADER = "reportType";
+    public static final String HEADER_USER_ID = "userId";
+
+    public static final int MSG_MAX_LENGTH = 256;
 
     @Autowired
     private StreamBridge publisher;
@@ -63,11 +66,12 @@ public class NotificationService {
                 "publishStopped-out-0");
     }
 
-    public void emitFailAnalysisMessage(String resultUuid, String receiver, String causeMessage) {
+    public void emitFailAnalysisMessage(String resultUuid, String receiver, String causeMessage, String userId) {
         sendMessage(MessageBuilder.withPayload("")
                                   .setHeader(RESULT_UUID_HEADER, resultUuid)
                                   .setHeader(RECEIVER_HEADER, receiver)
-                                  .setHeader(MESSAGE_HEADER, FAIL_MESSAGE + " : " + causeMessage)
+                                  .setHeader(HEADER_USER_ID, userId)
+                                  .setHeader(MESSAGE_HEADER, shortenMessage(FAIL_MESSAGE + " : " + causeMessage))
                                   .build(),
                 "publishFailed-out-0");
     }
@@ -78,5 +82,17 @@ public class NotificationService {
 
     public void emitCancelAnalysisMessage(Message<String> message) {
         sendMessage(message, "publishCancel-out-0");
+    }
+
+    // prevent the message from being too long for rabbitmq
+    // the beginning and ending are both kept, it should make it easier to identify
+    public String shortenMessage(String msg) {
+        if (msg == null) {
+            return msg;
+        }
+
+        return msg.length() > MSG_MAX_LENGTH ?
+                msg.substring(0, MSG_MAX_LENGTH / 2) + " ... " + msg.substring(msg.length() - MSG_MAX_LENGTH / 2, msg.length() - 1)
+                : msg;
     }
 }
