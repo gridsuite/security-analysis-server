@@ -195,22 +195,22 @@ public class SecurityAnalysisWorkerService {
 
         Network network = securityAnalysisObserver.observe("network.load", context, () -> getNetwork(context.getNetworkUuid()));
 
-        List<Contingency> contingencies = securityAnalysisObserver.observe("contingencies.fetch", context,
+        List<ContingencyInfos> contingencies = securityAnalysisObserver.observe("contingencies.fetch", context,
             () -> context.getContingencyListNames().stream()
-                    .map(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid(), context.getVariantId()))
-                    .flatMap(List::stream)
-                    .collect(Collectors.toList()));
+                .map(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid(), context.getVariantId()))
+                .flatMap(List::stream)
+                .toList());
 
         SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
 
-        Reporter rootReporter = Reporter.NO_OP;
+        AtomicReference<Reporter> rootReporter = new AtomicReference<>(Reporter.NO_OP);
         Reporter reporter = Reporter.NO_OP;
 
         if (context.getReportUuid() != null) {
             final String reportType = context.getReportType();
             String rootReporterId = context.getReporterId() == null ? reportType : context.getReporterId() + "@" + reportType;
-            rootReporter = new ReporterModel(rootReporterId, rootReporterId);
-            reporter = rootReporter.createSubReporter(reportType, reportType + " (${providerToUse})", "providerToUse", securityAnalysisRunner.getName());
+            rootReporter.set(new ReporterModel(rootReporterId, rootReporterId));
+            reporter = rootReporter.get().createSubReporter(reportType, reportType + " (${providerToUse})", "providerToUse", securityAnalysisRunner.getName());
             // Delete any previous SA computation logs
             securityAnalysisObserver.observe("report.delete", context, () -> reportService.deleteReport(context.getReportUuid(), reportType));
         }
@@ -242,7 +242,7 @@ public class SecurityAnalysisWorkerService {
                 Reporter elementNotFoundSubReporter = reporter.createSubReporter(context.getReportUuid().toString() + "notFoundElements", "Elements not found");
                 notFoundElementReports.forEach(elementNotFoundSubReporter::report);
             }
-            securityAnalysisObserver.observe("report.send", context, () -> reportService.sendReport(context.getReportUuid(), rootReporter));
+            securityAnalysisObserver.observe("report.send", context, () -> reportService.sendReport(context.getReportUuid(), rootReporter.get()));
         }
         return result;
     }
