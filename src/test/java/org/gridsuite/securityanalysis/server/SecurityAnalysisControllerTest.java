@@ -18,7 +18,10 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.*;
+import com.vladmihalcea.sql.SQLStatementCountValidator;
+
 import lombok.SneakyThrows;
+import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.PreContingencyLimitViolationResultDTO;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
@@ -54,12 +57,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static org.gridsuite.securityanalysis.server.service.NotificationService.CANCEL_MESSAGE;
 import static org.gridsuite.securityanalysis.server.service.NotificationService.FAIL_MESSAGE;
 import static org.gridsuite.securityanalysis.server.service.NotificationService.HEADER_USER_ID;
+import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -137,7 +142,7 @@ public class SecurityAnalysisControllerTest {
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID, VARIANT_1_ID))
                 .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME_VARIANT, NETWORK_UUID, VARIANT_3_ID))
-            .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES_VARIANT);
+            .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES_VARIANT.stream().map(ContingencyInfos::new).collect(Collectors.toList()));
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID, VARIANT_2_ID))
             .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
         given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID, null))
@@ -252,6 +257,7 @@ public class SecurityAnalysisControllerTest {
         MvcResult mvcResult;
         String resultAsString;
 
+        SQLStatementCountValidator.reset();
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME
             + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow")
                 .header(HEADER_USER_ID, "testUserId"))
@@ -259,6 +265,20 @@ public class SecurityAnalysisControllerTest {
                     status().isOk(),
                     content().contentType(MediaType.APPLICATION_JSON)
                 ).andReturn();
+        // * inserts
+        // security_analysis_result
+        // contingency
+        // contingency_limit_violation
+        // pre_contingency_limit_violation
+        // subject_limit_violation
+        // contingency_entity_contingency_elements
+
+        // * updates
+        // contingency_limit_violation
+        // pre_contingency_limit_violation
+        // security_analysis_result
+        // TODO remove those useless updates if everything is well done !
+        assertRequestsCount(2, 6, 3, 0);
 
         resultAsString = mvcResult.getResponse().getContentAsString();
         UUID resultUuid = mapper.readValue(resultAsString, UUID.class);
