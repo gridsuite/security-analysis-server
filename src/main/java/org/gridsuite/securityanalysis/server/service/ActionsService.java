@@ -6,7 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
-import com.powsybl.contingency.Contingency;
+import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -47,15 +47,15 @@ public class ActionsService {
         this.restTemplate = restTemplate;
     }
 
-    public List<Contingency> getContingencyList(String name, UUID networkUuid, String variantId) {
+    public List<ContingencyInfos> getContingencyList(String name, UUID networkUuid, String variantId) {
         Objects.requireNonNull(name);
         Objects.requireNonNull(networkUuid);
 
         URI path = UriComponentsBuilder
-            .fromPath(DELIMITER + ACTIONS_API_VERSION + "/contingency-lists/{name}/export")
+            .fromPath(DELIMITER + ACTIONS_API_VERSION + "/contingency-lists/contingency-infos/{name}/export")
             .queryParam("networkUuid", networkUuid.toString())
             .queryParamIfPresent("variantId", Optional.ofNullable(variantId)).build(name);
 
-        return restTemplate.exchange(baseUri + path, HttpMethod.GET, null, new ParameterizedTypeReference<List<Contingency>>() { }).getBody();
+        return restTemplate.exchange(baseUri + path, HttpMethod.GET, null, new ParameterizedTypeReference<List<ContingencyInfos>>() { }).getBody();
     }
 }

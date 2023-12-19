@@ -9,8 +9,10 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.powsybl.commons.PowsyblException;
+import com.powsybl.commons.reporter.Report;
 import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.commons.reporter.ReporterModel;
+import com.powsybl.commons.reporter.TypedValue;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
@@ -23,6 +25,7 @@ import com.powsybl.security.SecurityAnalysisReport;
 import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.ws.commons.LogUtils;
+import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
 import org.slf4j.Logger;
@@ -31,8 +34,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -200,6 +205,7 @@ public class SecurityAnalysisWorkerService {
 
         Reporter rootReporter = Reporter.NO_OP;
         Reporter reporter = Reporter.NO_OP;
+
         if (context.getReportUuid() != null) {
             final String reportType = context.getReportType();
             String rootReporterId = context.getReporterId() == null ? reportType : context.getReporterId() + "@" + reportType;
@@ -209,12 +215,34 @@ public class SecurityAnalysisWorkerService {
             securityAnalysisObserver.observe("report.delete", context, () -> reportService.deleteReport(context.getReportUuid(), reportType));
         }
 
-        CompletableFuture<SecurityAnalysisResult> future = runASAsync(context, securityAnalysisRunner, network, contingencies, reporter, resultUuid);
+        CompletableFuture<SecurityAnalysisResult> future = runASAsync(context,
+                securityAnalysisRunner,
+                network,
+                contingencies.stream()
+                        .map(ContingencyInfos::getContingency)
+                        .filter(Objects::nonNull)
+                        .toList(),
+                reporter,
+                resultUuid);
 
         SecurityAnalysisResult result = future == null ? null : securityAnalysisObserver.observe("run", context, () -> future.get());
         if (context.getReportUuid() != null) {
-            Reporter finalRootReporter = rootReporter;
-            securityAnalysisObserver.observe("report.send", context, () -> reportService.sendReport(context.getReportUuid(), finalRootReporter));
+            List<Report> notFoundElementReports = new ArrayList<>();
+            contingencies.stream()
+                    .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements()))
+                    .forEach(contingencyInfos -> {
+                        String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
+                        notFoundElementReports.add(Report.builder()
+                                .withKey("contingencyElementNotFound_" + contingencyInfos.getId() + notFoundElementReports.size())
+                                .withDefaultMessage(String.format("Cannot find the following equipments %s in contingency %s", elementsIds, contingencyInfos.getId()))
+                                .withSeverity(TypedValue.WARN_SEVERITY)
+                                .build());
+                    });
+            if (!CollectionUtils.isEmpty(notFoundElementReports)) {
+                Reporter elementNotFoundSubReporter = reporter.createSubReporter(context.getReportUuid().toString() + "notFoundElements", "Elements not found");
+                notFoundElementReports.forEach(elementNotFoundSubReporter::report);
+            }
+            securityAnalysisObserver.observe("report.send", context, () -> reportService.sendReport(context.getReportUuid(), rootReporter));
         }
         return result;
     }
