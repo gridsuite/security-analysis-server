@@ -20,3 +20,13 @@ gridsuite:
       base-uri: http://localhost:5022
     report-server:
       base-uri: http://localhost:5028
+
+management:
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  endpoints:
+    web:
+      exposure:
+        include: prometheus, health, info

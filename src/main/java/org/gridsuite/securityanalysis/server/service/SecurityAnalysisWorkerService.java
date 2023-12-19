@@ -88,9 +88,12 @@ public class SecurityAnalysisWorkerService {
 
     private SecurityAnalysisExecutionService securityAnalysisExecutionService;
 
+    private final SecurityAnalysisObserver securityAnalysisObserver;
+
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService, ReportService reportService,
                                          SecurityAnalysisResultService resultRepository, ObjectMapper objectMapper,
-                                         SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, NotificationService notificationService, SecurityAnalysisExecutionService securityAnalysisExecutionService) {
+                                         SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, NotificationService notificationService, SecurityAnalysisExecutionService securityAnalysisExecutionService,
+                                         SecurityAnalysisObserver securityAnalysisObserver) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.reportService = Objects.requireNonNull(reportService);
@@ -99,6 +102,7 @@ public class SecurityAnalysisWorkerService {
         this.notificationService = Objects.requireNonNull(notificationService);
         this.securityAnalysisExecutionService = Objects.requireNonNull(securityAnalysisExecutionService);
         this.securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
+        this.securityAnalysisObserver = securityAnalysisObserver;
     }
 
     public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier) {
@@ -184,30 +188,31 @@ public class SecurityAnalysisWorkerService {
         LOGGER.info(CANCEL_MESSAGE + " (resultUuid='{}')", resultUuid);
     }
 
-    private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) throws ExecutionException, InterruptedException {
+    private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) throws Exception {
         Objects.requireNonNull(context);
 
         LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(LogUtils::sanitizeParam).collect(Collectors.toList()));
 
-        Network network = getNetwork(context.getNetworkUuid());
+        Network network = securityAnalysisObserver.observe("network.load", context, () -> getNetwork(context.getNetworkUuid()));
 
-        List<ContingencyInfos> contingencies = context.getContingencyListNames().stream()
+        List<ContingencyInfos> contingencies = securityAnalysisObserver.observe("contingencies.fetch", context,
+            () -> context.getContingencyListNames().stream()
                 .map(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid(), context.getVariantId()))
                 .flatMap(List::stream)
-                .toList();
+                .toList());
 
         SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(context.getProvider());
 
-        Reporter rootReporter = Reporter.NO_OP;
+        AtomicReference<Reporter> rootReporter = new AtomicReference<>(Reporter.NO_OP);
         Reporter reporter = Reporter.NO_OP;
 
         if (context.getReportUuid() != null) {
             final String reportType = context.getReportType();
             String rootReporterId = context.getReporterId() == null ? reportType : context.getReporterId() + "@" + reportType;
-            rootReporter = new ReporterModel(rootReporterId, rootReporterId);
-            reporter = rootReporter.createSubReporter(reportType, reportType + " (${providerToUse})", "providerToUse", securityAnalysisRunner.getName());
+            rootReporter.set(new ReporterModel(rootReporterId, rootReporterId));
+            reporter = rootReporter.get().createSubReporter(reportType, reportType + " (${providerToUse})", "providerToUse", securityAnalysisRunner.getName());
             // Delete any previous SA computation logs
-            reportService.deleteReport(context.getReportUuid(), reportType);
+            securityAnalysisObserver.observe("report.delete", context, () -> reportService.deleteReport(context.getReportUuid(), reportType));
         }
 
         CompletableFuture<SecurityAnalysisResult> future = runASAsync(context,
@@ -220,7 +225,7 @@ public class SecurityAnalysisWorkerService {
                 reporter,
                 resultUuid);
 
-        SecurityAnalysisResult result = future == null ? null : future.get();
+        SecurityAnalysisResult result = future == null ? null : securityAnalysisObserver.observe("run", context, () -> future.get());
         if (context.getReportUuid() != null) {
             List<Report> notFoundElementReports = new ArrayList<>();
             contingencies.stream()
@@ -237,7 +242,7 @@ public class SecurityAnalysisWorkerService {
                 Reporter elementNotFoundSubReporter = reporter.createSubReporter(context.getReportUuid().toString() + "notFoundElements", "Elements not found");
                 notFoundElementReports.forEach(elementNotFoundSubReporter::report);
             }
-            reportService.sendReport(context.getReportUuid(), rootReporter);
+            securityAnalysisObserver.observe("report.send", context, () -> reportService.sendReport(context.getReportUuid(), rootReporter.get()));
         }
         return result;
     }
@@ -255,12 +260,12 @@ public class SecurityAnalysisWorkerService {
                 long nanoTime = System.nanoTime();
                 LOGGER.info("Just run in {}s", TimeUnit.NANOSECONDS.toSeconds(nanoTime - startTime.getAndSet(nanoTime)));
 
-                securityAnalysisResultService.insert(
+                securityAnalysisObserver.observe("results.save", resultContext.getRunContext(), () -> securityAnalysisResultService.insert(
                     resultContext.getResultUuid(),
                     result,
                     result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED
                         ? SecurityAnalysisStatus.CONVERGED
-                        : SecurityAnalysisStatus.DIVERGED);
+                        : SecurityAnalysisStatus.DIVERGED));
 
                 long finalNanoTime = System.nanoTime();
                 LOGGER.info("Stored in {}s", TimeUnit.NANOSECONDS.toSeconds(finalNanoTime - startTime.getAndSet(finalNanoTime)));
