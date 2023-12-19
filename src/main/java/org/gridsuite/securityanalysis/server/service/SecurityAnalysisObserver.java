@@ -22,7 +22,7 @@ public class SecurityAnalysisObserver {
     private static final String OBSERVATION_PREFIX = "app.";
     private static final String PROVIDER_TAG_NAME = "provider";
 
-    private static final String COMPUTATION_NAME_TAG_NAME = "computation.name";
+    private static final String COMPUTATION_NAME_TAG_NAME = "type";
     private static final String COMPUTATION_NAME = "sa";
 
     public SecurityAnalysisObserver(@NonNull ObservationRegistry observationRegistry) {
