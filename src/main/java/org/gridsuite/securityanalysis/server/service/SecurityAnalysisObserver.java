@@ -22,7 +22,7 @@ public class SecurityAnalysisObserver {
     private static final String OBSERVATION_PREFIX = "app.";
     private static final String PROVIDER_TAG_NAME = "provider";
 
-    private static final String COMPUTATION_NAME_TAG_NAME = "type";
+    private static final String TYPE_TAG_NAME = "type";
     private static final String COMPUTATION_NAME = "sa";
 
     public SecurityAnalysisObserver(@NonNull ObservationRegistry observationRegistry) {
@@ -40,6 +40,6 @@ public class SecurityAnalysisObserver {
     private Observation createSecurityAnalysisObservation(String name, SecurityAnalysisRunContext runContext) {
         return Observation.createNotStarted(OBSERVATION_PREFIX + name, observationRegistry)
             .lowCardinalityKeyValue(PROVIDER_TAG_NAME, runContext.getProvider())
-            .lowCardinalityKeyValue(COMPUTATION_NAME_TAG_NAME, COMPUTATION_NAME);
+            .lowCardinalityKeyValue(TYPE_TAG_NAME, COMPUTATION_NAME);
     }
 }
