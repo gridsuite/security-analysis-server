@@ -7,6 +7,7 @@
 package org.gridsuite.securityanalysis.server.repositories;
 
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
+import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.springframework.data.jpa.domain.Specification;
@@ -25,7 +26,12 @@ public interface SubjectLimitViolationRepository extends CommonLimitViolationRep
     @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.contingency"}, type = EntityGraph.EntityGraphType.LOAD)
     List<SubjectLimitViolationEntity> findAll(Specification<SubjectLimitViolationEntity> spec);
 
+    @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.subjectLimitViolation"}, type = EntityGraph.EntityGraphType.LOAD)
+    List<SubjectLimitViolationEntity> findAllWithContingencyContingencyLimitViolationsByIdIn(List<UUID> uuids);
+
     List<SubjectLimitViolationEntity> findAllByIdIn(List<UUID> uuids);
+
+    List<SubjectLimitViolationEntity> findAllByResultId(UUID resultUuid);
 
     @Override
     default String columnToDotSeparatedField(ResourceFilterDTO.Column column) {

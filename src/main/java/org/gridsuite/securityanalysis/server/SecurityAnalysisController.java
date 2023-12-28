@@ -138,7 +138,7 @@ public class SecurityAnalysisController {
                                                                                     @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
                                                                                     @Parameter(description = "Pagination parameters") Pageable pageable) {
         String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
-        Page<ContingencyResultDTO> result = securityAnalysisResultService.findNmKContingenciesResult(resultUuid, decodedStringFilters, pageable);
+        Page<ContingencyResultDTO> result = securityAnalysisResultService.findNmKContingenciesPaged(resultUuid, decodedStringFilters, pageable);
 
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
@@ -158,17 +158,29 @@ public class SecurityAnalysisController {
     }
 
     @GetMapping(value = "/results/{resultUuid}/nmk-constraints-result/paged", produces = APPLICATION_JSON_VALUE)
-    @Operation(summary = "Get a security analysis result from the database - NMK contingencies result")
+    @Operation(summary = "Get a security analysis result from the database - NMK constraints result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<Page<SubjectLimitViolationResultDTO>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                                                         @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
                                                                                         @Parameter(description = "Pagination parameters") Pageable pageable) {
         String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
-        Page<SubjectLimitViolationResultDTO> result = securityAnalysisResultService.findNmKConstraintsResult(resultUuid, decodedStringFilters, pageable);
+        Page<SubjectLimitViolationResultDTO> result = securityAnalysisResultService.findNmKConstraintsResultPaged(resultUuid, decodedStringFilters, pageable);
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
             : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping(value = "/results/{resultUuid}/nmk-constraints-result/csv", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get a security analysis result from the database - NMK constraints result - CSV export")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result csv export"),
+        @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
+    public ResponseEntity<StreamingResponseBody> getNmKContraintsResultCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+            .header(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=%s", "nmk-contingencies-results.csv"))
+            .header(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION)
+            .body(securityAnalysisResultService.findNmKConstraintsResultCsvStream(resultUuid));
     }
 
     @DeleteMapping(value = "/results/{resultUuid}", produces = APPLICATION_JSON_VALUE)
