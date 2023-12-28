@@ -10,12 +10,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisResult;
+import com.univocity.parsers.csv.CsvFormat;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.repositories.*;
+import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +30,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -74,6 +77,13 @@ public class SecurityAnalysisResultService {
         return preContingencyLimitViolation.stream()
                 .map(PreContingencyLimitViolationResultDTO::toDto)
                 .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public StreamingResponseBody findNResultCsvStream(UUID resultUuid) {
+        List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, List.of(), Sort.by(Sort.Direction.ASC, ResourceFilterDTO.Column.SUBJECT_ID.getColumnName()));
+
+        return CsvExportUtils.csvRowsToCsvStream(result.stream().map(PreContingencyLimitViolationResultDTO::toCsvRow).toList());
     }
 
     private Sort createNResultSort(Sort sort) {
@@ -307,5 +317,11 @@ public class SecurityAnalysisResultService {
             // we fetch contingencyElements for each contingency here to prevent N+1 query
             contingencyRepository.findAllWithContingencyElementsByUuidIn(contingencyUuids);
         }
+    }
+
+    private static void setFormat(CsvFormat format) {
+        format.setLineSeparator(System.lineSeparator());
+        format.setDelimiter(';');
+        format.setQuoteEscape('"');
     }
 }

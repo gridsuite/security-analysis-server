@@ -8,6 +8,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
@@ -34,4 +37,21 @@ public class LimitViolationDTO {
             .loading(limitViolation.getLoading())
             .build();
     }
+
+    public List<String> toCsvRow() {
+        List<String> csvRow = new ArrayList<>();
+        csvRow.add(this.getLimitType() != null ? this.getLimitType().name() : "");
+        csvRow.add(replaceNullWithEmptyString(this.getLimitName()));
+        csvRow.add(Double.toString(this.getLimit()));
+        csvRow.add(Double.toString(this.getValue()));
+        csvRow.add(replaceNullWithEmptyString(this.getLoading()));
+        csvRow.add(Integer.toString(this.getAcceptableDuration()));
+        csvRow.add(this.getSide() != null ? this.getSide().name() : "");
+        return csvRow;
+    }
+
+    public static String replaceNullWithEmptyString(Object input) {
+        return input == null ? "" : input.toString();
+    }
+
 }

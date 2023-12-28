@@ -25,9 +25,11 @@ import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerServi
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -114,6 +116,18 @@ public class SecurityAnalysisController {
         return result != null
                 ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
                 : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping(value = "/results/{resultUuid}/n-result/csv", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get a security analysis result from the database - N result - CSV export")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result csv export"),
+        @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
+    public ResponseEntity<StreamingResponseBody> getNResultCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
+            .header(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=%s", "n-results.csv"))
+            .header(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION)
+            .body(securityAnalysisResultService.findNResultCsvStream(resultUuid));
     }
 
     @GetMapping(value = "/results/{resultUuid}/nmk-contingencies-result/paged", produces = APPLICATION_JSON_VALUE)
