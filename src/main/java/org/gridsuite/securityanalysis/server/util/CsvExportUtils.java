@@ -18,12 +18,13 @@ public final class CsvExportUtils {
         throw new java.lang.UnsupportedOperationException("CsvExportUtils Utility class and cannot be instantiated");
     }
 
-    public static StreamingResponseBody csvRowsToCsvStream(List<List<String>> csvRows) {
+    public static StreamingResponseBody csvRowsToCsvStream(List<String> headers, List<List<String>> csvRows) {
         return outputStream -> {
             try (Writer writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8)) {
                 CsvWriterSettings settings = new CsvWriterSettings();
                 setFormat(settings.getFormat());
                 CsvWriter csvWriter = new CsvWriter(writer, settings);
+                csvWriter.writeRow(headers);
                 csvWriter.writeRows(csvRows);
             }
         };
