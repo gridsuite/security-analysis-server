@@ -30,7 +30,12 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
     @EntityGraph(attributePaths = {"contingencyElements"}, type = EntityGraph.EntityGraphType.LOAD)
     List<ContingencyEntity> findAllWithContingencyElementsByUuidIn(List<UUID> uuids);
 
+    @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.subjectLimitViolation"}, type = EntityGraph.EntityGraphType.LOAD)
+    List<ContingencyEntity> findAllWithContingencyContingencyLimitViolationsByUuidIn(List<UUID> uuids);
+
     List<ContingencyEntity> findAllByUuidIn(List<UUID> uuids);
+
+    List<ContingencyEntity> findAllByResultId(UUID resultId);
 
     @Query(value = "SELECT uuid FROM ContingencyEntity WHERE result.id = ?1")
     Set<UUID> findAllUuidsByResultId(UUID resultId);

@@ -108,6 +108,25 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
+    public List<ContingencyResultDTO> findNmKContingenciesResult(UUID resultUuid) {
+        assertResultExists(resultUuid);
+
+        List<ContingencyEntity> contingencies = contingencyRepository.findAllByResultId(resultUuid);
+        List<UUID> uuids = contingencies.stream().map(contingency -> contingency.getUuid()).toList();
+        contingencyRepository.findAllWithContingencyElementsByUuidIn(uuids);
+        contingencyRepository.findAllWithContingencyContingencyLimitViolationsByUuidIn(uuids);
+
+        return contingencies.stream().map(ContingencyResultDTO::toDto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public StreamingResponseBody findNmKContingenciesResultCsvStream(UUID resultUuid) {
+        List<ContingencyResultDTO> result = self.findNmKContingenciesResult(resultUuid);
+
+        return CsvExportUtils.csvRowsToCsvStream(result.stream().map(ContingencyResultDTO::toCsvRows).flatMap(List::stream).toList());
+    }
+
+    @Transactional(readOnly = true)
     public Page<SubjectLimitViolationResultDTO> findNmKConstraintsResult(UUID resultUuid, String stringFilters, Pageable pageable) {
         assertResultExists(resultUuid);
 
