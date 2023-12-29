@@ -21,7 +21,7 @@ public class RestResponseEntityExceptionHandler {
     @ExceptionHandler(SecurityAnalysisException.class)
     protected ResponseEntity<Object> handleStudyException(SecurityAnalysisException exception) {
         switch (exception.getType()) {
-            case RESULT_NOT_FOUND :
+            case RESULT_NOT_FOUND, PARAMETERS_NOT_FOUND:
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getType());
             case INVALID_FILTER_FORMAT, INVALID_FILTER, INVALID_SORT_FORMAT:
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getType());

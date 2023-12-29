@@ -18,8 +18,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.gridsuite.securityanalysis.server.dto.*;
+import org.gridsuite.securityanalysis.server.service.SecurityAnalysisParametersService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
-import org.gridsuite.securityanalysis.server.service.SecurityAnalysisRunContext;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.springframework.data.domain.Page;
@@ -49,14 +49,17 @@ import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 public class SecurityAnalysisController {
     private final SecurityAnalysisService securityAnalysisService;
 
+    private final SecurityAnalysisParametersService securityAnalysisParametersService;
+
     private final SecurityAnalysisResultService securityAnalysisResultService;
 
     private final SecurityAnalysisWorkerService workerService;
 
-    public SecurityAnalysisController(SecurityAnalysisService securityAnalysisService, SecurityAnalysisWorkerService workerService, SecurityAnalysisResultService securityAnalysisResultService) {
+    public SecurityAnalysisController(SecurityAnalysisService securityAnalysisService, SecurityAnalysisWorkerService workerService, SecurityAnalysisResultService securityAnalysisResultService, SecurityAnalysisParametersService securityAnalysisParametersService) {
         this.securityAnalysisService = securityAnalysisService;
         this.workerService = workerService;
         this.securityAnalysisResultService = securityAnalysisResultService;
+        this.securityAnalysisParametersService = securityAnalysisParametersService;
     }
 
     @PostMapping(value = "/networks/{networkUuid}/run", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
@@ -66,17 +69,17 @@ public class SecurityAnalysisController {
                                         content = {@Content(mediaType = APPLICATION_JSON_VALUE,
                                                             schema = @Schema(implementation = SecurityAnalysisResult.class))})})
     public ResponseEntity<SecurityAnalysisResult> run(@Parameter(description = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
-                                                            @Parameter(description = "Variant Id") @RequestParam(name = "variantId", required = false) String variantId,
-                                                            @Parameter(description = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
-                                                            @Parameter(description = "Provider") @RequestParam(name = "provider", required = false) String provider,
-                                                            @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
-                                                            @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
-                                                            @Parameter(description = "The type name for the report") @RequestParam(name = "reportType", required = false, defaultValue = "SecurityAnalysis") String reportType,
-                                                            @RequestBody(required = false) SecurityAnalysisParametersInfos parameters,
-                                                            @RequestHeader(HEADER_USER_ID) String userId) {
+                                                      @Parameter(description = "Variant Id") @RequestParam(name = "variantId", required = false) String variantId,
+                                                      @Parameter(description = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
+                                                      @Parameter(description = "Provider") @RequestParam(name = "provider", required = false) String provider,
+                                                      @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
+                                                      @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
+                                                      @Parameter(description = "The type name for the report") @RequestParam(name = "reportType", required = false, defaultValue = "SecurityAnalysis") String reportType,
+                                                      @Parameter(description = "parametersUuid") @RequestParam(name = "parametersUuid", required = false) UUID parametersUuid,
+                                                      @RequestBody SecurityAnalysisAdditionalParametersInfos securityAnalysisAdditionalParametersInfos,
+                                                      @RequestHeader(HEADER_USER_ID) String userId) {
         String providerToUse = provider != null ? provider : securityAnalysisService.getDefaultProvider();
-        SecurityAnalysisResult result = workerService.run(new SecurityAnalysisRunContext(networkUuid, variantId, contigencyListNames, null, providerToUse, parameters, reportUuid, reporterId, reportType, userId));
-
+        SecurityAnalysisResult result = workerService.run(securityAnalysisParametersService.createRunContext(networkUuid, variantId, contigencyListNames, null, providerToUse, parametersUuid, securityAnalysisAdditionalParametersInfos, reportUuid, reporterId, reportType, userId));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
     }
 
@@ -87,17 +90,18 @@ public class SecurityAnalysisController {
                                         content = {@Content(mediaType = APPLICATION_JSON_VALUE,
                                                             schema = @Schema(implementation = SecurityAnalysisResult.class))})})
     public ResponseEntity<UUID> runAndSave(@Parameter(description = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
-                                                 @Parameter(description = "Variant Id") @RequestParam(name = "variantId", required = false) String variantId,
-                                                 @Parameter(description = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
-                                                 @Parameter(description = "Result receiver") @RequestParam(name = "receiver", required = false) String receiver,
-                                                 @Parameter(description = "Provider") @RequestParam(name = "provider", required = false) String provider,
-                                                 @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
-                                                 @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
-                                                 @Parameter(description = "The type name for the report") @RequestParam(name = "reportType", required = false, defaultValue = "SecurityAnalysis") String reportType,
-                                                 @RequestBody(required = false) SecurityAnalysisParametersInfos parameters,
-                                                 @RequestHeader(HEADER_USER_ID) String userId) {
+                                           @Parameter(description = "Variant Id") @RequestParam(name = "variantId", required = false) String variantId,
+                                           @Parameter(description = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
+                                           @Parameter(description = "Result receiver") @RequestParam(name = "receiver", required = false) String receiver,
+                                           @Parameter(description = "Provider") @RequestParam(name = "provider", required = false) String provider,
+                                           @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
+                                           @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
+                                           @Parameter(description = "The type name for the report") @RequestParam(name = "reportType", required = false, defaultValue = "SecurityAnalysis") String reportType,
+                                           @Parameter(description = "parametersUuid") @RequestParam(name = "parametersUuid", required = false) UUID parametersUuid,
+                                           @RequestBody SecurityAnalysisAdditionalParametersInfos securityAnalysisAdditionalParametersInfos,
+                                           @RequestHeader(HEADER_USER_ID) String userId) {
         String providerToUse = provider != null ? provider : securityAnalysisService.getDefaultProvider();
-        UUID resultUuid = securityAnalysisService.runAndSaveResult(new SecurityAnalysisRunContext(networkUuid, variantId, contigencyListNames, receiver, providerToUse, parameters, reportUuid, reporterId, reportType, userId));
+        UUID resultUuid = securityAnalysisService.runAndSaveResult(securityAnalysisParametersService.createRunContext(networkUuid, variantId, contigencyListNames, receiver, providerToUse, parametersUuid, securityAnalysisAdditionalParametersInfos, reportUuid, reporterId, reportType, userId));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(resultUuid);
     }
 

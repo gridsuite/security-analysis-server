@@ -12,7 +12,7 @@ import com.powsybl.loadflow.LoadFlowParameters;
 import com.powsybl.loadflow.LoadFlowProvider;
 import com.powsybl.security.SecurityAnalysisParameters;
 import lombok.Getter;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisAdditionalParametersInfos;
 
 import java.util.List;
 import java.util.Objects;
@@ -45,9 +45,9 @@ public class SecurityAnalysisRunContext {
     private final String reportType;
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
-                                      String receiver, String provider, SecurityAnalysisParametersInfos parameters,
+                                      String receiver, String provider, SecurityAnalysisParameters parameters, SecurityAnalysisAdditionalParametersInfos additionalParameters,
                                       UUID reportUuid, String reporterId, String reportType, String userId) {
-        this(networkUuid, variantId, contingencyListNames, receiver, provider, buildParameters(parameters, provider), reportUuid, reporterId, reportType, userId);
+        this(networkUuid, variantId, contingencyListNames, receiver, provider, buildParameters(parameters, additionalParameters, provider), reportUuid, reporterId, reportType, userId);
     }
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
@@ -65,19 +65,25 @@ public class SecurityAnalysisRunContext {
         this.reportType = reportType;
     }
 
-    private static SecurityAnalysisParameters buildParameters(SecurityAnalysisParametersInfos parameters, String provider) {
-        SecurityAnalysisParameters params = parameters == null || parameters.getParameters() == null ?
-                SecurityAnalysisParameters.load() : parameters.getParameters();
-        if (parameters == null || parameters.getLoadFlowSpecificParameters() == null || parameters.getLoadFlowSpecificParameters().isEmpty()) {
-            return params; // no specific LF params
+    private static SecurityAnalysisParameters buildParameters(SecurityAnalysisParameters securityAnalysisParameters,
+                                                              SecurityAnalysisAdditionalParametersInfos securityAnalysisAdditionalParametersInfos,
+                                                              String provider) {
+        if (securityAnalysisAdditionalParametersInfos == null || securityAnalysisAdditionalParametersInfos.getLoadFlowParameters() == null) {
+            securityAnalysisParameters.setLoadFlowParameters(new LoadFlowParameters());
+        } else {
+            securityAnalysisParameters.setLoadFlowParameters(securityAnalysisAdditionalParametersInfos.getLoadFlowParameters());
+        }
+
+        if (securityAnalysisAdditionalParametersInfos == null || securityAnalysisAdditionalParametersInfos.getSpecificLoadFlowParameters() == null || securityAnalysisAdditionalParametersInfos.getSpecificLoadFlowParameters().isEmpty()) {
+            return securityAnalysisParameters; // no specific LF params
         }
         LoadFlowProvider lfProvider = LoadFlowProvider.findAll().stream()
                 .filter(p -> p.getName().equals(provider))
                 .findFirst().orElseThrow(() -> new PowsyblException("Security analysis provider not found " + provider));
-        Extension<LoadFlowParameters> extension = lfProvider.loadSpecificParameters(parameters.getLoadFlowSpecificParameters())
+        Extension<LoadFlowParameters> extension = lfProvider.loadSpecificParameters(securityAnalysisAdditionalParametersInfos.getSpecificLoadFlowParameters())
                 .orElseThrow(() -> new PowsyblException("Cannot add specific loadflow parameters with security analysis provider " + provider));
-        params.getLoadFlowParameters().addExtension((Class) extension.getClass(), extension);
-        return params;
+        securityAnalysisParameters.getLoadFlowParameters().addExtension((Class) extension.getClass(), extension);
+        return securityAnalysisParameters;
     }
 
     public UUID getNetworkUuid() {
