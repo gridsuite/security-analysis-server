@@ -224,7 +224,7 @@ public class SecurityAnalysisWorkerService {
                 reporter,
                 resultUuid);
 
-        SecurityAnalysisResult result = future == null ? null : securityAnalysisObserver.observe("run", context, () -> future.get());
+        SecurityAnalysisResult result = future == null ? null : securityAnalysisObserver.observeRun("run", context, future::get);
         if (context.getReportUuid() != null) {
             List<Report> notFoundElementReports = new ArrayList<>();
             contingencies.stream()
