@@ -21,9 +21,9 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class SecurityAnalysisAdditionalParametersInfos {
+public class LoadFlowParametersInfos {
 
-    LoadFlowParameters loadFlowParameters;
+    LoadFlowParameters commonParameters;
 
-    Map<String, String> specificLoadFlowParameters;
+    Map<String, String> specificParameters;
 }

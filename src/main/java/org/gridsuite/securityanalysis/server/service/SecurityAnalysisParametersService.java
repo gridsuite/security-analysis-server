@@ -7,7 +7,7 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.security.SecurityAnalysisParameters;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisAdditionalParametersInfos;
+import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisParametersRepository;
@@ -42,7 +42,7 @@ public class SecurityAnalysisParametersService {
 
     public SecurityAnalysisRunContext createRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
                                                        String receiver, String provider, UUID parametersUuid,
-                                                       SecurityAnalysisAdditionalParametersInfos securityAnalysisAdditionalParametersInfos,
+                                                       LoadFlowParametersInfos loadFlowParametersInfos,
                                                        UUID reportUuid, String reporterId, String userId, String reportType) {
         Optional<SecurityAnalysisParametersEntity> securityAnalysisParametersEntity = Optional.empty();
         if (parametersUuid != null) {
@@ -56,7 +56,7 @@ public class SecurityAnalysisParametersService {
                 receiver,
                 provider,
                 parameters,
-                securityAnalysisAdditionalParametersInfos,
+                loadFlowParametersInfos,
                 reportUuid,
                 reporterId,
                 reportType,
