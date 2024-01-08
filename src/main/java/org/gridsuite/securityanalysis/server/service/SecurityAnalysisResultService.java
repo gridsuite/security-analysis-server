@@ -30,7 +30,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -80,7 +79,7 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public StreamingResponseBody findNResultCsvStream(UUID resultUuid) {
+    public byte[] findNResultCsvStream(UUID resultUuid) {
         List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, List.of(), Sort.by(Sort.Direction.ASC, ResourceFilterDTO.Column.SUBJECT_ID.getColumnName()));
         List<String> headers = List.of("Equipment", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side");
 
@@ -121,7 +120,7 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public StreamingResponseBody findNmKContingenciesResultCsvStream(UUID resultUuid) {
+    public byte[] findNmKContingenciesResultCsvStream(UUID resultUuid) {
         List<ContingencyResultDTO> result = self.findNmKContingenciesResult(resultUuid);
         List<String> headers = List.of("Contingency ID", "Status", "Constraint", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side");
 
@@ -153,7 +152,7 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public StreamingResponseBody findNmKConstraintsResultCsvStream(UUID resultUuid) {
+    public byte[] findNmKConstraintsResultCsvStream(UUID resultUuid) {
         List<SubjectLimitViolationResultDTO> result = self.findNmKConstraintsResult(resultUuid);
         List<String> headers = List.of("Constraint", "Contingency ID", "Status", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side");
 

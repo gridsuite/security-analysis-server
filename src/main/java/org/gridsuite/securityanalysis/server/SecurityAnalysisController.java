@@ -29,7 +29,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -122,7 +121,7 @@ public class SecurityAnalysisController {
     @Operation(summary = "Get a security analysis result from the database - N result - CSV export")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result csv export"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public ResponseEntity<StreamingResponseBody> getNResultCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+    public ResponseEntity<byte[]> getNResultCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
             .header(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=%s", "n-results.csv"))
@@ -149,7 +148,7 @@ public class SecurityAnalysisController {
     @Operation(summary = "Get a security analysis result from the database - NMK contingencies result - CSV export")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result csv export"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public ResponseEntity<StreamingResponseBody> getNmKContingenciesResultCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+    public ResponseEntity<byte[]> getNmKContingenciesResultCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
             .header(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=%s", "nmk-contingencies-results.csv"))
@@ -175,7 +174,7 @@ public class SecurityAnalysisController {
     @Operation(summary = "Get a security analysis result from the database - NMK constraints result - CSV export")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result csv export"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public ResponseEntity<StreamingResponseBody> getNmKContraintsResultCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+    public ResponseEntity<byte[]> getNmKContraintsResultCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
             .header(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=%s", "nmk-contingencies-results.csv"))
