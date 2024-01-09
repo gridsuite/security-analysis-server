@@ -329,7 +329,6 @@ public class SecurityAnalysisControllerTest {
         // should throw not found if result does not exist
         assertResultNotFound(OTHER_RESULT_UUID);
 
-
         // test one result deletion
         mockMvc.perform(delete("/" + VERSION + "/results/" + RESULT_UUID))
                 .andExpect(status().isOk());
@@ -666,7 +665,7 @@ public class SecurityAnalysisControllerTest {
         SQLStatementCountValidator.reset();
         checkZippedCsvResult("n-result", "/results/n-result-fr.csv",
             CsvTranslationDTO.builder()
-                .headers(List.of("Ouvrage","Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Valeur calculée (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
+                .headers(List.of("Ouvrage", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Valeur calculée (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
                 .enumValueTranslations(enumTranslationsFr)
                 .build());
         assertRequestsCount(2, 0, 0, 0);

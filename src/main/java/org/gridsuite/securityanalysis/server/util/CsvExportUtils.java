@@ -50,12 +50,12 @@ public final class CsvExportUtils {
     }
 
     public static String translate(String valueToTranslate, Map<String, String> translations) {
-        if (translations == null){
+        if (translations == null) {
             return valueToTranslate;
         }
         String translatedValue = translations.get(valueToTranslate);
         // if value to translate or translate value is null, we keep original value (null or untranslated value)
-        if(valueToTranslate == null || translatedValue == null) {
+        if (valueToTranslate == null || translatedValue == null) {
             return valueToTranslate;
         }
         return translatedValue;
