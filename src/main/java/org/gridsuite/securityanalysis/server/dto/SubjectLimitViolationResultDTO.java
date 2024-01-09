@@ -11,9 +11,11 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -41,15 +43,15 @@ public class SubjectLimitViolationResultDTO {
     }
 
     // each SubjectLimitViolationResultDTO will return multiple line (one for each contingency)
-    public List<List<String>> toCsvRows() {
+    public List<List<String>> toCsvRows(Map<String, String> translations) {
         List<List<String>> csvRows = new ArrayList<>();
         this.getContingencies().forEach(contingency -> {
             List<String> csvRow = new ArrayList<>();
             csvRow.add(this.getSubjectId());
             csvRow.add(contingency.getContingency().getContingencyId());
-            csvRow.add(contingency.getContingency().getStatus());
+            csvRow.add(CsvExportUtils.translate(contingency.getContingency().getStatus(), translations));
 
-            csvRows.add(Stream.concat(csvRow.stream(), contingency.getLimitViolation().toCsvRow().stream()).toList());
+            csvRows.add(Stream.concat(csvRow.stream(), contingency.getLimitViolation().toCsvRow(translations).stream()).toList());
         });
 
         return csvRows;

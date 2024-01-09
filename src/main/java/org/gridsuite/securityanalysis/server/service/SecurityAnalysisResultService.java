@@ -79,11 +79,10 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public byte[] findNResultCsvStream(UUID resultUuid) {
+    public byte[] findNResultCsvStream(UUID resultUuid, CsvTranslationDTO csvTranslations) {
         List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, List.of(), Sort.by(Sort.Direction.ASC, ResourceFilterDTO.Column.SUBJECT_ID.getColumnName()));
-        List<String> headers = List.of("Equipment", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side");
 
-        return CsvExportUtils.csvRowsToCsvStream(headers, result.stream().map(PreContingencyLimitViolationResultDTO::toCsvRow).toList());
+        return CsvExportUtils.csvRowsToCsvStream(csvTranslations.getHeaders(), result.stream().map(r -> r.toCsvRow(csvTranslations.getEnumValueTranslations())).toList());
     }
 
     private Sort createNResultSort(Sort sort) {
@@ -120,11 +119,10 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public byte[] findNmKContingenciesResultCsvStream(UUID resultUuid) {
+    public byte[] findNmKContingenciesResultCsvStream(UUID resultUuid, CsvTranslationDTO csvTranslations) {
         List<ContingencyResultDTO> result = self.findNmKContingenciesResult(resultUuid);
-        List<String> headers = List.of("Contingency ID", "Status", "Constraint", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side");
 
-        return CsvExportUtils.csvRowsToCsvStream(headers, result.stream().map(ContingencyResultDTO::toCsvRows).flatMap(List::stream).toList());
+        return CsvExportUtils.csvRowsToCsvStream(csvTranslations.getHeaders(), result.stream().map(r -> r.toCsvRows(csvTranslations.getEnumValueTranslations())).flatMap(List::stream).toList());
     }
 
     @Transactional(readOnly = true)
@@ -152,11 +150,11 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public byte[] findNmKConstraintsResultCsvStream(UUID resultUuid) {
+    public byte[] findNmKConstraintsResultCsvStream(UUID resultUuid, CsvTranslationDTO csvTranslations) {
         List<SubjectLimitViolationResultDTO> result = self.findNmKConstraintsResult(resultUuid);
         List<String> headers = List.of("Constraint", "Contingency ID", "Status", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side");
 
-        return CsvExportUtils.csvRowsToCsvStream(headers, result.stream().map(SubjectLimitViolationResultDTO::toCsvRows).flatMap(List::stream).toList());
+        return CsvExportUtils.csvRowsToCsvStream(csvTranslations.getHeaders(), result.stream().map(r -> r.toCsvRows(csvTranslations.getEnumValueTranslations())).flatMap(List::stream).toList());
     }
 
     private void assertNmKContingenciesSortAllowed(Sort sort) {

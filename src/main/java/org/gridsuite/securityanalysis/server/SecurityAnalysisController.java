@@ -117,16 +117,15 @@ public class SecurityAnalysisController {
                 : ResponseEntity.notFound().build();
     }
 
-    @GetMapping(value = "/results/{resultUuid}/n-result/csv", produces = APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/results/{resultUuid}/n-result/csv", produces = "application/zip")
     @Operation(summary = "Get a security analysis result from the database - N result - CSV export")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result csv export"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public ResponseEntity<byte[]> getNResultCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+    public ResponseEntity<byte[]> getNResultCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                                @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations) {
         return ResponseEntity.ok()
-            .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
-            .header(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=%s", "n-results.csv"))
-            .header(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION)
-            .body(securityAnalysisResultService.findNResultCsvStream(resultUuid));
+            .contentType(MediaType.parseMediaType("application/zip"))
+            .body(securityAnalysisResultService.findNResultCsvStream(resultUuid, csvTranslations));
     }
 
     @GetMapping(value = "/results/{resultUuid}/nmk-contingencies-result/paged", produces = APPLICATION_JSON_VALUE)
@@ -144,16 +143,15 @@ public class SecurityAnalysisController {
             : ResponseEntity.notFound().build();
     }
 
-    @GetMapping(value = "/results/{resultUuid}/nmk-contingencies-result/csv", produces = APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/results/{resultUuid}/nmk-contingencies-result/csv", produces = "application/zip")
     @Operation(summary = "Get a security analysis result from the database - NMK contingencies result - CSV export")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result csv export"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public ResponseEntity<byte[]> getNmKContingenciesResultCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+    public ResponseEntity<byte[]> getNmKContingenciesResultCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                                               @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations) {
         return ResponseEntity.ok()
-            .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
-            .header(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=%s", "nmk-contingencies-results.csv"))
-            .header(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION)
-            .body(securityAnalysisResultService.findNmKContingenciesResultCsvStream(resultUuid));
+            .contentType(MediaType.parseMediaType("application/zip"))
+            .body(securityAnalysisResultService.findNmKContingenciesResultCsvStream(resultUuid, csvTranslations));
     }
 
     @GetMapping(value = "/results/{resultUuid}/nmk-constraints-result/paged", produces = APPLICATION_JSON_VALUE)
@@ -170,16 +168,15 @@ public class SecurityAnalysisController {
             : ResponseEntity.notFound().build();
     }
 
-    @GetMapping(value = "/results/{resultUuid}/nmk-constraints-result/csv", produces = APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/results/{resultUuid}/nmk-constraints-result/csv", produces = "application/zip")
     @Operation(summary = "Get a security analysis result from the database - NMK constraints result - CSV export")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result csv export"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public ResponseEntity<byte[]> getNmKContraintsResultCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+    public ResponseEntity<byte[]> getNmKContraintsResultCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                                            @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations) {
         return ResponseEntity.ok()
-            .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
-            .header(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment; filename=%s", "nmk-contingencies-results.csv"))
-            .header(HttpHeaders.ACCESS_CONTROL_EXPOSE_HEADERS, HttpHeaders.CONTENT_DISPOSITION)
-            .body(securityAnalysisResultService.findNmKConstraintsResultCsvStream(resultUuid));
+            .contentType(MediaType.parseMediaType("application/zip"))
+            .body(securityAnalysisResultService.findNmKConstraintsResultCsvStream(resultUuid, csvTranslations));
     }
 
     @DeleteMapping(value = "/results/{resultUuid}", produces = APPLICATION_JSON_VALUE)

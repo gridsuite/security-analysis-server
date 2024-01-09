@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 @Getter
@@ -38,11 +39,11 @@ public class PreContingencyLimitViolationResultDTO {
                 .build();
     }
 
-    public List<String> toCsvRow() {
+    public List<String> toCsvRow(Map<String, String> translations) {
         List<String> csvRow = List.of(this.getSubjectId());
 
         if (this.getLimitViolation() != null) {
-            return Stream.concat(csvRow.stream(), this.getLimitViolation().toCsvRow().stream()).toList();
+            return Stream.concat(csvRow.stream(), this.getLimitViolation().toCsvRow(translations).stream()).toList();
         }
 
         return csvRow;
