@@ -152,7 +152,6 @@ public class SecurityAnalysisResultService {
     @Transactional(readOnly = true)
     public byte[] findNmKConstraintsResultCsvStream(UUID resultUuid, CsvTranslationDTO csvTranslations) {
         List<SubjectLimitViolationResultDTO> result = self.findNmKConstraintsResult(resultUuid);
-        List<String> headers = List.of("Constraint", "Contingency ID", "Status", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side");
 
         return CsvExportUtils.csvRowsToCsvStream(csvTranslations.getHeaders(), result.stream().map(r -> r.toCsvRows(csvTranslations.getEnumValueTranslations())).flatMap(List::stream).toList());
     }
@@ -359,11 +358,5 @@ public class SecurityAnalysisResultService {
             // we fetch contingencyElements for each contingency here to prevent N+1 query
             contingencyRepository.findAllWithContingencyElementsByUuidIn(contingencyUuids);
         }
-    }
-
-    private static void setFormat(CsvFormat format) {
-        format.setLineSeparator(System.lineSeparator());
-        format.setDelimiter(';');
-        format.setQuoteEscape('"');
     }
 }

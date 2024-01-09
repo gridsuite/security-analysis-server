@@ -74,6 +74,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -724,7 +725,7 @@ public class SecurityAnalysisControllerTest {
                 .content(mapper.writeValueAsString(csvTranslationDTO)))
             .andExpectAll(
                 status().isOk(),
-                content().contentType("application/zip")
+                content().contentType(APPLICATION_OCTET_STREAM_VALUE)
             ).andReturn().getResponse().getContentAsByteArray();
 
         // get zip file stream
@@ -732,8 +733,7 @@ public class SecurityAnalysisControllerTest {
             // get first entry
             ZipEntry zipEntry = zin.getNextEntry();
             // check zip entry name
-            String fileName = zipEntry.getName();
-            assertEquals(fileName, CsvExportUtils.CSV_RESULT_FILE_NAME);
+            assertEquals(CsvExportUtils.CSV_RESULT_FILE_NAME, zipEntry.getName());
 
             // get entry content as outputStream
             ByteArrayOutputStream contentOutputStream = new ByteArrayOutputStream();

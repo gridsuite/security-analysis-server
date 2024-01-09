@@ -35,7 +35,7 @@ public final class CsvExportUtils {
             csvWriter.close();
             return outputStream.toByteArray();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new SecurityAnalysisException(SecurityAnalysisException.Type.FILE_EXPORT_ERROR);
         }
     }
 
