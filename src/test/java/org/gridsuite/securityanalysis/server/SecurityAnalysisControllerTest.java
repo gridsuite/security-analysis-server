@@ -729,23 +729,20 @@ public class SecurityAnalysisControllerTest {
             ).andReturn().getResponse().getContentAsByteArray();
 
         // get zip file stream
-        try (ZipInputStream zin = new ZipInputStream(new ByteArrayInputStream(resultAsByteArray))) {
+        try (ZipInputStream zin = new ZipInputStream(new ByteArrayInputStream(resultAsByteArray));
+             ByteArrayOutputStream contentOutputStream = new ByteArrayOutputStream();
+             ByteArrayOutputStream expectedContentOutputStream = new ByteArrayOutputStream()) {
             // get first entry
             ZipEntry zipEntry = zin.getNextEntry();
             // check zip entry name
             assertEquals(CsvExportUtils.CSV_RESULT_FILE_NAME, zipEntry.getName());
 
             // get entry content as outputStream
-            ByteArrayOutputStream contentOutputStream = new ByteArrayOutputStream();
             StreamUtils.copy(zin, contentOutputStream);
 
             // get expected content as outputStream
             InputStream csvStream = getClass().getResourceAsStream(resourcePath);
-            ByteArrayOutputStream expectedContentOutputStream = new ByteArrayOutputStream();
             StreamUtils.copy(csvStream, expectedContentOutputStream);
-
-            expectedContentOutputStream.toString();
-            contentOutputStream.toString();
 
             assertEquals(expectedContentOutputStream.toString(), contentOutputStream.toString());
             zin.closeEntry();

@@ -166,14 +166,14 @@ public class SecurityAnalysisController {
             : ResponseEntity.notFound().build();
     }
 
-    @PostMapping(value = "/results/{resultUuid}/nmk-constraints-result/csv", produces = "application/zip")
+    @PostMapping(value = "/results/{resultUuid}/nmk-constraints-result/csv", produces = APPLICATION_OCTET_STREAM_VALUE)
     @Operation(summary = "Get a security analysis result from the database - NMK constraints result - CSV export")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result csv export"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<byte[]> getNmKContraintsResultCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                             @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations) {
         return ResponseEntity.ok()
-            .contentType(MediaType.parseMediaType("application/zip"))
+            .contentType(MediaType.parseMediaType(APPLICATION_OCTET_STREAM_VALUE))
             .body(securityAnalysisResultService.findNmKConstraintsResultCsvStream(resultUuid, csvTranslations));
     }
 
