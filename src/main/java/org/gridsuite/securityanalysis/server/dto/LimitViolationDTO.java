@@ -47,7 +47,7 @@ public class LimitViolationDTO {
         csvRow.add(Double.toString(this.getLimit()));
         csvRow.add(Double.toString(this.getValue()));
         csvRow.add(CsvExportUtils.replaceNullWithEmptyString(this.getLoading()));
-        csvRow.add(Integer.toString(this.getAcceptableDuration()));
+        csvRow.add(this.getAcceptableDuration() == Integer.MAX_VALUE ? null : Integer.toString(this.getAcceptableDuration()));
         csvRow.add(this.getSide() != null ? CsvExportUtils.translate(this.getSide().name(), translations) : "");
         return csvRow;
     }
