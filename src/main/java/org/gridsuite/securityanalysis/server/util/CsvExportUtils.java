@@ -21,7 +21,7 @@ public final class CsvExportUtils {
         throw new java.lang.UnsupportedOperationException("CsvExportUtils Utility class and cannot be instantiated");
     }
 
-    public static byte[] csvRowsToCsvStream(List<String> headers, List<List<String>> csvRows) {
+    public static byte[] csvRowsToZippedCsv(List<String> headers, List<List<String>> csvRows) {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
             zipOutputStream.putNextEntry(new ZipEntry(CSV_RESULT_FILE_NAME));

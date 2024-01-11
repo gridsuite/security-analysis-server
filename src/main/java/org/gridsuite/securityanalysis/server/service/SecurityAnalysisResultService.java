@@ -78,10 +78,10 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public byte[] findNResultCsvStream(UUID resultUuid, CsvTranslationDTO csvTranslations) {
+    public byte[] findNResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
         List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, List.of(), Sort.by(Sort.Direction.ASC, ResourceFilterDTO.Column.SUBJECT_ID.getColumnName()));
 
-        return CsvExportUtils.csvRowsToCsvStream(csvTranslations.getHeaders(), result.stream().map(r -> r.toCsvRow(csvTranslations.getEnumValueTranslations())).toList());
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.getHeaders(), result.stream().map(r -> r.toCsvRow(csvTranslations.getEnumValueTranslations())).toList());
     }
 
     private Sort createNResultSort(Sort sort) {
@@ -118,10 +118,10 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public byte[] findNmKContingenciesResultCsvStream(UUID resultUuid, CsvTranslationDTO csvTranslations) {
+    public byte[] findNmKContingenciesResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
         List<ContingencyResultDTO> result = self.findNmKContingenciesResult(resultUuid);
 
-        return CsvExportUtils.csvRowsToCsvStream(csvTranslations.getHeaders(), result.stream().map(r -> r.toCsvRows(csvTranslations.getEnumValueTranslations())).flatMap(List::stream).toList());
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.getHeaders(), result.stream().map(r -> r.toCsvRows(csvTranslations.getEnumValueTranslations())).flatMap(List::stream).toList());
     }
 
     @Transactional(readOnly = true)
@@ -149,10 +149,10 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public byte[] findNmKConstraintsResultCsvStream(UUID resultUuid, CsvTranslationDTO csvTranslations) {
+    public byte[] findNmKConstraintsResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
         List<SubjectLimitViolationResultDTO> result = self.findNmKConstraintsResult(resultUuid);
 
-        return CsvExportUtils.csvRowsToCsvStream(csvTranslations.getHeaders(), result.stream().map(r -> r.toCsvRows(csvTranslations.getEnumValueTranslations())).flatMap(List::stream).toList());
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.getHeaders(), result.stream().map(r -> r.toCsvRows(csvTranslations.getEnumValueTranslations())).flatMap(List::stream).toList());
     }
 
     private void assertNmKContingenciesSortAllowed(Sort sort) {
