@@ -112,11 +112,11 @@ public class SecurityAnalysisParametersService {
     }
 
     public UUID createParameters(SecurityAnalysisParametersValues securityAnalysisParametersValues) {
-        if (securityAnalysisParametersValues == null) {
-            return securityAnalysisParametersRepository.save(getDefaultSecurityAnalysisParametersValues().toEntity()).getId();
-        } else {
-            return securityAnalysisParametersRepository.save(securityAnalysisParametersValues.toEntity()).getId();
-        }
+        return securityAnalysisParametersRepository.save(securityAnalysisParametersValues.toEntity()).getId();
+    }
+
+    public UUID createDefaultParameters() {
+        return securityAnalysisParametersRepository.save(getDefaultSecurityAnalysisParametersValues().toEntity()).getId();
     }
 
     public Optional<UUID> createParameters(UUID sourceParametersId) {

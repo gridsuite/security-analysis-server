@@ -26,6 +26,7 @@ import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisParametersService.getDefaultSecurityAnalysisParametersValues;
+import static org.gridsuite.securityanalysis.server.util.SecurityAnalysisException.Type.PARAMETERS_NOT_FOUND;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -57,17 +58,6 @@ public class SecurityAnalysisParametersControllerTest {
         MvcResult mvcResult;
         String resultAsString;
 
-        // get parameters without giving an uuid -> return default parameters
-        mvcResult = mockMvc.perform(get("/" + VERSION + "/parameters"))
-                .andExpectAll(
-                        status().isOk(),
-                        content().contentType(MediaType.APPLICATION_JSON)
-                ).andReturn();
-
-        resultAsString = mvcResult.getResponse().getContentAsString();
-        SecurityAnalysisParametersValues securityAnalysisParametersValues = objectMapper.readValue(resultAsString, SecurityAnalysisParametersValues.class);
-        assertThat(getDefaultSecurityAnalysisParametersValues(), new MatcherJson<>(objectMapper, securityAnalysisParametersValues));
-
         // create parameters
         SecurityAnalysisParametersValues securityAnalysisParametersValues1 = SecurityAnalysisParametersValues.builder()
                 .lowVoltageAbsoluteThreshold(10)
@@ -92,38 +82,21 @@ public class SecurityAnalysisParametersControllerTest {
         assertSecurityAnalysisParametersEntityAreEquals(createdParametersUuid, 10, 11, 12, 13, 14);
 
         //get the created parameters
-        mvcResult = mockMvc.perform(get("/" + VERSION + "/parameters?uuid=" + createdParametersUuid))
+        mvcResult = mockMvc.perform(get("/" + VERSION + "/parameters/" + createdParametersUuid))
                 .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON)
                 ).andReturn();
 
         resultAsString = mvcResult.getResponse().getContentAsString();
-        securityAnalysisParametersValues = objectMapper.readValue(resultAsString, SecurityAnalysisParametersValues.class);
+        SecurityAnalysisParametersValues securityAnalysisParametersValues = objectMapper.readValue(resultAsString, SecurityAnalysisParametersValues.class);
         assertThat(securityAnalysisParametersValues1, new MatcherJson<>(objectMapper, securityAnalysisParametersValues));
 
         //get not existing parameters and expect 404
-        mockMvc.perform(get("/" + VERSION + "/parameters?uuid=" + UUID.randomUUID()))
+        mockMvc.perform(get("/" + VERSION + "/parameters/" + UUID.randomUUID()))
                 .andExpectAll(
-                        status().isNotFound()
-                ).andReturn();
-
-        //create parameters without giving the parameters -> create default parameters
-        mvcResult = mockMvc.perform(post("/" + VERSION + "/parameters"))
-                .andExpectAll(
-                        status().isOk()
-                ).andReturn();
-
-        resultAsString = mvcResult.getResponse().getContentAsString();
-        createdParametersUuid = objectMapper.readValue(resultAsString, UUID.class);
-
-        assertNotNull(createdParametersUuid);
-        assertSecurityAnalysisParametersEntityAreEquals(createdParametersUuid,
-                defaultSecurityAnalysisParametersValues.getLowVoltageAbsoluteThreshold(),
-                defaultSecurityAnalysisParametersValues.getLowVoltageProportionalThreshold(),
-                defaultSecurityAnalysisParametersValues.getHighVoltageAbsoluteThreshold(),
-                defaultSecurityAnalysisParametersValues.getHighVoltageProportionalThreshold(),
-                defaultSecurityAnalysisParametersValues.getFlowProportionalThreshold());
+                        status().isNotFound(),
+                        result -> assertTrue(result.getResponse().getContentAsString().contains(PARAMETERS_NOT_FOUND.name())));
     }
 
     @Test
@@ -131,10 +104,16 @@ public class SecurityAnalysisParametersControllerTest {
         MvcResult mvcResult;
         String resultAsString;
 
-        //update parameters without giving an id or parameters value -> create default parameters and return the id
-        mvcResult = mockMvc.perform(put("/" + VERSION + "/parameters")
+        //update parameters with not existing ID and expect a 404
+        mockMvc.perform(put("/" + VERSION + "/parameters/" + UUID.randomUUID())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpectAll(
+                        status().isNotFound(),
+                        result -> assertTrue(result.getResponse().getContentAsString().contains(PARAMETERS_NOT_FOUND.name())));
+
+        //create default parameters and return id
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/parameters/default"))
+                .andExpect(
                         status().isOk()
                 ).andReturn();
 
@@ -158,7 +137,7 @@ public class SecurityAnalysisParametersControllerTest {
                 .flowProportionalThreshold(14)
                 .build();
 
-        mvcResult = mockMvc.perform(put("/" + VERSION + "/parameters?uuid=" + createdParametersUuid)
+        mvcResult = mockMvc.perform(put("/" + VERSION + "/parameters/" + createdParametersUuid)
                         .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(securityAnalysisParametersValues1)))
                 .andExpectAll(
                         status().isOk(),
@@ -171,7 +150,7 @@ public class SecurityAnalysisParametersControllerTest {
         assertSecurityAnalysisParametersEntityAreEquals(updatedParametersUuid, 10, 11, 12, 13, 14);
 
         //update previous parameters again but without giving the parameters values -> reset the parameters to default values
-        mvcResult = mockMvc.perform(put("/" + VERSION + "/parameters?uuid=" + updatedParametersUuid))
+        mvcResult = mockMvc.perform(put("/" + VERSION + "/parameters/" + updatedParametersUuid))
                 .andExpectAll(
                         status().isOk()
                 ).andReturn();
