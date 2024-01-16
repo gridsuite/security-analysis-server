@@ -68,13 +68,14 @@ public class SecurityAnalysisRunContext {
     private static SecurityAnalysisParameters buildParameters(SecurityAnalysisParameters securityAnalysisParameters,
                                                               LoadFlowParametersInfos loadFlowParametersInfos,
                                                               String provider) {
-        if (loadFlowParametersInfos == null || loadFlowParametersInfos.getCommonParameters() == null) {
+        Objects.requireNonNull(loadFlowParametersInfos);
+        if (loadFlowParametersInfos.getCommonParameters() == null) {
             securityAnalysisParameters.setLoadFlowParameters(new LoadFlowParameters());
         } else {
             securityAnalysisParameters.setLoadFlowParameters(loadFlowParametersInfos.getCommonParameters());
         }
 
-        if (loadFlowParametersInfos == null || loadFlowParametersInfos.getSpecificParameters() == null || loadFlowParametersInfos.getSpecificParameters().isEmpty()) {
+        if (loadFlowParametersInfos.getSpecificParameters() == null || loadFlowParametersInfos.getSpecificParameters().isEmpty()) {
             return securityAnalysisParameters; // no specific LF params
         }
         LoadFlowProvider lfProvider = LoadFlowProvider.findAll().stream()
@@ -84,41 +85,5 @@ public class SecurityAnalysisRunContext {
                 .orElseThrow(() -> new PowsyblException("Cannot add specific loadflow parameters with security analysis provider " + provider));
         securityAnalysisParameters.getLoadFlowParameters().addExtension((Class) extension.getClass(), extension);
         return securityAnalysisParameters;
-    }
-
-    public UUID getNetworkUuid() {
-        return networkUuid;
-    }
-
-    public String getVariantId() {
-        return variantId;
-    }
-
-    public List<String> getContingencyListNames() {
-        return contingencyListNames;
-    }
-
-    public String getReceiver() {
-        return receiver;
-    }
-
-    public String getProvider() {
-        return provider;
-    }
-
-    public SecurityAnalysisParameters getParameters() {
-        return parameters;
-    }
-
-    public UUID getReportUuid() {
-        return reportUuid;
-    }
-
-    public String getReporterId() {
-        return reporterId;
-    }
-
-    public String getReportType() {
-        return reportType;
     }
 }

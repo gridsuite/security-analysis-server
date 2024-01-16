@@ -1,12 +1,11 @@
 /**
- * Copyright (c) 2023, RTE (http://www.rte-france.com)
+ * Copyright (c) 2024, RTE (http://www.rte-france.com)
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 package org.gridsuite.securityanalysis.server.entities;
 
-import jakarta.transaction.Transactional;
 import lombok.*;
 
 import jakarta.persistence.*;
@@ -25,9 +24,6 @@ import java.util.UUID;
 @Builder
 @Table(name = "securityAnalysisParameters")
 public class SecurityAnalysisParametersEntity {
-    public SecurityAnalysisParametersEntity(double lowVoltageAbsoluteThreshold, double lowVoltageProportionalThreshold, double highVoltageAbsoluteThreshold, double highVoltageProportionalThreshold, double flowProportionalThreshold) {
-        this(null, lowVoltageAbsoluteThreshold, lowVoltageProportionalThreshold, highVoltageAbsoluteThreshold, highVoltageProportionalThreshold, flowProportionalThreshold);
-    }
 
     public SecurityAnalysisParametersEntity(SecurityAnalysisParametersValues securityAnalysisParametersValues) {
         this(null,
@@ -36,10 +32,6 @@ public class SecurityAnalysisParametersEntity {
                 securityAnalysisParametersValues.getHighVoltageAbsoluteThreshold(),
                 securityAnalysisParametersValues.getHighVoltageProportionalThreshold(),
                 securityAnalysisParametersValues.getFlowProportionalThreshold());
-    }
-
-    public SecurityAnalysisParametersEntity(UUID id, SecurityAnalysisParametersValues securityAnalysisParametersValues) {
-        this(id, securityAnalysisParametersValues.getLowVoltageAbsoluteThreshold(), securityAnalysisParametersValues.getLowVoltageProportionalThreshold(), securityAnalysisParametersValues.getHighVoltageAbsoluteThreshold(), securityAnalysisParametersValues.getHighVoltageProportionalThreshold(), securityAnalysisParametersValues.getFlowProportionalThreshold());
     }
 
     @Id
@@ -62,7 +54,6 @@ public class SecurityAnalysisParametersEntity {
     @Column(name = "flowProportionalThreshold")
     private double flowProportionalThreshold;
 
-    @Transactional
     public SecurityAnalysisParametersValues toSecurityAnalysisParametersValues() {
         return SecurityAnalysisParametersValues.builder()
                 .flowProportionalThreshold(this.flowProportionalThreshold)

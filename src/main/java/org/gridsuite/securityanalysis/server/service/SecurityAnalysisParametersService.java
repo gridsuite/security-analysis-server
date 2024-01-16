@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2023, RTE (http://www.rte-france.com)
+ * Copyright (c) 2024, RTE (http://www.rte-france.com)
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -85,17 +85,6 @@ public class SecurityAnalysisParametersService {
         return increasedViolationsParameters;
     }
 
-    public static SecurityAnalysisParametersValues fromEntity(SecurityAnalysisParametersEntity entity) {
-        Objects.requireNonNull(entity);
-        return SecurityAnalysisParametersValues.builder()
-                .lowVoltageAbsoluteThreshold(entity.getLowVoltageAbsoluteThreshold())
-                .lowVoltageProportionalThreshold(entity.getLowVoltageProportionalThreshold())
-                .highVoltageAbsoluteThreshold(entity.getHighVoltageAbsoluteThreshold())
-                .highVoltageProportionalThreshold(entity.getHighVoltageProportionalThreshold())
-                .flowProportionalThreshold(entity.getFlowProportionalThreshold())
-                .build();
-    }
-
     public static SecurityAnalysisParametersValues getDefaultSecurityAnalysisParametersValues() {
         return SecurityAnalysisParametersValues.builder()
                 .lowVoltageAbsoluteThreshold(DEFAULT_LOW_VOLTAGE_ABSOLUTE_THRESHOLD)
@@ -106,9 +95,8 @@ public class SecurityAnalysisParametersService {
                 .build();
     }
 
-    public SecurityAnalysisParametersValues getParameters(UUID parametersUuid) {
-        var params = securityAnalysisParametersRepository.findById(parametersUuid).orElseThrow(() -> new SecurityAnalysisException(PARAMETERS_NOT_FOUND));
-        return SecurityAnalysisParametersService.fromEntity(params);
+    public Optional<SecurityAnalysisParametersValues> getParameters(UUID parametersUuid) {
+        return securityAnalysisParametersRepository.findById(parametersUuid).map(SecurityAnalysisParametersEntity::toSecurityAnalysisParametersValues);
     }
 
     public UUID createParameters(SecurityAnalysisParametersValues securityAnalysisParametersValues) {
@@ -119,14 +107,9 @@ public class SecurityAnalysisParametersService {
         return securityAnalysisParametersRepository.save(getDefaultSecurityAnalysisParametersValues().toEntity()).getId();
     }
 
-    public Optional<UUID> createParameters(UUID sourceParametersId) {
-        Optional<SecurityAnalysisParametersValues> securityAnalysisParametersValuesOptional = securityAnalysisParametersRepository.findById(sourceParametersId).map(SecurityAnalysisParametersEntity::toSecurityAnalysisParametersValues);
-        if (securityAnalysisParametersValuesOptional.isPresent()) {
-            SecurityAnalysisParametersEntity entity = new SecurityAnalysisParametersEntity(securityAnalysisParametersValuesOptional.get());
-            securityAnalysisParametersRepository.save(entity);
-            return Optional.of(entity.getId());
-        }
-        return Optional.empty();
+    public Optional<UUID> duplicateParameters(UUID sourceParametersUuid) {
+        Optional<SecurityAnalysisParametersValues> securityAnalysisParametersValuesOptional = securityAnalysisParametersRepository.findById(sourceParametersUuid).map(SecurityAnalysisParametersEntity::toSecurityAnalysisParametersValues);
+        return securityAnalysisParametersValuesOptional.map(parametersValues -> securityAnalysisParametersRepository.save(new SecurityAnalysisParametersEntity(parametersValues)).getId());
     }
 
     @Transactional

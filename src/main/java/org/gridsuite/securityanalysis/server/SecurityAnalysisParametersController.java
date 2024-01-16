@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2023, RTE (http://www.rte-france.com)
+ * Copyright (c) 2024, RTE (http://www.rte-france.com)
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -49,14 +49,14 @@ public class SecurityAnalysisParametersController {
         return ResponseEntity.ok().body(parametersService.createDefaultParameters());
     }
 
-    @PostMapping(value = "/duplicate", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/{sourceParametersUuid}", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Duplicate parameters")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "parameters were duplicated"),
         @ApiResponse(responseCode = "404", description = "source parameters were not found")})
     public ResponseEntity<UUID> duplicateParameters(
-        @Parameter(description = "source parameters UUID") @RequestParam(name = "duplicateFrom") UUID sourceParametersUuid) {
-        return parametersService.createParameters(sourceParametersUuid).map(duplicatedParametersUuid -> ResponseEntity.ok()
+        @Parameter(description = "source parameters UUID") @PathVariable(name = "sourceParametersUuid") UUID sourceParametersUuid) {
+        return parametersService.duplicateParameters(sourceParametersUuid).map(duplicatedParametersUuid -> ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(duplicatedParametersUuid))
             .orElse(ResponseEntity.notFound().build());
@@ -69,7 +69,9 @@ public class SecurityAnalysisParametersController {
         @ApiResponse(responseCode = "404", description = "parameters were not found")})
     public ResponseEntity<SecurityAnalysisParametersValues> getParameters(
             @Parameter(description = "parameters UUID") @PathVariable(value = "uuid") UUID parametersUuid) {
-        return ResponseEntity.ok().body(parametersService.getParameters(parametersUuid));
+        return parametersService.getParameters(parametersUuid)
+                .map(parametersValues -> ResponseEntity.ok().body(parametersValues))
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PutMapping(value = "/{uuid}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
