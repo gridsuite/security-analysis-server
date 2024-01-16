@@ -13,6 +13,7 @@ import com.powsybl.loadflow.LoadFlowProvider;
 import com.powsybl.security.SecurityAnalysisParameters;
 import lombok.Getter;
 import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersInfos;
+import org.gridsuite.securityanalysis.server.dto.ReportInfos;
 
 import java.util.List;
 import java.util.Objects;
@@ -46,23 +47,32 @@ public class SecurityAnalysisRunContext {
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParameters parameters, LoadFlowParametersInfos loadFlowParametersInfos,
-                                      UUID reportUuid, String reporterId, String reportType, String userId) {
-        this(networkUuid, variantId, contingencyListNames, receiver, provider, buildParameters(parameters, loadFlowParametersInfos, provider), reportUuid, reporterId, reportType, userId);
+                                      ReportInfos reportInfos, String userId) {
+        this(
+                networkUuid,
+                variantId,
+                contingencyListNames,
+                receiver,
+                provider,
+                buildParameters(parameters, loadFlowParametersInfos, provider),
+                new ReportInfos(reportInfos.getReportUuid(), reportInfos.getReporterId(), reportInfos.getReportType()),
+                userId
+        );
     }
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParameters parameters,
-                                      UUID reportUuid, String reporterId, String reportType, String userId) {
+                                      ReportInfos reportInfos, String userId) {
         this.networkUuid = Objects.requireNonNull(networkUuid);
         this.variantId = variantId;
         this.contingencyListNames = Objects.requireNonNull(contingencyListNames);
         this.receiver = receiver;
         this.provider = provider;
         this.parameters = Objects.requireNonNull(parameters);
-        this.reportUuid = reportUuid;
-        this.reporterId = reporterId;
+        this.reportUuid = reportInfos.getReportUuid();
+        this.reporterId = reportInfos.getReporterId();
         this.userId = userId;
-        this.reportType = reportType;
+        this.reportType = reportInfos.getReportType();
     }
 
     private static SecurityAnalysisParameters buildParameters(SecurityAnalysisParameters securityAnalysisParameters,

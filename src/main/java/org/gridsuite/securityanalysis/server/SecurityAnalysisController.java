@@ -79,7 +79,7 @@ public class SecurityAnalysisController {
                                                       @RequestBody LoadFlowParametersInfos loadFlowParametersInfos,
                                                       @RequestHeader(HEADER_USER_ID) String userId) {
         String providerToUse = provider != null ? provider : securityAnalysisService.getDefaultProvider();
-        SecurityAnalysisResult result = workerService.run(securityAnalysisParametersService.createRunContext(networkUuid, variantId, contigencyListNames, null, providerToUse, parametersUuid, loadFlowParametersInfos, reportUuid, reporterId, reportType, userId));
+        SecurityAnalysisResult result = workerService.run(securityAnalysisParametersService.createRunContext(networkUuid, variantId, new RunContextParametersInfos(contigencyListNames, parametersUuid, loadFlowParametersInfos), null, providerToUse, new ReportInfos(reportUuid, reporterId, reportType), userId));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
     }
 
@@ -101,7 +101,17 @@ public class SecurityAnalysisController {
                                            @RequestBody LoadFlowParametersInfos loadFlowParametersInfos,
                                            @RequestHeader(HEADER_USER_ID) String userId) {
         String providerToUse = provider != null ? provider : securityAnalysisService.getDefaultProvider();
-        UUID resultUuid = securityAnalysisService.runAndSaveResult(securityAnalysisParametersService.createRunContext(networkUuid, variantId, contigencyListNames, receiver, providerToUse, parametersUuid, loadFlowParametersInfos, reportUuid, reporterId, reportType, userId));
+        UUID resultUuid = securityAnalysisService.runAndSaveResult(
+                securityAnalysisParametersService.createRunContext(
+                        networkUuid,
+                        variantId,
+                        new RunContextParametersInfos(contigencyListNames, parametersUuid, loadFlowParametersInfos),
+                        receiver,
+                        providerToUse,
+                        new ReportInfos(reportUuid, reporterId, reportType),
+                        userId
+                )
+        );
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(resultUuid);
     }
 

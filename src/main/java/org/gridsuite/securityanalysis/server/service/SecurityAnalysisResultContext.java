@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.security.SecurityAnalysisParameters;
+import org.gridsuite.securityanalysis.server.dto.ReportInfos;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -80,7 +81,16 @@ public class SecurityAnalysisResultContext {
         UUID reportUuid = headers.containsKey(REPORT_UUID_HEADER) ? UUID.fromString((String) headers.get(REPORT_UUID_HEADER)) : null;
         String reporterId = headers.containsKey(REPORTER_ID_HEADER) ? (String) headers.get(REPORTER_ID_HEADER) : null;
         String reportType = headers.containsKey(REPORT_TYPE_HEADER) ? (String) headers.get(REPORT_TYPE_HEADER) : null;
-        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(networkUuid, variantId, contingencyListNames, receiver, provider, parameters, reportUuid, reporterId, reportType, userId);
+        SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(
+                networkUuid,
+                variantId,
+                contingencyListNames,
+                receiver,
+                provider,
+                parameters,
+                new ReportInfos(reportUuid, reporterId, reportType),
+                userId
+        );
         return new SecurityAnalysisResultContext(resultUuid, runContext);
     }
 

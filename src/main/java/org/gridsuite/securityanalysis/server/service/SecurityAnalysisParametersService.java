@@ -7,7 +7,8 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.security.SecurityAnalysisParameters;
-import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersInfos;
+import org.gridsuite.securityanalysis.server.dto.ReportInfos;
+import org.gridsuite.securityanalysis.server.dto.RunContextParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisParametersRepository;
@@ -15,7 +16,6 @@ import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -40,26 +40,22 @@ public class SecurityAnalysisParametersService {
         this.securityAnalysisParametersRepository = Objects.requireNonNull(securityAnalysisParametersRepository);
     }
 
-    public SecurityAnalysisRunContext createRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
-                                                       String receiver, String provider, UUID parametersUuid,
-                                                       LoadFlowParametersInfos loadFlowParametersInfos,
-                                                       UUID reportUuid, String reporterId, String userId, String reportType) {
+    public SecurityAnalysisRunContext createRunContext(UUID networkUuid, String variantId, RunContextParametersInfos runContextParametersInfos,
+                                                       String receiver, String provider, ReportInfos reportInfos, String userId) {
         Optional<SecurityAnalysisParametersEntity> securityAnalysisParametersEntity = Optional.empty();
-        if (parametersUuid != null) {
-            securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(parametersUuid);
+        if (runContextParametersInfos.getSecurityAnalysisParametersUuid() != null) {
+            securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(runContextParametersInfos.getSecurityAnalysisParametersUuid());
         }
         SecurityAnalysisParameters parameters = toSecurityAnalysisParameters(securityAnalysisParametersEntity.orElse(null));
         return new SecurityAnalysisRunContext(
                 networkUuid,
                 variantId,
-                contingencyListNames,
+                runContextParametersInfos.getContingencyListNames(),
                 receiver,
                 provider,
                 parameters,
-                loadFlowParametersInfos,
-                reportUuid,
-                reporterId,
-                reportType,
+                runContextParametersInfos.getLoadFlowParametersInfos(),
+                new ReportInfos(reportInfos.getReportUuid(), reportInfos.getReporterId(), reportInfos.getReportType()),
                 userId);
 
     }
