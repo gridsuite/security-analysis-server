@@ -18,7 +18,7 @@ public final class CsvExportUtils {
     public static final String CSV_RESULT_FILE_NAME = "result.csv";
 
     private CsvExportUtils() {
-        throw new java.lang.UnsupportedOperationException("CsvExportUtils Utility class and cannot be instantiated");
+        throw new UnsupportedOperationException("CsvExportUtils Utility class and cannot be instantiated");
     }
 
     public static byte[] csvRowsToZippedCsv(List<String> headers, List<List<String>> csvRows) {
@@ -50,14 +50,11 @@ public final class CsvExportUtils {
     }
 
     public static String translate(String valueToTranslate, Map<String, String> translations) {
-        if (translations == null) {
+        // if value to translate or translations is null, we keep original value (null or no translation values)
+        if (valueToTranslate == null || translations == null) {
             return valueToTranslate;
         }
-        String translatedValue = translations.get(valueToTranslate);
-        // if value to translate or translate value is null, we keep original value (null or untranslated value)
-        if (valueToTranslate == null || translatedValue == null) {
-            return valueToTranslate;
-        }
-        return translatedValue;
+        // if translated value is null, we keep original value (untranslated value)
+        return translations.getOrDefault(valueToTranslate, valueToTranslate);
     }
 }

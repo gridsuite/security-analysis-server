@@ -81,7 +81,7 @@ public class SecurityAnalysisResultService {
     public byte[] findNResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
         List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, List.of(), Sort.by(Sort.Direction.ASC, ResourceFilterDTO.Column.SUBJECT_ID.getColumnName()));
 
-        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.getHeaders(), result.stream().map(r -> r.toCsvRow(csvTranslations.getEnumValueTranslations())).toList());
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), result.stream().map(r -> r.toCsvRow(csvTranslations.enumValueTranslations())).toList());
     }
 
     private Sort createNResultSort(Sort sort) {
@@ -110,9 +110,11 @@ public class SecurityAnalysisResultService {
         assertResultExists(resultUuid);
 
         List<ContingencyEntity> contingencies = contingencyRepository.findAllByResultId(resultUuid);
-        List<UUID> uuids = contingencies.stream().map(contingency -> contingency.getUuid()).toList();
+        List<UUID> uuids = contingencies.stream().map(ContingencyEntity::getUuid).toList();
+        // fetching contingency elements to prevent n+1 requests
         contingencyRepository.findAllWithContingencyElementsByUuidIn(uuids);
-        contingencyRepository.findAllWithContingencyContingencyLimitViolationsByUuidIn(uuids);
+        // fetching contingency limitViolations to prevent n+1 requests
+        contingencyRepository.findAllWithContingencyLimitViolationsByUuidIn(uuids);
 
         return contingencies.stream().map(ContingencyResultDTO::toDto).toList();
     }
@@ -121,7 +123,7 @@ public class SecurityAnalysisResultService {
     public byte[] findNmKContingenciesResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
         List<ContingencyResultDTO> result = self.findNmKContingenciesResult(resultUuid);
 
-        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.getHeaders(), result.stream().map(r -> r.toCsvRows(csvTranslations.getEnumValueTranslations())).flatMap(List::stream).toList());
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations())).flatMap(List::stream).toList());
     }
 
     @Transactional(readOnly = true)
@@ -152,7 +154,7 @@ public class SecurityAnalysisResultService {
     public byte[] findNmKConstraintsResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
         List<SubjectLimitViolationResultDTO> result = self.findNmKConstraintsResult(resultUuid);
 
-        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.getHeaders(), result.stream().map(r -> r.toCsvRows(csvTranslations.getEnumValueTranslations())).flatMap(List::stream).toList());
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations())).flatMap(List::stream).toList());
     }
 
     private void assertNmKContingenciesSortAllowed(Sort sort) {
