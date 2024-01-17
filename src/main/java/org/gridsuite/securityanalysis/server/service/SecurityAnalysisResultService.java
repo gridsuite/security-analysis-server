@@ -139,7 +139,7 @@ public class SecurityAnalysisResultService {
         assertResultExists(resultUuid);
 
         List<SubjectLimitViolationEntity> subjectLimitViolations = subjectLimitViolationRepository.findAllByResultId(resultUuid);
-        List<UUID> uuids = subjectLimitViolations.stream().map(SubjectLimitViolationEntity::getId.toList();
+        List<UUID> uuids = subjectLimitViolations.stream().map(SubjectLimitViolationEntity::getId).toList();
         subjectLimitViolationRepository.findAllWithContingencyContingencyLimitViolationsByIdIn(uuids);
         List<UUID> contingencyUuids = subjectLimitViolations.stream().map(SubjectLimitViolationEntity::getContingencyLimitViolations).flatMap(List::stream)
             .map(lm -> lm.getContingency().getUuid())
