@@ -16,7 +16,6 @@ import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
