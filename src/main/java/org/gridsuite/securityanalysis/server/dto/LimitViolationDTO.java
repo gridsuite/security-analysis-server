@@ -7,6 +7,11 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -33,5 +38,17 @@ public class LimitViolationDTO {
             .value(limitViolation.getValue())
             .loading(limitViolation.getLoading())
             .build();
+    }
+
+    public List<String> toCsvRow(Map<String, String> translations) {
+        List<String> csvRow = new ArrayList<>();
+        csvRow.add(this.getLimitType() != null ? CsvExportUtils.translate(this.getLimitType().name(), translations) : "");
+        csvRow.add(CsvExportUtils.replaceNullWithEmptyString(this.getLimitName()));
+        csvRow.add(Double.toString(this.getLimit()));
+        csvRow.add(Double.toString(this.getValue()));
+        csvRow.add(CsvExportUtils.replaceNullWithEmptyString(this.getLoading()));
+        csvRow.add(this.getAcceptableDuration() == Integer.MAX_VALUE ? null : Integer.toString(this.getAcceptableDuration()));
+        csvRow.add(this.getSide() != null ? CsvExportUtils.translate(this.getSide().name(), translations) : "");
+        return csvRow;
     }
 }
