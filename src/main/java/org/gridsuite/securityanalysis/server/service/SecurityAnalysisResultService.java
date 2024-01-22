@@ -16,6 +16,7 @@ import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolati
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.repositories.*;
+import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,6 +77,13 @@ public class SecurityAnalysisResultService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public byte[] findNResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
+        List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, List.of(), Sort.by(Sort.Direction.ASC, ResourceFilterDTO.Column.SUBJECT_ID.getColumnName()));
+
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), result.stream().map(r -> r.toCsvRow(csvTranslations.enumValueTranslations())).toList());
+    }
+
     private Sort createNResultSort(Sort sort) {
         List<Sort.Order> newOrders = new ArrayList<>();
         sort.forEach(order -> {
@@ -90,7 +98,7 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ContingencyResultDTO> findNmKContingenciesResult(UUID resultUuid, String stringFilters, Pageable pageable) {
+    public Page<ContingencyResultDTO> findNmKContingenciesPaged(UUID resultUuid, String stringFilters, Pageable pageable) {
         assertResultExists(resultUuid);
 
         Page<ContingencyEntity> contingencyPageBis = self.findContingenciesPage(resultUuid, fromStringFiltersToDTO(stringFilters), pageable);
@@ -98,11 +106,55 @@ public class SecurityAnalysisResultService {
     }
 
     @Transactional(readOnly = true)
-    public Page<SubjectLimitViolationResultDTO> findNmKConstraintsResult(UUID resultUuid, String stringFilters, Pageable pageable) {
+    public List<ContingencyResultDTO> findNmKContingenciesResult(UUID resultUuid) {
+        assertResultExists(resultUuid);
+
+        List<ContingencyEntity> contingencies = contingencyRepository.findAllByResultId(resultUuid);
+        List<UUID> uuids = contingencies.stream().map(ContingencyEntity::getUuid).toList();
+        // fetching contingency elements to prevent n+1 requests
+        contingencyRepository.findAllWithContingencyElementsByUuidIn(uuids);
+        // fetching contingency limitViolations to prevent n+1 requests
+        contingencyRepository.findAllWithContingencyLimitViolationsByUuidIn(uuids);
+
+        return contingencies.stream().map(ContingencyResultDTO::toDto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] findNmKContingenciesResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
+        List<ContingencyResultDTO> result = self.findNmKContingenciesResult(resultUuid);
+
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations())).flatMap(List::stream).toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Page<SubjectLimitViolationResultDTO> findNmKConstraintsResultPaged(UUID resultUuid, String stringFilters, Pageable pageable) {
         assertResultExists(resultUuid);
 
         Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = self.findSubjectLimitViolationsPage(resultUuid, fromStringFiltersToDTO(stringFilters), pageable);
         return subjectLimitViolationsPage.map(SubjectLimitViolationResultDTO::toDto);
+    }
+
+    @Transactional(readOnly = true)
+    public List<SubjectLimitViolationResultDTO> findNmKConstraintsResult(UUID resultUuid) {
+        assertResultExists(resultUuid);
+
+        List<SubjectLimitViolationEntity> subjectLimitViolations = subjectLimitViolationRepository.findAllByResultId(resultUuid);
+        List<UUID> uuids = subjectLimitViolations.stream().map(SubjectLimitViolationEntity::getId).toList();
+        subjectLimitViolationRepository.findAllWithContingencyContingencyLimitViolationsByIdIn(uuids);
+        List<UUID> contingencyUuids = subjectLimitViolations.stream().map(SubjectLimitViolationEntity::getContingencyLimitViolations).flatMap(List::stream)
+            .map(lm -> lm.getContingency().getUuid())
+            .toList();
+        // we fetch contingencyElements for each contingency here to prevent N+1 query
+        contingencyRepository.findAllWithContingencyElementsByUuidIn(contingencyUuids);
+
+        return subjectLimitViolations.stream().map(SubjectLimitViolationResultDTO::toDto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public byte[] findNmKConstraintsResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
+        List<SubjectLimitViolationResultDTO> result = self.findNmKConstraintsResult(resultUuid);
+
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations())).flatMap(List::stream).toList());
     }
 
     private void assertNmKContingenciesSortAllowed(Sort sort) {

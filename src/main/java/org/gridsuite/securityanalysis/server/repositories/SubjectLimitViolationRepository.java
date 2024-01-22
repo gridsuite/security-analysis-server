@@ -25,7 +25,12 @@ public interface SubjectLimitViolationRepository extends CommonLimitViolationRep
     @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.contingency"}, type = EntityGraph.EntityGraphType.LOAD)
     List<SubjectLimitViolationEntity> findAll(Specification<SubjectLimitViolationEntity> spec);
 
+    @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.subjectLimitViolation"}, type = EntityGraph.EntityGraphType.LOAD)
+    List<SubjectLimitViolationEntity> findAllWithContingencyContingencyLimitViolationsByIdIn(List<UUID> uuids);
+
     List<SubjectLimitViolationEntity> findAllByIdIn(List<UUID> uuids);
+
+    List<SubjectLimitViolationEntity> findAllByResultId(UUID resultUuid);
 
     @Override
     default String columnToDotSeparatedField(ResourceFilterDTO.Column column) {
