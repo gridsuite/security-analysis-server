@@ -50,7 +50,6 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.gridsuite.securityanalysis.server.service.NotificationService.CANCEL_MESSAGE;
 import static org.gridsuite.securityanalysis.server.service.NotificationService.FAIL_MESSAGE;
@@ -191,7 +190,7 @@ public class SecurityAnalysisWorkerService {
     private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) throws Exception {
         Objects.requireNonNull(context);
 
-        LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(LogUtils::sanitizeParam).collect(Collectors.toList()));
+        LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(LogUtils::sanitizeParam).toList());
 
         Network network = securityAnalysisObserver.observe("network.load", context, () -> getNetwork(context.getNetworkUuid()));
 
@@ -225,7 +224,7 @@ public class SecurityAnalysisWorkerService {
                 reporter,
                 resultUuid);
 
-        SecurityAnalysisResult result = future == null ? null : securityAnalysisObserver.observe("run", context, () -> future.get());
+        SecurityAnalysisResult result = future == null ? null : securityAnalysisObserver.observeRun("run", context, future::get);
         if (context.getReportUuid() != null) {
             List<Report> notFoundElementReports = new ArrayList<>();
             contingencies.stream()
@@ -285,7 +284,8 @@ public class SecurityAnalysisWorkerService {
                     LOGGER.error(FAIL_MESSAGE, e);
                     notificationService.emitFailAnalysisMessage(resultContext.getResultUuid().toString(),
                         resultContext.getRunContext().getReceiver(),
-                        e.getMessage());
+                        e.getMessage(),
+                        resultContext.getRunContext().getUserId());
                     securityAnalysisResultService.delete(resultContext.getResultUuid());
                 }
             } finally {

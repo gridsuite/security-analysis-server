@@ -7,6 +7,10 @@
 
 package org.gridsuite.securityanalysis.server.service;
 
+import com.powsybl.loadflow.LoadFlowResult;
+import com.powsybl.security.SecurityAnalysisResult;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.NonNull;
@@ -17,29 +21,52 @@ import org.springframework.stereotype.Service;
 */
 @Service
 public class SecurityAnalysisObserver {
+
+    private static final String OBSERVATION_PREFIX = "app.computation.";
+
+    private static final String PROVIDER_TAG_NAME = "provider";
+    private static final String TYPE_TAG_NAME = "type";
+    private static final String STATUS_TAG_NAME = "status";
+
+    private static final String COMPUTATION_TYPE = "sa";
+
+    private static final String COMPUTATION_COUNTER_NAME = OBSERVATION_PREFIX + "count";
+
     private final ObservationRegistry observationRegistry;
 
-    private static final String OBSERVATION_PREFIX = "app.";
-    private static final String PROVIDER_TAG_NAME = "provider";
+    private final MeterRegistry meterRegistry;
 
-    private static final String TYPE_TAG_NAME = "type";
-    private static final String COMPUTATION_NAME = "sa";
-
-    public SecurityAnalysisObserver(@NonNull ObservationRegistry observationRegistry) {
+    public SecurityAnalysisObserver(@NonNull ObservationRegistry observationRegistry, @NonNull MeterRegistry meterRegistry) {
         this.observationRegistry = observationRegistry;
+        this.meterRegistry = meterRegistry;
     }
 
-    public <E extends Throwable> void observe(String name, SecurityAnalysisRunContext runContext, Observation.CheckedRunnable<E> callable) throws E {
-        createSecurityAnalysisObservation(name, runContext).observeChecked(callable);
+    public <E extends Throwable> void observe(String name, SecurityAnalysisRunContext runContext, Observation.CheckedRunnable<E> runnable) throws E {
+        createObservation(name, runContext).observeChecked(runnable);
     }
 
     public <T, E extends Throwable> T observe(String name, SecurityAnalysisRunContext runContext, Observation.CheckedCallable<T, E> callable) throws E {
-        return createSecurityAnalysisObservation(name, runContext).observeChecked(callable);
+        return createObservation(name, runContext).observeChecked(callable);
     }
 
-    private Observation createSecurityAnalysisObservation(String name, SecurityAnalysisRunContext runContext) {
+    public <T extends SecurityAnalysisResult, E extends Throwable> T observeRun(String name, SecurityAnalysisRunContext runContext, Observation.CheckedCallable<T, E> callable) throws E {
+        T result = createObservation(name, runContext).observeChecked(callable);
+        incrementCount(runContext, result);
+        return result;
+    }
+
+    private Observation createObservation(String name, SecurityAnalysisRunContext runContext) {
         return Observation.createNotStarted(OBSERVATION_PREFIX + name, observationRegistry)
             .lowCardinalityKeyValue(PROVIDER_TAG_NAME, runContext.getProvider())
-            .lowCardinalityKeyValue(TYPE_TAG_NAME, COMPUTATION_NAME);
+            .lowCardinalityKeyValue(TYPE_TAG_NAME, COMPUTATION_TYPE);
+    }
+
+    private void incrementCount(SecurityAnalysisRunContext runContext, SecurityAnalysisResult result) {
+        Counter.builder(COMPUTATION_COUNTER_NAME)
+                .tag(PROVIDER_TAG_NAME, runContext.getProvider())
+                .tag(TYPE_TAG_NAME, COMPUTATION_TYPE)
+                .tag(STATUS_TAG_NAME, result != null && result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED ? "OK" : "NOK")
+                .register(meterRegistry)
+                .increment();
     }
 }
