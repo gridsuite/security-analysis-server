@@ -28,7 +28,8 @@ public interface CommonLimitViolationRepository<T> {
      */
     default Specification<T> getParentsSpecifications(
         UUID resultUuid,
-        List<ResourceFilterDTO> filters
+        List<ResourceFilterDTO> filters,
+        boolean isSubjectLimitViolations
     ) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -46,7 +47,7 @@ public interface CommonLimitViolationRepository<T> {
                 // user filters on OneToMany collection - needed here to filter main entities that would have empty collection when filters are applied
                 childrenFilters
                     .forEach(filter -> addPredicate(criteriaBuilder, root.get("contingencyLimitViolations"), predicates, filter));
-            } else {
+            } else if (isSubjectLimitViolations) {
                 // filter parents with empty children even if there isn't any filter
                 predicates.add(criteriaBuilder.isNotEmpty(root.get("contingencyLimitViolations")));
             }
