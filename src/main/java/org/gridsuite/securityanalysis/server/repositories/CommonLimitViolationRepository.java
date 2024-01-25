@@ -6,6 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.repositories;
 
+import com.powsybl.loadflow.LoadFlowResult;
 import jakarta.persistence.criteria.*;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.springframework.data.jpa.domain.Specification;
@@ -50,6 +51,19 @@ public interface CommonLimitViolationRepository<T> {
             } else if (isSubjectLimitViolations) {
                 // filter parents with empty children even if there isn't any filter
                 predicates.add(criteriaBuilder.isNotEmpty(root.get("contingencyLimitViolations")));
+            } else {
+                Predicate isNotEmptyPredicate = criteriaBuilder.isNotEmpty(root.get("contingencyLimitViolations"));
+                // Add condition for status "CONVERGED" and contingencyLimitViolations isNotEmpty
+                Predicate convergedCondition = criteriaBuilder.and(criteriaBuilder.equal(root.get("status"),
+                        LoadFlowResult.ComponentResult.Status.CONVERGED.toString()), isNotEmptyPredicate);
+                // Add condition for status "MAX_ITERATION_REACHED" or "DIVERGED"
+                Predicate maxIterationOrDivergedCondition = criteriaBuilder.or(criteriaBuilder.equal(root.get("status"),
+                        LoadFlowResult.ComponentResult.Status.MAX_ITERATION_REACHED.toString()),
+                        criteriaBuilder.equal(root.get("status"), LoadFlowResult.ComponentResult.Status.CONVERGED.toString()));
+
+                // Combine the conditions
+                Predicate finalCondition = criteriaBuilder.or(convergedCondition, maxIterationOrDivergedCondition);
+                predicates.add(finalCondition);
             }
 
             // since sql joins generates duplicate results, we need to use distinct here
