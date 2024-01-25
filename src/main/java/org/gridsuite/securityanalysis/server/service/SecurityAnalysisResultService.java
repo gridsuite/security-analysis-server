@@ -22,10 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +44,12 @@ public class SecurityAnalysisResultService {
     private final ContingencyLimitViolationRepository contingencyLimitViolationRepository;
     private final ObjectMapper objectMapper;
     private SecurityAnalysisResultService self;
+
+    private static final String DEFAULT_CONTINGENCY_SORT_COLUMN = "uuid";
+
+    private static final String DEFAULT_SUBJECT_LIMIT_VIOLATION_SORT_COLUMN = "id";
+
+    private static final Sort.Direction DEFAULT_SORT_DIRECTION = Sort.Direction.ASC;
 
     @Autowired
     public SecurityAnalysisResultService(SecurityAnalysisResultRepository securityAnalysisResultRepository,
@@ -265,6 +268,7 @@ public class SecurityAnalysisResultService {
     public Page<ContingencyEntity> findContingenciesPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
         assertNmKContingenciesSortAllowed(pageable.getSort());
+        Pageable modifiedPageable = addDefaultSort(pageable, DEFAULT_CONTINGENCY_SORT_COLUMN);
         Specification<ContingencyEntity> specification = contingencyRepository.getParentsSpecifications(resultUuid, resourceFilters);
         // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
@@ -275,18 +279,18 @@ public class SecurityAnalysisResultService {
         Page<ContingencyRepository.EntityUuid> uuidPage = contingencyRepository.findBy(specification, q ->
             q.project("uuid")
                 .as(ContingencyRepository.EntityUuid.class)
-                .sortBy(pageable.getSort())
-                .page(pageable)
+                .sortBy(modifiedPageable.getSort())
+                .page(modifiedPageable)
         );
 
         if (!uuidPage.hasContent()) {
             return Page.empty();
         } else {
-            List<UUID> uuids = uuidPage.map(u -> u.getUuid()).toList();
+            List<UUID> uuids = uuidPage.map(ContingencyRepository.EntityUuid::getUuid).toList();
             // Then we fetch the main entities data for each UUID
             List<ContingencyEntity> contingencies = contingencyRepository.findAllByUuidIn(uuids);
             contingencies.sort(Comparator.comparing(c -> uuids.indexOf(c.getUuid())));
-            Page<ContingencyEntity> contingenciesPage = new PageImpl<>(contingencies, pageable, uuidPage.getTotalElements());
+            Page<ContingencyEntity> contingenciesPage = new PageImpl<>(contingencies, modifiedPageable, uuidPage.getTotalElements());
 
             // then we append the missing data, and filter some of the Lazy Loaded collections
             appendLimitViolationsAndElementsToContingenciesResult(contingenciesPage, resourceFilters);
@@ -299,6 +303,7 @@ public class SecurityAnalysisResultService {
     public Page<SubjectLimitViolationEntity> findSubjectLimitViolationsPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
         assertNmKSubjectLimitViolationsSortAllowed(pageable.getSort());
+        Pageable modifiedPageable = addDefaultSort(pageable, DEFAULT_SUBJECT_LIMIT_VIOLATION_SORT_COLUMN);
         Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters);
         // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
@@ -307,8 +312,8 @@ public class SecurityAnalysisResultService {
         Page<SubjectLimitViolationRepository.EntityId> uuidPage = subjectLimitViolationRepository.findBy(specification, q ->
             q.project("id")
                 .as(SubjectLimitViolationRepository.EntityId.class)
-                .sortBy(pageable.getSort())
-                .page(pageable)
+                .sortBy(modifiedPageable.getSort())
+                .page(modifiedPageable)
         );
 
         if (!uuidPage.hasContent()) {
@@ -359,5 +364,24 @@ public class SecurityAnalysisResultService {
             // we fetch contingencyElements for each contingency here to prevent N+1 query
             contingencyRepository.findAllWithContingencyElementsByUuidIn(contingencyUuids);
         }
+    }
+
+    private Pageable addDefaultSort(Pageable pageable, String defaultSortColumn) {
+        if (pageable.isPaged()) {
+            if (pageable.getSort().equals(Sort.unsorted())) {
+                //if there is no sort on the original request we just add the default one
+                return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(DEFAULT_SORT_DIRECTION, defaultSortColumn));
+            } else {
+                //else we restore the original sort, and then we add the default sort on top of it to ensure there is a deterministic result
+                if (pageable.getSort().getOrderFor(defaultSortColumn) == null) {
+                    //if it's already sorted by our defaultColumn we don't add another sort by the same column
+                    Sort additionalSort = Sort.by(new Sort.Order(DEFAULT_SORT_DIRECTION, defaultSortColumn));
+                    Sort finalSort = pageable.getSort().and(additionalSort);
+                    return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), finalSort);
+                }
+            }
+        }
+        //nothing to do if the request is not paged
+        return pageable;
     }
 }
