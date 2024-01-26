@@ -655,10 +655,13 @@ public class SecurityAnalysisControllerTest {
 
     @Test
     public void getZippedCsvResults() throws Exception {
+        LoadFlowParametersInfos loadFlowParametersInfos = new LoadFlowParametersInfos(null, null);
         // running computation to create result
         MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME
                 + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow")
-                .header(HEADER_USER_ID, "testUserId"))
+                .header(HEADER_USER_ID, "testUserId")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(loadFlowParametersInfos)))
             .andExpectAll(
                 status().isOk(),
                 content().contentType(MediaType.APPLICATION_JSON)
