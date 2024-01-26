@@ -27,6 +27,7 @@ import org.gridsuite.securityanalysis.server.service.ReportService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.gridsuite.securityanalysis.server.service.UuidGeneratorService;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
+import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
 import org.junit.After;
 import org.junit.Before;
@@ -44,7 +45,11 @@ import org.springframework.messaging.Message;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.util.StreamUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -54,6 +59,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
@@ -67,6 +74,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -114,6 +122,24 @@ public class SecurityAnalysisControllerTest {
 
     @Autowired
     private ObjectMapper mapper;
+
+    private final Map<String, String> enumTranslationsEn = Map.of(
+        "ONE", "Side 1",
+        "TWO", "Side 2",
+        "CURRENT", "Current",
+        "HIGH_VOLTAGE", "High voltage",
+        "FAILED", "Failed",
+        "CONVERGED", "Converged"
+    );
+
+    private final Map<String, String> enumTranslationsFr = Map.of(
+        "ONE", "Côté 1",
+        "TWO", "Côté 2",
+        "CURRENT", "Intensité",
+        "HIGH_VOLTAGE", "Tension haute",
+        "FAILED", "Echec",
+        "CONVERGED", "Convergence"
+    );
 
     @Before
     public void setUp() throws Exception {
@@ -625,6 +651,128 @@ public class SecurityAnalysisControllerTest {
         String resultAsString = mvcResult.getResponse().getContentAsString();
         List<LoadFlowResult.ComponentResult.Status> status = mapper.readValue(resultAsString, new TypeReference<>() { });
         assertEquals(status, Arrays.asList(LoadFlowResult.ComponentResult.Status.values()));
+    }
+
+    @Test
+    public void getZippedCsvResults() throws Exception {
+        // running computation to create result
+        MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME
+                + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow")
+                .header(HEADER_USER_ID, "testUserId"))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON)
+            ).andReturn();
+
+        String resultAsString = mvcResult.getResponse().getContentAsString();
+        UUID resultUuid = mapper.readValue(resultAsString, UUID.class);
+        assertEquals(RESULT_UUID, resultUuid);
+
+        Message<byte[]> resultMessage = output.receive(TIMEOUT, "sa.result");
+        assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
+        assertEquals("me", resultMessage.getHeaders().get("receiver"));
+
+        checkAllZippedCsvResults();
+    }
+
+    public void checkAllZippedCsvResults() throws Exception {
+        SQLStatementCountValidator.reset();
+        checkZippedCsvResult("n-result", "/results/n-result-en.csv",
+            CsvTranslationDTO.builder()
+                .headers(List.of("Equipment", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
+                .enumValueTranslations(enumTranslationsEn)
+                .build());
+        /**
+         * SELECT
+         * assert result exists
+         * get all results
+         */
+        assertRequestsCount(2, 0, 0, 0);
+
+        SQLStatementCountValidator.reset();
+        checkZippedCsvResult("n-result", "/results/n-result-fr.csv",
+            CsvTranslationDTO.builder()
+                .headers(List.of("Ouvrage", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Valeur calculée (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
+                .enumValueTranslations(enumTranslationsFr)
+                .build());
+        assertRequestsCount(2, 0, 0, 0);
+
+        SQLStatementCountValidator.reset();
+        checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-en.csv",
+            CsvTranslationDTO.builder()
+                .headers(List.of("Contingency ID", "Status", "Constraint", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
+                .enumValueTranslations(enumTranslationsEn)
+                .build());
+        /**
+         * SELECT
+         * assert result exists
+         * get all contingencies
+         * join contingency_entity_contingency_elements
+         * join contingency_limit_violation and subject_limit_violation
+         */
+        assertRequestsCount(4, 0, 0, 0);
+
+        SQLStatementCountValidator.reset();
+        checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-fr.csv",
+            CsvTranslationDTO.builder()
+                .headers(List.of("Id aléa", "Statut", "Contrainte", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
+                .enumValueTranslations(enumTranslationsFr)
+                .build());
+        assertRequestsCount(4, 0, 0, 0);
+
+        SQLStatementCountValidator.reset();
+        checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-en.csv",
+            CsvTranslationDTO.builder()
+                .headers(List.of("Constraint", "Contingency ID", "Status", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
+                .enumValueTranslations(enumTranslationsEn)
+                .build());
+        /**
+         * SELECT
+         * assert result exists
+         * get all subject_limit_violations
+         * join contingency_limit_violation
+         * join contingency_entity_contingency_elements
+         */
+        assertRequestsCount(4, 0, 0, 0);
+
+        SQLStatementCountValidator.reset();
+        checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-fr.csv",
+            CsvTranslationDTO.builder()
+                .headers(List.of("Contrainte", "ID aléa", "Statut", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Valeur calculée (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
+                .enumValueTranslations(enumTranslationsFr)
+                .build());
+        assertRequestsCount(4, 0, 0, 0);
+    }
+
+    public void checkZippedCsvResult(String resultType, String resourcePath, CsvTranslationDTO csvTranslationDTO) throws Exception {
+        // get csv file
+        byte[] resultAsByteArray = mockMvc.perform(post("/" + VERSION + "/results/" + RESULT_UUID + "/" + resultType + "/csv")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(csvTranslationDTO)))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(APPLICATION_OCTET_STREAM_VALUE)
+            ).andReturn().getResponse().getContentAsByteArray();
+
+        // get zip file stream
+        try (ZipInputStream zin = new ZipInputStream(new ByteArrayInputStream(resultAsByteArray));
+             ByteArrayOutputStream contentOutputStream = new ByteArrayOutputStream();
+             ByteArrayOutputStream expectedContentOutputStream = new ByteArrayOutputStream()) {
+            // get first entry
+            ZipEntry zipEntry = zin.getNextEntry();
+            // check zip entry name
+            assertEquals(CsvExportUtils.CSV_RESULT_FILE_NAME, zipEntry.getName());
+
+            // get entry content as outputStream
+            StreamUtils.copy(zin, contentOutputStream);
+
+            // get expected content as outputStream
+            InputStream csvStream = getClass().getResourceAsStream(resourcePath);
+            StreamUtils.copy(csvStream, expectedContentOutputStream);
+
+            assertEquals(expectedContentOutputStream.toString(), contentOutputStream.toString());
+            zin.closeEntry();
+        }
     }
 
     private void assertResultNotFound(UUID resultUuid) throws Exception {

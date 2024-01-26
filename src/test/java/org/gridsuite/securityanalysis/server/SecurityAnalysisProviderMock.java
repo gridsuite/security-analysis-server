@@ -80,7 +80,8 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         new Contingency("l4", new LineContingency("l4"))
     );
 
-    static final LimitViolation LIMIT_VIOLATION_1 = new LimitViolation("l3", LimitViolationType.CURRENT, "l3_name", 20 * 60, 10, 1, 11, Branch.Side.ONE);
+    //MAX VALUE for acceptable duration here is important to check this value is actually set to null when exporting it
+    static final LimitViolation LIMIT_VIOLATION_1 = new LimitViolation("l3", LimitViolationType.CURRENT, "l3_name", Integer.MAX_VALUE, 10, 1, 11, Branch.Side.ONE);
     static final LimitViolation LIMIT_VIOLATION_2 = new LimitViolation("vl1", LimitViolationType.HIGH_VOLTAGE, "vl1_name", 0, 400, 1, 410, null);
     static final LimitViolation LIMIT_VIOLATION_3 = new LimitViolation("l6", LimitViolationType.CURRENT, "l6_name", 20 * 60, 10, 1, 11, Branch.Side.ONE);
     static final LimitViolation LIMIT_VIOLATION_4 = new LimitViolation("vl7", LimitViolationType.HIGH_VOLTAGE, "vl7_name", 0, 400, 2, 410, null);
