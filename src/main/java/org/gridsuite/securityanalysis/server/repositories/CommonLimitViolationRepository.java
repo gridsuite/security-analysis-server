@@ -56,13 +56,14 @@ public interface CommonLimitViolationRepository<T> {
                 // Add condition for status "CONVERGED" and contingencyLimitViolations isNotEmpty
                 Predicate convergedCondition = criteriaBuilder.and(criteriaBuilder.equal(root.get("status"),
                         LoadFlowResult.ComponentResult.Status.CONVERGED.toString()), isNotEmptyPredicate);
-                // Add condition for status "MAX_ITERATION_REACHED" or "DIVERGED"
-                Predicate maxIterationOrDivergedCondition = criteriaBuilder.or(criteriaBuilder.equal(root.get("status"),
+                // Add condition for status "MAX_ITERATION_REACHED" or "FAILED" or "SOLVER_FAILED"
+                Predicate maxIterationOrFailedCondition = criteriaBuilder.or(criteriaBuilder.equal(root.get("status"),
                         LoadFlowResult.ComponentResult.Status.MAX_ITERATION_REACHED.toString()),
-                        criteriaBuilder.equal(root.get("status"), LoadFlowResult.ComponentResult.Status.CONVERGED.toString()));
+                        criteriaBuilder.equal(root.get("status"), LoadFlowResult.ComponentResult.Status.FAILED.toString()),
+                        criteriaBuilder.equal(root.get("status"), LoadFlowResult.ComponentResult.Status.SOLVER_FAILED.toString()));
 
                 // Combine the conditions
-                Predicate finalCondition = criteriaBuilder.or(convergedCondition, maxIterationOrDivergedCondition);
+                Predicate finalCondition = criteriaBuilder.or(convergedCondition, maxIterationOrFailedCondition);
                 predicates.add(finalCondition);
             }
 
