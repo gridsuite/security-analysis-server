@@ -6,7 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import com.powsybl.iidm.network.Branch;
+import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
@@ -246,8 +246,8 @@ public class SecurityAnalysisController {
     @GetMapping(value = "/branch-sides", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get available branch sides")
     @ApiResponses(@ApiResponse(responseCode = "200", description = "List of available branch sides"))
-    public ResponseEntity<Branch.Side[]> getBranchSides() {
-        return ResponseEntity.ok().body(Branch.Side.values());
+    public ResponseEntity<ThreeSides[]> getBranchSides() {
+        return ResponseEntity.ok().body(ThreeSides.values());
     }
 
     @GetMapping(value = "/computation-status", produces = APPLICATION_JSON_VALUE)
