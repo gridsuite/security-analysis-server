@@ -10,7 +10,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.iidm.network.Network;
-import com.powsybl.iidm.network.ThreeSides;
+import com.powsybl.iidm.network.TwoSides;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.loadflow.LoadFlowResult;
@@ -631,11 +631,10 @@ public class SecurityAnalysisControllerTest {
                 ).andReturn();
 
         String resultAsString = mvcResult.getResponse().getContentAsString();
-        List<ThreeSides> sides = mapper.readValue(resultAsString, new TypeReference<>() { });
-        assertEquals(3, sides.size());
-        assertTrue(sides.contains(ThreeSides.ONE));
-        assertTrue(sides.contains(ThreeSides.TWO));
-        assertTrue(sides.contains(ThreeSides.THREE));
+        List<TwoSides> sides = mapper.readValue(resultAsString, new TypeReference<>() { });
+        assertEquals(2, sides.size());
+        assertTrue(sides.contains(TwoSides.ONE));
+        assertTrue(sides.contains(TwoSides.TWO));
     }
 
     @Test
