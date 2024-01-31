@@ -12,7 +12,8 @@ import com.powsybl.loadflow.LoadFlowParameters;
 import com.powsybl.loadflow.LoadFlowProvider;
 import com.powsybl.security.SecurityAnalysisParameters;
 import lombok.Getter;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
+import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersInfos;
+import org.gridsuite.securityanalysis.server.dto.ReportInfos;
 
 import java.util.List;
 import java.util.Objects;
@@ -45,74 +46,54 @@ public class SecurityAnalysisRunContext {
     private final String reportType;
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
-                                      String receiver, String provider, SecurityAnalysisParametersInfos parameters,
-                                      UUID reportUuid, String reporterId, String reportType, String userId) {
-        this(networkUuid, variantId, contingencyListNames, receiver, provider, buildParameters(parameters, provider), reportUuid, reporterId, reportType, userId);
+                                      String receiver, String provider, SecurityAnalysisParameters parameters, LoadFlowParametersInfos loadFlowParametersInfos,
+                                      ReportInfos reportInfos, String userId) {
+        this(
+                networkUuid,
+                variantId,
+                contingencyListNames,
+                receiver,
+                provider,
+                buildParameters(parameters, loadFlowParametersInfos, provider),
+                new ReportInfos(reportInfos.getReportUuid(), reportInfos.getReporterId(), reportInfos.getReportType()),
+                userId
+        );
     }
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParameters parameters,
-                                      UUID reportUuid, String reporterId, String reportType, String userId) {
+                                      ReportInfos reportInfos, String userId) {
         this.networkUuid = Objects.requireNonNull(networkUuid);
         this.variantId = variantId;
         this.contingencyListNames = Objects.requireNonNull(contingencyListNames);
         this.receiver = receiver;
         this.provider = provider;
         this.parameters = Objects.requireNonNull(parameters);
-        this.reportUuid = reportUuid;
-        this.reporterId = reporterId;
+        this.reportUuid = reportInfos.getReportUuid();
+        this.reporterId = reportInfos.getReporterId();
         this.userId = userId;
-        this.reportType = reportType;
+        this.reportType = reportInfos.getReportType();
     }
 
-    private static SecurityAnalysisParameters buildParameters(SecurityAnalysisParametersInfos parameters, String provider) {
-        SecurityAnalysisParameters params = parameters == null || parameters.getParameters() == null ?
-                SecurityAnalysisParameters.load() : parameters.getParameters();
-        if (parameters == null || parameters.getLoadFlowSpecificParameters() == null || parameters.getLoadFlowSpecificParameters().isEmpty()) {
-            return params; // no specific LF params
+    private static SecurityAnalysisParameters buildParameters(SecurityAnalysisParameters securityAnalysisParameters,
+                                                              LoadFlowParametersInfos loadFlowParametersInfos,
+                                                              String provider) {
+        Objects.requireNonNull(loadFlowParametersInfos);
+        if (loadFlowParametersInfos.getCommonParameters() == null) {
+            securityAnalysisParameters.setLoadFlowParameters(new LoadFlowParameters());
+        } else {
+            securityAnalysisParameters.setLoadFlowParameters(loadFlowParametersInfos.getCommonParameters());
+        }
+
+        if (loadFlowParametersInfos.getSpecificParameters() == null || loadFlowParametersInfos.getSpecificParameters().isEmpty()) {
+            return securityAnalysisParameters; // no specific LF params
         }
         LoadFlowProvider lfProvider = LoadFlowProvider.findAll().stream()
                 .filter(p -> p.getName().equals(provider))
                 .findFirst().orElseThrow(() -> new PowsyblException("Security analysis provider not found " + provider));
-        Extension<LoadFlowParameters> extension = lfProvider.loadSpecificParameters(parameters.getLoadFlowSpecificParameters())
+        Extension<LoadFlowParameters> extension = lfProvider.loadSpecificParameters(loadFlowParametersInfos.getSpecificParameters())
                 .orElseThrow(() -> new PowsyblException("Cannot add specific loadflow parameters with security analysis provider " + provider));
-        params.getLoadFlowParameters().addExtension((Class) extension.getClass(), extension);
-        return params;
-    }
-
-    public UUID getNetworkUuid() {
-        return networkUuid;
-    }
-
-    public String getVariantId() {
-        return variantId;
-    }
-
-    public List<String> getContingencyListNames() {
-        return contingencyListNames;
-    }
-
-    public String getReceiver() {
-        return receiver;
-    }
-
-    public String getProvider() {
-        return provider;
-    }
-
-    public SecurityAnalysisParameters getParameters() {
-        return parameters;
-    }
-
-    public UUID getReportUuid() {
-        return reportUuid;
-    }
-
-    public String getReporterId() {
-        return reporterId;
-    }
-
-    public String getReportType() {
-        return reportType;
+        securityAnalysisParameters.getLoadFlowParameters().addExtension((Class) extension.getClass(), extension);
+        return securityAnalysisParameters;
     }
 }
