@@ -597,7 +597,7 @@ public class SecurityAnalysisControllerTest {
 
         resultAsString = mvcResult.getResponse().getContentAsString();
         List<String> providers = mapper.readValue(resultAsString, new TypeReference<List<String>>() { });
-        assertEquals(List.of("DynaFlow", "OpenLoadFlow"), providers); // WHY Dynaflow ???
+        assertEquals(List.of("DynaFlow", "OpenLoadFlow"), providers);
     }
 
     @Test
