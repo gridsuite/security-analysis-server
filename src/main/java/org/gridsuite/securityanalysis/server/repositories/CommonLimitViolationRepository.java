@@ -6,7 +6,6 @@
  */
 package org.gridsuite.securityanalysis.server.repositories;
 
-import com.powsybl.loadflow.LoadFlowResult;
 import jakarta.persistence.criteria.*;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.springframework.data.jpa.domain.Specification;
@@ -29,9 +28,7 @@ public interface CommonLimitViolationRepository<T> {
      */
     default Specification<T> getParentsSpecifications(
         UUID resultUuid,
-        List<ResourceFilterDTO> filters,
-        boolean isSubjectLimitViolations
-    ) {
+        List<ResourceFilterDTO> filters) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             List<ResourceFilterDTO> childrenFilters = filters.stream().filter(not(this::isParentFilter)).toList();
@@ -48,25 +45,10 @@ public interface CommonLimitViolationRepository<T> {
                 // user filters on OneToMany collection - needed here to filter main entities that would have empty collection when filters are applied
                 childrenFilters
                     .forEach(filter -> addPredicate(criteriaBuilder, root.get("contingencyLimitViolations"), predicates, filter));
-            } else if (isSubjectLimitViolations) {
-                // filter parents with empty children even if there isn't any filter
-                predicates.add(criteriaBuilder.isNotEmpty(root.get("contingencyLimitViolations")));
             } else {
-                Predicate isNotEmptyPredicate = criteriaBuilder.isNotEmpty(root.get("contingencyLimitViolations"));
-                // Add condition for status "CONVERGED" and contingencyLimitViolations isNotEmpty
-                Predicate convergedCondition = criteriaBuilder.and(criteriaBuilder.equal(root.get("status"),
-                        LoadFlowResult.ComponentResult.Status.CONVERGED.toString()), isNotEmptyPredicate);
-                // Add condition for status "MAX_ITERATION_REACHED" or "FAILED" or "SOLVER_FAILED"
-                Predicate maxIterationOrFailedCondition = criteriaBuilder.or(criteriaBuilder.equal(root.get("status"),
-                        LoadFlowResult.ComponentResult.Status.MAX_ITERATION_REACHED.toString()),
-                        criteriaBuilder.equal(root.get("status"), LoadFlowResult.ComponentResult.Status.FAILED.toString()),
-                        criteriaBuilder.equal(root.get("status"), LoadFlowResult.ComponentResult.Status.SOLVER_FAILED.toString()));
-
-                // Combine the conditions
-                Predicate finalCondition = criteriaBuilder.or(convergedCondition, maxIterationOrFailedCondition);
-                predicates.add(finalCondition);
+                // filter parents with empty children even if there isn't any filter
+                addSpecificFilter(root, criteriaBuilder, predicates);
             }
-
             // since sql joins generates duplicate results, we need to use distinct here
             query.distinct(true);
 
@@ -103,6 +85,8 @@ public interface CommonLimitViolationRepository<T> {
     String columnToDotSeparatedField(ResourceFilterDTO.Column column);
 
     boolean isParentFilter(ResourceFilterDTO filter);
+
+    void addSpecificFilter(Root<T> root, CriteriaBuilder criteriaBuilder, List<Predicate> predicates);
 
     String getIdFieldName();
 }

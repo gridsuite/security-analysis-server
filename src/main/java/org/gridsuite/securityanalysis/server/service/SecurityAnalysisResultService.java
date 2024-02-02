@@ -265,7 +265,7 @@ public class SecurityAnalysisResultService {
     public Page<ContingencyEntity> findContingenciesPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
         assertNmKContingenciesSortAllowed(pageable.getSort());
-        Specification<ContingencyEntity> specification = contingencyRepository.getParentsSpecifications(resultUuid, resourceFilters, false);
+        Specification<ContingencyEntity> specification = contingencyRepository.getParentsSpecifications(resultUuid, resourceFilters);
         // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
         // cf. https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/
@@ -299,7 +299,7 @@ public class SecurityAnalysisResultService {
     public Page<SubjectLimitViolationEntity> findSubjectLimitViolationsPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
         assertNmKSubjectLimitViolationsSortAllowed(pageable.getSort());
-        Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters, true);
+        Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters);
         // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
         // cf. https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/
