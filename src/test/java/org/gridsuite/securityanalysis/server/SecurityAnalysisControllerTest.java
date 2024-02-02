@@ -391,6 +391,23 @@ public class SecurityAnalysisControllerTest {
         List<String> result = subjectLimitViolationResultDTOS.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList();
         List<String> expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(o -> o.getId().toString())).map(SubjectLimitViolationEntity::getSubjectId).toList();
         assertEquals(expectedResultInOrder, result);
+
+        //test with a sorted paged request
+        res = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("sort", "subjectId"))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn().getResponse().getContentAsString();
+
+        resultsPageNode0 = mapper.readTree(res);
+        faultResultsReader = mapper.readerFor(new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
+        subjectLimitViolationResultDTOS = faultResultsReader.readValue(resultsPageNode0.get("content"));
+        result = subjectLimitViolationResultDTOS.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList();
+        expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(SubjectLimitViolationEntity::getSubjectId).thenComparing(SubjectLimitViolationEntity::getId)).map(SubjectLimitViolationEntity::getSubjectId).toList();
+        assertEquals(expectedResultInOrder, result);
     }
 
     private String buildFilterUrl() {
