@@ -350,14 +350,16 @@ public class SecurityAnalysisControllerTest {
     public void testDeterministicResults() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
-
+        LoadFlowParametersInfos loadFlowParametersInfos = new LoadFlowParametersInfos(null, null);
         SQLStatementCountValidator.reset();
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME
                         + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow")
-                        .header(HEADER_USER_ID, "testUserId"))
+                        .header(HEADER_USER_ID, "testUserId")
+                        .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(loadFlowParametersInfos)))
                 .andExpectAll(
-                        status().isOk(),
-                        content().contentType(MediaType.APPLICATION_JSON)
+                        content().contentType(MediaType.APPLICATION_JSON),
+                        status().isOk()
                 ).andReturn();
 
         assertRequestsCount(2, 6, 3, 0);
