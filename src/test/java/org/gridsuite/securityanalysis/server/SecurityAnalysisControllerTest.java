@@ -9,8 +9,8 @@ package org.gridsuite.securityanalysis.server;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.reporter.Reporter;
-import com.powsybl.iidm.network.Branch;
 import com.powsybl.iidm.network.Network;
+import com.powsybl.iidm.network.TwoSides;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.loadflow.LoadFlowResult;
@@ -19,7 +19,6 @@ import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.*;
 import com.vladmihalcea.sql.SQLStatementCountValidator;
-
 import lombok.SneakyThrows;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
@@ -64,9 +63,7 @@ import java.util.zip.ZipInputStream;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.CANCEL_MESSAGE;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.FAIL_MESSAGE;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.HEADER_USER_ID;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.*;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
@@ -626,7 +623,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void geBranchSidesTest() throws Exception {
+    public void getBranchSidesTest() throws Exception {
         MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/branch-sides"))
                 .andExpectAll(
                         status().isOk(),
@@ -634,10 +631,10 @@ public class SecurityAnalysisControllerTest {
                 ).andReturn();
 
         String resultAsString = mvcResult.getResponse().getContentAsString();
-        List<Branch.Side> sides = mapper.readValue(resultAsString, new TypeReference<>() { });
+        List<TwoSides> sides = mapper.readValue(resultAsString, new TypeReference<>() { });
         assertEquals(2, sides.size());
-        assertTrue(sides.contains(Branch.Side.ONE));
-        assertTrue(sides.contains(Branch.Side.TWO));
+        assertTrue(sides.contains(TwoSides.ONE));
+        assertTrue(sides.contains(TwoSides.TWO));
     }
 
     @Test
