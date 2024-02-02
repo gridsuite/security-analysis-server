@@ -11,8 +11,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.powsybl.commons.reporter.Reporter;
-import com.powsybl.iidm.network.Branch;
 import com.powsybl.iidm.network.Network;
+import com.powsybl.iidm.network.TwoSides;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.loadflow.LoadFlowResult;
@@ -21,7 +21,6 @@ import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.*;
 import com.vladmihalcea.sql.SQLStatementCountValidator;
-
 import lombok.SneakyThrows;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
@@ -65,9 +64,7 @@ import java.util.zip.ZipInputStream;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.CANCEL_MESSAGE;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.FAIL_MESSAGE;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.HEADER_USER_ID;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.*;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
@@ -252,10 +249,13 @@ public class SecurityAnalysisControllerTest {
     public void runTest() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
+        LoadFlowParametersInfos loadFlowParametersInfos = new LoadFlowParametersInfos(null, null);
 
         // run with specific variant
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME_VARIANT + "&variantId=" + VARIANT_3_ID + "&provider=OpenLoadFlow")
-                .header(HEADER_USER_ID, "testUserId"))
+                .header(HEADER_USER_ID, "testUserId")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(loadFlowParametersInfos)))
                 .andExpectAll(
                     status().isOk(),
                     content().contentType(MediaType.APPLICATION_JSON)
@@ -267,7 +267,9 @@ public class SecurityAnalysisControllerTest {
 
         // run with implicit initial variant
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME)
-           .header(HEADER_USER_ID, "testUserId"))
+           .header(HEADER_USER_ID, "testUserId")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(loadFlowParametersInfos)))
            .andExpectAll(
                status().isOk(),
                content().contentType(MediaType.APPLICATION_JSON)
@@ -282,11 +284,14 @@ public class SecurityAnalysisControllerTest {
     public void runAndSaveTest() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
+        LoadFlowParametersInfos loadFlowParametersInfos = new LoadFlowParametersInfos(null, null);
 
         SQLStatementCountValidator.reset();
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME
             + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow")
-                .header(HEADER_USER_ID, "testUserId"))
+                .header(HEADER_USER_ID, "testUserId")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(loadFlowParametersInfos)))
                 .andExpectAll(
                     status().isOk(),
                     content().contentType(MediaType.APPLICATION_JSON)
@@ -424,9 +429,11 @@ public class SecurityAnalysisControllerTest {
     public void runWithTwoLists() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
-
+        LoadFlowParametersInfos loadFlowParametersInfos = new LoadFlowParametersInfos(null, null);
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME +
             "&contingencyListName=" + CONTINGENCY_LIST2_NAME + "&variantId=" + VARIANT_1_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(loadFlowParametersInfos))
                 .header(HEADER_USER_ID, "testUserId"))
                 .andExpectAll(
                     status().isOk(),
@@ -441,9 +448,12 @@ public class SecurityAnalysisControllerTest {
     public void deleteResultsTest() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
+        LoadFlowParametersInfos loadFlowParametersInfos = new LoadFlowParametersInfos(null, null);
 
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME)
-            .header(HEADER_USER_ID, "testUserId"))
+            .header(HEADER_USER_ID, "testUserId")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(loadFlowParametersInfos)))
             .andExpectAll(
                 status().isOk(),
                 content().contentType(MediaType.APPLICATION_JSON)
@@ -465,6 +475,7 @@ public class SecurityAnalysisControllerTest {
     public void testStatus() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
+        LoadFlowParametersInfos loadFlowParametersInfos = new LoadFlowParametersInfos(null, null);
 
         // getting status when result does not exist
         mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/status"))
@@ -488,7 +499,9 @@ public class SecurityAnalysisControllerTest {
         // running computation to create result
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME
             + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow")
-                .header(HEADER_USER_ID, "testUserId"))
+                .header(HEADER_USER_ID, "testUserId")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(loadFlowParametersInfos)))
                 .andExpectAll(
                     status().isOk(),
                     content().contentType(MediaType.APPLICATION_JSON)
@@ -531,9 +544,13 @@ public class SecurityAnalysisControllerTest {
             try {
                 MvcResult mvcResult;
                 String resultAsString;
+                LoadFlowParametersInfos loadFlowParametersInfos = new LoadFlowParametersInfos(null, null);
+
                 mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_STOP_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME
                         + "&receiver=me&variantId=" + VARIANT_TO_STOP_ID)
-                    .header(HEADER_USER_ID, "testUserId"))
+                    .header(HEADER_USER_ID, "testUserId")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(loadFlowParametersInfos)))
                     .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON)
@@ -564,13 +581,16 @@ public class SecurityAnalysisControllerTest {
     public void runTestWithError() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
+        LoadFlowParametersInfos loadFlowParametersInfos = new LoadFlowParametersInfos(null, null);
 
         given(actionsService.getContingencyList(CONTINGENCY_LIST_ERROR_NAME, NETWORK_UUID, VARIANT_1_ID))
             .willThrow(new RuntimeException(ERROR_MESSAGE));
 
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_ERROR_NAME
             + "&receiver=me&variantId=" + VARIANT_1_ID)
-                .header(HEADER_USER_ID, "testUserId"))
+                .header(HEADER_USER_ID, "testUserId")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(loadFlowParametersInfos)))
                 .andExpectAll(
                     status().isOk(),
                     content().contentType(MediaType.APPLICATION_JSON)
@@ -594,9 +614,12 @@ public class SecurityAnalysisControllerTest {
     public void runWithReportTest() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
+        LoadFlowParametersInfos loadFlowParametersInfos = new LoadFlowParametersInfos(null, null);
 
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME + "&provider=testProvider" + "&reportUuid=" + REPORT_UUID + "&reporterId=" + UUID.randomUUID()).contentType(MediaType.APPLICATION_JSON)
-                .header(HEADER_USER_ID, "testUserId"))
+                .header(HEADER_USER_ID, "testUserId")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(loadFlowParametersInfos)))
                 .andExpectAll(
                     status().isOk(),
                     content().contentType(MediaType.APPLICATION_JSON))
@@ -620,7 +643,7 @@ public class SecurityAnalysisControllerTest {
 
         resultAsString = mvcResult.getResponse().getContentAsString();
         List<String> providers = mapper.readValue(resultAsString, new TypeReference<List<String>>() { });
-        assertEquals(List.of("DynaFlow", "OpenLoadFlow", "Hades2"), providers);
+        assertEquals(List.of("DynaFlow", "OpenLoadFlow"), providers);
     }
 
     @Test
@@ -649,7 +672,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void geBranchSidesTest() throws Exception {
+    public void getBranchSidesTest() throws Exception {
         MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/branch-sides"))
                 .andExpectAll(
                         status().isOk(),
@@ -657,10 +680,10 @@ public class SecurityAnalysisControllerTest {
                 ).andReturn();
 
         String resultAsString = mvcResult.getResponse().getContentAsString();
-        List<Branch.Side> sides = mapper.readValue(resultAsString, new TypeReference<>() { });
+        List<TwoSides> sides = mapper.readValue(resultAsString, new TypeReference<>() { });
         assertEquals(2, sides.size());
-        assertTrue(sides.contains(Branch.Side.ONE));
-        assertTrue(sides.contains(Branch.Side.TWO));
+        assertTrue(sides.contains(TwoSides.ONE));
+        assertTrue(sides.contains(TwoSides.TWO));
     }
 
     @Test
@@ -678,10 +701,13 @@ public class SecurityAnalysisControllerTest {
 
     @Test
     public void getZippedCsvResults() throws Exception {
+        LoadFlowParametersInfos loadFlowParametersInfos = new LoadFlowParametersInfos(null, null);
         // running computation to create result
         MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME
                 + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow")
-                .header(HEADER_USER_ID, "testUserId"))
+                .header(HEADER_USER_ID, "testUserId")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(loadFlowParametersInfos)))
             .andExpectAll(
                 status().isOk(),
                 content().contentType(MediaType.APPLICATION_JSON)
