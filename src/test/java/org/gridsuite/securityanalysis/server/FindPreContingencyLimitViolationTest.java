@@ -6,7 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import com.powsybl.iidm.network.Branch;
+import com.powsybl.iidm.network.ThreeSides;
 import org.gridsuite.securityanalysis.server.dto.PreContingencyLimitViolationResultDTO;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
@@ -107,7 +107,7 @@ class FindPreContingencyLimitViolationTest {
     private Stream<Arguments> provideEachColumnFilter() {
         return Stream.of(
                 Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "ONE", ResourceFilterDTO.Column.SIDE)), Sort.by(Sort.Direction.ASC, "subjectId"),
-                        getResultPreContingencyWithNestedFilter(c -> c.getLimitViolation().getSide() != null && c.getLimitViolation().getSide().equals(Branch.Side.ONE)).stream().sorted(Comparator.comparing(PreContingencyLimitViolationResultDTO::getSubjectId)).toList(), 2),
+                        getResultPreContingencyWithNestedFilter(c -> c.getLimitViolation().getSide() != null && c.getLimitViolation().getSide().equals(ThreeSides.ONE)).stream().sorted(Comparator.comparing(PreContingencyLimitViolationResultDTO::getSubjectId)).toList(), 2),
                 Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "l5_name", ResourceFilterDTO.Column.LIMIT_NAME)), Sort.by(Sort.Direction.ASC, "subjectId"),
                         getResultConstraintsWithNestedFilter(c -> c.getLimitViolation().getLimitName().equals("l5_name")).stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 2)
         );

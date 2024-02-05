@@ -40,6 +40,6 @@ powsybl-ws:
     customQuery: ${powsybl-ws.database.customQueryBegin}reWriteBatchedInserts=true
     name: sa
 
-# default values for loadflow providers "Hades2" or "OpenLoadFlow"
+# default values for security-analysis providers "DynaFlow" or "OpenLoadFlow"
 security-analysis:
   default-provider: OpenLoadFlow

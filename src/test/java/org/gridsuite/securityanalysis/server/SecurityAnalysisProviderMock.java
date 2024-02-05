@@ -6,6 +6,22 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.powsybl.commons.reporter.Reporter;
+import com.powsybl.computation.ComputationManager;
+import com.powsybl.contingency.*;
+import com.powsybl.iidm.network.Network;
+import com.powsybl.iidm.network.TwoSides;
+import com.powsybl.loadflow.LoadFlowResult;
+import com.powsybl.security.*;
+import com.powsybl.security.action.Action;
+import com.powsybl.security.interceptors.SecurityAnalysisInterceptor;
+import com.powsybl.security.monitor.StateMonitor;
+import com.powsybl.security.results.PostContingencyResult;
+import com.powsybl.security.strategy.OperatorStrategy;
+import org.gridsuite.securityanalysis.server.dto.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -14,34 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.powsybl.commons.reporter.Reporter;
-import com.powsybl.loadflow.LoadFlowResult;
-import com.powsybl.security.*;
-import com.powsybl.security.action.Action;
-import com.powsybl.security.strategy.OperatorStrategy;
-import org.gridsuite.securityanalysis.server.dto.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.powsybl.computation.ComputationManager;
-import com.powsybl.contingency.BranchContingency;
-import com.powsybl.contingency.BusbarSectionContingency;
-import com.powsybl.contingency.ContingenciesProvider;
-import com.powsybl.contingency.Contingency;
-import com.powsybl.contingency.DanglingLineContingency;
-import com.powsybl.contingency.GeneratorContingency;
-import com.powsybl.contingency.HvdcLineContingency;
-import com.powsybl.contingency.LineContingency;
-import com.powsybl.contingency.ShuntCompensatorContingency;
-import com.powsybl.contingency.StaticVarCompensatorContingency;
-import com.powsybl.contingency.ThreeWindingsTransformerContingency;
-import com.powsybl.contingency.TwoWindingsTransformerContingency;
-import com.powsybl.iidm.network.Branch;
-import com.powsybl.iidm.network.Network;
-import com.powsybl.security.interceptors.SecurityAnalysisInterceptor;
-import com.powsybl.security.monitor.StateMonitor;
-import com.powsybl.security.results.PostContingencyResult;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -81,11 +69,11 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     );
 
     //MAX VALUE for acceptable duration here is important to check this value is actually set to null when exporting it
-    static final LimitViolation LIMIT_VIOLATION_1 = new LimitViolation("l3", LimitViolationType.CURRENT, "l3_name", Integer.MAX_VALUE, 10, 1, 11, Branch.Side.ONE);
-    static final LimitViolation LIMIT_VIOLATION_2 = new LimitViolation("vl1", LimitViolationType.HIGH_VOLTAGE, "vl1_name", 0, 400, 1, 410, null);
-    static final LimitViolation LIMIT_VIOLATION_3 = new LimitViolation("l6", LimitViolationType.CURRENT, "l6_name", 20 * 60, 10, 1, 11, Branch.Side.ONE);
-    static final LimitViolation LIMIT_VIOLATION_4 = new LimitViolation("vl7", LimitViolationType.HIGH_VOLTAGE, "vl7_name", 0, 400, 2, 410, null);
-    static final LimitViolation LIMIT_VIOLATION_5 = new LimitViolation("vl5", LimitViolationType.LOW_VOLTAGE, "vl5_name", 0, 350, 3, 416, Branch.Side.TWO);
+    static final LimitViolation LIMIT_VIOLATION_1 = new LimitViolation("l3", LimitViolationType.CURRENT, "l3_name", Integer.MAX_VALUE, 10, 1, 11, TwoSides.ONE);
+    static final LimitViolation LIMIT_VIOLATION_2 = new LimitViolation("vl1", LimitViolationType.HIGH_VOLTAGE, "vl1_name", 0, 400, 1, 410);
+    static final LimitViolation LIMIT_VIOLATION_3 = new LimitViolation("l6", LimitViolationType.CURRENT, "l6_name", 20 * 60, 10, 1, 11, TwoSides.ONE);
+    static final LimitViolation LIMIT_VIOLATION_4 = new LimitViolation("vl7", LimitViolationType.HIGH_VOLTAGE, "vl7_name", 0, 400, 2, 410);
+    static final LimitViolation LIMIT_VIOLATION_5 = new LimitViolation("vl5", LimitViolationType.LOW_VOLTAGE, "vl5_name", 0, 350, 3, 416, TwoSides.TWO);
     static final List<LimitViolation> RESULT_LIMIT_VIOLATIONS = List.of(LIMIT_VIOLATION_1, LIMIT_VIOLATION_2);
     static final List<LimitViolation> FAILED_LIMIT_VIOLATIONS = List.of(LIMIT_VIOLATION_3, LIMIT_VIOLATION_4);
     public static final SecurityAnalysisResult RESULT = new SecurityAnalysisResult(new LimitViolationsResult(List.of(LIMIT_VIOLATION_1, LIMIT_VIOLATION_2, LIMIT_VIOLATION_3)), LoadFlowResult.ComponentResult.Status.CONVERGED,
