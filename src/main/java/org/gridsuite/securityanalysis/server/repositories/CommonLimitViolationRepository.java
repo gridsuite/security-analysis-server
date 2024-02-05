@@ -28,8 +28,7 @@ public interface CommonLimitViolationRepository<T> {
      */
     default Specification<T> getParentsSpecifications(
         UUID resultUuid,
-        List<ResourceFilterDTO> filters
-    ) {
+        List<ResourceFilterDTO> filters) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
             List<ResourceFilterDTO> childrenFilters = filters.stream().filter(not(this::isParentFilter)).toList();
@@ -48,9 +47,8 @@ public interface CommonLimitViolationRepository<T> {
                     .forEach(filter -> addPredicate(criteriaBuilder, root.get("contingencyLimitViolations"), predicates, filter));
             } else {
                 // filter parents with empty children even if there isn't any filter
-                predicates.add(criteriaBuilder.isNotEmpty(root.get("contingencyLimitViolations")));
+                addSpecificFilter(root, criteriaBuilder, predicates);
             }
-
             // since sql joins generates duplicate results, we need to use distinct here
             query.distinct(true);
 
@@ -87,6 +85,8 @@ public interface CommonLimitViolationRepository<T> {
     String columnToDotSeparatedField(ResourceFilterDTO.Column column);
 
     boolean isParentFilter(ResourceFilterDTO filter);
+
+    void addSpecificFilter(Root<T> root, CriteriaBuilder criteriaBuilder, List<Predicate> predicates);
 
     String getIdFieldName();
 }
