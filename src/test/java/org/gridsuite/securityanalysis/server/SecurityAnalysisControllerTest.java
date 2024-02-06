@@ -7,7 +7,9 @@
 package org.gridsuite.securityanalysis.server;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.TwoSides;
@@ -21,6 +23,8 @@ import com.powsybl.security.*;
 import com.vladmihalcea.sql.SQLStatementCountValidator;
 import lombok.SneakyThrows;
 import org.gridsuite.securityanalysis.server.dto.*;
+import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationRepository;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.ReportService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
@@ -52,10 +56,7 @@ import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -119,6 +120,9 @@ public class SecurityAnalysisControllerTest {
 
     @Autowired
     private ObjectMapper mapper;
+
+    @Autowired
+    SubjectLimitViolationRepository subjectLimitViolationRepository;
 
     private final Map<String, String> enumTranslationsEn = Map.of(
         "ONE", "Side 1",
@@ -340,6 +344,70 @@ public class SecurityAnalysisControllerTest {
                 .andExpect(status().isOk());
 
         assertResultNotFound(RESULT_UUID);
+    }
+
+    @Test
+    public void testDeterministicResults() throws Exception {
+        MvcResult mvcResult;
+        String resultAsString;
+        LoadFlowParametersInfos loadFlowParametersInfos = new LoadFlowParametersInfos(null, null);
+        SQLStatementCountValidator.reset();
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME
+                        + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow")
+                        .header(HEADER_USER_ID, "testUserId")
+                        .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(loadFlowParametersInfos)))
+                .andExpectAll(
+                        content().contentType(MediaType.APPLICATION_JSON),
+                        status().isOk()
+                ).andReturn();
+
+        assertRequestsCount(2, 6, 3, 0);
+
+        resultAsString = mvcResult.getResponse().getContentAsString();
+        UUID resultUuid = mapper.readValue(resultAsString, UUID.class);
+        assertEquals(RESULT_UUID, resultUuid);
+
+        Message<byte[]> resultMessage = output.receive(TIMEOUT, "sa.result");
+        assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
+        assertEquals("me", resultMessage.getHeaders().get("receiver"));
+
+        mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/n-result"))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON));
+
+        assertFiltredResultN();
+
+        var res = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged"))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode resultsPageNode0 = mapper.readTree(res);
+        ObjectReader faultResultsReader = mapper.readerFor(new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
+        List<SubjectLimitViolationResultDTO> subjectLimitViolationResultDTOS = faultResultsReader.readValue(resultsPageNode0.get("content"));
+        List<String> result = subjectLimitViolationResultDTOS.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList();
+        List<String> expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(o -> o.getId().toString())).map(SubjectLimitViolationEntity::getSubjectId).toList();
+        assertEquals(expectedResultInOrder, result);
+
+        //test with a sorted paged request
+        res = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("sort", "subjectId"))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn().getResponse().getContentAsString();
+
+        resultsPageNode0 = mapper.readTree(res);
+        faultResultsReader = mapper.readerFor(new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
+        subjectLimitViolationResultDTOS = faultResultsReader.readValue(resultsPageNode0.get("content"));
+        result = subjectLimitViolationResultDTOS.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList();
+        expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(SubjectLimitViolationEntity::getSubjectId).thenComparing(SubjectLimitViolationEntity::getId)).map(SubjectLimitViolationEntity::getSubjectId).toList();
+        assertEquals(expectedResultInOrder, result);
     }
 
     private String buildFilterUrl() {
