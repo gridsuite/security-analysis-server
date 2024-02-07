@@ -6,13 +6,14 @@ import com.univocity.parsers.csv.CsvWriterSettings;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public final class CsvExportUtils {
-    public static final char CSV_DELIMITER = ';';
+    public static final char CSV_DELIMITER = ',';
     public static final char CSV_QUOTE_ESCAPE = '"';
 
     public static final String CSV_RESULT_FILE_NAME = "result.csv";
@@ -26,6 +27,8 @@ public final class CsvExportUtils {
             ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
             zipOutputStream.putNextEntry(new ZipEntry(CSV_RESULT_FILE_NAME));
 
+            writeUTF8Bom(zipOutputStream);
+
             CsvWriterSettings settings = new CsvWriterSettings();
             setFormat(settings.getFormat());
             CsvWriter csvWriter = new CsvWriter(zipOutputStream, settings);
@@ -37,6 +40,12 @@ public final class CsvExportUtils {
         } catch (IOException e) {
             throw new SecurityAnalysisException(SecurityAnalysisException.Type.FILE_EXPORT_ERROR);
         }
+    }
+
+    private static void writeUTF8Bom (OutputStream outputStream) throws IOException {
+        outputStream.write(0xef); // emits 0xef
+        outputStream.write(0xbb); // emits 0xbb
+        outputStream.write(0xbf); // emits 0xbf
     }
 
     private static void setFormat(CsvFormat format) {
