@@ -42,10 +42,10 @@ public final class CsvExportUtils {
         }
     }
 
-    private static void writeUTF8Bom (OutputStream outputStream) throws IOException {
-        outputStream.write(0xef); // emits 0xef
-        outputStream.write(0xbb); // emits 0xbb
-        outputStream.write(0xbf); // emits 0xbf
+    private static void writeUTF8Bom(OutputStream outputStream) throws IOException {
+        outputStream.write(0xef);
+        outputStream.write(0xbb);
+        outputStream.write(0xbf);
     }
 
     private static void setFormat(CsvFormat format) {
