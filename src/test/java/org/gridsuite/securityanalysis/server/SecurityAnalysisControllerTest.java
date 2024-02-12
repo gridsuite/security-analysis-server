@@ -22,6 +22,7 @@ import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.*;
 import com.vladmihalcea.sql.SQLStatementCountValidator;
 import lombok.SneakyThrows;
+import org.assertj.core.api.Assertions;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationRepository;
@@ -76,6 +77,7 @@ import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -838,7 +840,8 @@ public class SecurityAnalysisControllerTest {
             InputStream csvStream = getClass().getResourceAsStream(resourcePath);
             StreamUtils.copy(csvStream, expectedContentOutputStream);
 
-            assertEquals(expectedContentOutputStream.toString(), contentOutputStream.toString());
+            // using bytearray comparison to check BOM presence in CSV files
+            Assertions.assertThat(expectedContentOutputStream.toByteArray()).isEqualTo(contentOutputStream.toByteArray());
             zin.closeEntry();
         }
     }
