@@ -32,7 +32,7 @@ public final class CsvExportUtils {
 
             CsvWriterSettings settings = new CsvWriterSettings();
             setFormat(settings.getFormat());
-            CsvWriter csvWriter = new CsvWriter(zipOutputStream, StandardCharsets.UTF_8 ,settings);
+            CsvWriter csvWriter = new CsvWriter(zipOutputStream, StandardCharsets.UTF_8, settings);
             csvWriter.writeRow(headers);
             csvWriter.writeRows(csvRows);
 
