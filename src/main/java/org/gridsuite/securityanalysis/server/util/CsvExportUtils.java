@@ -7,6 +7,7 @@ import com.univocity.parsers.csv.CsvWriterSettings;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
@@ -31,7 +32,7 @@ public final class CsvExportUtils {
 
             CsvWriterSettings settings = new CsvWriterSettings();
             setFormat(settings.getFormat());
-            CsvWriter csvWriter = new CsvWriter(zipOutputStream, settings);
+            CsvWriter csvWriter = new CsvWriter(zipOutputStream, StandardCharsets.UTF_8 ,settings);
             csvWriter.writeRow(headers);
             csvWriter.writeRows(csvRows);
 
