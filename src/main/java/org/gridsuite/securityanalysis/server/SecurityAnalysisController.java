@@ -75,10 +75,9 @@ public class SecurityAnalysisController {
                                                       @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
                                                       @Parameter(description = "The type name for the report") @RequestParam(name = "reportType", required = false, defaultValue = "SecurityAnalysis") String reportType,
                                                       @Parameter(description = "parametersUuid") @RequestParam(name = "parametersUuid", required = false) UUID parametersUuid,
-                                                      @RequestBody LoadFlowParametersInfos loadFlowParametersInfos,
+                                                      @Parameter(description = "loadFlow parameters uuid") @RequestParam(name = "loadFlowParametersUuid") UUID loadFlowParametersUuid,
                                                       @RequestHeader(HEADER_USER_ID) String userId) {
-        String providerToUse = provider != null ? provider : securityAnalysisService.getDefaultProvider();
-        SecurityAnalysisResult result = workerService.run(securityAnalysisParametersService.createRunContext(networkUuid, variantId, new RunContextParametersInfos(contigencyListNames, parametersUuid, loadFlowParametersInfos), null, providerToUse, new ReportInfos(reportUuid, reporterId, reportType), userId));
+        SecurityAnalysisResult result = workerService.run(securityAnalysisParametersService.createRunContext(networkUuid, variantId, new RunContextParametersInfos(contigencyListNames, parametersUuid, loadFlowParametersUuid), null, new ReportInfos(reportUuid, reporterId, reportType), userId));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
     }
 
@@ -97,16 +96,14 @@ public class SecurityAnalysisController {
                                            @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
                                            @Parameter(description = "The type name for the report") @RequestParam(name = "reportType", required = false, defaultValue = "SecurityAnalysis") String reportType,
                                            @Parameter(description = "parametersUuid") @RequestParam(name = "parametersUuid", required = false) UUID parametersUuid,
-                                           @RequestBody LoadFlowParametersInfos loadFlowParametersInfos,
+                                           @Parameter(description = "loadFlow parameters uuid") @RequestParam(name = "loadFlowParametersUuid") UUID loadFlowParametersUuid,
                                            @RequestHeader(HEADER_USER_ID) String userId) {
-        String providerToUse = provider != null ? provider : securityAnalysisService.getDefaultProvider();
         UUID resultUuid = securityAnalysisService.runAndSaveResult(
                 securityAnalysisParametersService.createRunContext(
                         networkUuid,
                         variantId,
-                        new RunContextParametersInfos(contigencyListNames, parametersUuid, loadFlowParametersInfos),
+                        new RunContextParametersInfos(contigencyListNames, parametersUuid, loadFlowParametersUuid),
                         receiver,
-                        providerToUse,
                         new ReportInfos(reportUuid, reporterId, reportType),
                         userId
                 )

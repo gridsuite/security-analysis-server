@@ -51,7 +51,7 @@ public class SecurityAnalysisParametersControllerTest {
     @Autowired
     private SecurityAnalysisParametersRepository securityAnalysisParametersRepository;
 
-    private final SecurityAnalysisParametersValues defaultSecurityAnalysisParametersValues = getDefaultSecurityAnalysisParametersValues();
+    private final SecurityAnalysisParametersValues defaultSecurityAnalysisParametersValues = getDefaultSecurityAnalysisParametersValues("defaultProvider");
 
     @Test
     public void securityAnalysisParametersCreateAndGetTest() throws Exception {

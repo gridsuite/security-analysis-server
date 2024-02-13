@@ -24,6 +24,6 @@ public class RunContextParametersInfos {
 
     private UUID securityAnalysisParametersUuid;
 
-    private LoadFlowParametersInfos loadFlowParametersInfos;
+    private UUID loadFlowParametersUuid;
 }
 

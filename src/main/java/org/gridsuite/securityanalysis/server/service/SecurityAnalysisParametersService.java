@@ -7,12 +7,14 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.security.SecurityAnalysisParameters;
+import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersValues;
 import org.gridsuite.securityanalysis.server.dto.ReportInfos;
 import org.gridsuite.securityanalysis.server.dto.RunContextParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisParametersRepository;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,31 +32,46 @@ public class SecurityAnalysisParametersService {
 
     private final SecurityAnalysisParametersRepository securityAnalysisParametersRepository;
 
+    private final LoadFlowService loadFlowService;
+
+    private final String defaultProvider;
+
     private static final double DEFAULT_FLOW_PROPORTIONAL_THRESHOLD = 0.1; // meaning 10.0 %
     private static final double DEFAULT_LOW_VOLTAGE_PROPORTIONAL_THRESHOLD = 0.01; // meaning 1.0 %
     private static final double DEFAULT_HIGH_VOLTAGE_PROPORTIONAL_THRESHOLD = 0.01; // meaning 1.0 %
     private static final double DEFAULT_LOW_VOLTAGE_ABSOLUTE_THRESHOLD = 1.0; // 1.0 kV
     private static final double DEFAULT_HIGH_VOLTAGE_ABSOLUTE_THRESHOLD = 1.0; // 1.0 kV
 
-    public SecurityAnalysisParametersService(SecurityAnalysisParametersRepository securityAnalysisParametersRepository) {
+    public SecurityAnalysisParametersService(SecurityAnalysisParametersRepository securityAnalysisParametersRepository, LoadFlowService loadFlowService,
+                                             @Value("${security-analysis.default-provider}") String defaultProvider) {
         this.securityAnalysisParametersRepository = Objects.requireNonNull(securityAnalysisParametersRepository);
+        this.loadFlowService = loadFlowService;
+        this.defaultProvider = defaultProvider;
     }
 
     public SecurityAnalysisRunContext createRunContext(UUID networkUuid, String variantId, RunContextParametersInfos runContextParametersInfos,
-                                                       String receiver, String provider, ReportInfos reportInfos, String userId) {
+                                                       String receiver, ReportInfos reportInfos, String userId) {
         Optional<SecurityAnalysisParametersEntity> securityAnalysisParametersEntity = Optional.empty();
         if (runContextParametersInfos.getSecurityAnalysisParametersUuid() != null) {
             securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(runContextParametersInfos.getSecurityAnalysisParametersUuid());
         }
+
+        String provider = securityAnalysisParametersEntity.map(SecurityAnalysisParametersEntity::getProvider).orElse(null);
+        String providerToUse = provider != null ? provider : defaultProvider;
+        LoadFlowParametersValues loadFlowParametersValues = null;
+        if (runContextParametersInfos.getLoadFlowParametersUuid() != null) {
+            loadFlowParametersValues = loadFlowService.getLoadFlowParameters(runContextParametersInfos.getLoadFlowParametersUuid(), providerToUse);
+        }
+
         SecurityAnalysisParameters parameters = toSecurityAnalysisParameters(securityAnalysisParametersEntity.orElse(null));
         return new SecurityAnalysisRunContext(
                 networkUuid,
                 variantId,
                 runContextParametersInfos.getContingencyListNames(),
                 receiver,
-                provider,
+                providerToUse,
                 parameters,
-                runContextParametersInfos.getLoadFlowParametersInfos(),
+                loadFlowParametersValues,
                 new ReportInfos(reportInfos.getReportUuid(), reportInfos.getReporterId(), reportInfos.getReportType()),
                 userId);
 
@@ -81,8 +98,9 @@ public class SecurityAnalysisParametersService {
         return increasedViolationsParameters;
     }
 
-    public static SecurityAnalysisParametersValues getDefaultSecurityAnalysisParametersValues() {
+    public static SecurityAnalysisParametersValues getDefaultSecurityAnalysisParametersValues(String provider) {
         return SecurityAnalysisParametersValues.builder()
+                .provider(provider)
                 .lowVoltageAbsoluteThreshold(DEFAULT_LOW_VOLTAGE_ABSOLUTE_THRESHOLD)
                 .lowVoltageProportionalThreshold(DEFAULT_LOW_VOLTAGE_PROPORTIONAL_THRESHOLD)
                 .highVoltageAbsoluteThreshold(DEFAULT_HIGH_VOLTAGE_ABSOLUTE_THRESHOLD)
@@ -100,7 +118,7 @@ public class SecurityAnalysisParametersService {
     }
 
     public UUID createDefaultParameters() {
-        return securityAnalysisParametersRepository.save(getDefaultSecurityAnalysisParametersValues().toEntity()).getId();
+        return securityAnalysisParametersRepository.save(getDefaultSecurityAnalysisParametersValues(defaultProvider).toEntity()).getId();
     }
 
     public Optional<UUID> duplicateParameters(UUID sourceParametersUuid) {
@@ -111,9 +129,9 @@ public class SecurityAnalysisParametersService {
     @Transactional
     public UUID updateParameters(UUID parametersUuid, SecurityAnalysisParametersValues parametersInfos) {
         SecurityAnalysisParametersEntity securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(parametersUuid).orElseThrow(() -> new SecurityAnalysisException(PARAMETERS_NOT_FOUND));
-        //if the parameters is null it means it's a reset to defaultValues
+        //if the parameters is null it means it's a reset to defaultValues but we need to keep the provider because it's updated separately
         if (parametersInfos == null) {
-            securityAnalysisParametersEntity.update(getDefaultSecurityAnalysisParametersValues());
+            securityAnalysisParametersEntity.update(getDefaultSecurityAnalysisParametersValues(securityAnalysisParametersEntity.getProvider()));
         } else {
             securityAnalysisParametersEntity.update(parametersInfos);
         }
@@ -122,5 +140,12 @@ public class SecurityAnalysisParametersService {
 
     public void deleteParameters(UUID parametersUuid) {
         securityAnalysisParametersRepository.deleteById(parametersUuid);
+    }
+
+    @Transactional
+    public void updateProvider(UUID parametersUuid, String provider) {
+        securityAnalysisParametersRepository.findById(parametersUuid)
+            .orElseThrow()
+            .updateProvider(provider != null ? provider : defaultProvider);
     }
 }
