@@ -10,6 +10,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.TwoSides;
@@ -45,7 +48,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.Message;
@@ -75,13 +77,11 @@ import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.assertj.core.api.Assertions.*;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -109,6 +109,8 @@ public class SecurityAnalysisControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
+    private WireMockServer wireMockServer;
+
     @MockBean
     private NetworkStoreService networkStoreService;
 
@@ -118,7 +120,7 @@ public class SecurityAnalysisControllerTest {
     @MockBean
     private ReportService reportService;
 
-    @SpyBean
+    @Autowired
     private LoadFlowService loadFlowService;
 
     @MockBean
@@ -153,6 +155,9 @@ public class SecurityAnalysisControllerTest {
 
     @Before
     public void setUp() throws Exception {
+        wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
+        wireMockServer.start();
+
         MockitoAnnotations.initMocks(this);
 
         // network store service mocking
@@ -203,11 +208,13 @@ public class SecurityAnalysisControllerTest {
         workerService.setSecurityAnalysisFactorySupplier(provider -> runner);
 
         // mock loadFlow parameters
+        loadFlowService.setLoadFlowServiceBaseUri(wireMockServer.baseUrl());
         LoadFlowParametersValues loadFlowParametersValues = LoadFlowParametersValues.builder()
             .commonParameters(LoadFlowParameters.load())
-            .specificParameters(Map.of())
+            .specificParameters(Map.of("reactiveRangeCheckMode", "TARGET_P", "plausibleActivePowerLimit", "5000.0"))
             .build();
-        doReturn(loadFlowParametersValues).when(loadFlowService).getLoadFlowParameters(any(), any());
+        wireMockServer.stubFor(WireMock.get(WireMock.urlMatching("/v1/parameters/.*/values\\?provider=.*"))
+            .willReturn(WireMock.ok().withHeader("Content-Type", "application/json").withBody(mapper.writeValueAsString(loadFlowParametersValues))));
 
         // purge messages
         while (output.receive(1000, "sa.result") != null) {
