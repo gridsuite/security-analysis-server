@@ -6,9 +6,12 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import com.powsybl.iidm.network.Branch;
+import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.security.LimitViolationType;
-import org.gridsuite.securityanalysis.server.dto.*;
+import org.gridsuite.securityanalysis.server.dto.ContingencyLimitViolationDTO;
+import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
+import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationResultDTO;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
@@ -36,7 +39,6 @@ import static com.vladmihalcea.sql.SQLStatementCountValidator.assertSelectCount;
 import static com.vladmihalcea.sql.SQLStatementCountValidator.reset;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.getResultConstraintsWithNestedFilter;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -139,7 +141,7 @@ class FindSubjectLimitViolationsTest {
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "CO", ResourceFilterDTO.Column.STATUS)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
                 getResultConstraintsWithNestedFilter(c -> c.getContingency().getStatus().contains("CO")).stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 4),
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "ONE", ResourceFilterDTO.Column.SIDE)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
-                getResultConstraintsWithNestedFilter(c -> c.getLimitViolation().getSide() != null && c.getLimitViolation().getSide().equals(Branch.Side.ONE)).stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 4),
+                getResultConstraintsWithNestedFilter(c -> c.getLimitViolation().getSide() != null && c.getLimitViolation().getSide().equals(ThreeSides.ONE)).stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 4),
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "l6_name", ResourceFilterDTO.Column.LIMIT_NAME)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
                 getResultConstraintsWithNestedFilter(c -> c.getLimitViolation().getLimitName().equals("l6_name")).stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 4)
         );

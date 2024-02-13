@@ -1,6 +1,6 @@
 package org.gridsuite.securityanalysis.server.dto;
 
-import com.powsybl.iidm.network.Branch;
+import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.security.LimitViolationType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -20,7 +20,7 @@ import java.util.Map;
 public class LimitViolationDTO {
     private LimitViolationType limitType;
     private String limitName;
-    private Branch.Side side;
+    private ThreeSides side;
     private int acceptableDuration;
     private double limit;
     private double limitReduction;

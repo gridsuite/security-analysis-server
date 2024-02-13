@@ -32,7 +32,7 @@ public class SecurityAnalysisRunnerSupplierTest {
     @Test
     public void test() {
         assertEquals("OpenLoadFlow", securityAnalysisRunnerSupplier.getRunner("OpenLoadFlow").getName());
-        assertEquals("Hades2", securityAnalysisRunnerSupplier.getRunner("Hades2").getName());
+        assertEquals("DynaFlow", securityAnalysisRunnerSupplier.getRunner("DynaFlow").getName());
         assertEquals(defaultSecurityAnalysisProvider, securityAnalysisRunnerSupplier.getRunner(null).getName());
         PowsyblException e = assertThrows(PowsyblException.class, () -> securityAnalysisRunnerSupplier.getRunner("XXX"));
         assertEquals("SecurityAnalysisProvider 'XXX' not found", e.getMessage());

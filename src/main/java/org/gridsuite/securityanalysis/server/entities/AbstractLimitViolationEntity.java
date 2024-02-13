@@ -6,11 +6,13 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
-import com.powsybl.iidm.network.Branch;
+import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.security.LimitViolation;
 import com.powsybl.security.LimitViolationType;
 import jakarta.persistence.*;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
 import java.util.UUID;
@@ -49,7 +51,7 @@ public abstract class AbstractLimitViolationEntity {
     private double value;
 
     @Enumerated(EnumType.STRING)
-    private Branch.Side side;
+    private ThreeSides side;
 
     @Column(name = "loading")
     private Double loading;

@@ -6,6 +6,9 @@
  */
 package org.gridsuite.securityanalysis.server.repositories;
 
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
@@ -48,6 +51,11 @@ public interface SubjectLimitViolationRepository extends CommonLimitViolationRep
     @Override
     default boolean isParentFilter(ResourceFilterDTO filter) {
         return filter.column().equals(ResourceFilterDTO.Column.SUBJECT_ID);
+    }
+
+    @Override
+    default void addSpecificFilter(Root<SubjectLimitViolationEntity> root, CriteriaBuilder criteriaBuilder, List<Predicate> predicates) {
+        predicates.add(criteriaBuilder.isNotEmpty(root.get("contingencyLimitViolations")));
     }
 
     interface EntityId {

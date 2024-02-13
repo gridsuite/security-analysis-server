@@ -7,6 +7,10 @@
 
 package org.gridsuite.securityanalysis.server.repositories;
 
+import com.powsybl.loadflow.LoadFlowResult;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
@@ -64,6 +68,14 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
     @Override
     default boolean isParentFilter(ResourceFilterDTO filter) {
         return List.of(ResourceFilterDTO.Column.CONTINGENCY_ID, ResourceFilterDTO.Column.STATUS).contains(filter.column());
+    }
+
+    @Override
+    default void addSpecificFilter(Root<ContingencyEntity> root, CriteriaBuilder criteriaBuilder, List<Predicate> predicates) {
+        predicates.add(criteriaBuilder.or(
+                criteriaBuilder.isNotEmpty(root.get("contingencyLimitViolations")),
+                criteriaBuilder.notEqual(root.get("status"), LoadFlowResult.ComponentResult.Status.CONVERGED.toString())
+        ));
     }
 
     interface EntityUuid {

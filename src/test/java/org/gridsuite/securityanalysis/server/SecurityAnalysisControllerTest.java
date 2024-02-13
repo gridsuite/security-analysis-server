@@ -6,61 +6,27 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.CONTINGENCY_LIST2_NAME;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.CONTINGENCY_LIST_ERROR_NAME;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.CONTINGENCY_LIST_NAME;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.CONTINGENCY_LIST_NAME_VARIANT;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.RESULT;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.RESULT_VARIANT;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.VARIANT_1_ID;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.VARIANT_2_ID;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.VARIANT_3_ID;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.VARIANT_TO_STOP_ID;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.countDownLatch;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.CANCEL_MESSAGE;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.FAIL_MESSAGE;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.HEADER_USER_ID;
-import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.when;
-import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.lang.reflect.Constructor;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
-import java.util.stream.Collectors;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
-import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
-import org.gridsuite.securityanalysis.server.dto.CsvTranslationDTO;
-import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersValues;
-import org.gridsuite.securityanalysis.server.dto.PreContingencyLimitViolationResultDTO;
-import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersInfos;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
+import com.powsybl.commons.reporter.Reporter;
+import com.powsybl.iidm.network.Network;
+import com.powsybl.iidm.network.TwoSides;
+import com.powsybl.iidm.network.VariantManagerConstants;
+import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
+import com.powsybl.loadflow.LoadFlowParameters;
+import com.powsybl.loadflow.LoadFlowResult;
+import com.powsybl.network.store.client.NetworkStoreService;
+import com.powsybl.network.store.client.PreloadingStrategy;
+import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
+import com.powsybl.security.*;
+import com.vladmihalcea.sql.SQLStatementCountValidator;
+import lombok.SneakyThrows;
+import org.assertj.core.api.Assertions;
+import org.gridsuite.securityanalysis.server.dto.*;
+import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationRepository;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.LoadFlowService;
 import org.gridsuite.securityanalysis.server.service.ReportService;
@@ -88,26 +54,34 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.util.StreamUtils;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.powsybl.commons.reporter.Reporter;
-import com.powsybl.iidm.network.Branch;
-import com.powsybl.iidm.network.Network;
-import com.powsybl.iidm.network.VariantManagerConstants;
-import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
-import com.powsybl.loadflow.LoadFlowParameters;
-import com.powsybl.loadflow.LoadFlowResult;
-import com.powsybl.network.store.client.NetworkStoreService;
-import com.powsybl.network.store.client.PreloadingStrategy;
-import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
-import com.powsybl.security.LimitViolationType;
-import com.powsybl.security.SecurityAnalysis;
-import com.powsybl.security.SecurityAnalysisParameters;
-import com.powsybl.security.SecurityAnalysisProvider;
-import com.powsybl.security.SecurityAnalysisResult;
-import com.vladmihalcea.sql.SQLStatementCountValidator;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.lang.reflect.Constructor;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+import java.util.concurrent.CountDownLatch;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
-import lombok.SneakyThrows;
+import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
+import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
+import static org.gridsuite.securityanalysis.server.service.NotificationService.*;
+import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.*;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -155,6 +129,9 @@ public class SecurityAnalysisControllerTest {
 
     @Autowired
     private ObjectMapper mapper;
+
+    @Autowired
+    SubjectLimitViolationRepository subjectLimitViolationRepository;
 
     private final Map<String, String> enumTranslationsEn = Map.of(
         "ONE", "Side 1",
@@ -378,6 +355,68 @@ public class SecurityAnalysisControllerTest {
                 .andExpect(status().isOk());
 
         assertResultNotFound(RESULT_UUID);
+    }
+
+    @Test
+    public void testDeterministicResults() throws Exception {
+        MvcResult mvcResult;
+        String resultAsString;
+        SQLStatementCountValidator.reset();
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME
+                        + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow" + "&loadFlowParametersUuid=" + UUID.randomUUID())
+                        .header(HEADER_USER_ID, "testUserId")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpectAll(
+                        content().contentType(MediaType.APPLICATION_JSON),
+                        status().isOk()
+                ).andReturn();
+
+        assertRequestsCount(2, 6, 3, 0);
+
+        resultAsString = mvcResult.getResponse().getContentAsString();
+        UUID resultUuid = mapper.readValue(resultAsString, UUID.class);
+        assertEquals(RESULT_UUID, resultUuid);
+
+        Message<byte[]> resultMessage = output.receive(TIMEOUT, "sa.result");
+        assertEquals(RESULT_UUID.toString(), resultMessage.getHeaders().get("resultUuid"));
+        assertEquals("me", resultMessage.getHeaders().get("receiver"));
+
+        mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/n-result"))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON));
+
+        assertFiltredResultN();
+
+        var res = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged"))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn().getResponse().getContentAsString();
+
+        JsonNode resultsPageNode0 = mapper.readTree(res);
+        ObjectReader faultResultsReader = mapper.readerFor(new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
+        List<SubjectLimitViolationResultDTO> subjectLimitViolationResultDTOS = faultResultsReader.readValue(resultsPageNode0.get("content"));
+        List<String> result = subjectLimitViolationResultDTOS.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList();
+        List<String> expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(o -> o.getId().toString())).map(SubjectLimitViolationEntity::getSubjectId).toList();
+        assertEquals(expectedResultInOrder, result);
+
+        //test with a sorted paged request
+        res = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("sort", "subjectId"))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn().getResponse().getContentAsString();
+
+        resultsPageNode0 = mapper.readTree(res);
+        faultResultsReader = mapper.readerFor(new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
+        subjectLimitViolationResultDTOS = faultResultsReader.readValue(resultsPageNode0.get("content"));
+        result = subjectLimitViolationResultDTOS.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList();
+        expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(SubjectLimitViolationEntity::getSubjectId).thenComparing(SubjectLimitViolationEntity::getId)).map(SubjectLimitViolationEntity::getSubjectId).toList();
+        assertEquals(expectedResultInOrder, result);
     }
 
     private String buildFilterUrl() {
@@ -620,7 +659,7 @@ public class SecurityAnalysisControllerTest {
 
         resultAsString = mvcResult.getResponse().getContentAsString();
         List<String> providers = mapper.readValue(resultAsString, new TypeReference<List<String>>() { });
-        assertEquals(List.of("DynaFlow", "OpenLoadFlow", "Hades2"), providers);
+        assertEquals(List.of("DynaFlow", "OpenLoadFlow"), providers);
     }
 
     @Test
@@ -649,7 +688,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void geBranchSidesTest() throws Exception {
+    public void getBranchSidesTest() throws Exception {
         MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/branch-sides"))
                 .andExpectAll(
                         status().isOk(),
@@ -657,10 +696,10 @@ public class SecurityAnalysisControllerTest {
                 ).andReturn();
 
         String resultAsString = mvcResult.getResponse().getContentAsString();
-        List<Branch.Side> sides = mapper.readValue(resultAsString, new TypeReference<>() { });
+        List<TwoSides> sides = mapper.readValue(resultAsString, new TypeReference<>() { });
         assertEquals(2, sides.size());
-        assertTrue(sides.contains(Branch.Side.ONE));
-        assertTrue(sides.contains(Branch.Side.TWO));
+        assertTrue(sides.contains(TwoSides.ONE));
+        assertTrue(sides.contains(TwoSides.TWO));
     }
 
     @Test
@@ -794,7 +833,8 @@ public class SecurityAnalysisControllerTest {
             InputStream csvStream = getClass().getResourceAsStream(resourcePath);
             StreamUtils.copy(csvStream, expectedContentOutputStream);
 
-            assertEquals(expectedContentOutputStream.toString(), contentOutputStream.toString());
+            // using bytearray comparison to check BOM presence in CSV files
+            Assertions.assertThat(expectedContentOutputStream.toByteArray()).isEqualTo(contentOutputStream.toByteArray());
             zin.closeEntry();
         }
     }
