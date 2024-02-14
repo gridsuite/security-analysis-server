@@ -91,7 +91,6 @@ public class SecurityAnalysisController {
                                            @Parameter(description = "Variant Id") @RequestParam(name = "variantId", required = false) String variantId,
                                            @Parameter(description = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
                                            @Parameter(description = "Result receiver") @RequestParam(name = "receiver", required = false) String receiver,
-                                           @Parameter(description = "Provider") @RequestParam(name = "provider", required = false) String provider,
                                            @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
                                            @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
                                            @Parameter(description = "The type name for the report") @RequestParam(name = "reportType", required = false, defaultValue = "SecurityAnalysis") String reportType,
