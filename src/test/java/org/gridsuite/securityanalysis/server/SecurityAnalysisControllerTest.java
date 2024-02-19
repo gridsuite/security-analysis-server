@@ -416,11 +416,11 @@ public class SecurityAnalysisControllerTest {
         String filterUrl = "";
         try {
 
-            List<ResourceFilterDTO> filters = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "vl1", ResourceFilterDTO.Column.SUBJECT_ID),
-                    new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, new String[]{"HIGH_VOLTAGE"}, ResourceFilterDTO.Column.LIMIT_TYPE),
-                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.GREATER_THAN_OR_EQUAL, "399", ResourceFilterDTO.Column.LIMIT),
-                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, "420", ResourceFilterDTO.Column.VALUE),
-                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.NOT_EQUAL, "2", ResourceFilterDTO.Column.ACCEPTABLE_DURATION)
+            List<ResourceFilterDTO> filters = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "vl1", ResourceFilterDTO.Column.SUBJECT_ID.getColumnName()),
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, new String[]{"HIGH_VOLTAGE"}, ResourceFilterDTO.Column.LIMIT_TYPE.getColumnName()),
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.GREATER_THAN_OR_EQUAL, "399", ResourceFilterDTO.Column.LIMIT.getColumnName()),
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, "420", ResourceFilterDTO.Column.VALUE.getColumnName()),
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.NOT_EQUAL, "2", ResourceFilterDTO.Column.ACCEPTABLE_DURATION.getColumnName())
             );
 
             String jsonFilters = new ObjectMapper().writeValueAsString(filters);

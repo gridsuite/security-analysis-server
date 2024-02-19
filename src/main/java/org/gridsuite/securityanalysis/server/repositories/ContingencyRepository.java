@@ -27,7 +27,7 @@ import java.util.UUID;
  */
 
 @Repository
-public interface ContingencyRepository extends CommonLimitViolationRepository<ContingencyEntity>, JpaRepository<ContingencyEntity, UUID>, JpaSpecificationExecutor<ContingencyEntity> {
+public interface ContingencyRepository extends /*CommonLimitViolationRepository<ContingencyEntity>, */JpaRepository<ContingencyEntity, UUID>, JpaSpecificationExecutor<ContingencyEntity> {
     @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.subjectLimitViolation"}, type = EntityGraph.EntityGraphType.LOAD)
     List<ContingencyEntity> findAll(Specification<ContingencyEntity> spec);
 
@@ -51,40 +51,39 @@ public interface ContingencyRepository extends CommonLimitViolationRepository<Co
     @Modifying
     @Query(value = "DELETE FROM contingency_entity_contingency_elements WHERE contingency_entity_uuid IN ?1", nativeQuery = true)
     void deleteAllContingencyElementsByContingencyUuidIn(Set<UUID> uuids);
-
-    @Override
-    default String columnToDotSeparatedField(ResourceFilterDTO.Column column) {
-        return switch (column) {
-            case CONTINGENCY_ID -> "contingencyId";
-            case STATUS -> "status";
-            case SUBJECT_ID -> "subjectLimitViolation.subjectId";
-            case LIMIT_TYPE -> "limitType";
-            case LIMIT_NAME -> "limitName";
-            case SIDE -> "side";
-            default -> throw new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_FILTER);
-        };
-    }
-
-    @Override
+//
+//    @Override
+//    default String columnToDotSeparatedField(ResourceFilterDTO.Column column) {
+//        return switch (column) {
+//            case CONTINGENCY_ID -> "contingencyId";
+//            case STATUS -> "status";
+//            case SUBJECT_ID -> "subjectLimitViolation.subjectId";
+//            case LIMIT_TYPE -> "limitType";
+//            case LIMIT_NAME -> "limitName";
+//            case SIDE -> "side";
+//            default -> throw new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_FILTER);
+//        };
+//    }
+//
     default boolean isParentFilter(ResourceFilterDTO filter) {
         return List.of(ResourceFilterDTO.Column.CONTINGENCY_ID, ResourceFilterDTO.Column.STATUS).contains(filter.column());
     }
-
-    @Override
-    default void addSpecificFilter(Root<ContingencyEntity> root, CriteriaBuilder criteriaBuilder, List<Predicate> predicates) {
-        predicates.add(criteriaBuilder.or(
-                criteriaBuilder.isNotEmpty(root.get("contingencyLimitViolations")),
-                criteriaBuilder.notEqual(root.get("status"), LoadFlowResult.ComponentResult.Status.CONVERGED.toString())
-        ));
-    }
-
+//
+//    @Override
+//    default void addSpecificFilter(Root<ContingencyEntity> root, CriteriaBuilder criteriaBuilder, List<Predicate> predicates) {
+//        predicates.add(criteriaBuilder.or(
+//                criteriaBuilder.isNotEmpty(root.get("contingencyLimitViolations")),
+//                criteriaBuilder.notEqual(root.get("status"), LoadFlowResult.ComponentResult.Status.CONVERGED.toString())
+//        ));
+//    }
+//
     interface EntityUuid {
         UUID getUuid();
     }
-
-    @Override
-    default String getIdFieldName() {
-        return "uuid";
-    }
+//
+//    @Override
+//    default String getIdFieldName() {
+//        return "uuid";
+//    }
 
 }

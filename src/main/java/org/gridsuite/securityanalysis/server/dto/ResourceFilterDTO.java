@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
  * @param column the column / field on which the filter will be applied
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
-public record ResourceFilterDTO(DataType dataType, Type type, Object value, Column column) {
+public record ResourceFilterDTO(DataType dataType, Type type, Object value, String column) {
 
     public enum DataType {
         @JsonProperty("text")

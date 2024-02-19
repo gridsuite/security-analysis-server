@@ -44,20 +44,20 @@ public interface PreContingencyLimitViolationRepository extends JpaRepository<Pr
             predicates.add(criteriaBuilder.equal(root.get("result").get("id"), resultUuid));
 
             // user filters on main entity
-            filters.stream().filter(this::isParentFilter)
+            /*filters.stream().filter(this::isParentFilter)
                     .forEach(filter -> addPredicate(criteriaBuilder, root, predicates, filter));
 
             if (!childrenFilters.isEmpty()) {
                 // user filters on OneToMany collection - needed here to filter main entities that would have empty collection when filters are applied
                 childrenFilters
                         .forEach(filter -> addPredicate(criteriaBuilder, root.get("subjectLimitViolation"), predicates, filter));
-            }
+            }*/
 
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
         };
     }
 
-    default void addPredicate(CriteriaBuilder criteriaBuilder,
+    /*default void addPredicate(CriteriaBuilder criteriaBuilder,
                               Path<?> path,
                               List<Predicate> predicates,
                               ResourceFilterDTO filter) {
@@ -74,7 +74,7 @@ public interface PreContingencyLimitViolationRepository extends JpaRepository<Pr
             default -> throw new UnsupportedOperationException("Unknown filter column");
         };
         CriteriaUtils.addPredicate(criteriaBuilder, path, predicates, filter, fieldName);
-    }
+    }*/
 
     default boolean isParentFilter(ResourceFilterDTO filter) {
         return !List.of(ResourceFilterDTO.Column.SUBJECT_ID).contains(filter.column());

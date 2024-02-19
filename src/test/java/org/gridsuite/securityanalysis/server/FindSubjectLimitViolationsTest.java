@@ -114,22 +114,22 @@ class FindSubjectLimitViolationsTest {
 
     private Stream<Arguments> provideParentFilter() {
         return Stream.of(
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", ResourceFilterDTO.Column.SUBJECT_ID.getColumnName())), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
                 RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).filter(c -> c.getSubjectId().contains("3")).toList(), 4),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "l", ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "l", ResourceFilterDTO.Column.SUBJECT_ID.getColumnName())), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
                 RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).filter(c -> c.getSubjectId().startsWith("l")).toList(), 4),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", ResourceFilterDTO.Column.SUBJECT_ID)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", ResourceFilterDTO.Column.SUBJECT_ID.getColumnName())), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
                 RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).filter(c -> c.getSubjectId().startsWith("3")).toList(), 1)
         );
     }
 
     private Stream<Arguments> provideChildFilter() {
         return Stream.of(
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "2", ResourceFilterDTO.Column.CONTINGENCY_ID)), PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "subjectId")),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "2", "contingencyLimitViolations.contingency." + ResourceFilterDTO.Column.CONTINGENCY_ID.getColumnName())), PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "subjectId")),
                 getResultConstraintsWithNestedFilter(c -> c.getContingency().getContingencyId().contains("2"))
                     .stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList()
                     .subList(0, 2), 5), // find 1st page of size 2 of contingencies, filtered by SubjectId
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "CURRENT", ResourceFilterDTO.Column.LIMIT_TYPE)), PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "subjectId")),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "CURRENT", "contingencyLimitViolations." + ResourceFilterDTO.Column.LIMIT_TYPE.getColumnName())), PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "subjectId")),
                 getResultConstraintsWithNestedFilter(c -> c.getLimitViolation().getLimitType().equals(LimitViolationType.CURRENT))
                     .stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList()
                     .subList(0, 2), 5)
@@ -138,11 +138,11 @@ class FindSubjectLimitViolationsTest {
 
     private Stream<Arguments> provideEachColumnFilter() {
         return Stream.of(
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "CO", ResourceFilterDTO.Column.STATUS)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "CO", "contingencyLimitViolations.contingency." + ResourceFilterDTO.Column.STATUS.getColumnName())), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
                 getResultConstraintsWithNestedFilter(c -> c.getContingency().getStatus().contains("CO")).stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 4),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "ONE", ResourceFilterDTO.Column.SIDE)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "ONE", "contingencyLimitViolations." + ResourceFilterDTO.Column.SIDE.getColumnName())), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
                 getResultConstraintsWithNestedFilter(c -> c.getLimitViolation().getSide() != null && c.getLimitViolation().getSide().equals(ThreeSides.ONE)).stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 4),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "l6_name", ResourceFilterDTO.Column.LIMIT_NAME)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "l6_name", "contingencyLimitViolations." + ResourceFilterDTO.Column.LIMIT_NAME.getColumnName())), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
                 getResultConstraintsWithNestedFilter(c -> c.getLimitViolation().getLimitName().equals("l6_name")).stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 4)
         );
     }
@@ -156,8 +156,8 @@ class FindSubjectLimitViolationsTest {
 
     private Stream<Arguments> provideForbiddenFilter() {
         return Stream.of(
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, List.of(), ResourceFilterDTO.Column.LIMIT)), PageRequest.of(0, 30), new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_FILTER)),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, List.of(), ResourceFilterDTO.Column.VALUE)), PageRequest.of(0, 30), new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_FILTER))
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.CONTAINS, 3, "contingencyLimitViolations." + ResourceFilterDTO.Column.LIMIT.getColumnName())), PageRequest.of(0, 30), new IllegalArgumentException("The filter type CONTAINS is not supported with the data type NUMBER")),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.EQUALS, 45, "contingencyLimitViolations." + ResourceFilterDTO.Column.VALUE.getColumnName())), PageRequest.of(0, 30), new IllegalArgumentException("The filter type EQUALS is not supported with the data type NUMBER"))
         );
     }
 

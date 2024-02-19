@@ -84,21 +84,21 @@ class FindPreContingencyLimitViolationTest {
 
     private Stream<Arguments> provideParentFilter() {
         return Stream.of(
-                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", ResourceFilterDTO.Column.SUBJECT_ID)), Sort.by(Sort.Direction.ASC, "subjectId"),
+                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", "subjectLimitViolation." + ResourceFilterDTO.Column.SUBJECT_ID.getColumnName())), Sort.by(Sort.Direction.ASC, "subjectId"),
                         RESULT_PRECONTINGENCY.stream().sorted(Comparator.comparing(PreContingencyLimitViolationResultDTO::getSubjectId)).filter(c -> c.getSubjectId().contains("3")).toList(), 2),
-                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "l", ResourceFilterDTO.Column.SUBJECT_ID)), Sort.by(Sort.Direction.ASC, "subjectId"),
+                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "l", "subjectLimitViolation." + ResourceFilterDTO.Column.SUBJECT_ID.getColumnName())), Sort.by(Sort.Direction.ASC, "subjectId"),
                         RESULT_PRECONTINGENCY.stream().sorted(Comparator.comparing(PreContingencyLimitViolationResultDTO::getSubjectId)).filter(c -> c.getSubjectId().startsWith("l")).toList(), 2),
-                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", ResourceFilterDTO.Column.SUBJECT_ID)), Sort.by(Sort.Direction.ASC, "subjectId"),
+                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", "subjectLimitViolation." + ResourceFilterDTO.Column.SUBJECT_ID.getColumnName())), Sort.by(Sort.Direction.ASC, "subjectId"),
                         RESULT_PRECONTINGENCY.stream().sorted(Comparator.comparing(PreContingencyLimitViolationResultDTO::getSubjectId)).filter(c -> c.getSubjectId().startsWith("3")).toList(), 2)
         );
     }
 
     private Stream<Arguments> provideChildFilter() {
         return Stream.of(
-                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "l6", ResourceFilterDTO.Column.SUBJECT_ID)), Sort.by(Sort.Direction.ASC, "subjectId"),
+                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "l6", "subjectLimitViolation." + ResourceFilterDTO.Column.SUBJECT_ID.getColumnName())), Sort.by(Sort.Direction.ASC, "subjectId"),
                         getResultPreContingencyWithNestedFilter(p -> p.getSubjectId().contains("l6"))
                                 .stream().sorted(Comparator.comparing(PreContingencyLimitViolationResultDTO::getSubjectId)).toList(), 2),
-                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, "390", ResourceFilterDTO.Column.LIMIT)), Sort.by(Sort.Direction.ASC, "limit"),
+                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, "390", ResourceFilterDTO.Column.LIMIT.getColumnName())), Sort.by(Sort.Direction.ASC, "limit"),
                         getResultPreContingencyWithNestedFilter(p -> p.getLimitViolation().getLimit() <= 390)
                                 .stream().sorted(Comparator.comparing(x -> x.getLimitViolation().getLimit())).toList(), 2)
         );
@@ -106,9 +106,9 @@ class FindPreContingencyLimitViolationTest {
 
     private Stream<Arguments> provideEachColumnFilter() {
         return Stream.of(
-                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "ONE", ResourceFilterDTO.Column.SIDE)), Sort.by(Sort.Direction.ASC, "subjectId"),
+                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "ONE", ResourceFilterDTO.Column.SIDE.getColumnName())), Sort.by(Sort.Direction.ASC, "subjectId"),
                         getResultPreContingencyWithNestedFilter(c -> c.getLimitViolation().getSide() != null && c.getLimitViolation().getSide().equals(ThreeSides.ONE)).stream().sorted(Comparator.comparing(PreContingencyLimitViolationResultDTO::getSubjectId)).toList(), 2),
-                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "l5_name", ResourceFilterDTO.Column.LIMIT_NAME)), Sort.by(Sort.Direction.ASC, "subjectId"),
+                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "l5_name", ResourceFilterDTO.Column.LIMIT_NAME.getColumnName())), Sort.by(Sort.Direction.ASC, "subjectId"),
                         getResultConstraintsWithNestedFilter(c -> c.getLimitViolation().getLimitName().equals("l5_name")).stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 2)
         );
     }

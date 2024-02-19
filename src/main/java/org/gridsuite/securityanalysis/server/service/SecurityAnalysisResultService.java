@@ -30,6 +30,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -42,6 +43,9 @@ public class SecurityAnalysisResultService {
     private final PreContingencyLimitViolationRepository preContingencyLimitViolationRepository;
     private final SubjectLimitViolationRepository subjectLimitViolationRepository;
     private final ContingencyLimitViolationRepository contingencyLimitViolationRepository;
+    private final ContingencySpecificationBuilder contingencySpecificationBuilder;
+    private final SubjectLimitViolationSpecificationBuilder subjectLimitViolationSpecificationBuilder;
+    private final PreContingencyLimitViolationSpecificationBuilder preContingencyLimitViolationSpecificationBuilder;
     private final ObjectMapper objectMapper;
     private SecurityAnalysisResultService self;
 
@@ -57,6 +61,9 @@ public class SecurityAnalysisResultService {
                                          PreContingencyLimitViolationRepository preContingencyLimitViolationRepository,
                                          SubjectLimitViolationRepository subjectLimitViolationRepository,
                                          ContingencyLimitViolationRepository contingencyLimitViolationRepository,
+                                         PreContingencyLimitViolationSpecificationBuilder preContingencyLimitViolationSpecificationBuilder,
+                                         ContingencySpecificationBuilder contingencySpecificationBuilder,
+                                         SubjectLimitViolationSpecificationBuilder subjectLimitViolationSpecificationBuilder,
                                          @Lazy SecurityAnalysisResultService self,
                                          ObjectMapper objectMapper) {
         this.securityAnalysisResultRepository = securityAnalysisResultRepository;
@@ -64,6 +71,9 @@ public class SecurityAnalysisResultService {
         this.preContingencyLimitViolationRepository = preContingencyLimitViolationRepository;
         this.subjectLimitViolationRepository = subjectLimitViolationRepository;
         this.contingencyLimitViolationRepository = contingencyLimitViolationRepository;
+        this.preContingencyLimitViolationSpecificationBuilder = preContingencyLimitViolationSpecificationBuilder;
+        this.contingencySpecificationBuilder = contingencySpecificationBuilder;
+        this.subjectLimitViolationSpecificationBuilder = subjectLimitViolationSpecificationBuilder;
         this.objectMapper = objectMapper;
         this.self = self;
     }
@@ -72,7 +82,7 @@ public class SecurityAnalysisResultService {
     public List<PreContingencyLimitViolationResultDTO> findNResult(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Sort sort) {
         assertResultExists(resultUuid);
         assertPreContingenciesSortAllowed(sort);
-        Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters);
+        Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationSpecificationBuilder.buildSpecification(resultUuid, resourceFilters);  // preContingencyLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters);
         Sort newSort = createNResultSort(sort);
         List<PreContingencyLimitViolationEntity> preContingencyLimitViolation = preContingencyLimitViolationRepository.findAll(specification, newSort);
         return preContingencyLimitViolation.stream()
@@ -243,8 +253,8 @@ public class SecurityAnalysisResultService {
         contingencyLimitViolationRepository.deleteAllByContingencyUuidIn(contingencyUuids);
         contingencyRepository.deleteAllContingencyElementsByContingencyUuidIn(contingencyUuids);
         contingencyRepository.deleteAllByResultId(resultId);
-        preContingencyLimitViolationRepository.deleteAllByResultId(resultId);
-        subjectLimitViolationRepository.deleteAllByResultId(resultId);
+//        preContingencyLimitViolationRepository.deleteAllByResultId(resultId);
+//        subjectLimitViolationRepository.deleteAllByResultId(resultId);
         securityAnalysisResultRepository.deleteById(resultId);
     }
 
@@ -269,7 +279,8 @@ public class SecurityAnalysisResultService {
         Objects.requireNonNull(resultUuid);
         assertNmKContingenciesSortAllowed(pageable.getSort());
         Pageable modifiedPageable = addDefaultSort(pageable, DEFAULT_CONTINGENCY_SORT_COLUMN);
-        Specification<ContingencyEntity> specification = contingencyRepository.getParentsSpecifications(resultUuid, resourceFilters);
+
+        Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildSpecification(resultUuid, resourceFilters);
         // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
         // cf. https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/
@@ -304,7 +315,7 @@ public class SecurityAnalysisResultService {
         Objects.requireNonNull(resultUuid);
         assertNmKSubjectLimitViolationsSortAllowed(pageable.getSort());
         Pageable modifiedPageable = addDefaultSort(pageable, DEFAULT_SUBJECT_LIMIT_VIOLATION_SORT_COLUMN);
-        Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters);
+        Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationSpecificationBuilder.buildSpecification(resultUuid, resourceFilters);
         // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
         // cf. https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/
@@ -340,7 +351,7 @@ public class SecurityAnalysisResultService {
             List<UUID> contingencyUuids = contingencies.stream()
                 .map(c -> c.getUuid())
                 .toList();
-            Specification<ContingencyEntity> specification = contingencyRepository.getLimitViolationsSpecifications(contingencyUuids, resourceFilters);
+            Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildLimitViolationsSpecification(resourceFilters.stream().filter(Predicate.not(contingencySpecificationBuilder::isParentFilter)).toList()); /*contingencyRepository.getLimitViolationsSpecifications(contingencyUuids, resourceFilters);*/
             contingencyRepository.findAll(specification);
             // we fetch contingencyElements here to prevent N+1 query
             contingencyRepository.findAllWithContingencyElementsByUuidIn(contingencyUuids);
@@ -355,7 +366,7 @@ public class SecurityAnalysisResultService {
             List<UUID> subjectLimitViolationsUuids = subjectLimitViolations.stream()
                 .map(c -> c.getId())
                 .toList();
-            Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getLimitViolationsSpecifications(subjectLimitViolationsUuids, resourceFilters);
+            Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationSpecificationBuilder.buildLimitViolationsSpecification(resourceFilters.stream().filter(Predicate.not(subjectLimitViolationSpecificationBuilder::isParentFilter)).toList()); /*subjectLimitViolationRepository.getLimitViolationsSpecifications(subjectLimitViolationsUuids, resourceFilters);*/
             subjectLimitViolationRepository.findAll(specification);
 
             List<UUID> contingencyUuids = subjectLimitViolations.map(SubjectLimitViolationEntity::getContingencyLimitViolations).flatMap(List::stream)

@@ -24,7 +24,7 @@ import java.util.UUID;
  */
 
 @Repository
-public interface SubjectLimitViolationRepository extends CommonLimitViolationRepository<SubjectLimitViolationEntity>, JpaRepository<SubjectLimitViolationEntity, UUID>, JpaSpecificationExecutor<SubjectLimitViolationEntity> {
+public interface SubjectLimitViolationRepository extends /*CommonLimitViolationRepository<SubjectLimitViolationEntity>,*/ JpaRepository<SubjectLimitViolationEntity, UUID>, JpaSpecificationExecutor<SubjectLimitViolationEntity> {
     @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.contingency"}, type = EntityGraph.EntityGraphType.LOAD)
     List<SubjectLimitViolationEntity> findAll(Specification<SubjectLimitViolationEntity> spec);
 
@@ -35,39 +35,39 @@ public interface SubjectLimitViolationRepository extends CommonLimitViolationRep
 
     List<SubjectLimitViolationEntity> findAllByResultId(UUID resultUuid);
 
-    @Override
-    default String columnToDotSeparatedField(ResourceFilterDTO.Column column) {
-        return switch (column) {
-            case CONTINGENCY_ID -> "contingency.contingencyId";
-            case STATUS -> "contingency.status";
-            case LIMIT_TYPE -> "limitType";
-            case LIMIT_NAME -> "limitName";
-            case SIDE -> "side";
-            case SUBJECT_ID -> "subjectId";
-            default -> throw new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_FILTER);
-        };
-    }
-
-    @Override
-    default boolean isParentFilter(ResourceFilterDTO filter) {
-        return filter.column().equals(ResourceFilterDTO.Column.SUBJECT_ID);
-    }
-
-    @Override
-    default void addSpecificFilter(Root<SubjectLimitViolationEntity> root, CriteriaBuilder criteriaBuilder, List<Predicate> predicates) {
-        predicates.add(criteriaBuilder.isNotEmpty(root.get("contingencyLimitViolations")));
-    }
-
+//    @Override
+//    default String columnToDotSeparatedField(ResourceFilterDTO.Column column) {
+//        return switch (column) {
+//            case CONTINGENCY_ID -> "contingency.contingencyId";
+//            case STATUS -> "contingency.status";
+//            case LIMIT_TYPE -> "limitType";
+//            case LIMIT_NAME -> "limitName";
+//            case SIDE -> "side";
+//            case SUBJECT_ID -> "subjectId";
+//            default -> throw new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_FILTER);
+//        };
+//    }
+//
+//    @Override
+//    default boolean isParentFilter(ResourceFilterDTO filter) {
+//        return filter.column().equals(ResourceFilterDTO.Column.SUBJECT_ID);
+//    }
+//
+//    @Override
+//    default void addSpecificFilter(Root<SubjectLimitViolationEntity> root, CriteriaBuilder criteriaBuilder, List<Predicate> predicates) {
+//        predicates.add(criteriaBuilder.isNotEmpty(root.get("contingencyLimitViolations")));
+//    }
+//
     interface EntityId {
         UUID getId();
     }
-
-    @Override
-    default String getIdFieldName() {
-        return "id";
-    }
-
-    @Modifying
-    @Query(value = "DELETE FROM subject_limit_violation WHERE result_id = ?1", nativeQuery = true)
-    void deleteAllByResultId(UUID resultId);
+//
+//    @Override
+//    default String getIdFieldName() {
+//        return "id";
+//    }
+//
+//    @Modifying
+//    @Query(value = "DELETE FROM subject_limit_violation WHERE result_id = ?1", nativeQuery = true)
+//    void deleteAllByResultId(UUID resultId);
 }
