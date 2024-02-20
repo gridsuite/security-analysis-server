@@ -81,10 +81,14 @@ public class SecurityAnalysisResultService {
     @Transactional(readOnly = true)
     public List<PreContingencyLimitViolationResultDTO> findNResult(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Sort sort) {
         assertResultExists(resultUuid);
+/*
         assertPreContingenciesSortAllowed(sort);
+*/
         Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationSpecificationBuilder.buildSpecification(resultUuid, resourceFilters);  // preContingencyLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters);
+/*
         Sort newSort = createNResultSort(sort);
-        List<PreContingencyLimitViolationEntity> preContingencyLimitViolation = preContingencyLimitViolationRepository.findAll(specification, newSort);
+*/
+        List<PreContingencyLimitViolationEntity> preContingencyLimitViolation = preContingencyLimitViolationRepository.findAll(specification, sort);
         return preContingencyLimitViolation.stream()
                 .map(PreContingencyLimitViolationResultDTO::toDto)
                 .toList();
