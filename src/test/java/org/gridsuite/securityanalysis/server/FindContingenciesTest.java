@@ -129,12 +129,12 @@ class FindContingenciesTest {
                 getResultContingenciesWithNestedFilter(lm -> lm.getSubjectId().equals("l6"))
                     .stream().sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList()
                     .subList(0, 2), 5), // find 1st page of size 2 of contingencies, filtered by SubjectId
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "not_found", "contingencyLimitViolations.subjectLimitViolation." + ResourceFilterDTO.Column.SUBJECT_ID.getColumnName())), PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "contingencyId")),
-                List.of(), 5), // find 1st page of size 2 of contingencies, filtered by SubjectId
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "CURRENT", "contingencyLimitViolations." + ResourceFilterDTO.Column.LIMIT_TYPE.getColumnName())), PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "contingencyId")),
                 getResultContingenciesWithNestedFilter(lm -> lm.getLimitViolation().getLimitType().equals(LimitViolationType.CURRENT))
                     .stream().sorted(Comparator.comparing(this::getContingencyResultDTOId)).toList()
-                    .subList(0, 2), 5)
+                    .subList(0, 2), 5),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "not_found", "contingencyLimitViolations.subjectLimitViolation." + ResourceFilterDTO.Column.SUBJECT_ID.getColumnName())), PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "contingencyId")),
+                List.of(), 1) // filter by not found limit_violation
         );
     }
 
