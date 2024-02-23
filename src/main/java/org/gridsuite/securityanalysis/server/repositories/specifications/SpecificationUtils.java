@@ -5,7 +5,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-package org.gridsuite.securityanalysis.server.repositories;
+package org.gridsuite.securityanalysis.server.repositories.specifications;
 
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Root;

@@ -1,4 +1,4 @@
-package org.gridsuite.securityanalysis.server.repositories;
+package org.gridsuite.securityanalysis.server.repositories.specifications;
 
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
