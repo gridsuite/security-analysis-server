@@ -21,9 +21,6 @@ import java.util.UUID;
 
 @Service
 public class PreContingencyLimitViolationSpecificationBuilder extends AbstractCommonSpecificationBuilder<PreContingencyLimitViolationEntity> {
-    public PreContingencyLimitViolationSpecificationBuilder() {
-    }
-
     @Override
     public Specification<PreContingencyLimitViolationEntity> buildSpecification(UUID resultUuid, List<ResourceFilterDTO> resourceFilters) {
         Specification<PreContingencyLimitViolationEntity> specification = Specification.where(resultUuidEquals(resultUuid));
