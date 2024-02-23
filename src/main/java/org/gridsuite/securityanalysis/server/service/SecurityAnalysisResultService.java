@@ -83,7 +83,7 @@ public class SecurityAnalysisResultService {
     public List<PreContingencyLimitViolationResultDTO> findNResult(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Sort sort) {
         assertResultExists(resultUuid);
         assertPreContingenciesSortAllowed(sort);
-        Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationSpecificationBuilder.buildSpecification(resultUuid, resourceFilters);  // preContingencyLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters);
+        Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationSpecificationBuilder.buildSpecification(resultUuid, resourceFilters);
 
         List<PreContingencyLimitViolationEntity> preContingencyLimitViolation = preContingencyLimitViolationRepository.findAll(specification, sort);
         return preContingencyLimitViolation.stream()
@@ -341,7 +341,7 @@ public class SecurityAnalysisResultService {
             List<UUID> contingencyUuids = contingencies.stream()
                 .map(c -> c.getUuid())
                 .toList();
-            Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildLimitViolationsSpecification(contingencyUuids, resourceFilters.stream().filter(Predicate.not(contingencySpecificationBuilder::isParentFilter)).toList()); /*contingencyRepository.getLimitViolationsSpecifications(contingencyUuids, resourceFilters);*/
+            Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildLimitViolationsSpecification(contingencyUuids, resourceFilters.stream().filter(Predicate.not(contingencySpecificationBuilder::isParentFilter)).toList());
             contingencyRepository.findAll(specification);
             // we fetch contingencyElements here to prevent N+1 query
             contingencyRepository.findAllWithContingencyElementsByUuidIn(contingencyUuids);
@@ -356,7 +356,7 @@ public class SecurityAnalysisResultService {
             List<UUID> subjectLimitViolationsUuids = subjectLimitViolations.stream()
                 .map(c -> c.getId())
                 .toList();
-            Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationSpecificationBuilder.buildLimitViolationsSpecification(subjectLimitViolationsUuids, resourceFilters.stream().filter(Predicate.not(subjectLimitViolationSpecificationBuilder::isParentFilter)).toList()); /*subjectLimitViolationRepository.getLimitViolationsSpecifications(subjectLimitViolationsUuids, resourceFilters);*/
+            Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationSpecificationBuilder.buildLimitViolationsSpecification(subjectLimitViolationsUuids, resourceFilters.stream().filter(Predicate.not(subjectLimitViolationSpecificationBuilder::isParentFilter)).toList());
             subjectLimitViolationRepository.findAll(specification);
 
             List<UUID> contingencyUuids = subjectLimitViolations.map(SubjectLimitViolationEntity::getContingencyLimitViolations).flatMap(List::stream)

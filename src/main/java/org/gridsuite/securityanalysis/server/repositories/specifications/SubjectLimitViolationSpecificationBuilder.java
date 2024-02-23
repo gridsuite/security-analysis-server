@@ -16,9 +16,6 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class SubjectLimitViolationSpecificationBuilder extends AbstractCommonSpecificationBuilder<SubjectLimitViolationEntity> {
-    public SubjectLimitViolationSpecificationBuilder() {
-    }
-
     public boolean isParentFilter(ResourceFilterDTO filter) {
         return filter.column().equals(SubjectLimitViolationEntity.Fields.subjectId);
     }

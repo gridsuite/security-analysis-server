@@ -16,7 +16,7 @@ import java.util.UUID;
  */
 
 public abstract class AbstractCommonSpecificationBuilder<T> {
-    public AbstractCommonSpecificationBuilder() {
+    AbstractCommonSpecificationBuilder() {
     }
 
     public Specification<T> resultUuidEquals(UUID value) {

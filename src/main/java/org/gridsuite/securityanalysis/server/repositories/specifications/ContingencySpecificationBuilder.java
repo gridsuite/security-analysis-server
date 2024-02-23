@@ -18,9 +18,6 @@ import java.util.List;
 
 @Service
 public class ContingencySpecificationBuilder extends AbstractCommonSpecificationBuilder<ContingencyEntity> {
-    public ContingencySpecificationBuilder() {
-    }
-
     public boolean isParentFilter(ResourceFilterDTO filter) {
         return List.of(ContingencyEntity.Fields.contingencyId, ContingencyEntity.Fields.status).contains(filter.column());
     }
