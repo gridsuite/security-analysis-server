@@ -85,9 +85,7 @@ public class SecurityAnalysisResultService {
         assertPreContingenciesSortAllowed(sort);
 */
         Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationSpecificationBuilder.buildSpecification(resultUuid, resourceFilters);  // preContingencyLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters);
-/*
-        Sort newSort = createNResultSort(sort);
-*/
+
         List<PreContingencyLimitViolationEntity> preContingencyLimitViolation = preContingencyLimitViolationRepository.findAll(specification, sort);
         return preContingencyLimitViolation.stream()
                 .map(PreContingencyLimitViolationResultDTO::toDto)
@@ -96,22 +94,9 @@ public class SecurityAnalysisResultService {
 
     @Transactional(readOnly = true)
     public byte[] findNResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
-        List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, List.of(), Sort.by(Sort.Direction.ASC, ResourceFilterDTO.Column.SUBJECT_ID.getColumnName()));
+        List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, List.of(), Sort.by(Sort.Direction.ASC, PreContingencyLimitViolationEntity.Fields.subjectLimitViolation + "." + SubjectLimitViolationEntity.Fields.subjectId));
 
         return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), result.stream().map(r -> r.toCsvRow(csvTranslations.enumValueTranslations())).toList());
-    }
-
-    private Sort createNResultSort(Sort sort) {
-        List<Sort.Order> newOrders = new ArrayList<>();
-        sort.forEach(order -> {
-            String property = order.getProperty();
-            if (preContingencyLimitViolationRepository.isParentFilter(property)) {
-                newOrders.add(new Sort.Order(order.getDirection(), "subjectLimitViolation." + property));
-            } else {
-                newOrders.add(order);
-            }
-        });
-        return Sort.by(newOrders);
     }
 
     @Transactional(readOnly = true)
@@ -175,24 +160,12 @@ public class SecurityAnalysisResultService {
     }
 
     private void assertNmKContingenciesSortAllowed(Sort sort) {
-        List<String> allowedSortProperties = List.of(ResourceFilterDTO.Column.CONTINGENCY_ID, ResourceFilterDTO.Column.STATUS)
-            .stream().map(ResourceFilterDTO.Column::getColumnName)
-            .toList();
-        assertSortAllowed(sort, allowedSortProperties);
-    }
-
-    private void assertPreContingenciesSortAllowed(Sort sort) {
-        List<String> allowedSortProperties = ResourceFilterDTO.getAllColumnNames().stream()
-                .filter(columnName -> !columnName.equals(ResourceFilterDTO.Column.CONTINGENCY_ID.getColumnName())
-                        && !columnName.equals(ResourceFilterDTO.Column.STATUS.getColumnName()))
-                .toList();
+        List<String> allowedSortProperties = List.of(ContingencyEntity.Fields.contingencyId, ContingencyEntity.Fields.status);
         assertSortAllowed(sort, allowedSortProperties);
     }
 
     private void assertNmKSubjectLimitViolationsSortAllowed(Sort sort) {
-        List<String> allowedSortProperties = List.of(ResourceFilterDTO.Column.SUBJECT_ID)
-            .stream().map(ResourceFilterDTO.Column::getColumnName)
-            .toList();
+        List<String> allowedSortProperties = List.of(SubjectLimitViolationEntity.Fields.subjectId);
         assertSortAllowed(sort, allowedSortProperties);
     }
 
@@ -355,7 +328,7 @@ public class SecurityAnalysisResultService {
             List<UUID> contingencyUuids = contingencies.stream()
                 .map(c -> c.getUuid())
                 .toList();
-            Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildLimitViolationsSpecification(resourceFilters.stream().filter(Predicate.not(contingencySpecificationBuilder::isParentFilter)).toList()); /*contingencyRepository.getLimitViolationsSpecifications(contingencyUuids, resourceFilters);*/
+            Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildLimitViolationsSpecification(contingencyUuids, resourceFilters.stream().filter(Predicate.not(contingencySpecificationBuilder::isParentFilter)).toList()); /*contingencyRepository.getLimitViolationsSpecifications(contingencyUuids, resourceFilters);*/
             contingencyRepository.findAll(specification);
             // we fetch contingencyElements here to prevent N+1 query
             contingencyRepository.findAllWithContingencyElementsByUuidIn(contingencyUuids);
@@ -370,7 +343,7 @@ public class SecurityAnalysisResultService {
             List<UUID> subjectLimitViolationsUuids = subjectLimitViolations.stream()
                 .map(c -> c.getId())
                 .toList();
-            Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationSpecificationBuilder.buildLimitViolationsSpecification(resourceFilters.stream().filter(Predicate.not(subjectLimitViolationSpecificationBuilder::isParentFilter)).toList()); /*subjectLimitViolationRepository.getLimitViolationsSpecifications(subjectLimitViolationsUuids, resourceFilters);*/
+            Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationSpecificationBuilder.buildLimitViolationsSpecification(subjectLimitViolationsUuids, resourceFilters.stream().filter(Predicate.not(subjectLimitViolationSpecificationBuilder::isParentFilter)).toList()); /*subjectLimitViolationRepository.getLimitViolationsSpecifications(subjectLimitViolationsUuids, resourceFilters);*/
             subjectLimitViolationRepository.findAll(specification);
 
             List<UUID> contingencyUuids = subjectLimitViolations.map(SubjectLimitViolationEntity::getContingencyLimitViolations).flatMap(List::stream)

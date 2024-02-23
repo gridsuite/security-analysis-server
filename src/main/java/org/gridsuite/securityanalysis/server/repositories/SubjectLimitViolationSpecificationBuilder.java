@@ -2,6 +2,7 @@ package org.gridsuite.securityanalysis.server.repositories;
 
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -10,6 +11,16 @@ public class SubjectLimitViolationSpecificationBuilder extends AbstractCommonSpe
     }
 
     public boolean isParentFilter(ResourceFilterDTO filter) {
-        return filter.column().equals(ResourceFilterDTO.Column.SUBJECT_ID);
+        return filter.column().equals(SubjectLimitViolationEntity.Fields.subjectId);
+    }
+
+    @Override
+    public String getIdFieldName() {
+        return SubjectLimitViolationEntity.Fields.id;
+    }
+
+    @Override
+    public Specification<SubjectLimitViolationEntity> childrenNotEmpty() {
+        return (contingency, cq, cb) -> cb.isNotEmpty(contingency.get(SubjectLimitViolationEntity.Fields.contingencyLimitViolations));
     }
 }

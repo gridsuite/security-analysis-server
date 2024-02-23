@@ -24,6 +24,8 @@ import com.vladmihalcea.sql.SQLStatementCountValidator;
 import lombok.SneakyThrows;
 import org.assertj.core.api.Assertions;
 import org.gridsuite.securityanalysis.server.dto.*;
+import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationRepository;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
@@ -416,11 +418,11 @@ public class SecurityAnalysisControllerTest {
         String filterUrl = "";
         try {
 
-            List<ResourceFilterDTO> filters = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "vl1", ResourceFilterDTO.Column.SUBJECT_ID.getColumnName()),
-                    new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, new String[]{"HIGH_VOLTAGE"}, ResourceFilterDTO.Column.LIMIT_TYPE.getColumnName()),
-                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.GREATER_THAN_OR_EQUAL, "399", ResourceFilterDTO.Column.LIMIT.getColumnName()),
-                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, "420", ResourceFilterDTO.Column.VALUE.getColumnName()),
-                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.NOT_EQUAL, "2", ResourceFilterDTO.Column.ACCEPTABLE_DURATION.getColumnName())
+            List<ResourceFilterDTO> filters = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "vl1", AbstractLimitViolationEntity.Fields.subjectLimitViolation + "." + SubjectLimitViolationEntity.Fields.subjectId),
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, new String[]{"HIGH_VOLTAGE"}, AbstractLimitViolationEntity.Fields.limitType),
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.GREATER_THAN_OR_EQUAL, "399", AbstractLimitViolationEntity.Fields.limit),
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, "420", AbstractLimitViolationEntity.Fields.value),
+                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.NOT_EQUAL, "2", AbstractLimitViolationEntity.Fields.acceptableDuration)
             );
 
             String jsonFilters = new ObjectMapper().writeValueAsString(filters);

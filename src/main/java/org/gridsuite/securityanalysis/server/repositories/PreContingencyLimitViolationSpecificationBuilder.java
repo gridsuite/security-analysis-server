@@ -1,7 +1,9 @@
 package org.gridsuite.securityanalysis.server.repositories;
 
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
+import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +23,11 @@ public class PreContingencyLimitViolationSpecificationBuilder extends AbstractCo
     }
 
     public boolean isParentFilter(ResourceFilterDTO filter) {
-        return filter.column().equals(ResourceFilterDTO.Column.SUBJECT_ID);
+        return filter.column().equals(SubjectLimitViolationEntity.Fields.subjectId);
+    }
+
+    @Override
+    public String getIdFieldName() {
+        return PreContingencyLimitViolationEntity.Fields.id;
     }
 }

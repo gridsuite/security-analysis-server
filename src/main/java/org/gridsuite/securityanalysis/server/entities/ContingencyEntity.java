@@ -11,6 +11,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.FieldNameConstants;
 
 import java.util.List;
 import java.util.Map;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 @NoArgsConstructor
 @Getter
 @Entity
+@FieldNameConstants
 @Table(name = "contingency")
 public class ContingencyEntity {
 

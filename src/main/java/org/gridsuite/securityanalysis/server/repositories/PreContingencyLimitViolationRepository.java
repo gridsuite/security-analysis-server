@@ -8,6 +8,7 @@ package org.gridsuite.securityanalysis.server.repositories;
 
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.*;
@@ -23,11 +24,11 @@ public interface PreContingencyLimitViolationRepository extends JpaRepository<Pr
     List<PreContingencyLimitViolationEntity> findAll(Specification<PreContingencyLimitViolationEntity> specification, Sort sort);
 
     default boolean isParentFilter(ResourceFilterDTO filter) {
-        return !List.of(ResourceFilterDTO.Column.SUBJECT_ID).contains(filter.column());
+        return !List.of(SubjectLimitViolationEntity.Fields.subjectId).contains(filter.column());
     }
 
     default boolean isParentFilter(String filter) {
-        return filter.equals("subjectId");
+        return filter.equals(SubjectLimitViolationEntity.Fields.subjectId);
     }
 
     @Modifying

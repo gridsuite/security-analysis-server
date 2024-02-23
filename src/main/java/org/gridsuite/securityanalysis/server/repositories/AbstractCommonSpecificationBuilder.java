@@ -14,8 +14,8 @@ public abstract class AbstractCommonSpecificationBuilder<T> {
         return (contingency, cq, cb) -> cb.equal(contingency.get("result").get("id"), value);
     }
 
-    public Specification<T> childrenNotEmpty() {
-        return (contingency, cq, cb) -> cb.isNotEmpty(contingency.get("contingencyLimitViolations"));
+    public Specification<T> uuidIn(List<UUID> uuids) {
+        return (contingency, cq, cb) -> contingency.get(getIdFieldName()).in(uuids);
     }
 
     public Specification<T> buildSpecification(UUID resultUuid, List<ResourceFilterDTO> resourceFilters) {
@@ -26,11 +26,17 @@ public abstract class AbstractCommonSpecificationBuilder<T> {
         return SpecificationUtils.appendFiltersToSpecification(specification, resourceFilters);
     }
 
-    public Specification<T> buildLimitViolationsSpecification(List<ResourceFilterDTO> resourceFilters) {
-        Specification<T> specification = Specification.where(null);
+    public Specification<T> buildLimitViolationsSpecification(List<UUID> uuids, List<ResourceFilterDTO> resourceFilters) {
+        Specification<T> specification = Specification.where(uuidIn(uuids));
 
         return SpecificationUtils.appendFiltersToSpecification(specification, resourceFilters);
     }
 
+    public Specification<T> childrenNotEmpty() {
+        return null;
+    }
+
     public abstract boolean isParentFilter(ResourceFilterDTO filter);
+
+    public abstract String getIdFieldName();
 }

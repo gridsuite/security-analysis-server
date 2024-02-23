@@ -9,6 +9,7 @@ package org.gridsuite.securityanalysis.server.entities;
 import com.powsybl.security.LimitViolation;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
 
@@ -22,6 +23,7 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 @Getter
 @Entity
+@FieldNameConstants
 @Table(name = "contingency_limit_violation")
 public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntity {
     @ManyToOne(fetch = FetchType.LAZY)
