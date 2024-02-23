@@ -15,6 +15,7 @@ import org.gridsuite.securityanalysis.server.util.MatcherJson;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
@@ -51,7 +52,10 @@ public class SecurityAnalysisParametersControllerTest {
     @Autowired
     private SecurityAnalysisParametersRepository securityAnalysisParametersRepository;
 
-    private final SecurityAnalysisParametersValues defaultSecurityAnalysisParametersValues = getDefaultSecurityAnalysisParametersValues();
+    @Value("${security-analysis.default-provider}")
+    private String defaultProvider;
+
+    private final SecurityAnalysisParametersValues defaultSecurityAnalysisParametersValues = getDefaultSecurityAnalysisParametersValues(defaultProvider);
 
     @Test
     public void securityAnalysisParametersCreateAndGetTest() throws Exception {
@@ -162,6 +166,20 @@ public class SecurityAnalysisParametersControllerTest {
                 defaultSecurityAnalysisParametersValues.getHighVoltageAbsoluteThreshold(),
                 defaultSecurityAnalysisParametersValues.getHighVoltageProportionalThreshold(),
                 defaultSecurityAnalysisParametersValues.getFlowProportionalThreshold());
+
+        // update provider
+        String newProvider = "newProvider";
+        mvcResult = mockMvc.perform(patch("/" + VERSION + "/parameters/" + updatedParametersUuid + "/provider")
+                .content(newProvider))
+                .andExpect(status().isOk()).andReturn();
+        SecurityAnalysisParametersEntity securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(updatedParametersUuid).orElseThrow();
+        assertEquals(newProvider, securityAnalysisParametersEntity.getProvider());
+
+        // reset provider
+        mvcResult = mockMvc.perform(patch("/" + VERSION + "/parameters/" + updatedParametersUuid + "/provider"))
+                .andExpect(status().isOk()).andReturn();
+        securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(updatedParametersUuid).orElseThrow();
+        assertEquals(defaultProvider, securityAnalysisParametersEntity.getProvider());
     }
 
     @Test

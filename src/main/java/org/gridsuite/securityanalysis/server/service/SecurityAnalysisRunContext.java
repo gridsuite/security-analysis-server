@@ -12,7 +12,7 @@ import com.powsybl.loadflow.LoadFlowParameters;
 import com.powsybl.loadflow.LoadFlowProvider;
 import com.powsybl.security.SecurityAnalysisParameters;
 import lombok.Getter;
-import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersInfos;
+import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersValues;
 import org.gridsuite.securityanalysis.server.dto.ReportInfos;
 
 import java.util.List;
@@ -46,7 +46,7 @@ public class SecurityAnalysisRunContext {
     private final String reportType;
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
-                                      String receiver, String provider, SecurityAnalysisParameters parameters, LoadFlowParametersInfos loadFlowParametersInfos,
+                                      String receiver, String provider, SecurityAnalysisParameters parameters, LoadFlowParametersValues loadFlowParametersValues,
                                       ReportInfos reportInfos, String userId) {
         this(
                 networkUuid,
@@ -54,7 +54,7 @@ public class SecurityAnalysisRunContext {
                 contingencyListNames,
                 receiver,
                 provider,
-                buildParameters(parameters, loadFlowParametersInfos, provider),
+                buildParameters(parameters, loadFlowParametersValues, provider),
                 new ReportInfos(reportInfos.getReportUuid(), reportInfos.getReporterId(), reportInfos.getReportType()),
                 userId
         );
@@ -76,22 +76,22 @@ public class SecurityAnalysisRunContext {
     }
 
     private static SecurityAnalysisParameters buildParameters(SecurityAnalysisParameters securityAnalysisParameters,
-                                                              LoadFlowParametersInfos loadFlowParametersInfos,
+                                                              LoadFlowParametersValues loadFlowParametersValues,
                                                               String provider) {
-        Objects.requireNonNull(loadFlowParametersInfos);
-        if (loadFlowParametersInfos.getCommonParameters() == null) {
+        Objects.requireNonNull(loadFlowParametersValues);
+        if (loadFlowParametersValues.getCommonParameters() == null) {
             securityAnalysisParameters.setLoadFlowParameters(new LoadFlowParameters());
         } else {
-            securityAnalysisParameters.setLoadFlowParameters(loadFlowParametersInfos.getCommonParameters());
+            securityAnalysisParameters.setLoadFlowParameters(loadFlowParametersValues.getCommonParameters());
         }
 
-        if (loadFlowParametersInfos.getSpecificParameters() == null || loadFlowParametersInfos.getSpecificParameters().isEmpty()) {
+        if (loadFlowParametersValues.getSpecificParameters() == null || loadFlowParametersValues.getSpecificParameters().isEmpty()) {
             return securityAnalysisParameters; // no specific LF params
         }
         LoadFlowProvider lfProvider = LoadFlowProvider.findAll().stream()
                 .filter(p -> p.getName().equals(provider))
                 .findFirst().orElseThrow(() -> new PowsyblException("Security analysis provider not found " + provider));
-        Extension<LoadFlowParameters> extension = lfProvider.loadSpecificParameters(loadFlowParametersInfos.getSpecificParameters())
+        Extension<LoadFlowParameters> extension = lfProvider.loadSpecificParameters(loadFlowParametersValues.getSpecificParameters())
                 .orElseThrow(() -> new PowsyblException("Cannot add specific loadflow parameters with security analysis provider " + provider));
         securityAnalysisParameters.getLoadFlowParameters().addExtension((Class) extension.getClass(), extension);
         return securityAnalysisParameters;
