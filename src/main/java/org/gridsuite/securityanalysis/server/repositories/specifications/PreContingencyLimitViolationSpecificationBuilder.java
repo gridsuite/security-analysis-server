@@ -7,9 +7,7 @@
 package org.gridsuite.securityanalysis.server.repositories.specifications;
 
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
-import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
-import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -20,20 +18,14 @@ import java.util.UUID;
  */
 
 @Service
-public class PreContingencyLimitViolationSpecificationBuilder extends AbstractCommonSpecificationBuilder<PreContingencyLimitViolationEntity> {
-    @Override
+public class PreContingencyLimitViolationSpecificationBuilder {
+    public Specification<PreContingencyLimitViolationEntity> resultUuidEquals(UUID value) {
+        return (contingency, cq, cb) -> cb.equal(contingency.get("result").get("id"), value);
+    }
+
     public Specification<PreContingencyLimitViolationEntity> buildSpecification(UUID resultUuid, List<ResourceFilterDTO> resourceFilters) {
         Specification<PreContingencyLimitViolationEntity> specification = Specification.where(resultUuidEquals(resultUuid));
 
         return SpecificationUtils.appendFiltersToSpecification(specification, resourceFilters);
-    }
-
-    public boolean isParentFilter(ResourceFilterDTO filter) {
-        return filter.column().equals(SubjectLimitViolationEntity.Fields.subjectId);
-    }
-
-    @Override
-    public String getIdFieldName() {
-        return AbstractLimitViolationEntity.Fields.id;
     }
 }

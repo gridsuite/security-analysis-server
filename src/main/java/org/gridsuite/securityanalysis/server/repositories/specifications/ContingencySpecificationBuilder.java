@@ -29,6 +29,6 @@ public class ContingencySpecificationBuilder extends AbstractCommonSpecification
 
     @Override
     public Specification<ContingencyEntity> childrenNotEmpty() {
-        return (contingency, cq, cb) -> cb.isNotEmpty(contingency.get(ContingencyEntity.Fields.contingencyLimitViolations));
+        return SpecificationUtils.isNotEmpty(ContingencyEntity.Fields.contingencyLimitViolations);
     }
 }

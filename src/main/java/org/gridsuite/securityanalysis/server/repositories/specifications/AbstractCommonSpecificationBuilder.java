@@ -41,9 +41,7 @@ public abstract class AbstractCommonSpecificationBuilder<T> {
         return SpecificationUtils.appendFiltersToSpecification(specification, resourceFilters);
     }
 
-    public Specification<T> childrenNotEmpty() {
-        return null;
-    }
+    public abstract Specification<T> childrenNotEmpty();
 
     public abstract boolean isParentFilter(ResourceFilterDTO filter);
 

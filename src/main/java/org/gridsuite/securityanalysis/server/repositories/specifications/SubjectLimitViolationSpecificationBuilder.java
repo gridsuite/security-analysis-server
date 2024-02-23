@@ -27,6 +27,6 @@ public class SubjectLimitViolationSpecificationBuilder extends AbstractCommonSpe
 
     @Override
     public Specification<SubjectLimitViolationEntity> childrenNotEmpty() {
-        return (contingency, cq, cb) -> cb.isNotEmpty(contingency.get(SubjectLimitViolationEntity.Fields.contingencyLimitViolations));
+        return SpecificationUtils.isNotEmpty(SubjectLimitViolationEntity.Fields.contingencyLimitViolations);
     }
 }
