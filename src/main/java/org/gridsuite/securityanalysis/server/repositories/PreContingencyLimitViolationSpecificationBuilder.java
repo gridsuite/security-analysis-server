@@ -28,6 +28,6 @@ public class PreContingencyLimitViolationSpecificationBuilder extends AbstractCo
 
     @Override
     public String getIdFieldName() {
-        return PreContingencyLimitViolationEntity.Fields.id;
+        return AbstractLimitViolationEntity.Fields.id;
     }
 }

@@ -8,7 +8,6 @@ package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.security.LimitViolationType;
-import lombok.experimental.FieldNameConstants;
 import org.gridsuite.securityanalysis.server.dto.ContingencyResultDTO;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;

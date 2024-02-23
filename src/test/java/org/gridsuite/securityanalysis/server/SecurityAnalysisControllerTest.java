@@ -25,7 +25,6 @@ import lombok.SneakyThrows;
 import org.assertj.core.api.Assertions;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
-import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationRepository;
 import org.gridsuite.securityanalysis.server.service.ActionsService;

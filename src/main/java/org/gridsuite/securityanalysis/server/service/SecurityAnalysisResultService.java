@@ -11,10 +11,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.dto.*;
-import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
-import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
-import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
-import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.entities.*;
 import org.gridsuite.securityanalysis.server.repositories.*;
 import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
@@ -81,9 +78,7 @@ public class SecurityAnalysisResultService {
     @Transactional(readOnly = true)
     public List<PreContingencyLimitViolationResultDTO> findNResult(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Sort sort) {
         assertResultExists(resultUuid);
-/*
         assertPreContingenciesSortAllowed(sort);
-*/
         Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationSpecificationBuilder.buildSpecification(resultUuid, resourceFilters);  // preContingencyLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters);
 
         List<PreContingencyLimitViolationEntity> preContingencyLimitViolation = preContingencyLimitViolationRepository.findAll(specification, sort);
@@ -94,7 +89,7 @@ public class SecurityAnalysisResultService {
 
     @Transactional(readOnly = true)
     public byte[] findNResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
-        List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, List.of(), Sort.by(Sort.Direction.ASC, PreContingencyLimitViolationEntity.Fields.subjectLimitViolation + "." + SubjectLimitViolationEntity.Fields.subjectId));
+        List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, List.of(), Sort.by(Sort.Direction.ASC, AbstractLimitViolationEntity.Fields.subjectLimitViolation + "." + SubjectLimitViolationEntity.Fields.subjectId));
 
         return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), result.stream().map(r -> r.toCsvRow(csvTranslations.enumValueTranslations())).toList());
     }
@@ -164,6 +159,20 @@ public class SecurityAnalysisResultService {
         assertSortAllowed(sort, allowedSortProperties);
     }
 
+    private void assertPreContingenciesSortAllowed(Sort sort) {
+        List<String> allowedSortProperties = List.of(
+            SubjectLimitViolationEntity.Fields.subjectId,
+            AbstractLimitViolationEntity.Fields.limitType,
+            AbstractLimitViolationEntity.Fields.limitName,
+            AbstractLimitViolationEntity.Fields.limit,
+            AbstractLimitViolationEntity.Fields.value,
+            AbstractLimitViolationEntity.Fields.loading,
+            AbstractLimitViolationEntity.Fields.acceptableDuration,
+            AbstractLimitViolationEntity.Fields.side
+        );
+        assertSortAllowed(sort, allowedSortProperties);
+    }
+
     private void assertNmKSubjectLimitViolationsSortAllowed(Sort sort) {
         List<String> allowedSortProperties = List.of(SubjectLimitViolationEntity.Fields.subjectId);
         assertSortAllowed(sort, allowedSortProperties);
@@ -230,8 +239,8 @@ public class SecurityAnalysisResultService {
         contingencyLimitViolationRepository.deleteAllByContingencyUuidIn(contingencyUuids);
         contingencyRepository.deleteAllContingencyElementsByContingencyUuidIn(contingencyUuids);
         contingencyRepository.deleteAllByResultId(resultId);
-//        preContingencyLimitViolationRepository.deleteAllByResultId(resultId);
-//        subjectLimitViolationRepository.deleteAllByResultId(resultId);
+        preContingencyLimitViolationRepository.deleteAllByResultId(resultId);
+        subjectLimitViolationRepository.deleteAllByResultId(resultId);
         securityAnalysisResultRepository.deleteById(resultId);
     }
 

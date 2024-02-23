@@ -74,7 +74,6 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         new Contingency("l4", new LineContingency("l4"))
     );
 
-
     //MAX VALUE for acceptable duration here is important to check this value is actually set to null when exporting it
     static final LimitViolation LIMIT_VIOLATION_1 = new LimitViolation("l3", LimitViolationType.CURRENT, "l3_name", Integer.MAX_VALUE, 10, 1, 11, TwoSides.ONE);
     static final LimitViolation LIMIT_VIOLATION_2 = new LimitViolation("vl1", LimitViolationType.HIGH_VOLTAGE, "vl1_name", 0, 400, 1, 410);
@@ -107,7 +106,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     static final List<ContingencyResultDTO> RESULT_CONTINGENCIES = Stream.of(
         CONTINGENCIES.stream().map(c -> toContingencyResultDTO(c.getContingency(), LoadFlowResult.ComponentResult.Status.CONVERGED.name(), RESULT_LIMIT_VIOLATIONS)),
         FAILED_CONTINGENCIES.stream().map(c -> toContingencyResultDTO(c, LoadFlowResult.ComponentResult.Status.FAILED.name(), FAILED_LIMIT_VIOLATIONS)))
-    .flatMap(Function.identity()).toList();
+            .flatMap(Function.identity()).toList();
 
     static List<ContingencyResultDTO> getResultContingenciesWithNestedFilter(Function<SubjectLimitViolationDTO, Boolean> filterMethod) {
         return RESULT_CONTINGENCIES.stream().map(r ->

@@ -9,10 +9,6 @@ package org.gridsuite.securityanalysis.server.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
 /**
  * An object that can be used to filter data with the JPA Criteria API (via Spring Specification)
  * @param dataType the type of data we want to filter (text, number)

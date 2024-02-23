@@ -12,7 +12,6 @@ import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationResultDTO;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
-import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
