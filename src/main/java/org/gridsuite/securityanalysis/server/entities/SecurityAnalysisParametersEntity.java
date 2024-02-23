@@ -27,6 +27,7 @@ public class SecurityAnalysisParametersEntity {
 
     public SecurityAnalysisParametersEntity(SecurityAnalysisParametersValues securityAnalysisParametersValues) {
         this(null,
+                securityAnalysisParametersValues.getProvider(),
                 securityAnalysisParametersValues.getLowVoltageAbsoluteThreshold(),
                 securityAnalysisParametersValues.getLowVoltageProportionalThreshold(),
                 securityAnalysisParametersValues.getHighVoltageAbsoluteThreshold(),
@@ -38,6 +39,9 @@ public class SecurityAnalysisParametersEntity {
     @GeneratedValue(strategy = GenerationType.AUTO)
     @Column(name = "id")
     private UUID id;
+
+    @Column(name = "provider")
+    private String provider;
 
     @Column(name = "lowVoltageAbsoluteThreshold")
     private double lowVoltageAbsoluteThreshold;
@@ -56,6 +60,7 @@ public class SecurityAnalysisParametersEntity {
 
     public SecurityAnalysisParametersValues toSecurityAnalysisParametersValues() {
         return SecurityAnalysisParametersValues.builder()
+                .provider(this.provider)
                 .flowProportionalThreshold(this.flowProportionalThreshold)
                 .highVoltageAbsoluteThreshold(this.highVoltageAbsoluteThreshold)
                 .highVoltageProportionalThreshold(this.highVoltageProportionalThreshold)
@@ -70,6 +75,10 @@ public class SecurityAnalysisParametersEntity {
         this.highVoltageProportionalThreshold = securityAnalysisParametersValues.getHighVoltageProportionalThreshold();
         this.lowVoltageAbsoluteThreshold = securityAnalysisParametersValues.getLowVoltageAbsoluteThreshold();
         this.lowVoltageProportionalThreshold = securityAnalysisParametersValues.getLowVoltageProportionalThreshold();
+    }
+
+    public void updateProvider(String provider) {
+        this.provider = provider;
     }
 }
 

@@ -20,6 +20,8 @@ import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParameters
 @Builder
 @NoArgsConstructor
 public class SecurityAnalysisParametersValues {
+    private String provider;
+
     private double lowVoltageAbsoluteThreshold;
 
     private double lowVoltageProportionalThreshold;

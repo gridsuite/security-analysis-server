@@ -21,7 +21,7 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class LoadFlowParametersInfos {
+public class LoadFlowParametersValues {
 
     LoadFlowParameters commonParameters;
 
