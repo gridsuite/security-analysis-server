@@ -28,6 +28,8 @@ import static org.springframework.data.jpa.domain.Specification.not;
  */
 public final class SpecificationUtils {
 
+    public static final String FIELD_SEPARATOR = ".";
+
     // Utility class, so no constructor
     private SpecificationUtils() {
     }
@@ -146,7 +148,7 @@ public final class SpecificationUtils {
      * @return path for the query
      */
     private static <X, Y> Path<Y> getColumnPath(Root<X> root, String dotSeparatedFields) {
-        if (dotSeparatedFields.contains(".")) {
+        if (dotSeparatedFields.contains(SpecificationUtils.FIELD_SEPARATOR)) {
             String[] fields = dotSeparatedFields.split("\\.");
             Path<Y> path = root.get(fields[0]);
             for (int i = 1; i < fields.length; i++) {
