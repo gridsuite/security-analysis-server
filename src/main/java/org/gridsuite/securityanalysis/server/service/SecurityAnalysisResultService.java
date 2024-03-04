@@ -31,7 +31,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -56,11 +55,11 @@ public class SecurityAnalysisResultService {
 
     private static final Sort.Direction DEFAULT_SORT_DIRECTION = Sort.Direction.ASC;
 
-    private static final List<String> allowedNmKContingenciesResultSortProperties = List.of(ContingencyEntity.Fields.contingencyId, ContingencyEntity.Fields.status);
+    private static final List<String> ALLOWED_NMK_CONTINGENCIES_RESULT_SORT_PROPERTIES = List.of(ContingencyEntity.Fields.contingencyId, ContingencyEntity.Fields.status);
 
-    private static final List<String> allowedNmKSubjectLimitViolationsResultSortProperties = List.of(SubjectLimitViolationEntity.Fields.subjectId);
+    private static final List<String> ALLOWED_NMK_SUBJECT_LIMIT_VIOLATIONS_RESULT_SORT_PROPERTIES = List.of(SubjectLimitViolationEntity.Fields.subjectId);
 
-    private static final List<String> allowedPreContingenciesResultSortProperties = List.of(
+    private static final List<String> ALLOWED_PRECONTINGENCIES_RESULT_SORT_PROPERTIES = List.of(
         AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId,
         AbstractLimitViolationEntity.Fields.limitType,
         AbstractLimitViolationEntity.Fields.limitName,
@@ -174,15 +173,15 @@ public class SecurityAnalysisResultService {
     }
 
     private void assertNmKContingenciesSortAllowed(Sort sort) {
-        assertSortAllowed(sort, allowedNmKContingenciesResultSortProperties);
+        assertSortAllowed(sort, ALLOWED_NMK_CONTINGENCIES_RESULT_SORT_PROPERTIES);
     }
 
     private void assertPreContingenciesSortAllowed(Sort sort) {
-        assertSortAllowed(sort, allowedPreContingenciesResultSortProperties);
+        assertSortAllowed(sort, ALLOWED_PRECONTINGENCIES_RESULT_SORT_PROPERTIES);
     }
 
     private void assertNmKSubjectLimitViolationsSortAllowed(Sort sort) {
-        assertSortAllowed(sort, allowedNmKSubjectLimitViolationsResultSortProperties);
+        assertSortAllowed(sort, ALLOWED_NMK_SUBJECT_LIMIT_VIOLATIONS_RESULT_SORT_PROPERTIES);
     }
 
     private void assertSortAllowed(Sort sort, List<String> allowedSortProperties) {

@@ -34,7 +34,9 @@ public class ContingencySpecificationBuilder extends AbstractCommonSpecification
     }
 
     @Override
-    public Path<UUID> getResultIdPath(Root<ContingencyEntity> root) { return root.get(ContingencyEntity.Fields.result).get(SecurityAnalysisResultEntity.Fields.id); }
+    public Path<UUID> getResultIdPath(Root<ContingencyEntity> root) {
+        return root.get(ContingencyEntity.Fields.result).get(SecurityAnalysisResultEntity.Fields.id);
+    }
 
     @Override
     public Specification<ContingencyEntity> addSpecificFilterWhenNoChildrenFilter() {
@@ -45,6 +47,4 @@ public class ContingencySpecificationBuilder extends AbstractCommonSpecification
     public Specification<ContingencyEntity> childrenNotEmpty() {
         return SpecificationUtils.isNotEmpty(ContingencyEntity.Fields.contingencyLimitViolations);
     }
-
-
 }

@@ -9,8 +9,6 @@ package org.gridsuite.securityanalysis.server.repositories.specifications;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Root;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
-import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
-import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
@@ -37,7 +35,7 @@ public abstract class AbstractCommonSpecificationBuilder<T> {
         Specification<T> specification = SpecificationUtils.distinct();
         // filter by resultUuid
         specification = specification.and(Specification.where(resultUuidEquals(resultUuid)));
-        if(childrenResourceFilter.isEmpty()) {
+        if (childrenResourceFilter.isEmpty()) {
             specification = specification.and(addSpecificFilterWhenNoChildrenFilter());
         } else {
             // needed here to filter main entities that would have empty collection when filters are applied
