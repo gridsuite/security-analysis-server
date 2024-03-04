@@ -56,6 +56,21 @@ public class SecurityAnalysisResultService {
 
     private static final Sort.Direction DEFAULT_SORT_DIRECTION = Sort.Direction.ASC;
 
+    private static final List<String> allowedNmKContingenciesResultSortProperties = List.of(ContingencyEntity.Fields.contingencyId, ContingencyEntity.Fields.status);
+
+    private static final List<String> allowedNmKSubjectLimitViolationsResultSortProperties = List.of(SubjectLimitViolationEntity.Fields.subjectId);
+
+    private static final List<String> allowedPreContingenciesResultSortProperties = List.of(
+        AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId,
+        AbstractLimitViolationEntity.Fields.limitType,
+        AbstractLimitViolationEntity.Fields.limitName,
+        AbstractLimitViolationEntity.Fields.limit,
+        AbstractLimitViolationEntity.Fields.value,
+        AbstractLimitViolationEntity.Fields.loading,
+        AbstractLimitViolationEntity.Fields.acceptableDuration,
+        AbstractLimitViolationEntity.Fields.side
+    );
+
     @Autowired
     public SecurityAnalysisResultService(SecurityAnalysisResultRepository securityAnalysisResultRepository,
                                          ContingencyRepository contingencyRepository,
@@ -159,27 +174,15 @@ public class SecurityAnalysisResultService {
     }
 
     private void assertNmKContingenciesSortAllowed(Sort sort) {
-        List<String> allowedSortProperties = List.of(ContingencyEntity.Fields.contingencyId, ContingencyEntity.Fields.status);
-        assertSortAllowed(sort, allowedSortProperties);
+        assertSortAllowed(sort, allowedNmKContingenciesResultSortProperties);
     }
 
     private void assertPreContingenciesSortAllowed(Sort sort) {
-        List<String> allowedSortProperties = List.of(
-            AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId,
-            AbstractLimitViolationEntity.Fields.limitType,
-            AbstractLimitViolationEntity.Fields.limitName,
-            AbstractLimitViolationEntity.Fields.limit,
-            AbstractLimitViolationEntity.Fields.value,
-            AbstractLimitViolationEntity.Fields.loading,
-            AbstractLimitViolationEntity.Fields.acceptableDuration,
-            AbstractLimitViolationEntity.Fields.side
-        );
-        assertSortAllowed(sort, allowedSortProperties);
+        assertSortAllowed(sort, allowedPreContingenciesResultSortProperties);
     }
 
     private void assertNmKSubjectLimitViolationsSortAllowed(Sort sort) {
-        List<String> allowedSortProperties = List.of(SubjectLimitViolationEntity.Fields.subjectId);
-        assertSortAllowed(sort, allowedSortProperties);
+        assertSortAllowed(sort, allowedNmKSubjectLimitViolationsResultSortProperties);
     }
 
     private void assertSortAllowed(Sort sort, List<String> allowedSortProperties) {
@@ -341,7 +344,7 @@ public class SecurityAnalysisResultService {
             List<UUID> contingencyUuids = contingencies.stream()
                 .map(c -> c.getUuid())
                 .toList();
-            Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildLimitViolationsSpecification(contingencyUuids, resourceFilters.stream().filter(Predicate.not(contingencySpecificationBuilder::isParentFilter)).toList());
+            Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildLimitViolationsSpecification(contingencyUuids, resourceFilters);
             contingencyRepository.findAll(specification);
             // we fetch contingencyElements here to prevent N+1 query
             contingencyRepository.findAllWithContingencyElementsByUuidIn(contingencyUuids);
@@ -356,7 +359,7 @@ public class SecurityAnalysisResultService {
             List<UUID> subjectLimitViolationsUuids = subjectLimitViolations.stream()
                 .map(c -> c.getId())
                 .toList();
-            Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationSpecificationBuilder.buildLimitViolationsSpecification(subjectLimitViolationsUuids, resourceFilters.stream().filter(Predicate.not(subjectLimitViolationSpecificationBuilder::isParentFilter)).toList());
+            Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationSpecificationBuilder.buildLimitViolationsSpecification(subjectLimitViolationsUuids, resourceFilters);
             subjectLimitViolationRepository.findAll(specification);
 
             List<UUID> contingencyUuids = subjectLimitViolations.map(SubjectLimitViolationEntity::getContingencyLimitViolations).flatMap(List::stream)

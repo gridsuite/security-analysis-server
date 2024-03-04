@@ -39,6 +39,10 @@ public final class SpecificationUtils {
         return (root, cq, cb) -> cb.equal(cb.upper(getColumnPath(root, field)).as(String.class), value.toUpperCase());
     }
 
+    public static <X> Specification<X> notEqual(String field, String value) {
+        return (root, cq, cb) -> cb.notEqual(getColumnPath(root, field), value);
+    }
+
     public static <X> Specification<X> contains(String field, String value) {
         return (root, cq, cb) -> cb.like(cb.upper(getColumnPath(root, field)), "%" + EscapeCharacter.DEFAULT.escape(value).toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
     }

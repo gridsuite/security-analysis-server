@@ -9,6 +9,7 @@ package org.gridsuite.securityanalysis.server.entities;
 import com.powsybl.security.SecurityAnalysisResult;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.FieldNameConstants;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.jgrapht.alg.util.Pair;
 
@@ -26,6 +27,7 @@ import java.util.stream.Stream;
 @Getter
 @Entity
 @AllArgsConstructor
+@FieldNameConstants
 @Builder
 @Table(name = "security_analysis_result")
 public class SecurityAnalysisResultEntity {

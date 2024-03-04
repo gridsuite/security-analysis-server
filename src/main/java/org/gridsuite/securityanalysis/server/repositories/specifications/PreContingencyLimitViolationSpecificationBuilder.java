@@ -13,10 +13,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.UUID;
+
 /**
  * @author Kevin LE SAULNIER <kevin.lesaulnier@rte-france.com>
  */
-
 @Service
 public class PreContingencyLimitViolationSpecificationBuilder {
     public Specification<PreContingencyLimitViolationEntity> resultUuidEquals(UUID value) {
