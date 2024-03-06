@@ -20,7 +20,6 @@ import java.util.Map;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
-
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
