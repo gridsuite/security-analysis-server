@@ -69,6 +69,8 @@ public final class SpecificationUtils {
 
     public static <X> Specification<X> distinct() {
         return (root, cq, cb) -> {
+            // to select distinct result, we need to set a "criteria query" param
+            // we don't need to return any predicate here
             cq.distinct(true);
             return null;
         };
