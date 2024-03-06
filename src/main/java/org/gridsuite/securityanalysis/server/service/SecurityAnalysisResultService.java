@@ -11,11 +11,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.dto.*;
-import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
-import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
-import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
-import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.entities.*;
 import org.gridsuite.securityanalysis.server.repositories.*;
+import org.gridsuite.securityanalysis.server.repositories.specifications.ContingencySpecificationBuilder;
+import org.gridsuite.securityanalysis.server.repositories.specifications.PreContingencyLimitViolationSpecificationBuilder;
+import org.gridsuite.securityanalysis.server.repositories.specifications.SpecificationUtils;
+import org.gridsuite.securityanalysis.server.repositories.specifications.SubjectLimitViolationSpecificationBuilder;
 import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.slf4j.Logger;
@@ -42,6 +43,9 @@ public class SecurityAnalysisResultService {
     private final PreContingencyLimitViolationRepository preContingencyLimitViolationRepository;
     private final SubjectLimitViolationRepository subjectLimitViolationRepository;
     private final ContingencyLimitViolationRepository contingencyLimitViolationRepository;
+    private final ContingencySpecificationBuilder contingencySpecificationBuilder;
+    private final SubjectLimitViolationSpecificationBuilder subjectLimitViolationSpecificationBuilder;
+    private final PreContingencyLimitViolationSpecificationBuilder preContingencyLimitViolationSpecificationBuilder;
     private final ObjectMapper objectMapper;
     private SecurityAnalysisResultService self;
 
@@ -51,12 +55,30 @@ public class SecurityAnalysisResultService {
 
     private static final Sort.Direction DEFAULT_SORT_DIRECTION = Sort.Direction.ASC;
 
+    private static final List<String> ALLOWED_NMK_CONTINGENCIES_RESULT_SORT_PROPERTIES = List.of(ContingencyEntity.Fields.contingencyId, ContingencyEntity.Fields.status);
+
+    private static final List<String> ALLOWED_NMK_SUBJECT_LIMIT_VIOLATIONS_RESULT_SORT_PROPERTIES = List.of(SubjectLimitViolationEntity.Fields.subjectId);
+
+    private static final List<String> ALLOWED_PRECONTINGENCIES_RESULT_SORT_PROPERTIES = List.of(
+        AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId,
+        AbstractLimitViolationEntity.Fields.limitType,
+        AbstractLimitViolationEntity.Fields.limitName,
+        AbstractLimitViolationEntity.Fields.limit,
+        AbstractLimitViolationEntity.Fields.value,
+        AbstractLimitViolationEntity.Fields.loading,
+        AbstractLimitViolationEntity.Fields.acceptableDuration,
+        AbstractLimitViolationEntity.Fields.side
+    );
+
     @Autowired
     public SecurityAnalysisResultService(SecurityAnalysisResultRepository securityAnalysisResultRepository,
                                          ContingencyRepository contingencyRepository,
                                          PreContingencyLimitViolationRepository preContingencyLimitViolationRepository,
                                          SubjectLimitViolationRepository subjectLimitViolationRepository,
                                          ContingencyLimitViolationRepository contingencyLimitViolationRepository,
+                                         PreContingencyLimitViolationSpecificationBuilder preContingencyLimitViolationSpecificationBuilder,
+                                         ContingencySpecificationBuilder contingencySpecificationBuilder,
+                                         SubjectLimitViolationSpecificationBuilder subjectLimitViolationSpecificationBuilder,
                                          @Lazy SecurityAnalysisResultService self,
                                          ObjectMapper objectMapper) {
         this.securityAnalysisResultRepository = securityAnalysisResultRepository;
@@ -64,6 +86,9 @@ public class SecurityAnalysisResultService {
         this.preContingencyLimitViolationRepository = preContingencyLimitViolationRepository;
         this.subjectLimitViolationRepository = subjectLimitViolationRepository;
         this.contingencyLimitViolationRepository = contingencyLimitViolationRepository;
+        this.preContingencyLimitViolationSpecificationBuilder = preContingencyLimitViolationSpecificationBuilder;
+        this.contingencySpecificationBuilder = contingencySpecificationBuilder;
+        this.subjectLimitViolationSpecificationBuilder = subjectLimitViolationSpecificationBuilder;
         this.objectMapper = objectMapper;
         this.self = self;
     }
@@ -72,9 +97,9 @@ public class SecurityAnalysisResultService {
     public List<PreContingencyLimitViolationResultDTO> findNResult(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Sort sort) {
         assertResultExists(resultUuid);
         assertPreContingenciesSortAllowed(sort);
-        Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters);
-        Sort newSort = createNResultSort(sort);
-        List<PreContingencyLimitViolationEntity> preContingencyLimitViolation = preContingencyLimitViolationRepository.findAll(specification, newSort);
+        Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationSpecificationBuilder.buildSpecification(resultUuid, resourceFilters);
+
+        List<PreContingencyLimitViolationEntity> preContingencyLimitViolation = preContingencyLimitViolationRepository.findAll(specification, sort);
         return preContingencyLimitViolation.stream()
                 .map(PreContingencyLimitViolationResultDTO::toDto)
                 .toList();
@@ -82,22 +107,9 @@ public class SecurityAnalysisResultService {
 
     @Transactional(readOnly = true)
     public byte[] findNResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
-        List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, List.of(), Sort.by(Sort.Direction.ASC, ResourceFilterDTO.Column.SUBJECT_ID.getColumnName()));
+        List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, List.of(), Sort.by(Sort.Direction.ASC, AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId));
 
         return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), result.stream().map(r -> r.toCsvRow(csvTranslations.enumValueTranslations())).toList());
-    }
-
-    private Sort createNResultSort(Sort sort) {
-        List<Sort.Order> newOrders = new ArrayList<>();
-        sort.forEach(order -> {
-            String property = order.getProperty();
-            if (preContingencyLimitViolationRepository.isParentFilter(property)) {
-                newOrders.add(new Sort.Order(order.getDirection(), "subjectLimitViolation." + property));
-            } else {
-                newOrders.add(order);
-            }
-        });
-        return Sort.by(newOrders);
     }
 
     @Transactional(readOnly = true)
@@ -161,25 +173,15 @@ public class SecurityAnalysisResultService {
     }
 
     private void assertNmKContingenciesSortAllowed(Sort sort) {
-        List<String> allowedSortProperties = List.of(ResourceFilterDTO.Column.CONTINGENCY_ID, ResourceFilterDTO.Column.STATUS)
-            .stream().map(ResourceFilterDTO.Column::getColumnName)
-            .toList();
-        assertSortAllowed(sort, allowedSortProperties);
+        assertSortAllowed(sort, ALLOWED_NMK_CONTINGENCIES_RESULT_SORT_PROPERTIES);
     }
 
     private void assertPreContingenciesSortAllowed(Sort sort) {
-        List<String> allowedSortProperties = ResourceFilterDTO.getAllColumnNames().stream()
-                .filter(columnName -> !columnName.equals(ResourceFilterDTO.Column.CONTINGENCY_ID.getColumnName())
-                        && !columnName.equals(ResourceFilterDTO.Column.STATUS.getColumnName()))
-                .toList();
-        assertSortAllowed(sort, allowedSortProperties);
+        assertSortAllowed(sort, ALLOWED_PRECONTINGENCIES_RESULT_SORT_PROPERTIES);
     }
 
     private void assertNmKSubjectLimitViolationsSortAllowed(Sort sort) {
-        List<String> allowedSortProperties = List.of(ResourceFilterDTO.Column.SUBJECT_ID)
-            .stream().map(ResourceFilterDTO.Column::getColumnName)
-            .toList();
-        assertSortAllowed(sort, allowedSortProperties);
+        assertSortAllowed(sort, ALLOWED_NMK_SUBJECT_LIMIT_VIOLATIONS_RESULT_SORT_PROPERTIES);
     }
 
     private void assertSortAllowed(Sort sort, List<String> allowedSortProperties) {
@@ -269,7 +271,8 @@ public class SecurityAnalysisResultService {
         Objects.requireNonNull(resultUuid);
         assertNmKContingenciesSortAllowed(pageable.getSort());
         Pageable modifiedPageable = addDefaultSort(pageable, DEFAULT_CONTINGENCY_SORT_COLUMN);
-        Specification<ContingencyEntity> specification = contingencyRepository.getParentsSpecifications(resultUuid, resourceFilters);
+
+        Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildSpecification(resultUuid, resourceFilters);
         // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
         // cf. https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/
@@ -304,7 +307,7 @@ public class SecurityAnalysisResultService {
         Objects.requireNonNull(resultUuid);
         assertNmKSubjectLimitViolationsSortAllowed(pageable.getSort());
         Pageable modifiedPageable = addDefaultSort(pageable, DEFAULT_SUBJECT_LIMIT_VIOLATION_SORT_COLUMN);
-        Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getParentsSpecifications(resultUuid, resourceFilters);
+        Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationSpecificationBuilder.buildSpecification(resultUuid, resourceFilters);
         // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
         // cf. https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/
@@ -340,7 +343,7 @@ public class SecurityAnalysisResultService {
             List<UUID> contingencyUuids = contingencies.stream()
                 .map(c -> c.getUuid())
                 .toList();
-            Specification<ContingencyEntity> specification = contingencyRepository.getLimitViolationsSpecifications(contingencyUuids, resourceFilters);
+            Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildLimitViolationsSpecification(contingencyUuids, resourceFilters);
             contingencyRepository.findAll(specification);
             // we fetch contingencyElements here to prevent N+1 query
             contingencyRepository.findAllWithContingencyElementsByUuidIn(contingencyUuids);
@@ -355,7 +358,7 @@ public class SecurityAnalysisResultService {
             List<UUID> subjectLimitViolationsUuids = subjectLimitViolations.stream()
                 .map(c -> c.getId())
                 .toList();
-            Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationRepository.getLimitViolationsSpecifications(subjectLimitViolationsUuids, resourceFilters);
+            Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationSpecificationBuilder.buildLimitViolationsSpecification(subjectLimitViolationsUuids, resourceFilters);
             subjectLimitViolationRepository.findAll(specification);
 
             List<UUID> contingencyUuids = subjectLimitViolations.map(SubjectLimitViolationEntity::getContingencyLimitViolations).flatMap(List::stream)
