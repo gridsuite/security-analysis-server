@@ -10,7 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.security.SecurityAnalysisParameters;
-import org.gridsuite.securityanalysis.server.dto.ReportInfos;
+import org.gridsuite.securityanalysis.server.computation.utils.ReportContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -88,7 +88,7 @@ public class SecurityAnalysisResultContext {
                 receiver,
                 provider,
                 parameters,
-                new ReportInfos(reportUuid, reporterId, reportType),
+                new ReportContext(reportUuid, reporterId, reportType),
                 userId
         );
         return new SecurityAnalysisResultContext(resultUuid, runContext);
@@ -109,9 +109,9 @@ public class SecurityAnalysisResultContext {
                 .setHeader(RECEIVER_HEADER, runContext.getReceiver())
                 .setHeader(HEADER_USER_ID, runContext.getUserId())
                 .setHeader(PROVIDER_HEADER, runContext.getProvider())
-                .setHeader(REPORT_UUID_HEADER, runContext.getReportUuid())
-                .setHeader(REPORTER_ID_HEADER, runContext.getReporterId())
-                .setHeader(REPORT_TYPE_HEADER, runContext.getReportType())
+                .setHeader(REPORT_UUID_HEADER, runContext.getReportContext().getReportId())
+                .setHeader(REPORTER_ID_HEADER, runContext.getReportContext().getReportName())
+                .setHeader(REPORT_TYPE_HEADER, runContext.getReportContext().getReportType())
                 .build();
     }
 }

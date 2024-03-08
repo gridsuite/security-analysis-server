@@ -205,13 +205,16 @@ public class SecurityAnalysisWorkerService {
         AtomicReference<Reporter> rootReporter = new AtomicReference<>(Reporter.NO_OP);
         Reporter reporter = Reporter.NO_OP;
 
-        if (context.getReportUuid() != null) {
-            final String reportType = context.getReportType();
-            String rootReporterId = context.getReporterId() == null ? reportType : context.getReporterId() + "@" + reportType;
+        if (context.getReportContext().getReportId() != null) {
+            final String reportType = context.getReportContext().getReportType();
+            String rootReporterId = context.getReportContext().getReportName() == null ?
+                    reportType :
+                    context.getReportContext().getReportName() + "@" + reportType;
             rootReporter.set(new ReporterModel(rootReporterId, rootReporterId));
             reporter = rootReporter.get().createSubReporter(reportType, reportType + " (${providerToUse})", "providerToUse", securityAnalysisRunner.getName());
             // Delete any previous SA computation logs
-            securityAnalysisObserver.observe("report.delete", context, () -> reportService.deleteReport(context.getReportUuid(), reportType));
+            securityAnalysisObserver.observe("report.delete",
+                    context, () -> reportService.deleteReport(context.getReportContext().getReportId(), reportType));
         }
 
         CompletableFuture<SecurityAnalysisResult> future = runASAsync(context,
@@ -225,7 +228,7 @@ public class SecurityAnalysisWorkerService {
                 resultUuid);
 
         SecurityAnalysisResult result = future == null ? null : securityAnalysisObserver.observeRun("run", context, future::get);
-        if (context.getReportUuid() != null) {
+        if (context.getReportContext().getReportId() != null) {
             List<Report> notFoundElementReports = new ArrayList<>();
             contingencies.stream()
                     .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements()))
@@ -238,10 +241,13 @@ public class SecurityAnalysisWorkerService {
                                 .build());
                     });
             if (!CollectionUtils.isEmpty(notFoundElementReports)) {
-                Reporter elementNotFoundSubReporter = reporter.createSubReporter(context.getReportUuid().toString() + "notFoundElements", "Elements not found");
+                Reporter elementNotFoundSubReporter = reporter.createSubReporter(
+                        context.getReportContext().getReportId().toString() + "notFoundElements",
+                        "Elements not found");
                 notFoundElementReports.forEach(elementNotFoundSubReporter::report);
             }
-            securityAnalysisObserver.observe("report.send", context, () -> reportService.sendReport(context.getReportUuid(), rootReporter.get()));
+            securityAnalysisObserver.observe("report.send",
+                    context, () -> reportService.sendReport(context.getReportContext().getReportId(), rootReporter.get()));
         }
         return result;
     }

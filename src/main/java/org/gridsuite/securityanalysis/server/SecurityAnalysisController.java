@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.gridsuite.securityanalysis.server.computation.utils.ReportContext;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisParametersService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
@@ -77,7 +78,7 @@ public class SecurityAnalysisController {
                                                       @Parameter(description = "parametersUuid") @RequestParam(name = "parametersUuid", required = false) UUID parametersUuid,
                                                       @Parameter(description = "loadFlow parameters uuid") @RequestParam(name = "loadFlowParametersUuid") UUID loadFlowParametersUuid,
                                                       @RequestHeader(HEADER_USER_ID) String userId) {
-        SecurityAnalysisResult result = workerService.run(securityAnalysisParametersService.createRunContext(networkUuid, variantId, new RunContextParametersInfos(contigencyListNames, parametersUuid, loadFlowParametersUuid), null, new ReportInfos(reportUuid, reporterId, reportType), userId));
+        SecurityAnalysisResult result = workerService.run(securityAnalysisParametersService.createRunContext(networkUuid, variantId, new RunContextParametersInfos(contigencyListNames, parametersUuid, loadFlowParametersUuid), null, new ReportContext(reportUuid, reporterId, reportType), userId));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
     }
 
@@ -103,7 +104,7 @@ public class SecurityAnalysisController {
                         variantId,
                         new RunContextParametersInfos(contigencyListNames, parametersUuid, loadFlowParametersUuid),
                         receiver,
-                        new ReportInfos(reportUuid, reporterId, reportType),
+                        new ReportContext(reportUuid, reporterId, reportType),
                         userId
                 )
         );
