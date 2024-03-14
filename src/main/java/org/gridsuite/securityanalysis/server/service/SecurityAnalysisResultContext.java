@@ -10,42 +10,29 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.security.SecurityAnalysisParameters;
+import org.gridsuite.securityanalysis.server.computation.service.AbstractResultContext;
 import org.gridsuite.securityanalysis.server.computation.utils.ReportContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.support.MessageBuilder;
 
 import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-import static org.gridsuite.securityanalysis.server.computation.service.AbstractResultContext.*;
 import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.*;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
-public class SecurityAnalysisResultContext {
+public class SecurityAnalysisResultContext extends AbstractResultContext<SecurityAnalysisRunContext> {
     public static final String CONTINGENCY_LIST_NAMES_HEADER = "contingencyListNames";
 
-    private final UUID resultUuid;
-
-    private final SecurityAnalysisRunContext runContext;
-
     public SecurityAnalysisResultContext(UUID resultUuid, SecurityAnalysisRunContext runContext) {
-        this.resultUuid = Objects.requireNonNull(resultUuid);
-        this.runContext = Objects.requireNonNull(runContext);
-    }
-
-    public UUID getResultUuid() {
-        return resultUuid;
-    }
-
-    public SecurityAnalysisRunContext getRunContext() {
-        return runContext;
+        super(resultUuid, runContext);
     }
 
     private static List<String> getHeaderList(MessageHeaders headers, String name) {
@@ -96,24 +83,8 @@ public class SecurityAnalysisResultContext {
         return new SecurityAnalysisResultContext(resultUuid, runContext);
     }
 
-    public Message<String> toMessage(ObjectMapper objectMapper) {
-        String parametersJson;
-        try {
-            parametersJson = objectMapper.writeValueAsString(runContext.getParameters());
-        } catch (JsonProcessingException e) {
-            throw new UncheckedIOException(e);
-        }
-        return MessageBuilder.withPayload(parametersJson)
-                .setHeader(HEADER_RESULT_UUID, resultUuid.toString())
-                .setHeader(NETWORK_UUID_HEADER, runContext.getNetworkUuid().toString())
-                .setHeader(VARIANT_ID_HEADER, runContext.getVariantId())
-                .setHeader(CONTINGENCY_LIST_NAMES_HEADER, String.join(",", runContext.getContingencyListNames()))
-                .setHeader(HEADER_RECEIVER, runContext.getReceiver())
-                .setHeader(HEADER_USER_ID, runContext.getUserId())
-                .setHeader(HEADER_PROVIDER, runContext.getProvider())
-                .setHeader(REPORT_UUID_HEADER, runContext.getReportContext().getReportId())
-                .setHeader(REPORTER_ID_HEADER, runContext.getReportContext().getReportName())
-                .setHeader(REPORT_TYPE_HEADER, runContext.getReportContext().getReportType())
-                .build();
+    public Map<String, String> getSpecificMsgHeaders() {
+        return Map.of(
+                CONTINGENCY_LIST_NAMES_HEADER, String.join(",", runContext.getContingencyListNames()));
     }
 }
