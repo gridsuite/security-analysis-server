@@ -36,7 +36,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import static org.gridsuite.securityanalysis.server.service.NotificationService.HEADER_USER_ID;
+import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.HEADER_USER_ID;
 import static org.springframework.http.MediaType.*;
 
 /**

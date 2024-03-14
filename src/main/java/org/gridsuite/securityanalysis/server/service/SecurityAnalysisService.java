@@ -8,6 +8,9 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisProvider;
+import lombok.Getter;
+import org.gridsuite.securityanalysis.server.computation.service.NotificationService;
+import org.gridsuite.securityanalysis.server.computation.service.UuidGeneratorService;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,8 @@ import java.util.stream.Collectors;
  */
 @Service
 public class SecurityAnalysisService {
+    public static final String COMPUTATION_TYPE = "Security analysis";
+
     private final SecurityAnalysisResultService securityAnalysisResultService;
 
     private final UuidGeneratorService uuidGeneratorService;
@@ -31,6 +36,7 @@ public class SecurityAnalysisService {
 
     private final ObjectMapper objectMapper;
 
+    @Getter
     private final String defaultProvider;
 
     public SecurityAnalysisService(SecurityAnalysisResultService securityAnalysisResultService,
@@ -50,7 +56,7 @@ public class SecurityAnalysisService {
         var resultUuid = uuidGeneratorService.generate();
         // update status to running status
         setStatus(List.of(resultUuid), SecurityAnalysisStatus.RUNNING);
-        notificationService.emitRunAnalysisMessage(new SecurityAnalysisResultContext(resultUuid, runContext).toMessage(objectMapper));
+        notificationService.sendRunMessage(new SecurityAnalysisResultContext(resultUuid, runContext).toMessage(objectMapper));
 
         return resultUuid;
     }
@@ -72,16 +78,12 @@ public class SecurityAnalysisService {
     }
 
     public void stop(UUID resultUuid, String receiver) {
-        notificationService.emitCancelAnalysisMessage(new SecurityAnalysisCancelContext(resultUuid, receiver).toMessage());
+        notificationService.sendCancelMessage(new SecurityAnalysisCancelContext(resultUuid, receiver).toMessage());
     }
 
     public List<String> getProviders() {
         return SecurityAnalysisProvider.findAll().stream()
                 .map(SecurityAnalysisProvider::getName)
                 .collect(Collectors.toList());
-    }
-
-    public String getDefaultProvider() {
-        return defaultProvider;
     }
 }

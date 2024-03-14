@@ -25,6 +25,7 @@ import com.powsybl.security.SecurityAnalysisReport;
 import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.ws.commons.LogUtils;
+import org.gridsuite.securityanalysis.server.computation.service.NotificationService;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
@@ -51,8 +52,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static org.gridsuite.securityanalysis.server.service.NotificationService.CANCEL_MESSAGE;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.FAIL_MESSAGE;
+import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.getCancelMessage;
+import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.getFailedMessage;
+import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -123,9 +125,14 @@ public class SecurityAnalysisWorkerService {
             Thread.currentThread().interrupt();
             return null;
         } catch (Exception e) {
-            LOGGER.error(FAIL_MESSAGE, e);
+            LOGGER.error(getFailedMessage(getComputationType()), e);
             return null;
         }
+    }
+
+    //@Override // TODO réOverride
+    protected String getComputationType() {
+        return COMPUTATION_TYPE;
     }
 
     private CompletableFuture<SecurityAnalysisResult> runASAsync(SecurityAnalysisRunContext context,
@@ -183,8 +190,8 @@ public class SecurityAnalysisWorkerService {
 
     private void cleanASResultsAndPublishCancel(UUID resultUuid, String receiver) {
         securityAnalysisResultService.delete(resultUuid);
-        notificationService.emitStopAnalysisMessage(resultUuid.toString(), receiver);
-        LOGGER.info(CANCEL_MESSAGE + " (resultUuid='{}')", resultUuid);
+        notificationService.publishStop(resultUuid, receiver, getComputationType());
+        LOGGER.info(getCancelMessage(getComputationType()) + " (resultUuid='{}')", resultUuid);
     }
 
     private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) throws Exception {
@@ -276,7 +283,7 @@ public class SecurityAnalysisWorkerService {
                 LOGGER.info("Stored in {}s", TimeUnit.NANOSECONDS.toSeconds(finalNanoTime - startTime.getAndSet(finalNanoTime)));
 
                 if (result != null) {  // result available
-                    notificationService.emitAnalysisResultsMessage(resultContext.getResultUuid().toString(), resultContext.getRunContext().getReceiver());
+                    notificationService.sendResultMessage(resultContext.getResultUuid(), resultContext.getRunContext().getReceiver());
                     LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
                 } else {  // result not available : stop computation request
                     if (cancelComputationRequests.get(resultContext.getResultUuid()) != null) {
@@ -287,11 +294,12 @@ public class SecurityAnalysisWorkerService {
                 Thread.currentThread().interrupt();
             } catch (Exception e) {
                 if (!(e instanceof CancellationException)) {
-                    LOGGER.error(FAIL_MESSAGE, e);
-                    notificationService.emitFailAnalysisMessage(resultContext.getResultUuid().toString(),
-                        resultContext.getRunContext().getReceiver(),
-                        e.getMessage(),
-                        resultContext.getRunContext().getUserId());
+                    LOGGER.error(getFailedMessage(getComputationType()), e);
+                    notificationService.publishFail(resultContext.getResultUuid(),
+                            resultContext.getRunContext().getReceiver(),
+                            e.getMessage(),
+                            resultContext.getRunContext().getUserId(),
+                            getComputationType());
                     securityAnalysisResultService.delete(resultContext.getResultUuid());
                 }
             } finally {
