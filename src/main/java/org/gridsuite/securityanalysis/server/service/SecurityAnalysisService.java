@@ -9,6 +9,7 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisProvider;
 import lombok.Getter;
+import org.gridsuite.securityanalysis.server.computation.service.CancelContext;
 import org.gridsuite.securityanalysis.server.computation.service.NotificationService;
 import org.gridsuite.securityanalysis.server.computation.service.UuidGeneratorService;
 import org.gridsuite.securityanalysis.server.dto.*;
@@ -18,7 +19,6 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -78,12 +78,12 @@ public class SecurityAnalysisService {
     }
 
     public void stop(UUID resultUuid, String receiver) {
-        notificationService.sendCancelMessage(new SecurityAnalysisCancelContext(resultUuid, receiver).toMessage());
+        notificationService.sendCancelMessage(new CancelContext(resultUuid, receiver).toMessage());
     }
 
     public List<String> getProviders() {
         return SecurityAnalysisProvider.findAll().stream()
                 .map(SecurityAnalysisProvider::getName)
-                .collect(Collectors.toList());
+                .toList();
     }
 }

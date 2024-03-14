@@ -25,6 +25,7 @@ import com.powsybl.security.SecurityAnalysisReport;
 import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.ws.commons.LogUtils;
+import org.gridsuite.securityanalysis.server.computation.service.CancelContext;
 import org.gridsuite.securityanalysis.server.computation.service.NotificationService;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
@@ -34,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.server.ResponseStatusException;
@@ -79,7 +81,7 @@ public class SecurityAnalysisWorkerService {
 
     private Map<UUID, CompletableFuture<SecurityAnalysisResult>> futures = new ConcurrentHashMap<>();
 
-    private Map<UUID, SecurityAnalysisCancelContext> cancelComputationRequests = new ConcurrentHashMap<>();
+    private Map<UUID, CancelContext> cancelComputationRequests = new ConcurrentHashMap<>();
 
     private Set<UUID> runRequests = Sets.newConcurrentHashSet();
 
@@ -171,7 +173,7 @@ public class SecurityAnalysisWorkerService {
         }
     }
 
-    private void cancelASAsync(SecurityAnalysisCancelContext cancelContext) {
+    private void cancelASAsync(CancelContext cancelContext) {
         lockRunAndCancelAS.lock();
         try {
             cancelComputationRequests.put(cancelContext.getResultUuid(), cancelContext);
@@ -312,6 +314,14 @@ public class SecurityAnalysisWorkerService {
 
     @Bean
     public Consumer<Message<String>> consumeCancel() {
-        return message -> cancelASAsync(SecurityAnalysisCancelContext.fromMessage(message));
+        return message -> cancelASAsync(CancelContext.fromMessage(message));
+    }
+
+    public static String getNonNullHeader(MessageHeaders headers, String name) {
+        String header = (String) headers.get(name);
+        if (header == null) {
+            throw new PowsyblException("Header '" + name + "' not found");
+        }
+        return header;
     }
 }

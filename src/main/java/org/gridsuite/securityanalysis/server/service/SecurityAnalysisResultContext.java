@@ -8,7 +8,6 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.powsybl.commons.PowsyblException;
 import com.powsybl.security.SecurityAnalysisParameters;
 import org.gridsuite.securityanalysis.server.computation.service.AbstractResultContext;
 import org.gridsuite.securityanalysis.server.computation.utils.ReportContext;
@@ -24,6 +23,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.*;
+import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService.getNonNullHeader;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -41,14 +41,6 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
             return Collections.emptyList();
         }
         return Arrays.asList(header.split(","));
-    }
-
-    private static String getNonNullHeader(MessageHeaders headers, String name) {
-        String header = (String) headers.get(name);
-        if (header == null) {
-            throw new PowsyblException("Header '" + name + "' not found");
-        }
-        return header;
     }
 
     public static SecurityAnalysisResultContext fromMessage(Message<String> message, ObjectMapper objectMapper) {
