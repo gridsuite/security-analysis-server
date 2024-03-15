@@ -27,6 +27,7 @@ import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.ws.commons.LogUtils;
 import org.gridsuite.securityanalysis.server.computation.service.CancelContext;
 import org.gridsuite.securityanalysis.server.computation.service.NotificationService;
+import org.gridsuite.securityanalysis.server.computation.service.ExecutionService;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
@@ -88,13 +89,13 @@ public class SecurityAnalysisWorkerService {
 
     private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier;
 
-    private SecurityAnalysisExecutionService securityAnalysisExecutionService;
+    private ExecutionService executionService;
 
     private final SecurityAnalysisObserver securityAnalysisObserver;
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService, ReportService reportService,
                                          SecurityAnalysisResultService resultRepository, ObjectMapper objectMapper,
-                                         SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, NotificationService notificationService, SecurityAnalysisExecutionService securityAnalysisExecutionService,
+                                         SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, NotificationService notificationService, ExecutionService executionService,
                                          SecurityAnalysisObserver securityAnalysisObserver) {
         this.networkStoreService = Objects.requireNonNull(networkStoreService);
         this.actionsService = Objects.requireNonNull(actionsService);
@@ -102,7 +103,7 @@ public class SecurityAnalysisWorkerService {
         this.securityAnalysisResultService = Objects.requireNonNull(resultRepository);
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.notificationService = Objects.requireNonNull(notificationService);
-        this.securityAnalysisExecutionService = Objects.requireNonNull(securityAnalysisExecutionService);
+        this.executionService = Objects.requireNonNull(executionService);
         this.securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
         this.securityAnalysisObserver = securityAnalysisObserver;
     }
@@ -154,7 +155,7 @@ public class SecurityAnalysisWorkerService {
                 variantId,
                 n -> contingencies,
                 context.getParameters(),
-                securityAnalysisExecutionService.getLocalComputationManager(),
+                executionService.getComputationManager(),
                 LimitViolationFilter.load(),
                 new DefaultLimitViolationDetector(),
                 Collections.emptyList(),
