@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.MessageHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.server.ResponseStatusException;
@@ -315,13 +314,5 @@ public class SecurityAnalysisWorkerService {
     @Bean
     public Consumer<Message<String>> consumeCancel() {
         return message -> cancelASAsync(CancelContext.fromMessage(message));
-    }
-
-    public static String getNonNullHeader(MessageHeaders headers, String name) {
-        String header = (String) headers.get(name);
-        if (header == null) {
-            throw new PowsyblException("Header '" + name + "' not found");
-        }
-        return header;
     }
 }

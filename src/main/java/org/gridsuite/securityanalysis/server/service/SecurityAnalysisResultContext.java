@@ -22,8 +22,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
+import static org.gridsuite.securityanalysis.server.computation.service.AbstractComputationService.getNonNullHeader;
 import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.*;
-import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService.getNonNullHeader;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>

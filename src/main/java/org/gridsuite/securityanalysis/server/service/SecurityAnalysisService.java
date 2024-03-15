@@ -8,8 +8,7 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisProvider;
-import lombok.Getter;
-import org.gridsuite.securityanalysis.server.computation.service.CancelContext;
+import org.gridsuite.securityanalysis.server.computation.service.AbstractComputationService;
 import org.gridsuite.securityanalysis.server.computation.service.NotificationService;
 import org.gridsuite.securityanalysis.server.computation.service.UuidGeneratorService;
 import org.gridsuite.securityanalysis.server.dto.*;
@@ -25,30 +24,18 @@ import java.util.UUID;
  * @author Franck Lecuyer <franck.lecuyer at rte-france.com>
  */
 @Service
-public class SecurityAnalysisService {
+public class SecurityAnalysisService extends AbstractComputationService<SecurityAnalysisRunContext> {
     public static final String COMPUTATION_TYPE = "Security analysis";
 
     private final SecurityAnalysisResultService securityAnalysisResultService;
-
-    private final UuidGeneratorService uuidGeneratorService;
-
-    private final NotificationService notificationService;
-
-    private final ObjectMapper objectMapper;
-
-    @Getter
-    private final String defaultProvider;
 
     public SecurityAnalysisService(SecurityAnalysisResultService securityAnalysisResultService,
                                    UuidGeneratorService uuidGeneratorService,
                                    ObjectMapper objectMapper,
                                    NotificationService notificationService,
                                    @Value("${security-analysis.default-provider}") String defaultProvider) {
+        super(notificationService, objectMapper, uuidGeneratorService, defaultProvider);
         this.securityAnalysisResultService = Objects.requireNonNull(securityAnalysisResultService);
-        this.uuidGeneratorService = Objects.requireNonNull(uuidGeneratorService);
-        this.objectMapper = Objects.requireNonNull(objectMapper);
-        this.notificationService = Objects.requireNonNull(notificationService);
-        this.defaultProvider = Objects.requireNonNull(defaultProvider);
     }
 
     public UUID runAndSaveResult(SecurityAnalysisRunContext runContext) {
@@ -75,10 +62,6 @@ public class SecurityAnalysisService {
 
     public void setStatus(List<UUID> resultUuids, SecurityAnalysisStatus status) {
         securityAnalysisResultService.insertStatus(resultUuids, status);
-    }
-
-    public void stop(UUID resultUuid, String receiver) {
-        notificationService.sendCancelMessage(new CancelContext(resultUuid, receiver).toMessage());
     }
 
     public List<String> getProviders() {

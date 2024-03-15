@@ -7,7 +7,6 @@
 package org.gridsuite.securityanalysis.server.computation.service;
 
 import lombok.Getter;
-import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 import org.springframework.messaging.support.MessageBuilder;
@@ -15,6 +14,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import java.util.Objects;
 import java.util.UUID;
 
+import static org.gridsuite.securityanalysis.server.computation.service.AbstractComputationService.getNonNullHeader;
 import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.*;
 
 /**
@@ -35,7 +35,7 @@ public class CancelContext {
     public static CancelContext fromMessage(Message<String> message) {
         Objects.requireNonNull(message);
         MessageHeaders headers = message.getHeaders();
-        UUID resultUuid = UUID.fromString(SecurityAnalysisWorkerService.getNonNullHeader(headers, HEADER_RESULT_UUID));
+        UUID resultUuid = UUID.fromString(getNonNullHeader(headers, HEADER_RESULT_UUID));
         String receiver = (String) headers.get(HEADER_RECEIVER);
         return new CancelContext(resultUuid, receiver);
     }
