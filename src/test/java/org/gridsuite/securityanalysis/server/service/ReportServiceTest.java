@@ -53,7 +53,7 @@ public class ReportServiceTest {
     @Before
     public void setUp() throws IOException {
         String mockServerUri = initMockWebServer();
-        reportService.setReportServiceBaseUri(mockServerUri);
+        reportService.setReportServerBaseUri(mockServerUri);
     }
 
     @After

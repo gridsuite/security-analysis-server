@@ -7,7 +7,6 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Sets;
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.commons.reporter.Report;
 import com.powsybl.commons.reporter.Reporter;
@@ -21,19 +20,18 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.security.LimitViolationFilter;
 import com.powsybl.security.SecurityAnalysis;
+import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.security.SecurityAnalysisReport;
 import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.ws.commons.LogUtils;
-import org.gridsuite.securityanalysis.server.computation.service.CancelContext;
+import org.gridsuite.securityanalysis.server.computation.service.AbstractWorkerService;
 import org.gridsuite.securityanalysis.server.computation.service.NotificationService;
 import org.gridsuite.securityanalysis.server.computation.service.ExecutionService;
 import org.gridsuite.securityanalysis.server.computation.service.ReportService;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
 import org.springframework.messaging.Message;
@@ -44,14 +42,10 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -64,49 +58,22 @@ import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisServ
  * @author Franck Lecuyer <franck.lecuyer at rte-france.com>
  */
 @Service
-public class SecurityAnalysisWorkerService {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisWorkerService.class);
-
-    private NetworkStoreService networkStoreService;
+public class SecurityAnalysisWorkerService extends AbstractWorkerService<SecurityAnalysisResult, SecurityAnalysisRunContext, SecurityAnalysisParameters> {
 
     private ActionsService actionsService;
 
-    private ReportService reportService;
-
-    private NotificationService notificationService;
-
     private SecurityAnalysisResultService securityAnalysisResultService;
 
-    private ObjectMapper objectMapper;
-
-    private Map<UUID, CompletableFuture<SecurityAnalysisResult>> futures = new ConcurrentHashMap<>();
-
-    private Map<UUID, CancelContext> cancelComputationRequests = new ConcurrentHashMap<>();
-
-    private Set<UUID> runRequests = Sets.newConcurrentHashSet();
-
-    private Lock lockRunAndCancelAS = new ReentrantLock();
-
     private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier;
-
-    private ExecutionService executionService;
-
-    private final SecurityAnalysisObserver securityAnalysisObserver;
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService, ReportService reportService,
                                          SecurityAnalysisResultService resultRepository, ObjectMapper objectMapper,
                                          SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, NotificationService notificationService, ExecutionService executionService,
-                                         SecurityAnalysisObserver securityAnalysisObserver) {
-        this.networkStoreService = Objects.requireNonNull(networkStoreService);
+                                         SecurityAnalysisObserver observer) {
+        super(networkStoreService, notificationService, reportService, executionService, observer, objectMapper);
         this.actionsService = Objects.requireNonNull(actionsService);
-        this.reportService = Objects.requireNonNull(reportService);
         this.securityAnalysisResultService = Objects.requireNonNull(resultRepository);
-        this.objectMapper = Objects.requireNonNull(objectMapper);
-        this.notificationService = Objects.requireNonNull(notificationService);
-        this.executionService = Objects.requireNonNull(executionService);
         this.securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
-        this.securityAnalysisObserver = securityAnalysisObserver;
     }
 
     public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier) {
@@ -133,7 +100,7 @@ public class SecurityAnalysisWorkerService {
         }
     }
 
-    //@Override // TODO réOverride
+    @Override
     protected String getComputationType() {
         return COMPUTATION_TYPE;
     }
@@ -144,7 +111,7 @@ public class SecurityAnalysisWorkerService {
                                                                  List<Contingency> contingencies,
                                                                  Reporter reporter,
                                                                  UUID resultUuid) {
-        lockRunAndCancelAS.lock();
+        lockRunAndCancel.lock();
         try {
             if (resultUuid != null && cancelComputationRequests.get(resultUuid) != null) {
                 return null;
@@ -170,28 +137,11 @@ public class SecurityAnalysisWorkerService {
             }
             return future;
         } finally {
-            lockRunAndCancelAS.unlock();
+            lockRunAndCancel.unlock();
         }
     }
 
-    private void cancelASAsync(CancelContext cancelContext) {
-        lockRunAndCancelAS.lock();
-        try {
-            cancelComputationRequests.put(cancelContext.getResultUuid(), cancelContext);
-
-            // find the completableFuture associated with result uuid
-            CompletableFuture<SecurityAnalysisResult> future = futures.get(cancelContext.getResultUuid());
-            if (future != null) {
-                future.cancel(true);  // cancel computation in progress
-
-                cleanASResultsAndPublishCancel(cancelContext.getResultUuid(), cancelContext.getReceiver());
-            }
-        } finally {
-            lockRunAndCancelAS.unlock();
-        }
-    }
-
-    private void cleanASResultsAndPublishCancel(UUID resultUuid, String receiver) {
+    protected void cleanResultsAndPublishCancel(UUID resultUuid, String receiver) {
         securityAnalysisResultService.delete(resultUuid);
         notificationService.publishStop(resultUuid, receiver, getComputationType());
         LOGGER.info(getCancelMessage(getComputationType()) + " (resultUuid='{}')", resultUuid);
@@ -202,9 +152,9 @@ public class SecurityAnalysisWorkerService {
 
         LOGGER.info("Run security analysis on contingency lists: {}", context.getContingencyListNames().stream().map(LogUtils::sanitizeParam).toList());
 
-        Network network = securityAnalysisObserver.observe("network.load", context, () -> getNetwork(context.getNetworkUuid()));
+        Network network = observer.observe("network.load", context, () -> getNetwork(context.getNetworkUuid()));
 
-        List<ContingencyInfos> contingencies = securityAnalysisObserver.observe("contingencies.fetch", context,
+        List<ContingencyInfos> contingencies = observer.observe("contingencies.fetch", context,
             () -> context.getContingencyListNames().stream()
                 .map(contingencyListName -> actionsService.getContingencyList(contingencyListName, context.getNetworkUuid(), context.getVariantId()))
                 .flatMap(List::stream)
@@ -223,7 +173,7 @@ public class SecurityAnalysisWorkerService {
             rootReporter.set(new ReporterModel(rootReporterId, rootReporterId));
             reporter = rootReporter.get().createSubReporter(reportType, reportType + " (${providerToUse})", "providerToUse", securityAnalysisRunner.getName());
             // Delete any previous SA computation logs
-            securityAnalysisObserver.observe("report.delete",
+            observer.observe("report.delete",
                     context, () -> reportService.deleteReport(context.getReportContext().getReportId(), reportType));
         }
 
@@ -237,7 +187,7 @@ public class SecurityAnalysisWorkerService {
                 reporter,
                 resultUuid);
 
-        SecurityAnalysisResult result = future == null ? null : securityAnalysisObserver.observeRun("run", context, future::get);
+        SecurityAnalysisResult result = future == null ? null : observer.observeRun("run", context, future::get);
         if (context.getReportContext().getReportId() != null) {
             List<Report> notFoundElementReports = new ArrayList<>();
             contingencies.stream()
@@ -256,7 +206,7 @@ public class SecurityAnalysisWorkerService {
                         "Elements not found");
                 notFoundElementReports.forEach(elementNotFoundSubReporter::report);
             }
-            securityAnalysisObserver.observe("report.send",
+            observer.observe("report.send",
                     context, () -> reportService.sendReport(context.getReportContext().getReportId(), rootReporter.get()));
         }
         return result;
@@ -275,7 +225,7 @@ public class SecurityAnalysisWorkerService {
                 long nanoTime = System.nanoTime();
                 LOGGER.info("Just run in {}s", TimeUnit.NANOSECONDS.toSeconds(nanoTime - startTime.getAndSet(nanoTime)));
 
-                securityAnalysisObserver.observe("results.save", resultContext.getRunContext(), () -> securityAnalysisResultService.insert(
+                observer.observe("results.save", resultContext.getRunContext(), () -> securityAnalysisResultService.insert(
                     resultContext.getResultUuid(),
                     result,
                     result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED
@@ -290,7 +240,7 @@ public class SecurityAnalysisWorkerService {
                     LOGGER.info("Security analysis complete (resultUuid='{}')", resultContext.getResultUuid());
                 } else {  // result not available : stop computation request
                     if (cancelComputationRequests.get(resultContext.getResultUuid()) != null) {
-                        cleanASResultsAndPublishCancel(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
+                        cleanResultsAndPublishCancel(resultContext.getResultUuid(), cancelComputationRequests.get(resultContext.getResultUuid()).getReceiver());
                     }
                 }
             } catch (InterruptedException e) {
@@ -311,10 +261,5 @@ public class SecurityAnalysisWorkerService {
                 runRequests.remove(resultContext.getResultUuid());
             }
         };
-    }
-
-    @Bean
-    public Consumer<Message<String>> consumeCancel() {
-        return message -> cancelASAsync(CancelContext.fromMessage(message));
     }
 }
