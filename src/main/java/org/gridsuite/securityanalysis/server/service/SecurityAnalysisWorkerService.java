@@ -28,6 +28,7 @@ import com.powsybl.ws.commons.LogUtils;
 import org.gridsuite.securityanalysis.server.computation.service.CancelContext;
 import org.gridsuite.securityanalysis.server.computation.service.NotificationService;
 import org.gridsuite.securityanalysis.server.computation.service.ExecutionService;
+import org.gridsuite.securityanalysis.server.computation.service.ReportService;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
