@@ -70,6 +70,7 @@ public class SecurityAnalysisParametersEntity {
     }
 
     public void update(@NonNull SecurityAnalysisParametersValues securityAnalysisParametersValues) {
+        updateProvider(securityAnalysisParametersValues.getProvider());
         this.flowProportionalThreshold = securityAnalysisParametersValues.getFlowProportionalThreshold();
         this.highVoltageAbsoluteThreshold = securityAnalysisParametersValues.getHighVoltageAbsoluteThreshold();
         this.highVoltageProportionalThreshold = securityAnalysisParametersValues.getHighVoltageProportionalThreshold();
