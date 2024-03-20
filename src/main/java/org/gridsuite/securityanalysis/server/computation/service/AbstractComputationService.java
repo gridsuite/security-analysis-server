@@ -7,11 +7,9 @@
 package org.gridsuite.securityanalysis.server.computation.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.powsybl.commons.PowsyblException;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.messaging.MessageHeaders;
 
 import java.util.List;
 import java.util.Objects;
@@ -20,8 +18,10 @@ import java.util.UUID;
 /**
  * @author Mathieu Deharbe <mathieu.deharbe at rte-france.com
  * @param <R> run context specific to a computation, including parameters
+ * @param <T> run service specific to a computation
+ * @param <S> enum status specific to a computation
  */
-public abstract class AbstractComputationService<R> {
+public abstract class AbstractComputationService<R extends AbstractComputationRunContext, T extends AbstractComputationResultService<S>, S> {
 
     protected static final Logger LOGGER = LoggerFactory.getLogger(AbstractComputationService.class);
 
@@ -31,8 +31,10 @@ public abstract class AbstractComputationService<R> {
     protected String defaultProvider;
 
     protected UuidGeneratorService uuidGeneratorService;
+    protected T resultService;
 
     protected AbstractComputationService(NotificationService notificationService,
+                                         T resultService,
                                          ObjectMapper objectMapper,
                                          UuidGeneratorService uuidGeneratorService,
                                          String defaultProvider) {
@@ -40,6 +42,7 @@ public abstract class AbstractComputationService<R> {
         this.objectMapper = Objects.requireNonNull(objectMapper);
         this.uuidGeneratorService = Objects.requireNonNull(uuidGeneratorService);
         this.defaultProvider = Objects.requireNonNull(defaultProvider);
+        this.resultService = Objects.requireNonNull(resultService);
     }
 
     public void stop(UUID resultUuid, String receiver) {
@@ -50,15 +53,19 @@ public abstract class AbstractComputationService<R> {
 
     public abstract UUID runAndSaveResult(R runContext);
 
-    public abstract void deleteResult(UUID resultUuid);
+    public void setStatus(List<UUID> resultUuids, S status) {
+        resultService.insertStatus(resultUuids, status);
+    }
 
-    public abstract void deleteResults();
+    public void deleteResult(UUID resultUuid) {
+        resultService.delete(resultUuid);
+    }
 
-    public static String getNonNullHeader(MessageHeaders headers, String name) {
-        String header = (String) headers.get(name);
-        if (header == null) {
-            throw new PowsyblException("Header '" + name + "' not found");
-        }
-        return header;
+    public void deleteResults() {
+        resultService.deleteAll();
+    }
+
+    public S getStatus(UUID resultUuid) {
+        return resultService.findStatus(resultUuid);
     }
 }

@@ -24,18 +24,15 @@ import java.util.UUID;
  * @author Franck Lecuyer <franck.lecuyer at rte-france.com>
  */
 @Service
-public class SecurityAnalysisService extends AbstractComputationService<SecurityAnalysisRunContext> {
+public class SecurityAnalysisService extends AbstractComputationService<SecurityAnalysisRunContext, SecurityAnalysisResultService, SecurityAnalysisStatus> {
     public static final String COMPUTATION_TYPE = "Security analysis";
-
-    private final SecurityAnalysisResultService securityAnalysisResultService;
 
     public SecurityAnalysisService(SecurityAnalysisResultService securityAnalysisResultService,
                                    UuidGeneratorService uuidGeneratorService,
                                    ObjectMapper objectMapper,
                                    NotificationService notificationService,
                                    @Value("${security-analysis.default-provider}") String defaultProvider) {
-        super(notificationService, objectMapper, uuidGeneratorService, defaultProvider);
-        this.securityAnalysisResultService = Objects.requireNonNull(securityAnalysisResultService);
+        super(notificationService, securityAnalysisResultService, objectMapper, uuidGeneratorService, defaultProvider);
     }
 
     public UUID runAndSaveResult(SecurityAnalysisRunContext runContext) {
@@ -46,22 +43,6 @@ public class SecurityAnalysisService extends AbstractComputationService<Security
         notificationService.sendRunMessage(new SecurityAnalysisResultContext(resultUuid, runContext).toMessage(objectMapper));
 
         return resultUuid;
-    }
-
-    public void deleteResult(UUID resultUuid) {
-        securityAnalysisResultService.delete(resultUuid);
-    }
-
-    public void deleteResults() {
-        securityAnalysisResultService.deleteAll();
-    }
-
-    public SecurityAnalysisStatus getStatus(UUID resultUuid) {
-        return securityAnalysisResultService.findStatus(resultUuid);
-    }
-
-    public void setStatus(List<UUID> resultUuids, SecurityAnalysisStatus status) {
-        securityAnalysisResultService.insertStatus(resultUuids, status);
     }
 
     public List<String> getProviders() {

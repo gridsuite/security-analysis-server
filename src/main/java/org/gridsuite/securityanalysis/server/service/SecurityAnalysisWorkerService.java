@@ -49,7 +49,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.getCancelMessage;
 import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.getFailedMessage;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
 
@@ -58,21 +57,18 @@ import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisServ
  * @author Franck Lecuyer <franck.lecuyer at rte-france.com>
  */
 @Service
-public class SecurityAnalysisWorkerService extends AbstractWorkerService<SecurityAnalysisResult, SecurityAnalysisRunContext, SecurityAnalysisParameters> {
+public class SecurityAnalysisWorkerService extends AbstractWorkerService<SecurityAnalysisResult, SecurityAnalysisRunContext, SecurityAnalysisParameters, SecurityAnalysisResultService> {
 
     private ActionsService actionsService;
-
-    private SecurityAnalysisResultService securityAnalysisResultService;
 
     private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier;
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService, ReportService reportService,
-                                         SecurityAnalysisResultService resultRepository, ObjectMapper objectMapper,
+                                         SecurityAnalysisResultService resultService, ObjectMapper objectMapper,
                                          SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, NotificationService notificationService, ExecutionService executionService,
                                          SecurityAnalysisObserver observer) {
-        super(networkStoreService, notificationService, reportService, executionService, observer, objectMapper);
+        super(networkStoreService, notificationService, reportService, resultService, executionService, observer, objectMapper);
         this.actionsService = Objects.requireNonNull(actionsService);
-        this.securityAnalysisResultService = Objects.requireNonNull(resultRepository);
         this.securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
     }
 
@@ -139,12 +135,6 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         } finally {
             lockRunAndCancel.unlock();
         }
-    }
-
-    protected void cleanResultsAndPublishCancel(UUID resultUuid, String receiver) {
-        securityAnalysisResultService.delete(resultUuid);
-        notificationService.publishStop(resultUuid, receiver, getComputationType());
-        LOGGER.info(getCancelMessage(getComputationType()) + " (resultUuid='{}')", resultUuid);
     }
 
     private SecurityAnalysisResult run(SecurityAnalysisRunContext context, UUID resultUuid) throws Exception {
@@ -225,7 +215,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 long nanoTime = System.nanoTime();
                 LOGGER.info("Just run in {}s", TimeUnit.NANOSECONDS.toSeconds(nanoTime - startTime.getAndSet(nanoTime)));
 
-                observer.observe("results.save", resultContext.getRunContext(), () -> securityAnalysisResultService.insert(
+                observer.observe("results.save", resultContext.getRunContext(), () -> resultService.insert(
                     resultContext.getResultUuid(),
                     result,
                     result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED
@@ -253,7 +243,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                             e.getMessage(),
                             resultContext.getRunContext().getUserId(),
                             getComputationType());
-                    securityAnalysisResultService.delete(resultContext.getResultUuid());
+                    resultService.delete(resultContext.getResultUuid());
                 }
             } finally {
                 futures.remove(resultContext.getResultUuid());
