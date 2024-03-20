@@ -12,8 +12,10 @@ import com.powsybl.loadflow.LoadFlowParameters;
 import com.powsybl.loadflow.LoadFlowProvider;
 import com.powsybl.security.SecurityAnalysisParameters;
 import lombok.Getter;
+import lombok.Setter;
 import org.gridsuite.securityanalysis.server.computation.service.AbstractComputationRunContext;
 import org.gridsuite.securityanalysis.server.computation.utils.ReportContext;
+import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersValues;
 
 import java.util.List;
@@ -27,6 +29,8 @@ import java.util.UUID;
 public class SecurityAnalysisRunContext extends AbstractComputationRunContext<SecurityAnalysisParameters> {
 
     private final List<String> contingencyListNames;
+    @Setter
+    private List<ContingencyInfos> contingencies;
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParameters parameters, LoadFlowParametersValues loadFlowParametersValues,
