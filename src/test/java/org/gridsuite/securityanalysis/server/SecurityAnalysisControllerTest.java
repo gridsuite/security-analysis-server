@@ -143,7 +143,8 @@ public class SecurityAnalysisControllerTest {
         "CURRENT", "Current",
         "HIGH_VOLTAGE", "High voltage",
         "FAILED", "Failed",
-        "CONVERGED", "Converged"
+        "CONVERGED", "Converged",
+        "permanent", "IST"
     );
 
     private final Map<String, String> enumTranslationsFr = Map.of(
@@ -152,7 +153,8 @@ public class SecurityAnalysisControllerTest {
         "CURRENT", "Intensité",
         "HIGH_VOLTAGE", "Tension haute",
         "FAILED", "Echec",
-        "CONVERGED", "Convergence"
+        "CONVERGED", "Convergence",
+        "permanent", "IST"
     );
 
     @Before
