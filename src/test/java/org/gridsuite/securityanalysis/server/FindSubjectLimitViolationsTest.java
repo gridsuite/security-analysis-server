@@ -8,10 +8,7 @@ package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.security.LimitViolationType;
-import org.gridsuite.securityanalysis.server.dto.ContingencyLimitViolationDTO;
-import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
-import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationResultDTO;
+import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.*;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
 import org.gridsuite.securityanalysis.server.repositories.specifications.SpecificationUtils;
@@ -72,6 +69,7 @@ class FindSubjectLimitViolationsTest {
         "providePageableAndSortOnly",
         "provideParentFilter",
         "provideChildFilter",
+        "provideChildSorting",
         "provideEachColumnFilter"
     })
     void findFilteredSubjectLimitViolationResultsTest(List<ResourceFilterDTO> filters, Pageable pageable, List<SubjectLimitViolationResultDTO> expectedResult, Integer expectedSelectCount) {
@@ -134,6 +132,64 @@ class FindSubjectLimitViolationsTest {
                     .stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList()
                     .subList(0, 2), 5)
         );
+    }
+
+    private Stream<Arguments> provideChildSorting() {
+        return Stream.of(
+            buildArgumentsForChildrenSorting(
+                Sort.by(Sort.Direction.ASC, SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.contingency + SpecificationUtils.FIELD_SEPARATOR + ContingencyEntity.Fields.contingencyId),
+                Comparator.comparing(c -> c.getContingency().getContingencyId(), Comparator.nullsLast(Comparator.naturalOrder()))
+            ),
+            buildArgumentsForChildrenSorting(
+                Sort.by(Sort.Direction.ASC, SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.contingency + SpecificationUtils.FIELD_SEPARATOR + ContingencyEntity.Fields.status),
+                Comparator.comparing(c -> c.getContingency().getStatus(), Comparator.nullsLast(Comparator.naturalOrder()))
+            ),
+            buildArgumentsForChildrenSorting(
+                Sort.by(Sort.Direction.ASC, SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limit),
+                Comparator.comparing(subjectLimitViolationDTO -> subjectLimitViolationDTO.getLimitViolation().getLimit(), Comparator.nullsLast(Comparator.naturalOrder()))
+            ),
+            buildArgumentsForChildrenSorting(
+                Sort.by(Sort.Direction.ASC, SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitName),
+                Comparator.comparing(subjectLimitViolationDTO -> subjectLimitViolationDTO.getLimitViolation().getLimitName(), Comparator.nullsLast(Comparator.naturalOrder()))
+            ),
+            buildArgumentsForChildrenSorting(
+                Sort.by(Sort.Direction.ASC, SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitType),
+                Comparator.comparing(subjectLimitViolationDTO -> subjectLimitViolationDTO.getLimitViolation().getLimitType(), Comparator.nullsLast(Comparator.naturalOrder()))
+            ),
+            buildArgumentsForChildrenSorting(
+                Sort.by(Sort.Direction.ASC, SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.value),
+                Comparator.comparing(subjectLimitViolationDTO -> subjectLimitViolationDTO.getLimitViolation().getValue(), Comparator.nullsLast(Comparator.naturalOrder()))
+            ),
+            buildArgumentsForChildrenSorting(
+                Sort.by(Sort.Direction.ASC, SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.loading),
+                Comparator.comparing(subjectLimitViolationDTO -> subjectLimitViolationDTO.getLimitViolation().getLoading(), Comparator.nullsLast(Comparator.naturalOrder()))
+            ),
+            buildArgumentsForChildrenSorting(
+                Sort.by(Sort.Direction.ASC, SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.acceptableDuration),
+                Comparator.comparing(subjectLimitViolationDTO -> subjectLimitViolationDTO.getLimitViolation().getAcceptableDuration(), Comparator.nullsLast(Comparator.naturalOrder()))
+            ),
+            buildArgumentsForChildrenSorting(
+                Sort.by(Sort.Direction.ASC, SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side),
+                Comparator.comparing(subjectLimitViolationDTO -> subjectLimitViolationDTO.getLimitViolation().getSide(), Comparator.nullsLast(Comparator.naturalOrder()))
+            ),
+            // default sorting
+            buildArgumentsForChildrenSorting(
+                Sort.unsorted(),
+                Comparator.comparing(c -> c.getContingency().getContingencyId(), Comparator.nullsLast(Comparator.naturalOrder()))
+            )
+        );
+    }
+
+    private Arguments buildArgumentsForChildrenSorting(Sort childrenSort, Comparator<ContingencyLimitViolationDTO> childrenComparator) {
+        return Arguments.of(
+            List.of(),
+            PageRequest.of(0, 4,
+                Sort.by(Sort.Direction.ASC, SubjectLimitViolationEntity.Fields.subjectId)
+                    .and(childrenSort)),
+            getResultConstraintsSorted(
+                childrenComparator,
+                Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId))
+                .subList(0, 4), 5);
     }
 
     private Stream<Arguments> provideEachColumnFilter() {
