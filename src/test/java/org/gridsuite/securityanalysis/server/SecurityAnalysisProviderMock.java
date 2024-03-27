@@ -164,7 +164,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     }
 
     static List<SubjectLimitViolationResultDTO> getResultConstraintsSorted(Comparator<ContingencyLimitViolationDTO> limitViolationDTOComparator,
-                                                                                     Comparator<SubjectLimitViolationResultDTO> contingencyResultDTOComparator) {
+                                                                           Comparator<SubjectLimitViolationResultDTO> subjectLimitViolationResultDTOComparator) {
         return RESULT_CONSTRAINTS.stream().map(r ->
                 new SubjectLimitViolationResultDTO(
                     r.getSubjectId(),
@@ -172,7 +172,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                         .sorted(limitViolationDTOComparator)
                         .toList()
                 ))
-            .sorted(contingencyResultDTOComparator)
+            .sorted(subjectLimitViolationResultDTOComparator)
             .toList();
     }
 
