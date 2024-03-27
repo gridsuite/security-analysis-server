@@ -19,7 +19,7 @@ import java.util.UUID;
 @Getter
 @Builder
 @AllArgsConstructor
-@Schema(description = "Report infos") // TODO : added in ReportInfos par Abdelsalem ==> à quoi cela sert-il ??
+@Schema(description = "Report infos")
 public class ReportContext {
 
     private UUID reportId;
