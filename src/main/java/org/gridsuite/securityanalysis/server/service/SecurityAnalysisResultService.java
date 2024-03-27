@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisResult;
+import org.gridsuite.securityanalysis.server.computation.service.AbstractComputationResultService;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.*;
 import org.gridsuite.securityanalysis.server.repositories.*;
@@ -36,7 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @Service
-public class SecurityAnalysisResultService {
+public class SecurityAnalysisResultService extends AbstractComputationResultService<SecurityAnalysisStatus> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisResultService.class);
     private final SecurityAnalysisResultRepository securityAnalysisResultRepository;
     private final ContingencyRepository contingencyRepository;

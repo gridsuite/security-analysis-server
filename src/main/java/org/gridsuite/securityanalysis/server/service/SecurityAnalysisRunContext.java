@@ -12,8 +12,11 @@ import com.powsybl.loadflow.LoadFlowParameters;
 import com.powsybl.loadflow.LoadFlowProvider;
 import com.powsybl.security.SecurityAnalysisParameters;
 import lombok.Getter;
+import lombok.Setter;
+import org.gridsuite.securityanalysis.server.computation.service.AbstractComputationRunContext;
+import org.gridsuite.securityanalysis.server.computation.utils.ReportContext;
+import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersValues;
-import org.gridsuite.securityanalysis.server.dto.ReportInfos;
 
 import java.util.List;
 import java.util.Objects;
@@ -23,31 +26,15 @@ import java.util.UUID;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @Getter
-public class SecurityAnalysisRunContext {
-
-    private final UUID networkUuid;
-
-    private final String variantId;
+public class SecurityAnalysisRunContext extends AbstractComputationRunContext<SecurityAnalysisParameters> {
 
     private final List<String> contingencyListNames;
-
-    private final String receiver;
-
-    private final String provider;
-
-    private final SecurityAnalysisParameters parameters;
-
-    private final UUID reportUuid;
-
-    private final String reporterId;
-
-    private final String userId;
-
-    private final String reportType;
+    @Setter
+    private List<ContingencyInfos> contingencies;
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParameters parameters, LoadFlowParametersValues loadFlowParametersValues,
-                                      ReportInfos reportInfos, String userId) {
+                                      ReportContext reportContext, String userId) {
         this(
                 networkUuid,
                 variantId,
@@ -55,24 +42,16 @@ public class SecurityAnalysisRunContext {
                 receiver,
                 provider,
                 buildParameters(parameters, loadFlowParametersValues, provider),
-                new ReportInfos(reportInfos.getReportUuid(), reportInfos.getReporterId(), reportInfos.getReportType()),
+                new ReportContext(reportContext.getReportId(), reportContext.getReportName(), reportContext.getReportType()),
                 userId
         );
     }
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParameters parameters,
-                                      ReportInfos reportInfos, String userId) {
-        this.networkUuid = Objects.requireNonNull(networkUuid);
-        this.variantId = variantId;
+                                      ReportContext reportContext, String userId) {
+        super(networkUuid, variantId, receiver, reportContext, userId, provider, parameters);
         this.contingencyListNames = Objects.requireNonNull(contingencyListNames);
-        this.receiver = receiver;
-        this.provider = provider;
-        this.parameters = Objects.requireNonNull(parameters);
-        this.reportUuid = reportInfos.getReportUuid();
-        this.reporterId = reportInfos.getReporterId();
-        this.userId = userId;
-        this.reportType = reportInfos.getReportType();
     }
 
     private static SecurityAnalysisParameters buildParameters(SecurityAnalysisParameters securityAnalysisParameters,

@@ -8,7 +8,7 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.security.SecurityAnalysisParameters;
 import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersValues;
-import org.gridsuite.securityanalysis.server.dto.ReportInfos;
+import org.gridsuite.securityanalysis.server.computation.utils.ReportContext;
 import org.gridsuite.securityanalysis.server.dto.RunContextParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
@@ -50,7 +50,7 @@ public class SecurityAnalysisParametersService {
     }
 
     public SecurityAnalysisRunContext createRunContext(UUID networkUuid, String variantId, RunContextParametersInfos runContextParametersInfos,
-                                                       String receiver, ReportInfos reportInfos, String userId) {
+                                                       String receiver, ReportContext reportContext, String userId) {
         Optional<SecurityAnalysisParametersEntity> securityAnalysisParametersEntity = Optional.empty();
         if (runContextParametersInfos.getSecurityAnalysisParametersUuid() != null) {
             securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(runContextParametersInfos.getSecurityAnalysisParametersUuid());
@@ -72,7 +72,7 @@ public class SecurityAnalysisParametersService {
                 providerToUse,
                 parameters,
                 loadFlowParametersValues,
-                new ReportInfos(reportInfos.getReportUuid(), reportInfos.getReporterId(), reportInfos.getReportType()),
+                new ReportContext(reportContext.getReportId(), reportContext.getReportName(), reportContext.getReportType()),
                 userId);
 
     }
