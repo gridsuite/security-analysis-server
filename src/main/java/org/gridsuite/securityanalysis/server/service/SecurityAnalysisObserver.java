@@ -24,7 +24,7 @@ public class SecurityAnalysisObserver extends AbstractComputationObserver<Securi
 
     private static final String COMPUTATION_TYPE = "sa";
 
-    public SecurityAnalysisObserver(@NonNull ObservationRegistry observationRegistry, @NonNull MeterRegistry meterRegistry) {
+    protected SecurityAnalysisObserver(@NonNull ObservationRegistry observationRegistry, @NonNull MeterRegistry meterRegistry) {
         super(observationRegistry, meterRegistry);
     }
 

@@ -6,7 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.computation.service;
 
-import org.gridsuite.securityanalysis.server.computation.utils.ContextUtils;
+import org.gridsuite.securityanalysis.server.computation.utils.MessageUtils;
 import org.gridsuite.securityanalysis.server.computation.utils.annotations.PostCompletion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +40,6 @@ public class NotificationService {
     public static final String HEADER_PROVIDER = "provider";
     public static final String HEADER_MESSAGE = "message";
     public static final String HEADER_USER_ID = "userId";
-
     public static final String SENDING_MESSAGE = "Sending message : {}";
 
     private final StreamBridge publisher;
@@ -89,7 +88,7 @@ public class NotificationService {
                 .withPayload("")
                 .setHeader(HEADER_RESULT_UUID, resultUuid.toString())
                 .setHeader(HEADER_RECEIVER, receiver)
-                .setHeader(HEADER_MESSAGE, ContextUtils.shortenMessage(
+                .setHeader(HEADER_MESSAGE, MessageUtils.shortenMessage(
                         getFailedMessage(computationLabel) + " : " + causeMessage))
                 .setHeader(HEADER_USER_ID, userId)
                 .build();

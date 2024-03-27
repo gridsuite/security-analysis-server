@@ -9,10 +9,13 @@ package org.gridsuite.securityanalysis.server.computation.utils;
 import com.powsybl.commons.PowsyblException;
 import org.springframework.messaging.MessageHeaders;
 
-public final class ContextUtils {
+/**
+ * @author Thang PHAM <quyet-thang.pham at rte-france.com>
+ */
+public final class MessageUtils {
     public static final int MSG_MAX_LENGTH = 256;
 
-    private ContextUtils() { }
+    private MessageUtils() { }
 
     public static String getNonNullHeader(MessageHeaders headers, String name) {
         String header = (String) headers.get(name);

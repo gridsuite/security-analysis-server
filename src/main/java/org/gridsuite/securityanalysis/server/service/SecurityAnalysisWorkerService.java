@@ -15,18 +15,10 @@ import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
-import com.powsybl.security.LimitViolationFilter;
-import com.powsybl.security.SecurityAnalysis;
-import com.powsybl.security.SecurityAnalysisParameters;
-import com.powsybl.security.SecurityAnalysisReport;
-import com.powsybl.security.SecurityAnalysisResult;
+import com.powsybl.security.*;
 import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.ws.commons.LogUtils;
-import org.gridsuite.securityanalysis.server.computation.service.AbstractResultContext;
-import org.gridsuite.securityanalysis.server.computation.service.AbstractWorkerService;
-import org.gridsuite.securityanalysis.server.computation.service.NotificationService;
-import org.gridsuite.securityanalysis.server.computation.service.ExecutionService;
-import org.gridsuite.securityanalysis.server.computation.service.ReportService;
+import org.gridsuite.securityanalysis.server.computation.service.*;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
@@ -38,7 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.getFailedMessage;
@@ -68,9 +60,11 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         this.securityAnalysisFactorySupplier = Objects.requireNonNull(securityAnalysisFactorySupplier);
     }
 
-    public SecurityAnalysisResult run(SecurityAnalysisRunContext context) {
+    public SecurityAnalysisResult run(SecurityAnalysisRunContext runContext) {
         try {
-            return run(context, null);
+            Network network = getNetwork(runContext.getNetworkUuid(),
+                    runContext.getVariantId());
+            return run(network, runContext, null);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;
@@ -112,33 +106,10 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     }
 
     @Override
-    protected void reportSpecificOperations(SecurityAnalysisRunContext runContext, Reporter reporter) {
-        List<Report> notFoundElementReports = new ArrayList<>();
-        runContext.getContingencies().stream()
-                .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements()))
-                .forEach(contingencyInfos -> {
-                    String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
-                    notFoundElementReports.add(Report.builder()
-                            .withKey("contingencyElementNotFound_" + contingencyInfos.getId() + notFoundElementReports.size())
-                            .withDefaultMessage(String.format("Cannot find the following equipments %s in contingency %s", elementsIds, contingencyInfos.getId()))
-                            .withSeverity(TypedValue.WARN_SEVERITY)
-                            .build());
-                });
-        if (!CollectionUtils.isEmpty(notFoundElementReports)) {
-            Reporter elementNotFoundSubReporter = reporter.createSubReporter(
-                    runContext.getReportContext().getReportId().toString() + "notFoundElements",
-                    "Elements not found");
-            notFoundElementReports.forEach(elementNotFoundSubReporter::report);
-        }
-    }
-
-    @Override
-    protected void logOnRun(SecurityAnalysisRunContext runContext) {
+    protected void preRun(SecurityAnalysisRunContext runContext, Reporter reporter) {
         LOGGER.info("Run security analysis on contingency lists: {}", runContext.getContingencyListNames().stream().map(LogUtils::sanitizeParam).toList());
-    }
 
-    @Override
-    protected void enrichRunContext(SecurityAnalysisRunContext runContext) {
+        // enrich context
         List<ContingencyInfos> contingencies = observer.observe("contingencies.fetch", runContext,
                 () -> runContext.getContingencyListNames().stream()
                         .map(contingencyListName -> actionsService.getContingencyList(contingencyListName, runContext.getNetworkUuid(), runContext.getVariantId()))
@@ -146,6 +117,29 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                         .toList());
 
         runContext.setContingencies(contingencies);
+    }
+
+    @Override
+    protected void postRun(SecurityAnalysisRunContext runContext, Reporter reporter) {
+        if (runContext.getReportContext().getReportId() != null) {
+            List<Report> notFoundElementReports = new ArrayList<>();
+            runContext.getContingencies().stream()
+                    .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements()))
+                    .forEach(contingencyInfos -> {
+                        String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
+                        notFoundElementReports.add(Report.builder()
+                                .withKey("contingencyElementNotFound_" + contingencyInfos.getId() + notFoundElementReports.size())
+                                .withDefaultMessage(String.format("Cannot find the following equipments %s in contingency %s", elementsIds, contingencyInfos.getId()))
+                                .withSeverity(TypedValue.WARN_SEVERITY)
+                                .build());
+                    });
+            if (!CollectionUtils.isEmpty(notFoundElementReports)) {
+                Reporter elementNotFoundSubReporter = reporter.createSubReporter(
+                        runContext.getReportContext().getReportId().toString() + "notFoundElements",
+                        "Elements not found");
+                notFoundElementReports.forEach(elementNotFoundSubReporter::report);
+            }
+        }
     }
 
     @Override

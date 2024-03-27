@@ -23,7 +23,7 @@ import java.util.Objects;
 import java.util.UUID;
 
 import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.*;
-import static org.gridsuite.securityanalysis.server.computation.utils.ContextUtils.getNonNullHeader;
+import static org.gridsuite.securityanalysis.server.computation.utils.MessageUtils.getNonNullHeader;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -75,6 +75,7 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
         return new SecurityAnalysisResultContext(resultUuid, runContext);
     }
 
+    @Override
     public Map<String, String> getSpecificMsgHeaders() {
         return Map.of(
                 CONTINGENCY_LIST_NAMES_HEADER, String.join(",", runContext.getContingencyListNames()));
