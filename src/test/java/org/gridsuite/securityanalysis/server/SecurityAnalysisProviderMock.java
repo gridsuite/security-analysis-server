@@ -22,6 +22,7 @@ import org.gridsuite.securityanalysis.server.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -130,6 +131,19 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
             .toList();
     }
 
+    static List<ContingencyResultDTO> getResultContingenciesSorted(Comparator<SubjectLimitViolationDTO> limitViolationDTOComparator,
+                                                                   Comparator<ContingencyResultDTO> contingencyResultDTOComparator) {
+        return RESULT_CONTINGENCIES.stream().map(r ->
+                new ContingencyResultDTO(
+                    r.getContingency(),
+                    r.getSubjectLimitViolations().stream()
+                        .sorted(limitViolationDTOComparator)
+                        .toList()
+                ))
+            .sorted(contingencyResultDTOComparator)
+            .toList();
+    }
+
     static final List<SubjectLimitViolationResultDTO> RESULT_CONSTRAINTS = Stream.concat(
         RESULT_LIMIT_VIOLATIONS.stream()
             .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, CONTINGENCIES.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), LoadFlowResult.ComponentResult.Status.CONVERGED)),
@@ -146,6 +160,19 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                     .toList()
             ))
             .filter(r -> !r.getContingencies().isEmpty())
+            .toList();
+    }
+
+    static List<SubjectLimitViolationResultDTO> getResultConstraintsSorted(Comparator<ContingencyLimitViolationDTO> limitViolationDTOComparator,
+                                                                           Comparator<SubjectLimitViolationResultDTO> subjectLimitViolationResultDTOComparator) {
+        return RESULT_CONSTRAINTS.stream().map(r ->
+                new SubjectLimitViolationResultDTO(
+                    r.getSubjectId(),
+                    r.getContingencies().stream()
+                        .sorted(limitViolationDTOComparator)
+                        .toList()
+                ))
+            .sorted(subjectLimitViolationResultDTOComparator)
             .toList();
     }
 

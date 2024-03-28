@@ -34,9 +34,9 @@ import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationR
 import org.gridsuite.securityanalysis.server.repositories.specifications.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.LoadFlowService;
-import org.gridsuite.securityanalysis.server.service.ReportService;
+import org.gridsuite.securityanalysis.server.computation.service.ReportService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
-import org.gridsuite.securityanalysis.server.service.UuidGeneratorService;
+import org.gridsuite.securityanalysis.server.computation.service.UuidGeneratorService;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
@@ -72,7 +72,10 @@ import java.util.zip.ZipInputStream;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
-import static org.gridsuite.securityanalysis.server.service.NotificationService.*;
+import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.HEADER_USER_ID;
+import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.getFailedMessage;
+import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.*;
+import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
@@ -605,7 +608,7 @@ public class SecurityAnalysisControllerTest {
         Message<byte[]> message = output.receive(TIMEOUT * 3, "sa.stopped");
         assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
         assertEquals("me", message.getHeaders().get("receiver"));
-        assertEquals(CANCEL_MESSAGE, message.getHeaders().get("message"));
+        assertEquals(getCancelMessage(COMPUTATION_TYPE), message.getHeaders().get("message"));
     }
 
     @Test
@@ -633,7 +636,7 @@ public class SecurityAnalysisControllerTest {
         Message<byte[]> cancelMessage = output.receive(TIMEOUT, "sa.failed");
         assertEquals(RESULT_UUID.toString(), cancelMessage.getHeaders().get("resultUuid"));
         assertEquals("me", cancelMessage.getHeaders().get("receiver"));
-        assertEquals(FAIL_MESSAGE + " : " + ERROR_MESSAGE, cancelMessage.getHeaders().get("message"));
+        assertEquals(getFailedMessage(COMPUTATION_TYPE) + " : " + ERROR_MESSAGE, cancelMessage.getHeaders().get("message"));
 
         // No result
         assertResultNotFound(RESULT_UUID);

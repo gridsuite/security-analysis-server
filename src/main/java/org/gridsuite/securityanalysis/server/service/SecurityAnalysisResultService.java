@@ -10,6 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisResult;
+import org.gridsuite.securityanalysis.server.computation.service.AbstractComputationResultService;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.*;
 import org.gridsuite.securityanalysis.server.repositories.*;
@@ -36,7 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @Service
-public class SecurityAnalysisResultService {
+public class SecurityAnalysisResultService extends AbstractComputationResultService<SecurityAnalysisStatus> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisResultService.class);
     private final SecurityAnalysisResultRepository securityAnalysisResultRepository;
     private final ContingencyRepository contingencyRepository;
@@ -49,15 +50,33 @@ public class SecurityAnalysisResultService {
     private final ObjectMapper objectMapper;
     private SecurityAnalysisResultService self;
 
-    private static final String DEFAULT_CONTINGENCY_SORT_COLUMN = "uuid";
-
-    private static final String DEFAULT_SUBJECT_LIMIT_VIOLATION_SORT_COLUMN = "id";
-
     private static final Sort.Direction DEFAULT_SORT_DIRECTION = Sort.Direction.ASC;
 
-    private static final List<String> ALLOWED_NMK_CONTINGENCIES_RESULT_SORT_PROPERTIES = List.of(ContingencyEntity.Fields.contingencyId, ContingencyEntity.Fields.status);
+    private static final List<String> ALLOWED_NMK_CONTINGENCIES_RESULT_SORT_PROPERTIES = List.of(
+        ContingencyEntity.Fields.contingencyId,
+        ContingencyEntity.Fields.status,
+        ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitType,
+        ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitName,
+        ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limit,
+        ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.value,
+        ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.loading,
+        ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.acceptableDuration,
+        ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side,
+        ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId
+    );
 
-    private static final List<String> ALLOWED_NMK_SUBJECT_LIMIT_VIOLATIONS_RESULT_SORT_PROPERTIES = List.of(SubjectLimitViolationEntity.Fields.subjectId);
+    private static final List<String> ALLOWED_NMK_SUBJECT_LIMIT_VIOLATIONS_RESULT_SORT_PROPERTIES = List.of(
+        SubjectLimitViolationEntity.Fields.subjectId,
+        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitType,
+        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitName,
+        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limit,
+        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.value,
+        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.loading,
+        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.acceptableDuration,
+        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side,
+        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.contingency + SpecificationUtils.FIELD_SEPARATOR + ContingencyEntity.Fields.contingencyId,
+        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.contingency + SpecificationUtils.FIELD_SEPARATOR + ContingencyEntity.Fields.status
+    );
 
     private static final List<String> ALLOWED_PRECONTINGENCIES_RESULT_SORT_PROPERTIES = List.of(
         AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId,
@@ -270,7 +289,7 @@ public class SecurityAnalysisResultService {
     public Page<ContingencyEntity> findContingenciesPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
         assertNmKContingenciesSortAllowed(pageable.getSort());
-        Pageable modifiedPageable = addDefaultSort(pageable, DEFAULT_CONTINGENCY_SORT_COLUMN);
+        Pageable modifiedPageable = addDefaultSortAndRemoveChildrenSorting(pageable, ContingencyEntity.Fields.uuid);
 
         Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildSpecification(resultUuid, resourceFilters);
         // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
@@ -293,7 +312,7 @@ public class SecurityAnalysisResultService {
             // Then we fetch the main entities data for each UUID
             List<ContingencyEntity> contingencies = contingencyRepository.findAllByUuidIn(uuids);
             contingencies.sort(Comparator.comparing(c -> uuids.indexOf(c.getUuid())));
-            Page<ContingencyEntity> contingenciesPage = new PageImpl<>(contingencies, modifiedPageable, uuidPage.getTotalElements());
+            Page<ContingencyEntity> contingenciesPage = new PageImpl<>(contingencies, pageable, uuidPage.getTotalElements());
 
             // then we append the missing data, and filter some of the Lazy Loaded collections
             appendLimitViolationsAndElementsToContingenciesResult(contingenciesPage, resourceFilters);
@@ -306,7 +325,7 @@ public class SecurityAnalysisResultService {
     public Page<SubjectLimitViolationEntity> findSubjectLimitViolationsPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
         assertNmKSubjectLimitViolationsSortAllowed(pageable.getSort());
-        Pageable modifiedPageable = addDefaultSort(pageable, DEFAULT_SUBJECT_LIMIT_VIOLATION_SORT_COLUMN);
+        Pageable modifiedPageable = addDefaultSortAndRemoveChildrenSorting(pageable, SubjectLimitViolationEntity.Fields.id);
         Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationSpecificationBuilder.buildSpecification(resultUuid, resourceFilters);
         // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
@@ -347,6 +366,8 @@ public class SecurityAnalysisResultService {
             contingencyRepository.findAll(specification);
             // we fetch contingencyElements here to prevent N+1 query
             contingencyRepository.findAllWithContingencyElementsByUuidIn(contingencyUuids);
+
+            sortLimitViolationsInContingencies(contingencies);
         }
     }
 
@@ -366,13 +387,114 @@ public class SecurityAnalysisResultService {
                 .toList();
             // we fetch contingencyElements for each contingency here to prevent N+1 query
             contingencyRepository.findAllWithContingencyElementsByUuidIn(contingencyUuids);
+
+            sortLimitViolationsInSubjectLimitViolations(subjectLimitViolations);
         }
     }
 
-    private Pageable addDefaultSort(Pageable pageable, String defaultSortColumn) {
-        if (pageable.isPaged() && pageable.getSort().getOrderFor(defaultSortColumn) == null) {
+    private void sortLimitViolationsInContingencies(Page<ContingencyEntity> contingencies) {
+        Optional<Sort.Order> lvSortOrder = contingencies.getSort().get()
+            // we filter sort on nested limit violations
+            .filter(sortOrder ->
+                sortOrder.getProperty().startsWith(ContingencyEntity.Fields.contingencyLimitViolations))
+            // for now, only one children sort possible
+            .findFirst();
+
+        Comparator<ContingencyLimitViolationEntity> comparator = getLimitViolationComparatorForContingencies(lvSortOrder);
+
+        boolean isSortOrderAscending = lvSortOrder.map(Sort.Order::isAscending).orElse(true);
+
+        contingencies.forEach(contingency -> contingency
+            .getContingencyLimitViolations()
+            .sort(isSortOrderAscending ?
+                comparator :
+                comparator.reversed()));
+    }
+
+    private void sortLimitViolationsInSubjectLimitViolations(Page<SubjectLimitViolationEntity> subjectLimitViolations) {
+        Optional<Sort.Order> lvSortOrder = subjectLimitViolations.getSort().get()
+            // we filter sort on nested limit violations
+            .filter(sortOrder ->
+                sortOrder.getProperty().startsWith(SubjectLimitViolationEntity.Fields.contingencyLimitViolations))
+            // for now, only one children sort possible
+            .findFirst();
+
+        Comparator<ContingencyLimitViolationEntity> comparator = getLimitViolationComparatorForSubjectLimitViolations(lvSortOrder);
+
+        boolean isSortOrderAscending = lvSortOrder.map(Sort.Order::isAscending).orElse(true);
+
+        subjectLimitViolations.forEach(subjectLimitViolation -> subjectLimitViolation
+            .getContingencyLimitViolations()
+            .sort(isSortOrderAscending ?
+                comparator :
+                comparator.reversed()));
+    }
+
+    private static Comparator<ContingencyLimitViolationEntity> getLimitViolationComparatorForContingencies(Optional<Sort.Order> lvSortOrder) {
+        if (lvSortOrder.isPresent()) {
+            String field = lvSortOrder.get().getProperty()
+                .replaceFirst(ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR, "");
+            return switch (field) {
+                case AbstractLimitViolationEntity.Fields.subjectLimitViolation
+                    + SpecificationUtils.FIELD_SEPARATOR
+                    + SubjectLimitViolationEntity.Fields.subjectId ->
+                    Comparator.comparing(value -> value.getSubjectLimitViolation().getSubjectId(), Comparator.nullsLast(Comparator.naturalOrder()));
+                default -> getCommonComparator(field);
+            };
+        } else {
+            return Comparator.comparing(limitViolation -> limitViolation.getSubjectLimitViolation().getSubjectId());
+        }
+    }
+
+    private static Comparator<ContingencyLimitViolationEntity> getLimitViolationComparatorForSubjectLimitViolations(Optional<Sort.Order> lvSortOrder) {
+        if (lvSortOrder.isPresent()) {
+            String field = lvSortOrder.get().getProperty()
+                .replaceFirst(SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR, "");
+            return switch (field) {
+                case ContingencyLimitViolationEntity.Fields.contingency
+                    + SpecificationUtils.FIELD_SEPARATOR
+                    + ContingencyEntity.Fields.contingencyId ->
+                    Comparator.comparing(value -> value.getContingency().getContingencyId(), Comparator.nullsLast(Comparator.naturalOrder()));
+                case ContingencyLimitViolationEntity.Fields.contingency
+                    + SpecificationUtils.FIELD_SEPARATOR
+                    + ContingencyEntity.Fields.status ->
+                    Comparator.comparing(value -> value.getContingency().getStatus(), Comparator.nullsLast(Comparator.naturalOrder()));
+                default -> getCommonComparator(field);
+            };
+        } else {
+            return Comparator.comparing(limitViolation -> limitViolation.getContingency().getContingencyId());
+        }
+    }
+
+    private static Comparator<ContingencyLimitViolationEntity> getCommonComparator(String field) {
+        return switch (field) {
+            case AbstractLimitViolationEntity.Fields.limit ->
+                Comparator.comparing(AbstractLimitViolationEntity::getLimit, Comparator.nullsLast(Comparator.naturalOrder()));
+            case AbstractLimitViolationEntity.Fields.limitName ->
+                Comparator.comparing(AbstractLimitViolationEntity::getLimitName, Comparator.nullsLast(Comparator.naturalOrder()));
+            case AbstractLimitViolationEntity.Fields.limitType ->
+                Comparator.comparing(AbstractLimitViolationEntity::getLimitType, Comparator.nullsLast(Comparator.naturalOrder()));
+            case AbstractLimitViolationEntity.Fields.acceptableDuration ->
+                Comparator.comparing(AbstractLimitViolationEntity::getAcceptableDuration, Comparator.nullsLast(Comparator.naturalOrder()));
+            case AbstractLimitViolationEntity.Fields.value ->
+                Comparator.comparing(AbstractLimitViolationEntity::getValue, Comparator.nullsLast(Comparator.naturalOrder()));
+            case AbstractLimitViolationEntity.Fields.side ->
+                Comparator.comparing(AbstractLimitViolationEntity::getSide, Comparator.nullsLast(Comparator.naturalOrder()));
+            case AbstractLimitViolationEntity.Fields.loading ->
+                Comparator.comparing(AbstractLimitViolationEntity::getLoading, Comparator.nullsLast(Comparator.naturalOrder()));
+            default -> throw new IllegalArgumentException("Sorting on the column '" + field + "' is not supported"); // not supposed to happen
+        };
+    }
+
+    private Pageable addDefaultSortAndRemoveChildrenSorting(Pageable pageable, String defaultSortColumn) {
+        if (pageable.isPaged()) {
+            // Can't use both distinct and sort on nested field here, so we have to remove "children" sorting. Maybe there is a way to do it ?
+            // https://github.com/querydsl/querydsl/issues/2443
+            Sort finalSort = Sort.by(pageable.getSort().filter(sortOrder -> !sortOrder.getProperty().startsWith("contingencyLimitViolations")).toList());
             //if it's already sorted by our defaultColumn we don't add another sort by the same column
-            Sort finalSort = pageable.getSort().and(Sort.by(DEFAULT_SORT_DIRECTION, defaultSortColumn));
+            if (finalSort.getOrderFor(defaultSortColumn) == null) {
+                finalSort = finalSort.and(Sort.by(DEFAULT_SORT_DIRECTION, defaultSortColumn));
+            }
             return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), finalSort);
         }
         //nothing to do if the request is not paged
