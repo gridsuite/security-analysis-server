@@ -76,7 +76,7 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
     }
 
     @Override
-    public Map<String, String> getSpecificMsgHeaders() {
+    protected Map<String, String> getSpecificMsgHeaders() {
         return Map.of(
                 CONTINGENCY_LIST_NAMES_HEADER, String.join(",", runContext.getContingencyListNames()));
     }
