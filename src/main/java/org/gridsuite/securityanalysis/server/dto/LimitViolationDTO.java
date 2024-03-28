@@ -43,7 +43,7 @@ public class LimitViolationDTO {
     public List<String> toCsvRow(Map<String, String> translations) {
         List<String> csvRow = new ArrayList<>();
         csvRow.add(this.getLimitType() != null ? CsvExportUtils.translate(this.getLimitType().name(), translations) : "");
-        csvRow.add(CsvExportUtils.replaceNullWithEmptyString(this.getLimitName()));
+        csvRow.add(CsvExportUtils.replaceNullWithEmptyString(CsvExportUtils.translate(this.getLimitName(), translations)));
         csvRow.add(Double.toString(this.getLimit()));
         csvRow.add(Double.toString(this.getValue()));
         csvRow.add(CsvExportUtils.replaceNullWithEmptyString(this.getLoading()));
