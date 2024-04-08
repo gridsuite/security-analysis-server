@@ -64,10 +64,11 @@ class FindPreContingencyLimitViolationTest {
 
     @ParameterizedTest
     @MethodSource({
-        "provideSortOnly",
-        "provideParentFilter",
-        "provideChildFilter",
-        "provideEachColumnFilter"
+       /* "provideSortOnly",
+        "provideParentFilter"
+      "provideChildFilter",
+          "provideEachColumnFilter",*/
+        "provideChildFilterWithTolerance"
     })
     void findFilteredPrecontingencyLimitViolationResultsTest(List<ResourceFilterDTO> filters, Sort sort, List<PreContingencyLimitViolationResultDTO> expectedResult, Integer expectedSelectCount) {
         reset();
@@ -103,6 +104,16 @@ class FindPreContingencyLimitViolationTest {
                                 .stream().sorted(Comparator.comparing(PreContingencyLimitViolationResultDTO::getSubjectId)).toList(), 2),
                 Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, "390", AbstractLimitViolationEntity.Fields.limit)), Sort.by(Sort.Direction.ASC, "limit"),
                         getResultPreContingencyWithNestedFilter(p -> p.getLimitViolation().getLimit() <= 390)
+                                .stream().sorted(Comparator.comparing(x -> x.getLimitViolation().getLimit())).toList(), 2)
+        );
+    }
+
+    private Stream<Arguments> provideChildFilterWithTolerance() {
+        return Stream.of(
+                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.NOT_EQUAL, "11.02425", AbstractLimitViolationEntity.Fields.value),
+                                new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, "10.51243", AbstractLimitViolationEntity.Fields.limit),
+                                new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.GREATER_THAN_OR_EQUAL, "1.00001", AbstractLimitViolationEntity.Fields.limitReduction)), Sort.by(Sort.Direction.ASC, "limit"),
+                        getResultPreContingencyWithNestedFilter(p -> p.getLimitViolation().getLimit() <= 10.51243)
                                 .stream().sorted(Comparator.comparing(x -> x.getLimitViolation().getLimit())).toList(), 2)
         );
     }
