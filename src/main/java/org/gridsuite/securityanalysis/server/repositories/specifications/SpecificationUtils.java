@@ -51,15 +51,30 @@ public final class SpecificationUtils {
         return (root, cq, cb) -> cb.like(cb.upper(getColumnPath(root, field)), EscapeCharacter.DEFAULT.escape(value).toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
     }
 
-    public static <X> Specification<X> notEqual(String field, Double value) {
+    public static <X> Specification<X> notEqual(String field, Double value, Double tolerance) {
+        return (root, cq, cb) -> cb.or(
+                cb.greaterThan(getColumnPath(root, field), value + tolerance),
+                cb.lessThan(getColumnPath(root, field), value - tolerance)
+        );
+    }
+
+    public static <X> Specification<X> notEqual(String field, Integer value) {
         return (root, cq, cb) -> cb.notEqual(getColumnPath(root, field), value);
     }
 
-    public static <X> Specification<X> lessThanOrEqual(String field, Double value) {
+    public static <X> Specification<X> lessThanOrEqual(String field, Double value, Double tolerance) {
+        return (root, cq, cb) -> cb.lessThanOrEqualTo(getColumnPath(root, field), value + tolerance);
+    }
+
+    public static <X> Specification<X> lessThanOrEqual(String field, Integer value) {
         return (root, cq, cb) -> cb.lessThanOrEqualTo(getColumnPath(root, field), value);
     }
 
-    public static <X> Specification<X> greaterThanOrEqual(String field, Double value) {
+    public static <X> Specification<X> greaterThanOrEqual(String field, Double value, Double tolerance) {
+        return (root, cq, cb) -> cb.greaterThanOrEqualTo(getColumnPath(root, field), value - tolerance);
+    }
+
+    public static <X> Specification<X> greaterThanOrEqual(String field, Integer value) {
         return (root, cq, cb) -> cb.greaterThanOrEqualTo(getColumnPath(root, field), value);
     }
 
@@ -116,7 +131,7 @@ public final class SpecificationUtils {
                 completedSpecification = completedSpecification.and(contains(resourceFilter.column(), resourceFilter.value().toString()));
             case STARTS_WITH ->
                 completedSpecification = completedSpecification.and(startsWith(resourceFilter.column(), resourceFilter.value().toString()));
-            default -> throwBadFilterTypeException(resourceFilter.type(), resourceFilter.dataType());
+            default -> throw new IllegalArgumentException("The filter type " + resourceFilter.type() + " is not supported with the data type " + resourceFilter.dataType());
         }
 
         return completedSpecification;
@@ -124,22 +139,36 @@ public final class SpecificationUtils {
 
     @NotNull
     private static <X> Specification<X> appendNumberFilterToSpecification(Specification<X> specification, ResourceFilterDTO resourceFilter) {
-        Specification<X> completedSpecification = specification;
-
-        // We need to cast it as String before and use .valueOf to be able to works with integers
-        Double value = Double.valueOf(resourceFilter.value().toString());
-
-        switch (resourceFilter.type()) {
-            case NOT_EQUAL ->
-                completedSpecification = completedSpecification.and(notEqual(resourceFilter.column(), value));
-            case LESS_THAN_OR_EQUAL ->
-                completedSpecification = completedSpecification.and(lessThanOrEqual(resourceFilter.column(), value));
-            case GREATER_THAN_OR_EQUAL ->
-                completedSpecification = completedSpecification.and(greaterThanOrEqual(resourceFilter.column(), value));
-            default -> throwBadFilterTypeException(resourceFilter.type(), resourceFilter.dataType());
+        String value = resourceFilter.value().toString();
+        if (isInteger(value)) {
+            return createIntegerPredicate(specification, resourceFilter, value);
+        } else {
+            return createDoublePredicate(specification, resourceFilter, value, 0.00001);
         }
+    }
 
-        return completedSpecification;
+    private static <X> Specification<X> createIntegerPredicate(Specification<X> specification, ResourceFilterDTO resourceFilter, String value) {
+        Integer valueInteger = Integer.valueOf(value);
+        return switch (resourceFilter.type()) {
+            case NOT_EQUAL -> specification.and(notEqual(resourceFilter.column(), valueInteger));
+            case LESS_THAN_OR_EQUAL -> specification.and(lessThanOrEqual(resourceFilter.column(), valueInteger));
+            case GREATER_THAN_OR_EQUAL -> specification.and(greaterThanOrEqual(resourceFilter.column(), valueInteger));
+            default ->
+                    throw new IllegalArgumentException("The filter type " + resourceFilter.type() + " is not supported with the data type " + resourceFilter.dataType());
+        };
+    }
+
+    private static <X> Specification<X> createDoublePredicate(Specification<X> specification, ResourceFilterDTO resourceFilter, String value, double tolerance) {
+        Double valueDouble = Double.valueOf(value);
+        return switch (resourceFilter.type()) {
+            case NOT_EQUAL -> specification.and(notEqual(resourceFilter.column(), valueDouble, tolerance));
+            case LESS_THAN_OR_EQUAL ->
+                    specification.and(lessThanOrEqual(resourceFilter.column(), valueDouble, tolerance));
+            case GREATER_THAN_OR_EQUAL ->
+                    specification.and(greaterThanOrEqual(resourceFilter.column(), valueDouble, tolerance));
+            default ->
+                    throw new IllegalArgumentException("The filter type " + resourceFilter.type() + " is not supported with the data type " + resourceFilter.dataType());
+        };
     }
 
     /**
@@ -166,8 +195,12 @@ public final class SpecificationUtils {
         }
     }
 
-    // will be overloaded by Spring as InvalidDataAccessApiUsageException
-    private static void throwBadFilterTypeException(ResourceFilterDTO.Type filterType, ResourceFilterDTO.DataType dataType) {
-        throw new IllegalArgumentException("The filter type " + filterType + " is not supported with the data type " + dataType);
+    private static boolean isInteger(String input) {
+        try {
+            Integer.parseInt(input);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
     }
 }
