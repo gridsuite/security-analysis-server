@@ -15,7 +15,7 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import com.powsybl.commons.reporter.Reporter;
 import com.powsybl.iidm.network.Network;
-import com.powsybl.iidm.network.TwoSides;
+import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.loadflow.LoadFlowParameters;
@@ -465,6 +465,32 @@ public class SecurityAnalysisControllerTest {
         String resultAsString = mvcResult.getResponse().getContentAsString();
         List<PreContingencyLimitViolationResultDTO> preContingencyResult = mapper.readValue(resultAsString, new TypeReference<List<PreContingencyLimitViolationResultDTO>>() { });
         assertEquals(1, preContingencyResult.size());
+
+        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/limit-types", RESULT_UUID))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON)
+                ).andReturn();
+        List<LimitViolationType> limitTypes = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
+        assertEquals(2, limitTypes.size());
+        assertFalse(limitTypes.contains(LimitViolationType.HIGH_SHORT_CIRCUIT_CURRENT));
+
+        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/branch-sides", RESULT_UUID))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON)
+                ).andReturn();
+        List<ThreeSides> sides = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
+        assertEquals(2, sides.size());
+        assertTrue(sides.contains(ThreeSides.ONE));
+
+        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/computation-status", RESULT_UUID))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON)
+                ).andReturn();
+        List<LoadFlowResult.ComponentResult.Status> status = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
+        assertEquals(0, status.size());
     }
 
     @Test
@@ -684,49 +710,6 @@ public class SecurityAnalysisControllerTest {
                 content().contentType(new MediaType(MediaType.TEXT_PLAIN, StandardCharsets.UTF_8)),
                 content().string("OpenLoadFlow")
             );
-    }
-
-    @Test
-    public void geLimitTypesTest() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/limit-types"))
-                .andExpectAll(
-                        status().isOk(),
-                        content().contentType(MediaType.APPLICATION_JSON)
-                ).andReturn();
-
-        String resultAsString = mvcResult.getResponse().getContentAsString();
-        List<LimitViolationType> limitTypes = mapper.readValue(resultAsString, new TypeReference<>() { });
-        assertEquals(6, limitTypes.size());
-        assertTrue(limitTypes.contains(LimitViolationType.ACTIVE_POWER));
-        assertFalse(limitTypes.contains(LimitViolationType.HIGH_SHORT_CIRCUIT_CURRENT));
-    }
-
-    @Test
-    public void getBranchSidesTest() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/branch-sides"))
-                .andExpectAll(
-                        status().isOk(),
-                        content().contentType(MediaType.APPLICATION_JSON)
-                ).andReturn();
-
-        String resultAsString = mvcResult.getResponse().getContentAsString();
-        List<TwoSides> sides = mapper.readValue(resultAsString, new TypeReference<>() { });
-        assertEquals(2, sides.size());
-        assertTrue(sides.contains(TwoSides.ONE));
-        assertTrue(sides.contains(TwoSides.TWO));
-    }
-
-    @Test
-    public void getComputationStatus() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/computation-status"))
-            .andExpectAll(
-                status().isOk(),
-                content().contentType(MediaType.APPLICATION_JSON)
-            ).andReturn();
-
-        String resultAsString = mvcResult.getResponse().getContentAsString();
-        List<LoadFlowResult.ComponentResult.Status> status = mapper.readValue(resultAsString, new TypeReference<>() { });
-        assertEquals(status, Arrays.asList(LoadFlowResult.ComponentResult.Status.values()));
     }
 
     @Test

@@ -6,8 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import com.powsybl.iidm.network.TwoSides;
-import com.powsybl.loadflow.LoadFlowResult;
+import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,7 +31,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -244,27 +242,24 @@ public class SecurityAnalysisController {
         return ResponseEntity.ok().body(securityAnalysisService.getDefaultProvider());
     }
 
-    @GetMapping(value = "/limit-types", produces = APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/results/{resultUuid}/limit-types", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get available limit types")
     @ApiResponses(@ApiResponse(responseCode = "200", description = "List of available limit types"))
-    public ResponseEntity<List<LimitViolationType>> getLimitTypes() {
-        List<LimitViolationType> limitViolationTypesToRemove = List.of(LimitViolationType.HIGH_SHORT_CIRCUIT_CURRENT, LimitViolationType.LOW_SHORT_CIRCUIT_CURRENT, LimitViolationType.LOW_VOLTAGE_ANGLE, LimitViolationType.HIGH_VOLTAGE_ANGLE);
-        return ResponseEntity.ok().body(Arrays.stream(LimitViolationType.values())
-            .filter(lm -> !limitViolationTypesToRemove.contains(lm))
-            .toList());
+    public ResponseEntity<List<LimitViolationType>> getLimitTypes(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(securityAnalysisService.getLimitTypes(resultUuid));
     }
 
-    @GetMapping(value = "/branch-sides", produces = APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/results/{resultUuid}/branch-sides", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get available branch sides")
     @ApiResponses(@ApiResponse(responseCode = "200", description = "List of available branch sides"))
-    public ResponseEntity<TwoSides[]> getBranchSides() {
-        return ResponseEntity.ok().body(TwoSides.values());
+    public ResponseEntity<List<ThreeSides>> getBranchSides(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(securityAnalysisService.getBranchSides(resultUuid));
     }
 
-    @GetMapping(value = "/computation-status", produces = APPLICATION_JSON_VALUE)
+    @GetMapping(value = "/results/{resultUuid}/computation-status", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get available computation status")
     @ApiResponses(@ApiResponse(responseCode = "200", description = "List of available computation status"))
-    public ResponseEntity<LoadFlowResult.ComponentResult.Status[]> getComputationStatus() {
-        return ResponseEntity.ok().body(LoadFlowResult.ComponentResult.Status.values());
+    public ResponseEntity<List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status>> getComputationStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(securityAnalysisService.getComputationStatus(resultUuid));
     }
 }

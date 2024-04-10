@@ -7,6 +7,7 @@
 
 package org.gridsuite.securityanalysis.server.repositories;
 
+import com.powsybl.loadflow.LoadFlowResult;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.*;
@@ -45,6 +46,11 @@ public interface ContingencyRepository extends JpaRepository<ContingencyEntity, 
     @Modifying
     @Query(value = "DELETE FROM contingency_entity_contingency_elements WHERE contingency_entity_uuid IN ?1", nativeQuery = true)
     void deleteAllContingencyElementsByContingencyUuidIn(Set<UUID> uuids);
+
+    @Query(value = "SELECT distinct c.status from ContingencyEntity as c " +
+            "where c.uuid = :resultUuid " +
+            "order by c.status")
+    List<LoadFlowResult.ComponentResult.Status> findComputingStatus(UUID resultUuid);
 
     interface EntityUuid {
         UUID getUuid();
