@@ -64,10 +64,10 @@ class FindPreContingencyLimitViolationTest {
 
     @ParameterizedTest
     @MethodSource({
-       /* "provideSortOnly",
-        "provideParentFilter"
-      "provideChildFilter",
-          "provideEachColumnFilter",*/
+        "provideSortOnly",
+        "provideParentFilter",
+        "provideChildFilter",
+        "provideEachColumnFilter",
         "provideChildFilterWithTolerance"
     })
     void findFilteredPrecontingencyLimitViolationResultsTest(List<ResourceFilterDTO> filters, Sort sort, List<PreContingencyLimitViolationResultDTO> expectedResult, Integer expectedSelectCount) {
