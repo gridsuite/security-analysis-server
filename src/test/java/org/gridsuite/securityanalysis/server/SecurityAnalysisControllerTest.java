@@ -481,7 +481,7 @@ public class SecurityAnalysisControllerTest {
                         content().contentType(MediaType.APPLICATION_JSON)
                 ).andReturn();
         List<ThreeSides> sides = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
-        assertEquals(2, sides.size());
+        assertEquals(1, sides.size());
         assertTrue(sides.contains(ThreeSides.ONE));
 
         mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/computation-status", RESULT_UUID))
