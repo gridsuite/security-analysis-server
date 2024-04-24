@@ -34,7 +34,7 @@ public interface ContingencyLimitViolationRepository extends JpaRepository<Conti
     List<LimitViolationType> findLimitTypes(UUID resultUuid);
 
     @Query(value = "SELECT distinct c.side from ContingencyLimitViolationEntity as c " +
-            "where c.subjectLimitViolation.result.id = :resultUuid " +
+            "where c.subjectLimitViolation.result.id = :resultUuid AND c.side != ''" +
             "order by c.side")
     List<ThreeSides> findBranchSides(UUID resultUuid);
 }
