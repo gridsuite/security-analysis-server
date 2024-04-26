@@ -29,7 +29,7 @@ public interface ContingencyLimitViolationRepository extends JpaRepository<Conti
     void deleteAllByContingencyUuidIn(Set<UUID> uuids);
 
     @Query(value = "SELECT distinct c.limitType from ContingencyLimitViolationEntity as c " +
-            "where c.subjectLimitViolation.result.id = :resultUuid " +
+            "where c.subjectLimitViolation.result.id = :resultUuid AND c.limitType != ''" +
             "order by c.limitType")
     List<LimitViolationType> findLimitTypes(UUID resultUuid);
 

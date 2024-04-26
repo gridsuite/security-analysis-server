@@ -48,7 +48,7 @@ public interface ContingencyRepository extends JpaRepository<ContingencyEntity, 
     void deleteAllContingencyElementsByContingencyUuidIn(Set<UUID> uuids);
 
     @Query(value = "SELECT distinct c.status from ContingencyEntity as c " +
-            "where c.uuid = :resultUuid " +
+            "where c.uuid = :resultUuid AND c.status != ''" +
             "order by c.status")
     List<LoadFlowResult.ComponentResult.Status> findComputingStatus(UUID resultUuid);
 
