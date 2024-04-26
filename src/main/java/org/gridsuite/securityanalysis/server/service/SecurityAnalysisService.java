@@ -7,6 +7,8 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.powsybl.iidm.network.ThreeSides;
+import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisProvider;
 import org.gridsuite.securityanalysis.server.computation.service.AbstractComputationService;
 import org.gridsuite.securityanalysis.server.computation.service.NotificationService;
@@ -49,5 +51,17 @@ public class SecurityAnalysisService extends AbstractComputationService<Security
         return SecurityAnalysisProvider.findAll().stream()
                 .map(SecurityAnalysisProvider::getName)
                 .toList();
+    }
+
+    public List<LimitViolationType> getLimitTypes(UUID resultUuid) {
+        return resultService.findLimitTypes(resultUuid);
+    }
+
+    public List<ThreeSides> getBranchSides(UUID resultUuid) {
+        return resultService.findBranchSides(resultUuid);
+    }
+
+    public List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status> getComputationStatus(UUID resultUuid) {
+        return resultService.findComputingStatus(resultUuid);
     }
 }

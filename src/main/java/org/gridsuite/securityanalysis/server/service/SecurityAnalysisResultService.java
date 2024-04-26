@@ -9,6 +9,8 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.powsybl.iidm.network.ThreeSides;
+import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
 import org.gridsuite.securityanalysis.server.computation.service.AbstractComputationResultService;
 import org.gridsuite.securityanalysis.server.dto.*;
@@ -352,6 +354,24 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
 
             return subjectLimitViolationPage;
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<LimitViolationType> findLimitTypes(UUID resultUuid) {
+        Objects.requireNonNull(resultUuid);
+        return contingencyLimitViolationRepository.findLimitTypes(resultUuid);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ThreeSides> findBranchSides(UUID resultUuid) {
+        Objects.requireNonNull(resultUuid);
+        return contingencyLimitViolationRepository.findBranchSides(resultUuid);
+    }
+
+    @Transactional(readOnly = true)
+    public List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status> findComputingStatus(UUID resultUuid) {
+        Objects.requireNonNull(resultUuid);
+        return contingencyRepository.findComputingStatus(resultUuid);
     }
 
     private void appendLimitViolationsAndElementsToContingenciesResult(Page<ContingencyEntity> contingencies, List<ResourceFilterDTO> resourceFilters) {
