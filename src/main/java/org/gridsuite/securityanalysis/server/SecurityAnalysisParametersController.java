@@ -49,7 +49,7 @@ public class SecurityAnalysisParametersController {
         return ResponseEntity.ok().body(parametersService.createDefaultParameters());
     }
 
-    @PostMapping(value = "", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "", params = "duplicateFrom", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Duplicate parameters")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "parameters were duplicated"),
