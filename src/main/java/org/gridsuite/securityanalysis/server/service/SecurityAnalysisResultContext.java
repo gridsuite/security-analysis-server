@@ -9,8 +9,8 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisParameters;
+import org.gridsuite.securityanalysis.server.computation.dto.ReportInfos;
 import org.gridsuite.securityanalysis.server.computation.service.AbstractResultContext;
-import org.gridsuite.securityanalysis.server.computation.utils.ReportContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
@@ -69,7 +69,7 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
                 receiver,
                 provider,
                 parameters,
-                new ReportContext(reportUuid, reporterId, reportType),
+                new ReportInfos(reportUuid, reporterId, reportType),
                 userId
         );
         return new SecurityAnalysisResultContext(resultUuid, runContext);
