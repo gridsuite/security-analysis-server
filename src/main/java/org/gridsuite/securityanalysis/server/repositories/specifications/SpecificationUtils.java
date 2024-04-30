@@ -7,6 +7,7 @@
 
 package org.gridsuite.securityanalysis.server.repositories.specifications;
 
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Root;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
@@ -51,16 +52,28 @@ public final class SpecificationUtils {
         return (root, cq, cb) -> cb.like(cb.upper(getColumnPath(root, field)), EscapeCharacter.DEFAULT.escape(value).toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
     }
 
-    public static <X> Specification<X> notEqual(String field, Double value) {
-        return (root, cq, cb) -> cb.notEqual(getColumnPath(root, field), value);
+    public static <X> Specification<X> notEqual(String field, Double value, Double tolerance) {
+        return (root, cq, cb) -> {
+            Expression<Double> doubleExpression = getColumnPath(root, field).as(Double.class);
+            return cb.or(
+                    cb.greaterThan(doubleExpression, value + tolerance),
+                    cb.lessThan(doubleExpression, value - tolerance)
+            );
+        };
     }
 
-    public static <X> Specification<X> lessThanOrEqual(String field, Double value) {
-        return (root, cq, cb) -> cb.lessThanOrEqualTo(getColumnPath(root, field), value);
+    public static <X> Specification<X> lessThanOrEqual(String field, Double value, Double tolerance) {
+        return (root, cq, cb) -> {
+            Expression<Double> doubleExpression = getColumnPath(root, field).as(Double.class);
+            return cb.lessThanOrEqualTo(doubleExpression, value + tolerance);
+        };
     }
 
-    public static <X> Specification<X> greaterThanOrEqual(String field, Double value) {
-        return (root, cq, cb) -> cb.greaterThanOrEqualTo(getColumnPath(root, field), value);
+    public static <X> Specification<X> greaterThanOrEqual(String field, Double value, Double tolerance) {
+        return (root, cq, cb) -> {
+            Expression<Double> doubleExpression = getColumnPath(root, field).as(Double.class);
+            return cb.greaterThanOrEqualTo(doubleExpression, value - tolerance);
+        };
     }
 
     public static <X> Specification<X> isNotEmpty(String field) {
@@ -116,7 +129,7 @@ public final class SpecificationUtils {
                 completedSpecification = completedSpecification.and(contains(resourceFilter.column(), resourceFilter.value().toString()));
             case STARTS_WITH ->
                 completedSpecification = completedSpecification.and(startsWith(resourceFilter.column(), resourceFilter.value().toString()));
-            default -> throwBadFilterTypeException(resourceFilter.type(), resourceFilter.dataType());
+            default -> throw new IllegalArgumentException("The filter type " + resourceFilter.type() + " is not supported with the data type " + resourceFilter.dataType());
         }
 
         return completedSpecification;
@@ -124,22 +137,22 @@ public final class SpecificationUtils {
 
     @NotNull
     private static <X> Specification<X> appendNumberFilterToSpecification(Specification<X> specification, ResourceFilterDTO resourceFilter) {
-        Specification<X> completedSpecification = specification;
+        final double tolerance = 0.00001; // tolerance for comparison
+        String value = resourceFilter.value().toString();
+        return createNumberPredicate(specification, resourceFilter, value, tolerance);
+    }
 
-        // We need to cast it as String before and use .valueOf to be able to works with integers
-        Double value = Double.valueOf(resourceFilter.value().toString());
-
-        switch (resourceFilter.type()) {
-            case NOT_EQUAL ->
-                completedSpecification = completedSpecification.and(notEqual(resourceFilter.column(), value));
+    private static <X> Specification<X> createNumberPredicate(Specification<X> specification, ResourceFilterDTO resourceFilter, String value, double tolerance) {
+        Double valueDouble = Double.valueOf(value);
+        return switch (resourceFilter.type()) {
+            case NOT_EQUAL -> specification.and(notEqual(resourceFilter.column(), valueDouble, tolerance));
             case LESS_THAN_OR_EQUAL ->
-                completedSpecification = completedSpecification.and(lessThanOrEqual(resourceFilter.column(), value));
+                    specification.and(lessThanOrEqual(resourceFilter.column(), valueDouble, tolerance));
             case GREATER_THAN_OR_EQUAL ->
-                completedSpecification = completedSpecification.and(greaterThanOrEqual(resourceFilter.column(), value));
-            default -> throwBadFilterTypeException(resourceFilter.type(), resourceFilter.dataType());
-        }
-
-        return completedSpecification;
+                    specification.and(greaterThanOrEqual(resourceFilter.column(), valueDouble, tolerance));
+            default ->
+                    throw new IllegalArgumentException("The filter type " + resourceFilter.type() + " is not supported with the data type " + resourceFilter.dataType());
+        };
     }
 
     /**
@@ -164,10 +177,5 @@ public final class SpecificationUtils {
         } else {
             return root.get(dotSeparatedFields);
         }
-    }
-
-    // will be overloaded by Spring as InvalidDataAccessApiUsageException
-    private static void throwBadFilterTypeException(ResourceFilterDTO.Type filterType, ResourceFilterDTO.DataType dataType) {
-        throw new IllegalArgumentException("The filter type " + filterType + " is not supported with the data type " + dataType);
     }
 }
