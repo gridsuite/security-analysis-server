@@ -13,8 +13,8 @@ import com.powsybl.loadflow.LoadFlowProvider;
 import com.powsybl.security.SecurityAnalysisParameters;
 import lombok.Getter;
 import lombok.Setter;
+import org.gridsuite.securityanalysis.server.computation.dto.ReportInfos;
 import org.gridsuite.securityanalysis.server.computation.service.AbstractComputationRunContext;
-import org.gridsuite.securityanalysis.server.computation.utils.ReportContext;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersValues;
 
@@ -34,7 +34,7 @@ public class SecurityAnalysisRunContext extends AbstractComputationRunContext<Se
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParameters parameters, LoadFlowParametersValues loadFlowParametersValues,
-                                      ReportContext reportContext, String userId) {
+                                      ReportInfos reportContext, String userId) {
         this(
                 networkUuid,
                 variantId,
@@ -42,15 +42,15 @@ public class SecurityAnalysisRunContext extends AbstractComputationRunContext<Se
                 receiver,
                 provider,
                 buildParameters(parameters, loadFlowParametersValues, provider),
-                new ReportContext(reportContext.getReportId(), reportContext.getReportName(), reportContext.getReportType()),
+                new ReportInfos(reportContext.reportUuid(), reportContext.reporterId(), reportContext.computationType()),
                 userId
         );
     }
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParameters parameters,
-                                      ReportContext reportContext, String userId) {
-        super(networkUuid, variantId, receiver, reportContext, userId, provider, parameters);
+                                      ReportInfos reportContext, String userId) {
+        super(networkUuid, variantId, receiver, reportContext, userId, provider, parameters, null);
         this.contingencyListNames = Objects.requireNonNull(contingencyListNames);
     }
 

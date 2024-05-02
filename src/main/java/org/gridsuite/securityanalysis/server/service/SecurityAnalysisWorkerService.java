@@ -22,6 +22,7 @@ import org.gridsuite.securityanalysis.server.computation.service.*;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
+import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -30,7 +31,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.getFailedMessage;
@@ -80,7 +83,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     }
 
     @Override
-    protected CompletableFuture<SecurityAnalysisResult> getCompletableFuture(Network network, SecurityAnalysisRunContext runContext, String provider, Reporter reporter) {
+    protected CompletableFuture<SecurityAnalysisResult> getCompletableFuture(Network network, SecurityAnalysisRunContext runContext, String provider, UUID resultUuid) {
         SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(provider);
         String variantId = runContext.getVariantId() != null ? runContext.getVariantId() : VariantManagerConstants.INITIAL_VARIANT_ID;
 
@@ -101,12 +104,12 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                         Collections.emptyList(),
                         Collections.emptyList(),
                         Collections.emptyList(),
-                        reporter)
+                        runContext.getReporter())
                 .thenApply(SecurityAnalysisReport::getResult);
     }
 
     @Override
-    protected void preRun(SecurityAnalysisRunContext runContext, Reporter reporter) {
+    protected void preRun(SecurityAnalysisRunContext runContext) {
         LOGGER.info("Run security analysis on contingency lists: {}", runContext.getContingencyListNames().stream().map(LogUtils::sanitizeParam).toList());
 
         // enrich context
@@ -120,8 +123,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     }
 
     @Override
-    protected void postRun(SecurityAnalysisRunContext runContext, Reporter reporter) {
-        if (runContext.getReportContext().getReportId() != null) {
+    protected void postRun(SecurityAnalysisRunContext runContext) {
+        if (runContext.getReportInfos().reportUuid() != null) {
             List<Report> notFoundElementReports = new ArrayList<>();
             runContext.getContingencies().stream()
                     .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements()))
@@ -134,8 +137,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                                 .build());
                     });
             if (!CollectionUtils.isEmpty(notFoundElementReports)) {
-                Reporter elementNotFoundSubReporter = reporter.createSubReporter(
-                        runContext.getReportContext().getReportId().toString() + "notFoundElements",
+                Reporter elementNotFoundSubReporter = runContext.getReporter().createSubReporter(
+                        runContext.getReportInfos().reportUuid().toString() + "notFoundElements",
                         "Elements not found");
                 notFoundElementReports.forEach(elementNotFoundSubReporter::report);
             }
@@ -155,5 +158,17 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     @Override
     protected SecurityAnalysisResultContext fromMessage(Message<String> message) {
         return SecurityAnalysisResultContext.fromMessage(message, objectMapper);
+    }
+
+    @Bean
+    @Override
+    public Consumer<Message<String>> consumeRun() {
+        return super.consumeRun();
+    }
+
+    @Bean
+    @Override
+    public Consumer<Message<String>> consumeCancel() {
+        return super.consumeCancel();
     }
 }
