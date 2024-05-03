@@ -49,13 +49,13 @@ public class SecurityAnalysisParametersController {
         return ResponseEntity.ok().body(parametersService.createDefaultParameters());
     }
 
-    @PostMapping(value = "/{sourceParametersUuid}", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "", params = "duplicateFrom", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Duplicate parameters")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "parameters were duplicated"),
         @ApiResponse(responseCode = "404", description = "source parameters were not found")})
     public ResponseEntity<UUID> duplicateParameters(
-        @Parameter(description = "source parameters UUID") @PathVariable(name = "sourceParametersUuid") UUID sourceParametersUuid) {
+        @Parameter(description = "source parameters UUID") @RequestParam(name = "duplicateFrom") UUID sourceParametersUuid) {
         return parametersService.duplicateParameters(sourceParametersUuid).map(duplicatedParametersUuid -> ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(duplicatedParametersUuid))
