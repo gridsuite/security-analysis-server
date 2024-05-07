@@ -13,7 +13,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
-import com.powsybl.commons.reporter.Reporter;
+import com.powsybl.commons.report.ReportNode;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.iidm.network.VariantManagerConstants;
@@ -45,7 +45,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.MockitoAnnotations;
-import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -114,8 +113,6 @@ public class SecurityAnalysisControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    private WireMockServer wireMockServer;
-
     @MockBean
     private NetworkStoreService networkStoreService;
 
@@ -162,7 +159,7 @@ public class SecurityAnalysisControllerTest {
 
     @Before
     public void setUp() throws Exception {
-        wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
+        WireMockServer wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
         wireMockServer.start();
 
         MockitoAnnotations.initMocks(this);
@@ -175,7 +172,7 @@ public class SecurityAnalysisControllerTest {
 
         given(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).willReturn(network);
 
-        when(networkStoreService.getNetwork(NETWORK_STOP_UUID, PreloadingStrategy.COLLECTION)).thenAnswer((Answer) invocation -> {
+        when(networkStoreService.getNetwork(NETWORK_STOP_UUID, PreloadingStrategy.COLLECTION)).thenAnswer(invocation -> {
             //Needed so the stop call doesn't arrive too late
             Network network1 = new NetworkFactoryImpl().createNetwork("other", "test");
             network1.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_TO_STOP_ID);
@@ -205,7 +202,7 @@ public class SecurityAnalysisControllerTest {
         // UUID service mocking to always generate the same result UUID
         given(uuidGeneratorService.generate()).willReturn(RESULT_UUID);
 
-        doNothing().when(reportService).sendReport(any(UUID.class), any(Reporter.class));
+        doNothing().when(reportService).sendReport(any(UUID.class), any(ReportNode.class));
 
         // SecurityAnalysis.Runner constructor is private..
         Constructor<SecurityAnalysis.Runner> constructor = SecurityAnalysis.Runner.class.getDeclaredConstructor(SecurityAnalysisProvider.class);
@@ -446,7 +443,7 @@ public class SecurityAnalysisControllerTest {
 
             String jsonFilters = new ObjectMapper().writeValueAsString(filters);
 
-            filterUrl = "filters=" + URLEncoder.encode(jsonFilters, StandardCharsets.UTF_8.toString());
+            filterUrl = "filters=" + URLEncoder.encode(jsonFilters, StandardCharsets.UTF_8);
 
             return filterUrl;
         } catch (Exception e) {
@@ -463,7 +460,8 @@ public class SecurityAnalysisControllerTest {
                         content().contentType(MediaType.APPLICATION_JSON)
                 ).andReturn();
         String resultAsString = mvcResult.getResponse().getContentAsString();
-        List<PreContingencyLimitViolationResultDTO> preContingencyResult = mapper.readValue(resultAsString, new TypeReference<List<PreContingencyLimitViolationResultDTO>>() { });
+        List<PreContingencyLimitViolationResultDTO> preContingencyResult = mapper.readValue(resultAsString, new TypeReference<>() {
+        });
         assertEquals(1, preContingencyResult.size());
 
         mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/limit-types", RESULT_UUID))
@@ -698,7 +696,8 @@ public class SecurityAnalysisControllerTest {
                 ).andReturn();
 
         resultAsString = mvcResult.getResponse().getContentAsString();
-        List<String> providers = mapper.readValue(resultAsString, new TypeReference<List<String>>() { });
+        List<String> providers = mapper.readValue(resultAsString, new TypeReference<>() {
+        });
         assertEquals(List.of("DynaFlow", "OpenLoadFlow"), providers);
     }
 
@@ -742,7 +741,7 @@ public class SecurityAnalysisControllerTest {
                 .headers(List.of("Equipment", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
                 .enumValueTranslations(enumTranslationsEn)
                 .build());
-        /**
+        /*
          * SELECT
          * assert result exists
          * get all results
@@ -763,7 +762,7 @@ public class SecurityAnalysisControllerTest {
                 .headers(List.of("Contingency ID", "Status", "Constraint", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
                 .enumValueTranslations(enumTranslationsEn)
                 .build());
-        /**
+        /*
          * SELECT
          * assert result exists
          * get all contingencies
@@ -786,7 +785,7 @@ public class SecurityAnalysisControllerTest {
                 .headers(List.of("Constraint", "Contingency ID", "Status", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
                 .enumValueTranslations(enumTranslationsEn)
                 .build());
-        /**
+        /*
          * SELECT
          * assert result exists
          * get all subject_limit_violations

@@ -16,6 +16,7 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -93,6 +94,7 @@ public class ActionsServiceTest {
         String jsonVariantExpected = objectMapper.writeValueAsString(List.of(CONTINGENCY_VARIANT));
 
         final Dispatcher dispatcher = new Dispatcher() {
+            @NotNull
             @Override
             public MockResponse dispatch(RecordedRequest request) {
                 String requestPath = Objects.requireNonNull(request.getPath());

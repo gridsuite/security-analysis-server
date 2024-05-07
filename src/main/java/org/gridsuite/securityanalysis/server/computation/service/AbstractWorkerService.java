@@ -8,8 +8,7 @@ package org.gridsuite.securityanalysis.server.computation.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.PowsyblException;
-import com.powsybl.commons.reporter.Reporter;
-import com.powsybl.commons.reporter.ReporterModel;
+import com.powsybl.commons.report.ReportNode;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.network.store.client.NetworkStoreService;
@@ -173,19 +172,21 @@ public abstract class AbstractWorkerService<S, R extends AbstractComputationRunC
 
     protected S run(Network network, R runContext, UUID resultUuid) throws Exception {
         String provider = runContext.getProvider();
-        AtomicReference<Reporter> rootReporter = new AtomicReference<>(Reporter.NO_OP);
-        Reporter reporter = Reporter.NO_OP;
+        AtomicReference<ReportNode> rootReportNodeRef = new AtomicReference<>(ReportNode.NO_OP);
+        ReportNode reportNode = ReportNode.NO_OP;
 
         if (runContext.getReportInfos().reportUuid() != null) {
             final String reportType = runContext.getReportInfos().computationType();
             String rootReporterId = runContext.getReportInfos().reporterId() == null ? reportType : runContext.getReportInfos().reporterId() + "@" + reportType;
-            rootReporter.set(new ReporterModel(rootReporterId, rootReporterId));
-            reporter = rootReporter.get().createSubReporter(reportType, String.format("%s (%s)", reportType, provider), "providerToUse", provider);
+            rootReportNodeRef.set(ReportNode.newRootReportNode().withMessageTemplate(rootReporterId, rootReporterId).build());
+            reportNode = rootReportNodeRef.get().newReportNode().withMessageTemplate(reportType, String.format("%s (${providerToUse})", reportType))
+                .withUntypedValue("providerToUse", provider)
+                .add();
             // Delete any previous computation logs
             observer.observe("report.delete",
                     runContext, () -> reportService.deleteReport(runContext.getReportInfos().reportUuid(), reportType));
         }
-        runContext.setReporter(reporter);
+        runContext.setReportNode(reportNode);
 
         preRun(runContext);
         CompletableFuture<S> future = runAsync(network, runContext, provider, resultUuid);
@@ -193,7 +194,7 @@ public abstract class AbstractWorkerService<S, R extends AbstractComputationRunC
         postRun(runContext);
 
         if (runContext.getReportInfos().reportUuid() != null) {
-            observer.observe("report.send", runContext, () -> reportService.sendReport(runContext.getReportInfos().reportUuid(), rootReporter.get()));
+            observer.observe("report.send", runContext, () -> reportService.sendReport(runContext.getReportInfos().reportUuid(), rootReportNodeRef.get()));
         }
         return result;
     }
