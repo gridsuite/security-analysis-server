@@ -169,14 +169,14 @@ public class SecurityAnalysisParametersControllerTest {
 
         // update provider
         String newProvider = "newProvider";
-        mvcResult = mockMvc.perform(patch("/" + VERSION + "/parameters/" + updatedParametersUuid + "/provider")
+        mockMvc.perform(patch("/" + VERSION + "/parameters/" + updatedParametersUuid + "/provider")
                 .content(newProvider))
                 .andExpect(status().isOk()).andReturn();
         SecurityAnalysisParametersEntity securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(updatedParametersUuid).orElseThrow();
         assertEquals(newProvider, securityAnalysisParametersEntity.getProvider());
 
         // reset provider
-        mvcResult = mockMvc.perform(patch("/" + VERSION + "/parameters/" + updatedParametersUuid + "/provider"))
+        mockMvc.perform(patch("/" + VERSION + "/parameters/" + updatedParametersUuid + "/provider"))
                 .andExpect(status().isOk()).andReturn();
         securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(updatedParametersUuid).orElseThrow();
         assertEquals(defaultProvider, securityAnalysisParametersEntity.getProvider());

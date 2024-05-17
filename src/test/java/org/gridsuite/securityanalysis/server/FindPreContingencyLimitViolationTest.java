@@ -75,7 +75,7 @@ class FindPreContingencyLimitViolationTest {
         List<PreContingencyLimitViolationResultDTO> preContingencyLimitViolation = securityAnalysisResultService.findNResult(resultEntity.getId(), filters, sort);
 
         // assert subject ids to check parent filters
-        assertThat(preContingencyLimitViolation).extracting(SubjectLimitViolationEntity.Fields.subjectId).containsExactlyElementsOf(expectedResult.stream().map(c -> c.getSubjectId()).toList());
+        assertThat(preContingencyLimitViolation).extracting(SubjectLimitViolationEntity.Fields.subjectId).containsExactlyElementsOf(expectedResult.stream().map(PreContingencyLimitViolationResultDTO::getSubjectId).toList());
         assertSelectCount(expectedSelectCount);
     }
 

@@ -6,15 +6,16 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import com.powsybl.commons.reporter.Reporter;
+import com.powsybl.commons.report.ReportNode;
 import com.powsybl.computation.ComputationManager;
 import com.powsybl.contingency.*;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.TwoSides;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.security.*;
-import com.powsybl.security.action.Action;
+import com.powsybl.action.Action;
 import com.powsybl.security.interceptors.SecurityAnalysisInterceptor;
+import com.powsybl.security.limitreduction.LimitReduction;
 import com.powsybl.security.monitor.StateMonitor;
 import com.powsybl.security.results.PostContingencyResult;
 import com.powsybl.security.strategy.OperatorStrategy;
@@ -207,17 +208,21 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                                                          List<OperatorStrategy> operatorStrategies,
                                                          List<Action> actions,
                                                          List<StateMonitor> monitors,
-                                                         Reporter reporter) {
+                                                         List<LimitReduction> limitReductions,
+                                                         ReportNode reportNode) {
         LOGGER.info("Run security analysis mock");
         switch (workingVariantId) {
-            case VARIANT_3_ID:
+            case VARIANT_3_ID -> {
                 return CompletableFuture.completedFuture(REPORT_VARIANT);
-            case VARIANT_TO_STOP_ID:
+            }
+            case VARIANT_TO_STOP_ID -> {
                 countDownLatch.countDown();
                 // creating a long completable future which is here to be canceled
                 return new CompletableFuture<SecurityAnalysisReport>().completeOnTimeout(REPORT, 3, TimeUnit.SECONDS);
-            default:
+            }
+            default -> {
                 return CompletableFuture.completedFuture(REPORT);
+            }
         }
 
     }

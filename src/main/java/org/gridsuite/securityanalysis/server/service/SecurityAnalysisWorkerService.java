@@ -7,9 +7,8 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.powsybl.commons.reporter.Report;
-import com.powsybl.commons.reporter.Reporter;
-import com.powsybl.commons.reporter.TypedValue;
+import com.powsybl.commons.report.ReportNode;
+import com.powsybl.commons.report.TypedValue;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
@@ -104,7 +103,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                         Collections.emptyList(),
                         Collections.emptyList(),
                         Collections.emptyList(),
-                        runContext.getReporter())
+                        Collections.emptyList(),
+                        runContext.getReportNode())
                 .thenApply(SecurityAnalysisReport::getResult);
     }
 
@@ -125,22 +125,23 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     @Override
     protected void postRun(SecurityAnalysisRunContext runContext) {
         if (runContext.getReportInfos().reportUuid() != null) {
-            List<Report> notFoundElementReports = new ArrayList<>();
+            List<ReportNode> notFoundElementReports = new ArrayList<>();
             runContext.getContingencies().stream()
                     .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements()))
                     .forEach(contingencyInfos -> {
                         String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
-                        notFoundElementReports.add(Report.builder()
-                                .withKey("contingencyElementNotFound_" + contingencyInfos.getId() + notFoundElementReports.size())
-                                .withDefaultMessage(String.format("Cannot find the following equipments %s in contingency %s", elementsIds, contingencyInfos.getId()))
+                        notFoundElementReports.add(ReportNode.newRootReportNode()
+                                .withMessageTemplate("contingencyElementNotFound_" + contingencyInfos.getId() + notFoundElementReports.size(),
+                                    String.format("Cannot find the following equipments %s in contingency %s", elementsIds, contingencyInfos.getId()))
                                 .withSeverity(TypedValue.WARN_SEVERITY)
                                 .build());
                     });
             if (!CollectionUtils.isEmpty(notFoundElementReports)) {
-                Reporter elementNotFoundSubReporter = runContext.getReporter().createSubReporter(
-                        runContext.getReportInfos().reportUuid().toString() + "notFoundElements",
-                        "Elements not found");
-                notFoundElementReports.forEach(elementNotFoundSubReporter::report);
+                ReportNode elementNotFoundSubReporter = runContext.getReportNode().newReportNode()
+                    .withMessageTemplate(runContext.getReportInfos().reportUuid().toString() + "notFoundElements", "Elements not found")
+                    .add();
+                notFoundElementReports.forEach(r -> elementNotFoundSubReporter.newReportNode()
+                    .withMessageTemplate(r.getMessageKey(), r.getMessageTemplate()).add());
             }
         }
     }

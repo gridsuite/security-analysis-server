@@ -85,8 +85,8 @@ class FindContingenciesTest {
         assertThat(contingenciesPage.getContent()).extracting(ContingencyEntity.Fields.contingencyId).containsExactlyElementsOf(expectedResult.stream().map(c -> c.getContingency().getContingencyId()).toList());
         // assert subject limit violation ids to check nested filters
         assertThat(contingenciesPage.getContent().stream()
-            .map(c -> ContingencyResultDTO.toDto(c)) // call toDTO method to check if it provokes any more requests
-            .map(c -> c.getSubjectLimitViolations().stream().map(lm -> lm.getSubjectId()).toList()))
+            .map(ContingencyResultDTO::toDto) // call toDTO method to check if it provokes any more requests
+            .map(c -> c.getSubjectLimitViolations().stream().map(SubjectLimitViolationDTO::getSubjectId).toList()))
             .containsExactlyElementsOf(expectedResult.stream().map(c -> c.getSubjectLimitViolations().stream().map(SubjectLimitViolationDTO::getSubjectId).toList()).toList());
 
         // select count check to prevent potential n+1 problems
