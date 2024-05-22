@@ -6,8 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
-import com.powsybl.commons.reporter.Reporter;
-import com.powsybl.commons.reporter.ReporterModel;
+import com.powsybl.commons.report.ReportNode;
 import okhttp3.HttpUrl;
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
@@ -15,6 +14,7 @@ import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
 import org.gridsuite.securityanalysis.server.computation.service.ReportService;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,7 +43,7 @@ public class ReportServiceTest {
     private static final UUID REPORT_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e4");
     private static final UUID REPORT_ERROR_UUID = UUID.fromString("9928181c-7977-4592-ba19-88027e4254e4");
 
-    private static final String REPORT_JSON = "{\"version\":\"1.0\",\"reportTree\":{\"taskKey\":\"test\"},\"dics\":{\"default\":{\"test\":\"a test\"}}}";
+    private static final String REPORT_JSON = "{\"version\":\"2.0\",\"reportRoot\":{\"messageKey\":\"test\",\"dictionaries\":{\"default\":{\"test\":\"a test\"}}}}";
 
     private MockWebServer server;
 
@@ -70,6 +70,7 @@ public class ReportServiceTest {
         server.start();
 
         final Dispatcher dispatcher = new Dispatcher() {
+            @NotNull
             @Override
             public MockResponse dispatch(RecordedRequest request) {
                 String requestPath = Objects.requireNonNull(request.getPath());
@@ -95,7 +96,7 @@ public class ReportServiceTest {
 
     @Test
     public void testSendReport() {
-        Reporter reporter = new ReporterModel("test", "a test");
+        ReportNode reporter = ReportNode.newRootReportNode().withMessageTemplate("test", "a test").build();
         reportService.sendReport(REPORT_UUID, reporter);
         assertThrows(RestClientException.class, () -> reportService.sendReport(REPORT_ERROR_UUID, reporter));
     }

@@ -47,7 +47,7 @@ public abstract class AbstractLimitViolationEntity {
 
     private long acceptableDuration;
 
-    private float limitReduction;
+    private double limitReduction;
 
     @Column(name = "offendingValue")
     private double value;
