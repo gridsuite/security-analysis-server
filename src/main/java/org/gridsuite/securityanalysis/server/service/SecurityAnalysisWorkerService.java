@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.report.ReportNode;
 import com.powsybl.commons.report.TypedValue;
 import com.powsybl.contingency.Contingency;
+import com.powsybl.contingency.ContingencyElement;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.loadflow.LoadFlowResult;
@@ -26,14 +27,12 @@ import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.getFailedMessage;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
@@ -105,7 +104,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                         Collections.emptyList(),
                         Collections.emptyList(),
                         runContext.getReportNode())
-                .thenApply(SecurityAnalysisReport::getResult);
+                .thenApply(SecurityAnalysisReport::getResult)
+                .thenApply(securityAnalysisResult -> this.logExcluded(securityAnalysisResult, runContext));
     }
 
     @Override
@@ -171,5 +171,45 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     @Override
     public Consumer<Message<String>> consumeCancel() {
         return super.consumeCancel();
+    }
+
+    private SecurityAnalysisResult logExcluded(SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisRunContext runContext){
+        if (runContext.getReportInfos().reportUuid() != null) {
+            List<ReportNode> excludedElements = new ArrayList<>();
+
+            Set<String> disconnectedElements = securityAnalysisResult.getPostContingencyResults().stream()
+                            .map(postContingencyResult -> postContingencyResult.getConnectivityResult().getDisconnectedElements())
+                    .flatMap(Set::stream)
+                    .collect(Collectors.toSet());
+
+            //compute the excluded elements
+            Set<String> excludedElementsIds = runContext.getContingencies().stream().flatMap(contingencyInfos -> {
+                        if (contingencyInfos.getContingency() == null) {
+                            return Stream.empty();
+                        } else {
+                            return contingencyInfos.getContingency().getElements().stream();
+                        }
+                    }
+            ).map(ContingencyElement::getId).collect(Collectors.toSet());
+            excludedElementsIds.removeAll(disconnectedElements);
+
+            securityAnalysisResult.getPostContingencyResults().stream().forEach( postContingencyResult -> {
+                String excludedListStr =  String.join(", ", postContingencyResult.getConnectivityResult().getDisconnectedElements());
+                excludedElements.add(ReportNode.newRootReportNode()
+                        .withMessageTemplate("ExludedEquipements_",
+                                String.format("The following equipements are disconnected %s", excludedListStr))
+                        .withSeverity(TypedValue.WARN_SEVERITY)
+                        .build());
+            });
+            if(!CollectionUtils.isEmpty(excludedElements)){
+                ReportNode equipementsDisconnected = runContext.getReportNode().newReportNode()
+                        .withMessageTemplate(runContext.getReportInfos().reportUuid().toString() + "disconnectedEquipements", "Equipements Disconnected")
+                        .add();
+                excludedElements.forEach(r -> equipementsDisconnected.newReportNode()
+                        .withMessageTemplate(r.getMessageKey(), r.getMessage()).add());
+            }
+        }
+
+        return securityAnalysisResult;
     }
 }
