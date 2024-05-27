@@ -10,7 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.report.ReportNode;
 import com.powsybl.commons.report.TypedValue;
 import com.powsybl.contingency.Contingency;
-import com.powsybl.contingency.ContingencyElement;
+import com.powsybl.contingency.ContingencyElementType;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.loadflow.LoadFlowResult;
@@ -175,39 +175,36 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     private SecurityAnalysisResult logExcluded(SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisRunContext runContext){
         if (runContext.getReportInfos().reportUuid() != null) {
-            List<ReportNode> excludedElements = new ArrayList<>();
-
             Set<String> disconnectedElements = securityAnalysisResult.getPostContingencyResults().stream()
                             .map(postContingencyResult -> postContingencyResult.getConnectivityResult().getDisconnectedElements())
                     .flatMap(Set::stream)
                     .collect(Collectors.toSet());
 
             //compute the excluded elements
-            Set<String> excludedElementsIds = runContext.getContingencies().stream().flatMap(contingencyInfos -> {
+            Map<String, ContingencyElementType> excludedElementsIds = runContext.getContingencies().stream().flatMap(contingencyInfos -> {
                         if (contingencyInfos.getContingency() == null) {
                             return Stream.empty();
                         } else {
                             return contingencyInfos.getContingency().getElements().stream();
                         }
                     }
-            ).map(ContingencyElement::getId).collect(Collectors.toSet());
-            excludedElementsIds.removeAll(disconnectedElements);
+            )
+                    .map(contingencyElement -> Map.entry(contingencyElement.getId(), contingencyElement.getType()))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
-            securityAnalysisResult.getPostContingencyResults().stream().forEach( postContingencyResult -> {
-                String excludedListStr =  String.join(", ", postContingencyResult.getConnectivityResult().getDisconnectedElements());
-                excludedElements.add(ReportNode.newRootReportNode()
-                        .withMessageTemplate("ExludedEquipements_",
-                                String.format("The following equipements are disconnected %s", excludedListStr))
-                        .withSeverity(TypedValue.WARN_SEVERITY)
-                        .build());
-            });
-            if(!CollectionUtils.isEmpty(excludedElements)){
+            excludedElementsIds.keySet().removeAll(disconnectedElements);
+
+            if(!CollectionUtils.isEmpty(excludedElementsIds)){
                 ReportNode equipementsDisconnected = runContext.getReportNode().newReportNode()
-                        .withMessageTemplate(runContext.getReportInfos().reportUuid().toString() + "disconnectedEquipements", "Equipements Disconnected")
+                        .withMessageTemplate(runContext.getReportInfos().reportUuid().toString() + "disconnectedEquipements", "Disconnected equipements")
                         .add();
-                excludedElements.forEach(r -> equipementsDisconnected.newReportNode()
-                        .withMessageTemplate(r.getMessageKey(), r.getMessage()).add());
+                excludedElementsIds.forEach( (elementsId, contingencyElementType) -> equipementsDisconnected.newReportNode().withMessageTemplate("equipementsList", "equipement type=${contengencyType} id=${elementsId}")
+                        .withUntypedValue("contengencyType", contingencyElementType.toString())
+                        .withUntypedValue("elementsId",elementsId)
+                        .withSeverity(TypedValue.INFO_SEVERITY)
+                        .add());
             }
+
         }
 
         return securityAnalysisResult;
