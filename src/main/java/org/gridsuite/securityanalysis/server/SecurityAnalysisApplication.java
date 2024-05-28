@@ -9,7 +9,6 @@ package org.gridsuite.securityanalysis.server;
 import com.powsybl.network.store.client.NetworkStoreService;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ComponentScan;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
