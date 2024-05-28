@@ -125,23 +125,24 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     @Override
     protected void postRun(SecurityAnalysisRunContext runContext) {
         if (runContext.getReportInfos().reportUuid() != null) {
-            List<ReportNode> notFoundElementReports = new ArrayList<>();
-            runContext.getContingencies().stream()
-                    .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements()))
-                    .forEach(contingencyInfos -> {
-                        String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
-                        notFoundElementReports.add(ReportNode.newRootReportNode()
-                                .withMessageTemplate("contingencyElementNotFound_" + contingencyInfos.getId() + notFoundElementReports.size(),
-                                    String.format("Cannot find the following equipments %s in contingency %s", elementsIds, contingencyInfos.getId()))
-                                .withSeverity(TypedValue.WARN_SEVERITY)
-                                .build());
-                    });
-            if (!CollectionUtils.isEmpty(notFoundElementReports)) {
+            List<ContingencyInfos> contingencyInfosList = runContext.getContingencies().stream()
+                    .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements())).toList();
+
+            if (!CollectionUtils.isEmpty(contingencyInfosList)) {
                 ReportNode elementNotFoundSubReporter = runContext.getReportNode().newReportNode()
                     .withMessageTemplate(runContext.getReportInfos().reportUuid().toString() + "notFoundElements", "Elements not found")
                     .add();
-                notFoundElementReports.forEach(r -> elementNotFoundSubReporter.newReportNode()
-                    .withMessageTemplate(r.getMessageKey(), r.getMessageTemplate()).add());
+
+                contingencyInfosList.stream().forEach(contingencyInfos -> {
+                    String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
+                    elementNotFoundSubReporter.newReportNode()
+                            .withMessageTemplate("contingencyElementNotFound_",
+                                    "Cannot find the following equipments ${elementsIds} in contingency ${contingencyId}")
+                            .withUntypedValue("elementsIds", elementsIds)
+                            .withUntypedValue("contingencyId", contingencyInfos.getId())
+                            .withSeverity(TypedValue.WARN_SEVERITY)
+                            .add();
+                });
             }
         }
     }
