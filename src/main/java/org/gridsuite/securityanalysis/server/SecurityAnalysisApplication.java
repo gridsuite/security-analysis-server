@@ -15,10 +15,8 @@ import org.springframework.context.annotation.ComponentScan;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @SuppressWarnings("checkstyle:HideUtilityClassConstructor")
-@SpringBootApplication
-@ComponentScan(basePackageClasses = {SecurityAnalysisApplication.class, NetworkStoreService.class})
+@SpringBootApplication(scanBasePackageClasses = { SecurityAnalysisApplication.class, NetworkStoreService.class })
 public class SecurityAnalysisApplication {
-
     public static void main(String[] args) {
         SpringApplication.run(SecurityAnalysisApplication.class, args);
     }
