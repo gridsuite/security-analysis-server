@@ -133,7 +133,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                     .withMessageTemplate(runContext.getReportInfos().reportUuid().toString() + "notFoundElements", "Elements not found")
                     .add();
 
-                contingencyInfosList.stream().forEach(contingencyInfos -> {
+                contingencyInfosList.forEach(contingencyInfos -> {
                     String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
                     elementNotFoundSubReporter.newReportNode()
                             .withMessageTemplate("contingencyElementNotFound_",
@@ -174,34 +174,33 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         return super.consumeCancel();
     }
 
-    private SecurityAnalysisResult logExcluded(SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisRunContext runContext){
+    private SecurityAnalysisResult logExcluded(SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisRunContext runContext) {
         if (runContext.getReportInfos().reportUuid() != null) {
             Set<String> disconnectedElements = securityAnalysisResult.getPostContingencyResults().stream()
-                            .map(postContingencyResult -> postContingencyResult.getConnectivityResult().getDisconnectedElements())
+                    .map(postContingencyResult -> postContingencyResult.getConnectivityResult().getDisconnectedElements())
                     .flatMap(Set::stream)
                     .collect(Collectors.toSet());
 
             //compute the excluded elements
             Map<String, ContingencyElementType> excludedElementsIds = runContext.getContingencies().stream().flatMap(contingencyInfos -> {
-                        if (contingencyInfos.getContingency() == null) {
-                            return Stream.empty();
-                        } else {
-                            return contingencyInfos.getContingency().getElements().stream();
-                        }
-                    }
-            )
+                if (contingencyInfos.getContingency() == null) {
+                    return Stream.empty();
+                } else {
+                    return contingencyInfos.getContingency().getElements().stream();
+                }
+            })
                     .map(contingencyElement -> Map.entry(contingencyElement.getId(), contingencyElement.getType()))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
             excludedElementsIds.keySet().removeAll(disconnectedElements);
 
-            if(!CollectionUtils.isEmpty(excludedElementsIds)){
-                ReportNode equipementsDisconnected = runContext.getReportNode().newReportNode()
-                        .withMessageTemplate(runContext.getReportInfos().reportUuid().toString() + "disconnectedEquipements", "Disconnected equipements")
+            if (!CollectionUtils.isEmpty(excludedElementsIds)) {
+                ReportNode equipmentsDisconnected = runContext.getReportNode().newReportNode()
+                        .withMessageTemplate(runContext.getReportInfos().reportUuid().toString() + "disconnectedEquipments", "Disconnected equipments")
                         .add();
-                excludedElementsIds.forEach( (elementsId, contingencyElementType) -> equipementsDisconnected.newReportNode().withMessageTemplate("equipementsList", "equipement type=${contengencyType} id=${elementsId}")
-                        .withUntypedValue("contengencyType", contingencyElementType.toString())
-                        .withUntypedValue("elementsId",elementsId)
+                excludedElementsIds.forEach((elementsId, contingencyElementType) -> equipmentsDisconnected.newReportNode().withMessageTemplate("equipmentsList", "equipment type=${contingencyType} id=${elementsId}")
+                        .withUntypedValue("contingencyType", contingencyElementType.toString())
+                        .withUntypedValue("elementsId", elementsId)
                         .withSeverity(TypedValue.INFO_SEVERITY)
                         .add());
             }
