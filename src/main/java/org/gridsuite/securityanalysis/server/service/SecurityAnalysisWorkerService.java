@@ -103,8 +103,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                         Collections.emptyList(),
                         Collections.emptyList(),
                         runContext.getReportNode())
-                .thenApply(SecurityAnalysisReport::getResult)
-                .thenApply(securityAnalysisResult -> this.logExcluded(securityAnalysisResult, runContext));
+                .thenApply(SecurityAnalysisReport::getResult);
     }
 
     @Override
@@ -122,7 +121,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     }
 
     @Override
-    protected void postRun(SecurityAnalysisRunContext runContext) {
+    protected void postRun(SecurityAnalysisRunContext runContext, SecurityAnalysisResult securityAnalysisResult) {
+        logExcluded(securityAnalysisResult, runContext);
         if (runContext.getReportInfos().reportUuid() != null) {
             List<ContingencyInfos> contingencyInfosList = runContext.getContingencies().stream()
                     .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements())).toList();
