@@ -122,7 +122,11 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     @Override
     protected void postRun(SecurityAnalysisRunContext runContext, SecurityAnalysisResult securityAnalysisResult) {
-        logExcluded(securityAnalysisResult, runContext);
+        logExcludedEquipmentFromComputation(securityAnalysisResult, runContext);
+        logContingencyElementNotFound(runContext);
+    }
+
+    private static void logContingencyElementNotFound(SecurityAnalysisRunContext runContext) {
         if (runContext.getReportInfos().reportUuid() != null) {
             List<ContingencyInfos> contingencyInfosList = runContext.getContingencies().stream()
                     .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements())).toList();
@@ -173,7 +177,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         return super.consumeCancel();
     }
 
-    private SecurityAnalysisResult logExcluded(SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisRunContext runContext) {
+    private void logExcludedEquipmentFromComputation(SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisRunContext runContext) {
+
         if (runContext.getReportInfos().reportUuid() != null) {
             Set<String> notFoundElements = runContext.getContingencies().stream()
                     .map(ContingencyInfos::getNotFoundElements)
@@ -212,11 +217,24 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                                 .add();
                     }
                 });
+
+                List<Set<String>> setList = new ArrayList<>();
+                securityAnalysisResult.getPostContingencyResults()
+                                .forEach( postContingencyResult -> {
+                                    Set<String> setResult = postContingencyResult.getConnectivityResult().getDisconnectedElements();
+                                    setList.add(setResult);
+                                });
+                Set<String> mergedSet = new HashSet<>();
+                setList.forEach(mergedSet::addAll);
+                String resultStr = String.join(", ", mergedSet);
+                equipmentsDisconnected.newReportNode()
+                        .withMessageTemplate("disconnectedElements", "Disconnected equipmentd in contingency ddde")
+                        .withUntypedValue("contingencyEquipments", resultStr)
+                        .withSeverity(TypedValue.WARN_SEVERITY)
+                        .add();
             }
 
         }
-
-        return securityAnalysisResult;
     }
 
     /**
