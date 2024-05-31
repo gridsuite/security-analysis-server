@@ -186,7 +186,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                     .flatMap(Set::stream)
                     .collect(Collectors.toSet());
 
-            List<Contingency> filteredContingency = filterEquipmentsInContengency(runContext.getContingencies(), notFoundElements);
+            List<Contingency> filteredContingency = filterEquipmentsInContingency(runContext.getContingencies(), notFoundElements);
 
             //compute the excluded elements
             boolean hasExcludedElements = false;
@@ -228,7 +228,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 setList.forEach(mergedSet::addAll);
                 String resultStr = String.join(", ", mergedSet);
                 equipmentsDisconnected.newReportNode()
-                        .withMessageTemplate("disconnectedElements", "Disconnected equipmentd in contingency ddde")
+                        .withMessageTemplate("disconnectedElements", "Disconnected equipments in contingency")
                         .withUntypedValue("contingencyEquipments", resultStr)
                         .withSeverity(TypedValue.WARN_SEVERITY)
                         .add();
@@ -244,7 +244,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
      * @param equipmentsToExclude A set of equipment identifiers to be excluded.
      * @return A new list of Contingency objects. Each Contingency object in this list has an equipment list that does not contain any of the equipment in the exclusion set.
      */
-    private List<Contingency> filterEquipmentsInContengency(List<ContingencyInfos> contingencies, Set<String> equipmentsToExclude) {
+    private List<Contingency> filterEquipmentsInContingency(List<ContingencyInfos> contingencies, Set<String> equipmentsToExclude) {
         return contingencies.stream()
                 .map(contingency -> {
                     if (contingency.getContingency() == null) {
