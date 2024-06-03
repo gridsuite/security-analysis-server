@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
-import org.gridsuite.securityanalysis.server.computation.service.AbstractComputationResultService;
+import com.powsybl.ws.commons.computation.service.AbstractComputationResultService;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.*;
 import org.gridsuite.securityanalysis.server.repositories.*;

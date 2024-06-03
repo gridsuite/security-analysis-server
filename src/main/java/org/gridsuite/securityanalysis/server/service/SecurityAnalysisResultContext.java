@@ -9,8 +9,8 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisParameters;
-import org.gridsuite.securityanalysis.server.computation.dto.ReportInfos;
-import org.gridsuite.securityanalysis.server.computation.service.AbstractResultContext;
+import com.powsybl.ws.commons.computation.dto.ReportInfos;
+import com.powsybl.ws.commons.computation.service.AbstractResultContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
@@ -22,8 +22,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
-import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.*;
-import static org.gridsuite.securityanalysis.server.computation.utils.MessageUtils.getNonNullHeader;
+import static com.powsybl.ws.commons.computation.service.NotificationService.*;
+import static com.powsybl.ws.commons.computation.utils.MessageUtils.getNonNullHeader;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -78,6 +78,6 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
     @Override
     protected Map<String, String> getSpecificMsgHeaders() {
         return Map.of(
-                CONTINGENCY_LIST_NAMES_HEADER, String.join(",", runContext.getContingencyListNames()));
+                CONTINGENCY_LIST_NAMES_HEADER, String.join(",", getRunContext().getContingencyListNames()));
     }
 }

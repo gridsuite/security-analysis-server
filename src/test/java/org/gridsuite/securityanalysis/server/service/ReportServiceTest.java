@@ -12,7 +12,7 @@ import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.gridsuite.securityanalysis.server.computation.service.ReportService;
+import com.powsybl.ws.commons.computation.service.ReportService;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;

@@ -34,9 +34,9 @@ import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationR
 import org.gridsuite.securityanalysis.server.repositories.specifications.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.LoadFlowService;
-import org.gridsuite.securityanalysis.server.computation.service.ReportService;
+import com.powsybl.ws.commons.computation.service.ReportService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
-import org.gridsuite.securityanalysis.server.computation.service.UuidGeneratorService;
+import com.powsybl.ws.commons.computation.service.UuidGeneratorService;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
@@ -71,9 +71,7 @@ import java.util.zip.ZipInputStream;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
-import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.HEADER_USER_ID;
-import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.getFailedMessage;
-import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.*;
+import static com.powsybl.ws.commons.computation.service.NotificationService.*;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.hamcrest.MatcherAssert.assertThat;

@@ -16,7 +16,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.gridsuite.securityanalysis.server.computation.dto.ReportInfos;
+import com.powsybl.ws.commons.computation.dto.ReportInfos;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisParametersService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
@@ -34,7 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
-import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.HEADER_USER_ID;
+import static com.powsybl.ws.commons.computation.service.NotificationService.HEADER_USER_ID;
 import static org.springframework.http.MediaType.*;
 
 /**
