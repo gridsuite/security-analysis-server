@@ -12,6 +12,7 @@ import com.powsybl.commons.report.TypedValue;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.contingency.ContingencyElement;
 import com.powsybl.iidm.network.Network;
+import com.powsybl.iidm.network.Terminal;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
@@ -31,7 +32,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.getFailedMessage;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
@@ -121,8 +121,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     }
 
     @Override
-    protected void postRun(SecurityAnalysisRunContext runContext, SecurityAnalysisResult securityAnalysisResult) {
-        logExcludedEquipmentFromComputation(securityAnalysisResult, runContext);
+    protected void postRun(SecurityAnalysisRunContext runContext) {
+        logExcludedEquipmentFromComputation(runContext);
         logContingencyElementNotFound(runContext);
     }
 
@@ -177,86 +177,54 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         return super.consumeCancel();
     }
 
-    private void logExcludedEquipmentFromComputation(SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisRunContext runContext) {
+    private void logExcludedEquipmentFromComputation(SecurityAnalysisRunContext runContext) {
 
-        if (runContext.getReportInfos().reportUuid() != null) {
-            Set<String> notFoundElements = runContext.getContingencies().stream()
-                    .map(ContingencyInfos::getNotFoundElements)
-                    .filter(foundElements -> !CollectionUtils.isEmpty(foundElements))
-                    .flatMap(Set::stream)
-                    .collect(Collectors.toSet());
+        if (runContext.getReportInfos().reportUuid() == null) {
+            return;
+        }
+        Network network = getNetwork(runContext.getNetworkUuid(),
+                runContext.getVariantId());
 
-            List<Contingency> filteredContingency = filterEquipmentsInContingency(runContext.getContingencies(), notFoundElements);
-
-            //compute the excluded elements
-            boolean hasExcludedElements = false;
-            for (Contingency contingency : filteredContingency) {
-                if (!contingency.getElements().isEmpty()) {
-                    hasExcludedElements = true;
+        Set<String> allDisconnectedElements = new HashSet<>();
+        network.getConnectables().forEach(connectable -> {
+            List<Terminal> terminals = connectable.getTerminals();
+            // check if the connectable are connected with terminal.isConnected()
+            boolean disonnected = false;
+            for (Terminal terminal : terminals) {
+                if (terminal != null && !terminal.isConnected()) {
+                    disonnected = true;
                     break;
                 }
             }
-
-            if (hasExcludedElements) {
-                ReportNode equipmentsDisconnected = runContext.getReportNode().newReportNode()
-                        .withMessageTemplate(runContext.getReportInfos().reportUuid().toString() + "disconnectedEquipments", "Disconnected equipments")
-                        .add();
-
-                filteredContingency.forEach(contingency -> {
-                    if (!contingency.getElements().isEmpty()) {
-                        String contingencyName = contingency.getId();
-                        String contingencyEquipments = contingency.getElements().stream()
-                                .map(ContingencyElement::getId)
-                                .collect(Collectors.joining(", "));
-
-                        equipmentsDisconnected.newReportNode()
-                                .withMessageTemplate("disconnectedEquipmentsList", "Disconnected equipment in contingency ${contingencyName} : ${contingencyEquipments}")
-                                .withUntypedValue("contingencyName", contingencyName)
-                                .withUntypedValue("contingencyEquipments", contingencyEquipments)
-                                .withSeverity(TypedValue.WARN_SEVERITY)
-                                .add();
-                    }
-                });
-
-                List<Set<String>> setList = new ArrayList<>();
-                securityAnalysisResult.getPostContingencyResults()
-                                .forEach( postContingencyResult -> {
-                                    Set<String> setResult = postContingencyResult.getConnectivityResult().getDisconnectedElements();
-                                    setList.add(setResult);
-                                });
-                Set<String> mergedSet = new HashSet<>();
-                setList.forEach(mergedSet::addAll);
-                String resultStr = String.join(", ", mergedSet);
-                equipmentsDisconnected.newReportNode()
-                        .withMessageTemplate("disconnectedElements", "Disconnected equipments in contingency")
-                        .withUntypedValue("contingencyEquipments", resultStr)
-                        .withSeverity(TypedValue.WARN_SEVERITY)
-                        .add();
+            if (disonnected) {
+                allDisconnectedElements.add(connectable.getId());
             }
+        });
 
-        }
-    }
-
-    /**
-     * Filters out the equipments in each Contingency object that are present in the exclusion set.
-     *
-     * @param contingencies A list of Contingency objects. Each Contingency object contains a list of equipments.
-     * @param equipmentsToExclude A set of equipment identifiers to be excluded.
-     * @return A new list of Contingency objects. Each Contingency object in this list has an equipment list that does not contain any of the equipment in the exclusion set.
-     */
-    private List<Contingency> filterEquipmentsInContingency(List<ContingencyInfos> contingencies, Set<String> equipmentsToExclude) {
-        return contingencies.stream()
-                .map(contingency -> {
-                    if (contingency.getContingency() == null) {
+        List<ContingencyElement> disconnectedEquipments = new HashSet<>(runContext.getContingencies())
+                .stream().map(contingencyInfos -> {
+                    if (contingencyInfos.getContingency() == null) {
                         return null;
                     }
-                    List<ContingencyElement> filteredEquipments = contingency.getContingency().getElements().stream()
-                            .filter(equipment -> !equipmentsToExclude.contains(equipment.getId()))
-                            .toList();
-
-                    return new Contingency(contingency.getId(), contingency.getContingency().getName().orElse(""), filteredEquipments);
+                    return contingencyInfos.getContingency().getElements();
                 })
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .flatMap(Collection::stream)
+                .filter(element -> allDisconnectedElements.contains(element.getId()))
+                .toList();
+
+        if (!disconnectedEquipments.isEmpty()) {
+            ReportNode equipmentsDisconnected = runContext.getReportNode().newReportNode()
+                    .withMessageTemplate(runContext.getReportInfos().reportUuid().toString() + "disconnectedEquipments", "Disconnected equipments")
+                    .add();
+
+            disconnectedEquipments.forEach(contingencyElement -> equipmentsDisconnected.newReportNode()
+                    .withMessageTemplate("disconnectedEquipmentsList", "Disconnected ${type} : ${name}")
+                    .withUntypedValue("name", contingencyElement.getId())
+                    .withUntypedValue("type", contingencyElement.getType().toString())
+                    .withSeverity(TypedValue.WARN_SEVERITY)
+                    .add());
+        }
+
     }
 }
