@@ -21,6 +21,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 
 /**
@@ -45,7 +46,8 @@ public class SecurityAnalysisWorkerServiceTest {
         Assert.assertTrue(SecurityAnalysisWorkerService.isDisconnected(connectable));
 
         List<ContingencyElement> disconnectedEquipments = new ArrayList<>();
-        workerService.logDisconnectedEquipments(disconnectedEquipments, new ReportNodeNoOp(), new ReportInfos(null, null, null));
+        UUID contingencyId = UUID.randomUUID();
+        SecurityAnalysisWorkerService.logDisconnectedEquipments(disconnectedEquipments, new ReportNodeNoOp(), new ReportInfos(contingencyId, null, null));
     }
 
 }

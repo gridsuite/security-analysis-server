@@ -181,9 +181,9 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     private void logExcludedEquipmentFromComputation(SecurityAnalysisRunContext runContext) {
 
-//        if (runContext.getReportInfos().reportUuid() == null) {
-//            return;
-//        }
+        if (runContext.getReportInfos().reportUuid() == null) {
+            return;
+        }
         Network network = getNetwork(runContext.getNetworkUuid(),
                 runContext.getVariantId());
 
@@ -210,7 +210,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     }
 
-    public void logDisconnectedEquipments(List<ContingencyElement> disconnectedEquipments, ReportNode reportNode, ReportInfos reportInfos) {
+    public static void logDisconnectedEquipments(List<ContingencyElement> disconnectedEquipments, ReportNode reportNode, ReportInfos reportInfos) {
         if (!disconnectedEquipments.isEmpty()) {
             ReportNode equipmentsDisconnected = reportNode.newReportNode()
                     .withMessageTemplate(reportInfos.reportUuid().toString() + "disconnectedEquipments", "Disconnected equipments")
