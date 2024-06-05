@@ -11,6 +11,7 @@ import com.powsybl.commons.report.ReportNode;
 import com.powsybl.commons.report.TypedValue;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.contingency.ContingencyElement;
+import com.powsybl.iidm.network.Connectable;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.Terminal;
 import com.powsybl.iidm.network.VariantManagerConstants;
@@ -19,6 +20,7 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.security.*;
 import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.ws.commons.LogUtils;
+import org.gridsuite.securityanalysis.server.computation.dto.ReportInfos;
 import org.gridsuite.securityanalysis.server.computation.service.*;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
@@ -179,24 +181,15 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     private void logExcludedEquipmentFromComputation(SecurityAnalysisRunContext runContext) {
 
-        if (runContext.getReportInfos().reportUuid() == null) {
-            return;
-        }
+//        if (runContext.getReportInfos().reportUuid() == null) {
+//            return;
+//        }
         Network network = getNetwork(runContext.getNetworkUuid(),
                 runContext.getVariantId());
 
         Set<String> allDisconnectedElements = new HashSet<>();
         network.getConnectables().forEach(connectable -> {
-            List<Terminal> terminals = connectable.getTerminals();
-            // check if the connectable are connected with terminal.isConnected()
-            boolean disonnected = false;
-            for (Terminal terminal : terminals) {
-                if (terminal != null && !terminal.isConnected()) {
-                    disonnected = true;
-                    break;
-                }
-            }
-            if (disonnected) {
+            if (isDisconnected(connectable)) {
                 allDisconnectedElements.add(connectable.getId());
             }
         });
@@ -213,9 +206,14 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 .filter(element -> allDisconnectedElements.contains(element.getId()))
                 .toList();
 
+        logDisconnectedEquipments(disconnectedEquipments, runContext.getReportNode(), runContext.getReportInfos());
+
+    }
+
+    public void logDisconnectedEquipments(List<ContingencyElement> disconnectedEquipments, ReportNode reportNode, ReportInfos reportInfos){
         if (!disconnectedEquipments.isEmpty()) {
-            ReportNode equipmentsDisconnected = runContext.getReportNode().newReportNode()
-                    .withMessageTemplate(runContext.getReportInfos().reportUuid().toString() + "disconnectedEquipments", "Disconnected equipments")
+            ReportNode equipmentsDisconnected = reportNode.newReportNode()
+                    .withMessageTemplate(reportInfos.reportUuid().toString() + "disconnectedEquipments", "Disconnected equipments")
                     .add();
 
             disconnectedEquipments.forEach(contingencyElement -> equipmentsDisconnected.newReportNode()
@@ -226,5 +224,18 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                     .add());
         }
 
+    }
+
+    public static boolean isDisconnected(Connectable connectable) {
+        List<Terminal> terminals = connectable.getTerminals();
+        // check if the connectable are connected with terminal.isConnected()
+        boolean disonnected = false;
+        for (Terminal terminal : terminals) {
+            if (terminal != null && !terminal.isConnected()) {
+                disonnected = true;
+                break;
+            }
+        }
+        return disonnected;
     }
 }
