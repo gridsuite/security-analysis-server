@@ -16,7 +16,6 @@ import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import org.gridsuite.securityanalysis.server.computation.dto.ReportInfos;
 import org.junit.Assert;
 import org.junit.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.ArrayList;
@@ -31,9 +30,6 @@ import java.util.UUID;
 public class SecurityAnalysisWorkerServiceTest {
     static final String VARIANT_1_ID = "variant_1";
 
-    @Autowired
-    private SecurityAnalysisWorkerService workerService;
-
     @Test
     public void testIsDisconnected() {
         // network store service mocking
@@ -42,10 +38,12 @@ public class SecurityAnalysisWorkerServiceTest {
         Connectable<?> connectable = network.getConnectable("NHV1_NHV2_1"); // get
 
         Assert.assertFalse(SecurityAnalysisWorkerService.isDisconnected(connectable));
+        // disconnect the line
         connectable.disconnect();
         Assert.assertTrue(SecurityAnalysisWorkerService.isDisconnected(connectable));
 
         List<ContingencyElement> disconnectedEquipments = new ArrayList<>();
+        disconnectedEquipments.add(ContingencyElement.of(connectable));
         UUID contingencyId = UUID.randomUUID();
         SecurityAnalysisWorkerService.logDisconnectedEquipments(disconnectedEquipments, new ReportNodeNoOp(), new ReportInfos(contingencyId, null, null));
     }
