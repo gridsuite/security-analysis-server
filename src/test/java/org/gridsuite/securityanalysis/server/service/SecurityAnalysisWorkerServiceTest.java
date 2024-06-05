@@ -10,7 +10,6 @@ import com.powsybl.commons.report.ReportNodeNoOp;
 import com.powsybl.contingency.ContingencyElement;
 import com.powsybl.iidm.network.Connectable;
 import com.powsybl.iidm.network.Network;
-import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import org.gridsuite.securityanalysis.server.computation.dto.ReportInfos;
@@ -28,13 +27,11 @@ import java.util.UUID;
  */
 @SpringBootTest
 public class SecurityAnalysisWorkerServiceTest {
-    static final String VARIANT_1_ID = "variant_1";
 
     @Test
-    public void testIsDisconnected() {
+    public void testLogExcludedEquipment() {
         // network store service mocking
         Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
-        network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_1_ID);
         Connectable<?> connectable = network.getConnectable("NHV1_NHV2_1"); // get
 
         Assert.assertFalse(SecurityAnalysisWorkerService.isDisconnected(connectable));
