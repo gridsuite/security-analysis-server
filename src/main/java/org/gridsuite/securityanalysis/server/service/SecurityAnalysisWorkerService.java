@@ -210,7 +210,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     }
 
-    public void logDisconnectedEquipments(List<ContingencyElement> disconnectedEquipments, ReportNode reportNode, ReportInfos reportInfos){
+    public void logDisconnectedEquipments(List<ContingencyElement> disconnectedEquipments, ReportNode reportNode, ReportInfos reportInfos) {
         if (!disconnectedEquipments.isEmpty()) {
             ReportNode equipmentsDisconnected = reportNode.newReportNode()
                     .withMessageTemplate(reportInfos.reportUuid().toString() + "disconnectedEquipments", "Disconnected equipments")

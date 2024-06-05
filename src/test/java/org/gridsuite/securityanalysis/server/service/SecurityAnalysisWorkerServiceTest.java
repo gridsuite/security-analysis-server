@@ -6,7 +6,6 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
-
 import com.powsybl.commons.report.ReportNodeNoOp;
 import com.powsybl.contingency.ContingencyElement;
 import com.powsybl.iidm.network.Connectable;
@@ -35,11 +34,11 @@ public class SecurityAnalysisWorkerServiceTest {
     private SecurityAnalysisWorkerService workerService;
 
     @Test
-    public void testIsDisconnected(){
+    public void testIsDisconnected() {
         // network store service mocking
         Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
         network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_1_ID);
-        Connectable<?> connectable  = network.getConnectable("NHV1_NHV2_1");// get
+        Connectable<?> connectable = network.getConnectable("NHV1_NHV2_1"); // get
 
         Assert.assertFalse(SecurityAnalysisWorkerService.isDisconnected(connectable));
         connectable.disconnect();
