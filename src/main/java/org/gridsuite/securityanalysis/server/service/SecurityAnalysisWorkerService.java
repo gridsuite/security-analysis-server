@@ -216,12 +216,13 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                     .withMessageTemplate(reportInfos.reportUuid().toString() + "disconnectedEquipments", "Disconnected equipments")
                     .add();
 
-            disconnectedEquipments.forEach(contingencyElement -> equipmentsDisconnected.newReportNode()
-                    .withMessageTemplate("disconnectedEquipmentsList", "Disconnected ${type} : ${name}")
-                    .withUntypedValue("name", contingencyElement.getId())
-                    .withUntypedValue("type", contingencyElement.getType().toString())
-                    .withSeverity(TypedValue.WARN_SEVERITY)
-                    .add());
+            disconnectedEquipments.forEach(contingencyElement ->
+                equipmentsDisconnected.newReportNode()
+                        .withMessageTemplate("disconnectedEquipmentsList", "Disconnected ${type} : ${name}")
+                        .withUntypedValue("name", contingencyElement.getId())
+                        .withUntypedValue("type", contingencyElement.getType().toString())
+                        .withSeverity(TypedValue.WARN_SEVERITY)
+                        .add());
         }
 
     }

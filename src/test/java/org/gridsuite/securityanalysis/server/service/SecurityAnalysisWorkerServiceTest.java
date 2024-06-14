@@ -6,7 +6,9 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
+import com.powsybl.commons.report.ReportNodeAdder;
 import com.powsybl.commons.report.ReportNodeNoOp;
+import com.powsybl.commons.report.TypedValue;
 import com.powsybl.contingency.ContingencyElement;
 import com.powsybl.iidm.network.Connectable;
 import com.powsybl.iidm.network.Network;
@@ -15,11 +17,14 @@ import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import org.gridsuite.securityanalysis.server.computation.dto.ReportInfos;
 import org.junit.Assert;
 import org.junit.Test;
+import org.mockito.ArgumentMatchers;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import static org.mockito.Mockito.*;
 
 
 /**
@@ -42,7 +47,21 @@ public class SecurityAnalysisWorkerServiceTest {
         List<ContingencyElement> disconnectedEquipments = new ArrayList<>();
         disconnectedEquipments.add(ContingencyElement.of(connectable));
         UUID contingencyId = UUID.randomUUID();
-        SecurityAnalysisWorkerService.logDisconnectedEquipments(disconnectedEquipments, new ReportNodeNoOp(), new ReportInfos(contingencyId, null, null));
+
+        ReportNodeNoOp reportNodeNoOpMock = mock(ReportNodeNoOp.class);
+        ReportNodeAdder childAdderMock = mock(ReportNodeAdder.class);
+        // Configure the mock to return the mocked ChildAdder when newReportNode is called
+        when(reportNodeNoOpMock.newReportNode()).thenReturn(childAdderMock);
+        // configure reportNodeAdderMock
+        when(childAdderMock.add()).thenReturn(reportNodeNoOpMock);
+        when(childAdderMock.withMessageTemplate(anyString(), anyString())).thenReturn(childAdderMock);
+        when(childAdderMock.withUntypedValue(anyString(), anyString())).thenReturn(childAdderMock);
+        when(childAdderMock.withSeverity((TypedValue) any())).thenReturn(childAdderMock);
+
+        SecurityAnalysisWorkerService.logDisconnectedEquipments(disconnectedEquipments, reportNodeNoOpMock, new ReportInfos(contingencyId, null, null));
+        //verify that the childAdderMock.withMessageTemplate() is called
+        verify(childAdderMock, times(2)).withMessageTemplate(anyString(), anyString());
+        verify(childAdderMock, atLeastOnce()).withMessageTemplate(anyString(), ArgumentMatchers.contains("Disconnected"));
     }
 
 }
