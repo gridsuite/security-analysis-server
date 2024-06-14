@@ -128,7 +128,6 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     @Override
     protected void postRun(SecurityAnalysisRunContext runContext, AtomicReference<ReportNode> rootReportNode, SecurityAnalysisResult ignoredResult) {
-        super.postRun(runContext, rootReportNode, ignoredResult);
         if (runContext.getReportInfos().reportUuid() != null) {
             List<ReportNode> notFoundElementReports = new ArrayList<>();
             runContext.getContingencies().stream()
@@ -149,6 +148,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                     .withMessageTemplate(r.getMessageKey(), r.getMessageTemplate()).add());
             }
         }
+        super.postRun(runContext, rootReportNode, ignoredResult);
     }
 
     @Override
