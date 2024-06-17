@@ -166,7 +166,7 @@ public abstract class AbstractWorkerService<S, R extends AbstractComputationRunC
      * Do some extra task before running the computation, e.g. print log or init extra data for the run context
      * @param ignoredRunContext This context may be used for further computation in overriding classes
      */
-    protected void preRun(R ignoredRunContext) {
+    protected void preRun(R ignoredRunContext, Network ignoredNetwork) {
         LOGGER.info("Run {} computation ...", getComputationType());
     }
 
@@ -188,7 +188,7 @@ public abstract class AbstractWorkerService<S, R extends AbstractComputationRunC
         }
         runContext.setReportNode(reportNode);
 
-        preRun(runContext);
+        preRun(runContext, network);
         CompletableFuture<S> future = runAsync(network, runContext, provider, resultUuid);
         S result = future == null ? null : observer.observeRun("run", runContext, future::get);
         postRun(runContext);

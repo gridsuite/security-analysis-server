@@ -14,23 +14,18 @@ import com.powsybl.iidm.network.Connectable;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
-import org.gridsuite.securityanalysis.server.computation.dto.ReportInfos;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentMatchers;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import static org.mockito.Mockito.*;
-
 
 /**
  * @author Jamal KHEYYAD <jamal.kheyyad@rte-international.com>
  */
-@SpringBootTest
 public class SecurityAnalysisWorkerServiceTest {
 
     @Test
@@ -46,7 +41,6 @@ public class SecurityAnalysisWorkerServiceTest {
 
         List<ContingencyElement> disconnectedEquipments = new ArrayList<>();
         disconnectedEquipments.add(ContingencyElement.of(connectable));
-        UUID contingencyId = UUID.randomUUID();
 
         ReportNodeNoOp reportNodeNoOpMock = mock(ReportNodeNoOp.class);
         ReportNodeAdder childAdderMock = mock(ReportNodeAdder.class);
@@ -58,7 +52,7 @@ public class SecurityAnalysisWorkerServiceTest {
         when(childAdderMock.withUntypedValue(anyString(), anyString())).thenReturn(childAdderMock);
         when(childAdderMock.withSeverity((TypedValue) any())).thenReturn(childAdderMock);
 
-        SecurityAnalysisWorkerService.logDisconnectedEquipments(disconnectedEquipments, reportNodeNoOpMock, new ReportInfos(contingencyId, null, null));
+        SecurityAnalysisWorkerService.logDisconnectedEquipments(disconnectedEquipments, reportNodeNoOpMock);
         //verify that the childAdderMock.withMessageTemplate() is called
         verify(childAdderMock, times(2)).withMessageTemplate(anyString(), anyString());
         verify(childAdderMock, atLeastOnce()).withMessageTemplate(anyString(), ArgumentMatchers.contains("Disconnected"));

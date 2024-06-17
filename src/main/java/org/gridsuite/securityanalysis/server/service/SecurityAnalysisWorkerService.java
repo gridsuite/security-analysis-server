@@ -20,7 +20,6 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.security.*;
 import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.ws.commons.LogUtils;
-import org.gridsuite.securityanalysis.server.computation.dto.ReportInfos;
 import org.gridsuite.securityanalysis.server.computation.service.*;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
@@ -109,7 +108,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     }
 
     @Override
-    protected void preRun(SecurityAnalysisRunContext runContext) {
+    protected void preRun(SecurityAnalysisRunContext runContext, Network network) {
         LOGGER.info("Run security analysis on contingency lists: {}", runContext.getContingencyListNames().stream().map(LogUtils::sanitizeParam).toList());
 
         // enrich context
@@ -120,6 +119,21 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                         .toList());
 
         runContext.setContingencies(contingencies);
+
+        ArrayList<ContingencyElement> allDisconnectedElements = new ArrayList<>();
+        contingencies.stream()
+                .map(ContingencyInfos::getContingency)
+                .filter(Objects::nonNull)
+                .map(Contingency::getElements)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .forEach(disconnectedEquipments -> {
+                    var connectable = network.getConnectable(disconnectedEquipments.getId());
+                    if (connectable != null && isDisconnected(connectable)) {
+                        allDisconnectedElements.add(disconnectedEquipments);
+                    }
+                });
+        runContext.setDisconnectedElementsContingencies(allDisconnectedElements);
     }
 
     @Override
@@ -135,13 +149,13 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
             if (!CollectionUtils.isEmpty(contingencyInfosList)) {
                 ReportNode elementNotFoundSubReporter = runContext.getReportNode().newReportNode()
-                    .withMessageTemplate(runContext.getReportInfos().reportUuid().toString() + "notFoundElements", "Elements not found")
+                    .withMessageTemplate("notFoundElements", "Elements not found")
                     .add();
 
                 contingencyInfosList.forEach(contingencyInfos -> {
                     String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
                     elementNotFoundSubReporter.newReportNode()
-                            .withMessageTemplate("contingencyElementNotFound_",
+                            .withMessageTemplate("contingencyElementNotFound",
                                     "Cannot find the following equipments ${elementsIds} in contingency ${contingencyId}")
                             .withUntypedValue("elementsIds", elementsIds)
                             .withUntypedValue("contingencyId", contingencyInfos.getId())
@@ -184,41 +198,20 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         if (runContext.getReportInfos().reportUuid() == null) {
             return;
         }
-        Network network = getNetwork(runContext.getNetworkUuid(),
-                runContext.getVariantId());
 
-        Set<String> allDisconnectedElements = new HashSet<>();
-        network.getConnectables().forEach(connectable -> {
-            if (isDisconnected(connectable)) {
-                allDisconnectedElements.add(connectable.getId());
-            }
-        });
-
-        List<ContingencyElement> disconnectedEquipments = new HashSet<>(runContext.getContingencies())
-                .stream().map(contingencyInfos -> {
-                    if (contingencyInfos.getContingency() == null) {
-                        return null;
-                    }
-                    return contingencyInfos.getContingency().getElements();
-                })
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
-                .filter(element -> allDisconnectedElements.contains(element.getId()))
-                .toList();
-
-        logDisconnectedEquipments(disconnectedEquipments, runContext.getReportNode(), runContext.getReportInfos());
+        logDisconnectedEquipments(runContext.getDisconnectedElementsContingencies(), runContext.getReportNode());
 
     }
 
-    public static void logDisconnectedEquipments(List<ContingencyElement> disconnectedEquipments, ReportNode reportNode, ReportInfos reportInfos) {
+    public static void logDisconnectedEquipments(List<ContingencyElement> disconnectedEquipments, ReportNode reportNode) {
         if (!disconnectedEquipments.isEmpty()) {
             ReportNode equipmentsDisconnected = reportNode.newReportNode()
-                    .withMessageTemplate(reportInfos.reportUuid().toString() + "disconnectedEquipments", "Disconnected equipments")
+                    .withMessageTemplate("disconnectedElements", "Disconnected equipments")
                     .add();
 
             disconnectedEquipments.forEach(contingencyElement ->
                 equipmentsDisconnected.newReportNode()
-                        .withMessageTemplate("disconnectedEquipmentsList", "Disconnected ${type} : ${name}")
+                        .withMessageTemplate("contengencyDisconnectedEquipments", "Disconnected ${type} : ${name}")
                         .withUntypedValue("name", contingencyElement.getId())
                         .withUntypedValue("type", contingencyElement.getType().toString())
                         .withSeverity(TypedValue.WARN_SEVERITY)
@@ -230,13 +223,13 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     public static boolean isDisconnected(Connectable connectable) {
         List<Terminal> terminals = connectable.getTerminals();
         // check if the connectable are connected with terminal.isConnected()
-        boolean disonnected = false;
+        boolean alteastOneIsConnected = false;
         for (Terminal terminal : terminals) {
-            if (terminal != null && !terminal.isConnected()) {
-                disonnected = true;
+            if (terminal != null && terminal.isConnected()) {
+                alteastOneIsConnected = true;
                 break;
             }
         }
-        return disonnected;
+        return !alteastOneIsConnected;
     }
 }
