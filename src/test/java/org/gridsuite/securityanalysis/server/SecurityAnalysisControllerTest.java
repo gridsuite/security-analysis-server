@@ -50,7 +50,6 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
-import org.springframework.data.domain.Page;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.Message;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -504,13 +503,12 @@ public class SecurityAnalysisControllerTest {
             .andExpectAll(
                 status().isOk(),
                 content().contentType(MediaType.APPLICATION_JSON)).andReturn();
-
         // getting paged result as list
         JsonNode resultsJsonNode = mapper.readTree(mvcResult.getResponse().getContentAsString());
         ObjectReader resultsObjectReader = mapper.readerFor(new TypeReference<List<ContingencyResultDTO>>() { });
         List<ContingencyResultDTO> nmkResult = resultsObjectReader.readValue(resultsJsonNode.get("content"));
 
-        List<LimitViolationType> expectedLimitTypes = nmkResult.stream().map(result -> result.getSubjectLimitViolations()).flatMap(slmList ->  slmList.stream().map(slm -> slm.getLimitViolation().getLimitType())).distinct().toList();
+        List<LimitViolationType> expectedLimitTypes = nmkResult.stream().map(ContingencyResultDTO::getSubjectLimitViolations).flatMap(subjectLimitViolationDTOS -> subjectLimitViolationDTOS.stream().map(slm -> slm.getLimitViolation().getLimitType())).distinct().toList();
         mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/nmk-limit-types", resultUuid))
             .andExpectAll(
                 status().isOk(),
@@ -519,7 +517,7 @@ public class SecurityAnalysisControllerTest {
         List<LimitViolationType> limitTypes = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
         Assertions.assertThat(limitTypes).hasSameElementsAs(expectedLimitTypes);
 
-        List<ThreeSides> expectedSides = nmkResult.stream().map(result -> result.getSubjectLimitViolations()).flatMap(slmList ->  slmList.stream().map(slm -> slm.getLimitViolation().getSide())).filter(side -> side != null).distinct().toList();
+        List<ThreeSides> expectedSides = nmkResult.stream().map(ContingencyResultDTO::getSubjectLimitViolations).flatMap(subjectLimitViolationDTOS -> subjectLimitViolationDTOS.stream().map(slm -> slm.getLimitViolation().getSide())).filter(Objects::nonNull).distinct().toList();
         mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/nmk-branch-sides", resultUuid))
             .andExpectAll(
                 status().isOk(),
