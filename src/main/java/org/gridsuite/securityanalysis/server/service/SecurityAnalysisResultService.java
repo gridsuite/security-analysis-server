@@ -357,19 +357,31 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional(readOnly = true)
-    public List<LimitViolationType> findLimitTypes(UUID resultUuid) {
+    public List<LimitViolationType> findNResultLimitTypes(UUID resultUuid) {
+        Objects.requireNonNull(resultUuid);
+        return preContingencyLimitViolationRepository.findLimitTypes(resultUuid);
+    }
+
+    @Transactional(readOnly = true)
+    public List<LimitViolationType> findNmKResultLimitTypes(UUID resultUuid) {
         Objects.requireNonNull(resultUuid);
         return contingencyLimitViolationRepository.findLimitTypes(resultUuid);
     }
 
     @Transactional(readOnly = true)
-    public List<ThreeSides> findBranchSides(UUID resultUuid) {
+    public List<ThreeSides> findNResultBranchSides(UUID resultUuid) {
+        Objects.requireNonNull(resultUuid);
+        return preContingencyLimitViolationRepository.findBranchSides(resultUuid);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ThreeSides> findNmKResultBranchSides(UUID resultUuid) {
         Objects.requireNonNull(resultUuid);
         return contingencyLimitViolationRepository.findBranchSides(resultUuid);
     }
 
     @Transactional(readOnly = true)
-    public List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status> findComputingStatus(UUID resultUuid) {
+    public List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status> findNmKComputingStatus(UUID resultUuid) {
         Objects.requireNonNull(resultUuid);
         return contingencyRepository.findComputingStatus(resultUuid);
     }
