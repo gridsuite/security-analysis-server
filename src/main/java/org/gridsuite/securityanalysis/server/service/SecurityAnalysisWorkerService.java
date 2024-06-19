@@ -111,28 +111,22 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     protected void preRun(SecurityAnalysisRunContext runContext, Network network) {
         LOGGER.info("Run security analysis on contingency lists: {}", runContext.getContingencyListNames().stream().map(LogUtils::sanitizeParam).toList());
 
-        // enrich context
         List<ContingencyInfos> contingencies = observer.observe("contingencies.fetch", runContext,
-                () -> runContext.getContingencyListNames().stream()
-                        .map(contingencyListName -> actionsService.getContingencyList(contingencyListName, runContext.getNetworkUuid(), runContext.getVariantId()))
-                        .flatMap(List::stream)
+                () -> runContext.getContingencyListNames()
+                        .stream()
+                        .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, runContext.getNetworkUuid(), runContext.getVariantId()).stream())
                         .toList());
 
         runContext.setContingencies(contingencies);
 
-        ArrayList<ContingencyElement> allDisconnectedElements = new ArrayList<>();
-        contingencies.stream()
+        List<ContingencyElement> allDisconnectedElements = contingencies.stream()
                 .map(ContingencyInfos::getContingency)
-                .filter(Objects::nonNull)
-                .map(Contingency::getElements)
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
-                .forEach(disconnectedEquipments -> {
-                    var connectable = network.getConnectable(disconnectedEquipments.getId());
-                    if (connectable != null && isDisconnected(connectable)) {
-                        allDisconnectedElements.add(disconnectedEquipments);
-                    }
-                });
+                .flatMap(contingency -> contingency.getElements().stream())
+                .filter(element -> {
+                    var connectable = network.getConnectable(element.getId());
+                    return connectable != null && isDisconnected(connectable);
+                })
+                .toList();
         runContext.setDisconnectedElementsContingencies(allDisconnectedElements);
     }
 
@@ -211,7 +205,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
             disconnectedEquipments.forEach(contingencyElement ->
                 equipmentsDisconnected.newReportNode()
-                        .withMessageTemplate("contengencyDisconnectedEquipments", "Disconnected ${type} : ${name}")
+                        .withMessageTemplate("contingencyElementNotConnected", "Disconnected ${type} : ${name}")
                         .withUntypedValue("name", contingencyElement.getId())
                         .withUntypedValue("type", contingencyElement.getType().toString())
                         .withSeverity(TypedValue.WARN_SEVERITY)
@@ -220,8 +214,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     }
 
-    public static boolean isDisconnected(Connectable connectable) {
-        List<Terminal> terminals = connectable.getTerminals();
+    public static boolean isDisconnected(Connectable<?> connectable) {
+        List<? extends Terminal> terminals = connectable.getTerminals();
         // check if the connectable are connected with terminal.isConnected()
         boolean alteastOneIsConnected = false;
         for (Terminal terminal : terminals) {

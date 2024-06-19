@@ -76,6 +76,7 @@ import static org.gridsuite.securityanalysis.server.computation.service.Notifica
 import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.*;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
+import static org.gridsuite.securityanalysis.server.util.TestUtils.assertLogMessage;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -682,6 +683,29 @@ public class SecurityAnalysisControllerTest {
         resultAsString = mvcResult.getResponse().getContentAsString();
         SecurityAnalysisResult securityAnalysisResult = mapper.readValue(resultAsString, SecurityAnalysisResult.class);
         assertThat(RESULT, new MatcherJson<>(mapper, securityAnalysisResult));
+    }
+
+    @Test
+    public void runWithReportTestElementsNotFound() throws Exception {
+        MvcResult mvcResult;
+        String resultAsString;
+
+        Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
+        given(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).willReturn(network);
+
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME + "&provider=testProvider" + "&reportUuid=" + REPORT_UUID + "&reporterId=" + UUID.randomUUID() + "&loadFlowParametersUuid=" + UUID.randomUUID()).contentType(MediaType.APPLICATION_JSON)
+                        .header(HEADER_USER_ID, "testUserId")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn();
+
+        resultAsString = mvcResult.getResponse().getContentAsString();
+        SecurityAnalysisResult securityAnalysisResult = mapper.readValue(resultAsString, SecurityAnalysisResult.class);
+        assertThat(RESULT, new MatcherJson<>(mapper, securityAnalysisResult));
+
+        assertLogMessage("Test message", "toto", reportService);
     }
 
     @Test

@@ -14,13 +14,14 @@ import com.powsybl.iidm.network.Connectable;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentMatchers;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 /**
@@ -34,10 +35,10 @@ public class SecurityAnalysisWorkerServiceTest {
         Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
         Connectable<?> connectable = network.getConnectable("NHV1_NHV2_1"); // get
 
-        Assert.assertFalse(SecurityAnalysisWorkerService.isDisconnected(connectable));
+        assertFalse(SecurityAnalysisWorkerService.isDisconnected(connectable));
         // disconnect the line
         connectable.disconnect();
-        Assert.assertTrue(SecurityAnalysisWorkerService.isDisconnected(connectable));
+        assertTrue(SecurityAnalysisWorkerService.isDisconnected(connectable));
 
         List<ContingencyElement> disconnectedEquipments = new ArrayList<>();
         disconnectedEquipments.add(ContingencyElement.of(connectable));
