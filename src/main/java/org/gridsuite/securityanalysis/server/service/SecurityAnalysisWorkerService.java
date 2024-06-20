@@ -105,7 +105,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     }
 
     @Override
-    protected void preRun(SecurityAnalysisRunContext runContext, Network network) {
+    protected void preRun(SecurityAnalysisRunContext runContext) {
         LOGGER.info("Run security analysis on contingency lists: {}", runContext.getContingencyListNames().stream().map(LogUtils::sanitizeParam).toList());
 
         List<ContingencyInfos> contingencies = observer.observe("contingencies.fetch", runContext,
