@@ -705,7 +705,8 @@ public class SecurityAnalysisControllerTest {
         SecurityAnalysisResult securityAnalysisResult = mapper.readValue(resultAsString, SecurityAnalysisResult.class);
         assertThat(RESULT, new MatcherJson<>(mapper, securityAnalysisResult));
 
-        assertLogMessage("Test message", "toto", reportService);
+        assertLogMessage("Elements not Connected", "notConnectedElements", reportService);
+        assertLogMessage("the following equipments notConnectedId1, notConnectedId2 in contingency l4 are not connected", "contingencyElementNotConnected", reportService);
     }
 
     @Test
