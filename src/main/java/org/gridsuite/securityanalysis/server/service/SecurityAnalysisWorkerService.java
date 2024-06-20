@@ -10,10 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.report.ReportNode;
 import com.powsybl.commons.report.TypedValue;
 import com.powsybl.contingency.Contingency;
-import com.powsybl.contingency.ContingencyElement;
-import com.powsybl.iidm.network.Connectable;
 import com.powsybl.iidm.network.Network;
-import com.powsybl.iidm.network.Terminal;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
@@ -118,16 +115,6 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                         .toList());
 
         runContext.setContingencies(contingencies);
-
-        List<ContingencyElement> allDisconnectedElements = contingencies.stream()
-                .map(ContingencyInfos::getContingency)
-                .flatMap(contingency -> contingency.getElements().stream())
-                .filter(element -> {
-                    var connectable = network.getConnectable(element.getId());
-                    return connectable != null && isDisconnected(connectable);
-                })
-                .toList();
-        runContext.setDisconnectedElementsContingencies(allDisconnectedElements);
     }
 
     @Override
@@ -189,41 +176,28 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     private void logExcludedEquipmentFromComputation(SecurityAnalysisRunContext runContext) {
 
-        if (runContext.getReportInfos().reportUuid() == null) {
-            return;
-        }
+        if (runContext.getReportInfos().reportUuid() != null) {
+            List<ContingencyInfos> contingencyInfosList = runContext.getContingencies().stream()
+                    .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotConnectedElements())).toList();
+            if (!CollectionUtils.isEmpty(contingencyInfosList)) {
+                ReportNode elementNotFoundSubReporter = runContext.getReportNode().newReportNode()
+                        .withMessageTemplate("notConnectedElements", "Elements not Connected")
+                        .add();
 
-        logDisconnectedEquipments(runContext.getDisconnectedElementsContingencies(), runContext.getReportNode());
+                contingencyInfosList.forEach(contingencyInfos -> {
+                    String elementsIds = String.join(", ", contingencyInfos.getNotConnectedElements());
+                    elementNotFoundSubReporter.newReportNode()
+                            .withMessageTemplate("contingencyElementNotConnected",
+                                    "the following equipments ${elementsIds} in contingency ${contingencyId} are not connected")
+                            .withUntypedValue("elementsIds", elementsIds)
+                            .withUntypedValue("contingencyId", contingencyInfos.getId())
+                            .withSeverity(TypedValue.WARN_SEVERITY)
+                            .add();
+                });
 
-    }
-
-    public static void logDisconnectedEquipments(List<ContingencyElement> disconnectedEquipments, ReportNode reportNode) {
-        if (!disconnectedEquipments.isEmpty()) {
-            ReportNode equipmentsDisconnected = reportNode.newReportNode()
-                    .withMessageTemplate("disconnectedElements", "Disconnected equipments")
-                    .add();
-
-            disconnectedEquipments.forEach(contingencyElement ->
-                equipmentsDisconnected.newReportNode()
-                        .withMessageTemplate("contingencyElementNotConnected", "Disconnected ${type} : ${name}")
-                        .withUntypedValue("name", contingencyElement.getId())
-                        .withUntypedValue("type", contingencyElement.getType().toString())
-                        .withSeverity(TypedValue.WARN_SEVERITY)
-                        .add());
-        }
-
-    }
-
-    public static boolean isDisconnected(Connectable<?> connectable) {
-        List<? extends Terminal> terminals = connectable.getTerminals();
-        // check if the connectable are connected with terminal.isConnected()
-        boolean alteastOneIsConnected = false;
-        for (Terminal terminal : terminals) {
-            if (terminal != null && terminal.isConnected()) {
-                alteastOneIsConnected = true;
-                break;
             }
         }
-        return !alteastOneIsConnected;
+
     }
+
 }

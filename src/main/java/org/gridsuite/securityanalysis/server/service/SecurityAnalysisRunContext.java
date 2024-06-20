@@ -8,7 +8,6 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.commons.extensions.Extension;
-import com.powsybl.contingency.ContingencyElement;
 import com.powsybl.loadflow.LoadFlowParameters;
 import com.powsybl.loadflow.LoadFlowProvider;
 import com.powsybl.security.SecurityAnalysisParameters;
@@ -32,8 +31,6 @@ public class SecurityAnalysisRunContext extends AbstractComputationRunContext<Se
     private final List<String> contingencyListNames;
     @Setter
     private List<ContingencyInfos> contingencies;
-    @Setter
-    private List<ContingencyElement> disconnectedElementsContingencies;
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParameters parameters, LoadFlowParametersValues loadFlowParametersValues,
