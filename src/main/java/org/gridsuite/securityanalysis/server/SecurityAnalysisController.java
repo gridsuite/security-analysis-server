@@ -249,24 +249,38 @@ public class SecurityAnalysisController {
         return ResponseEntity.ok().body(securityAnalysisService.getDefaultProvider());
     }
 
-    @GetMapping(value = "/results/{resultUuid}/limit-types", produces = APPLICATION_JSON_VALUE)
-    @Operation(summary = "Get the list of limit types values")
-    @ApiResponses(@ApiResponse(responseCode = "200", description = "List of limit types values by result"))
-    public ResponseEntity<List<LimitViolationType>> getLimitTypes(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(securityAnalysisService.getLimitTypes(resultUuid));
+    @GetMapping(value = "/results/{resultUuid}/n-limit-types", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get the list of limit types values - N results")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "List of limit types values by result - N results"))
+    public ResponseEntity<List<LimitViolationType>> getNResultLimitTypes(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(securityAnalysisService.getNResultLimitTypes(resultUuid));
     }
 
-    @GetMapping(value = "/results/{resultUuid}/branch-sides", produces = APPLICATION_JSON_VALUE)
-    @Operation(summary = "Get the list of branch sides values")
-    @ApiResponses(@ApiResponse(responseCode = "200", description = "List of branch sides values by result"))
-    public ResponseEntity<List<ThreeSides>> getBranchSides(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(securityAnalysisService.getBranchSides(resultUuid));
+    @GetMapping(value = "/results/{resultUuid}/nmk-limit-types", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get the list of limit types values  - NmK results")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "List of limit types values by result - NmK results"))
+    public ResponseEntity<List<LimitViolationType>> getNmKResultLimitTypes(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(securityAnalysisService.getNmKResultLimitTypes(resultUuid));
     }
 
-    @GetMapping(value = "/results/{resultUuid}/computation-status", produces = APPLICATION_JSON_VALUE)
-    @Operation(summary = "Get the list of computation status values")
-    @ApiResponses(@ApiResponse(responseCode = "200", description = "List of computation status values by result"))
-    public ResponseEntity<List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status>> getComputationStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
-        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(securityAnalysisService.getComputationStatus(resultUuid));
+    @GetMapping(value = "/results/{resultUuid}/n-branch-sides", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get the list of branch sides values - N results")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "List of branch sides values by result - N results"))
+    public ResponseEntity<List<ThreeSides>> getNResultBranchSides(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(securityAnalysisService.getNResultBranchSides(resultUuid));
+    }
+
+    @GetMapping(value = "/results/{resultUuid}/nmk-branch-sides", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get the list of branch sides values - NmK results")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "List of branch sides values by result - NmK results"))
+    public ResponseEntity<List<ThreeSides>> getNmKResultBranchSides(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(securityAnalysisService.getNmKResultBranchSides(resultUuid));
+    }
+
+    @GetMapping(value = "/results/{resultUuid}/nmk-computation-status", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get the list of computation status values - NmK results")
+    @ApiResponses(@ApiResponse(responseCode = "200", description = "List of computation status values by result - NmK results"))
+    public ResponseEntity<List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status>> getNmKResultComputationStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(securityAnalysisService.getNmKComputationStatus(resultUuid));
     }
 }

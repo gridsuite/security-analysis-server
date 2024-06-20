@@ -6,6 +6,8 @@
  */
 package org.gridsuite.securityanalysis.server.repositories;
 
+import com.powsybl.iidm.network.ThreeSides;
+import com.powsybl.security.LimitViolationType;
 import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
@@ -24,4 +26,14 @@ public interface PreContingencyLimitViolationRepository extends JpaRepository<Pr
     @Modifying
     @Query(value = "DELETE FROM pre_contingency_limit_violation WHERE result_id = ?1", nativeQuery = true)
     void deleteAllByResultId(UUID resultId);
+
+    @Query(value = "SELECT distinct pc.limitType from PreContingencyLimitViolationEntity as pc " +
+        "where pc.subjectLimitViolation.result.id = :resultUuid AND pc.limitType != ''" +
+        "order by pc.limitType")
+    List<LimitViolationType> findLimitTypes(UUID resultUuid);
+
+    @Query(value = "SELECT distinct pc.side from PreContingencyLimitViolationEntity as pc " +
+        "where pc.subjectLimitViolation.result.id = :resultUuid AND pc.side != ''" +
+        "order by pc.side")
+    List<ThreeSides> findBranchSides(UUID resultUuid);
 }
