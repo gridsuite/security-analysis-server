@@ -49,19 +49,27 @@ public class SecurityAnalysisService extends AbstractComputationService<Security
 
     public List<String> getProviders() {
         return SecurityAnalysisProvider.findAll().stream()
-                .map(SecurityAnalysisProvider::getName)
-                .toList();
+            .map(SecurityAnalysisProvider::getName)
+            .toList();
     }
 
-    public List<LimitViolationType> getLimitTypes(UUID resultUuid) {
-        return resultService.findLimitTypes(resultUuid);
+    public List<LimitViolationType> getNResultLimitTypes(UUID resultUuid) {
+        return resultService.findNResultLimitTypes(resultUuid);
     }
 
-    public List<ThreeSides> getBranchSides(UUID resultUuid) {
-        return resultService.findBranchSides(resultUuid);
+    public List<LimitViolationType> getNmKResultLimitTypes(UUID resultUuid) {
+        return resultService.findNmKResultLimitTypes(resultUuid);
     }
 
-    public List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status> getComputationStatus(UUID resultUuid) {
-        return resultService.findComputingStatus(resultUuid);
+    public List<ThreeSides> getNResultBranchSides(UUID resultUuid) {
+        return resultService.findNResultBranchSides(resultUuid);
+    }
+
+    public List<ThreeSides> getNmKResultBranchSides(UUID resultUuid) {
+        return resultService.findNmKResultBranchSides(resultUuid);
+    }
+
+    public List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status> getNmKComputationStatus(UUID resultUuid) {
+        return resultService.findNmKComputingStatus(resultUuid);
     }
 }
