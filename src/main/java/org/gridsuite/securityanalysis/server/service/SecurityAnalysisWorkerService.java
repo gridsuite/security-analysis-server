@@ -181,13 +181,13 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                     .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotConnectedElements())).toList();
             if (!CollectionUtils.isEmpty(contingencyInfosList)) {
                 ReportNode elementNotFoundSubReporter = runContext.getReportNode().newReportNode()
-                        .withMessageTemplate("notConnectedElements", "Elements not Connected")
+                        .withMessageTemplate("notConnectedEquipments", "Equipment not Connected")
                         .add();
 
                 contingencyInfosList.forEach(contingencyInfos -> {
                     String elementsIds = String.join(", ", contingencyInfos.getNotConnectedElements());
                     elementNotFoundSubReporter.newReportNode()
-                            .withMessageTemplate("contingencyElementNotConnected",
+                            .withMessageTemplate("contingencyEquipmentNotConnected",
                                     "the following equipments ${elementsIds} in contingency ${contingencyId} are not connected")
                             .withUntypedValue("elementsIds", elementsIds)
                             .withUntypedValue("contingencyId", contingencyInfos.getId())
