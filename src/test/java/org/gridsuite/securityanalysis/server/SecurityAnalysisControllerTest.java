@@ -706,7 +706,7 @@ public class SecurityAnalysisControllerTest {
         assertThat(RESULT, new MatcherJson<>(mapper, securityAnalysisResult));
 
         assertLogMessage("Equipment not Connected", "notConnectedEquipments", reportService);
-        assertLogMessage("the following equipments notConnectedId1, notConnectedId2 in contingency l4 are not connected", "contingencyEquipmentNotConnected", reportService);
+        assertLogMessage("the following equipments notConnectedId1 in contingency l4 are not connected", "contingencyEquipmentNotConnected", reportService);
     }
 
     @Test
