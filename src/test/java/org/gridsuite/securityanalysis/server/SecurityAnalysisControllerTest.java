@@ -686,7 +686,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void runWithReportTestElementsNotFound() throws Exception {
+    public void runWithReportTestElementsNotFoundAndNotConnected() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
 
@@ -705,8 +705,11 @@ public class SecurityAnalysisControllerTest {
         SecurityAnalysisResult securityAnalysisResult = mapper.readValue(resultAsString, SecurityAnalysisResult.class);
         assertThat(RESULT, new MatcherJson<>(mapper, securityAnalysisResult));
 
-        assertLogMessage("Equipment not Connected", "notConnectedEquipments", reportService);
-        assertLogMessage("the following equipments notConnectedId1 in contingency l4 are not connected", "contingencyEquipmentNotConnected", reportService);
+        assertLogMessage("Equipments not found", "notFoundEquipments", reportService);
+        assertLogMessage("Cannot find the following equipments wrongId1, wrongId2 in contingency l1", "contingencyEquipmentNotFound", reportService);
+
+        assertLogMessage("Equipments not connected", "notConnectedEquipments", reportService);
+        assertLogMessage("The following equipments notConnectedId1 in contingency l4 are not connected", "contingencyEquipmentNotConnected", reportService);
     }
 
     @Test

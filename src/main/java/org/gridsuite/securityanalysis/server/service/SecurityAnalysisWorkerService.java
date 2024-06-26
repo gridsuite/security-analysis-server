@@ -24,9 +24,11 @@ import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -119,31 +121,9 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     @Override
     protected void postRun(SecurityAnalysisRunContext runContext) {
-        logExcludedEquipmentFromComputation(runContext);
-        logContingencyElementNotFound(runContext);
-    }
-
-    private static void logContingencyElementNotFound(SecurityAnalysisRunContext runContext) {
         if (runContext.getReportInfos().reportUuid() != null) {
-            List<ContingencyInfos> contingencyInfosList = runContext.getContingencies().stream()
-                    .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements())).toList();
-
-            if (!CollectionUtils.isEmpty(contingencyInfosList)) {
-                ReportNode elementNotFoundSubReporter = runContext.getReportNode().newReportNode()
-                    .withMessageTemplate("notFoundElements", "Elements not found")
-                    .add();
-
-                contingencyInfosList.forEach(contingencyInfos -> {
-                    String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
-                    elementNotFoundSubReporter.newReportNode()
-                            .withMessageTemplate("contingencyElementNotFound",
-                                    "Cannot find the following equipments ${elementsIds} in contingency ${contingencyId}")
-                            .withUntypedValue("elementsIds", elementsIds)
-                            .withUntypedValue("contingencyId", contingencyInfos.getId())
-                            .withSeverity(TypedValue.WARN_SEVERITY)
-                            .add();
-                });
-            }
+            logContingencyEquipmentsNotConnected(runContext);
+            logContingencyEquipmentsNotFound(runContext);
         }
     }
 
@@ -174,30 +154,52 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         return super.consumeCancel();
     }
 
-    private void logExcludedEquipmentFromComputation(SecurityAnalysisRunContext runContext) {
+    private static void logContingencyEquipmentsNotFound(SecurityAnalysisRunContext runContext) {
+        List<ContingencyInfos> contingencyInfosList = runContext.getContingencies().stream()
+                .filter(contingencyInfos -> !contingencyInfos.getNotFoundElements().isEmpty()).toList();
 
-        if (runContext.getReportInfos().reportUuid() != null) {
-            List<ContingencyInfos> contingencyInfosList = runContext.getContingencies().stream()
-                    .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotConnectedElements())).toList();
-            if (!CollectionUtils.isEmpty(contingencyInfosList)) {
-                ReportNode elementNotFoundSubReporter = runContext.getReportNode().newReportNode()
-                        .withMessageTemplate("notConnectedEquipments", "Equipment not Connected")
-                        .add();
-
-                contingencyInfosList.forEach(contingencyInfos -> {
-                    String elementsIds = String.join(", ", contingencyInfos.getNotConnectedElements());
-                    elementNotFoundSubReporter.newReportNode()
-                            .withMessageTemplate("contingencyEquipmentNotConnected",
-                                    "the following equipments ${elementsIds} in contingency ${contingencyId} are not connected")
-                            .withUntypedValue("elementsIds", elementsIds)
-                            .withUntypedValue("contingencyId", contingencyInfos.getId())
-                            .withSeverity(TypedValue.WARN_SEVERITY)
-                            .add();
-                });
-
-            }
+        if (contingencyInfosList.isEmpty()) {
+            return;
         }
 
+        ReportNode elementsNotFoundSubReporter = runContext.getReportNode().newReportNode()
+                .withMessageTemplate("notFoundEquipments", "Equipments not found")
+                .add();
+
+        contingencyInfosList.forEach(contingencyInfos -> {
+            String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
+            elementsNotFoundSubReporter.newReportNode()
+                    .withMessageTemplate("contingencyEquipmentNotFound",
+                            "Cannot find the following equipments ${elementsIds} in contingency ${contingencyId}")
+                    .withUntypedValue("elementsIds", elementsIds)
+                    .withUntypedValue("contingencyId", contingencyInfos.getId())
+                    .withSeverity(TypedValue.WARN_SEVERITY)
+                    .add();
+        });
+    }
+
+    private void logContingencyEquipmentsNotConnected(SecurityAnalysisRunContext runContext) {
+        List<ContingencyInfos> contingencyInfosList = runContext.getContingencies().stream()
+                .filter(contingencyInfos -> !contingencyInfos.getNotConnectedElements().isEmpty()).toList();
+
+        if (contingencyInfosList.isEmpty()) {
+            return;
+        }
+
+        ReportNode elementsNotConnectedSubReporter = runContext.getReportNode().newReportNode()
+                .withMessageTemplate("notConnectedEquipments", "Equipments not connected")
+                .add();
+
+        contingencyInfosList.forEach(contingencyInfos -> {
+            String elementsIds = String.join(", ", contingencyInfos.getNotConnectedElements());
+            elementsNotConnectedSubReporter.newReportNode()
+                    .withMessageTemplate("contingencyEquipmentNotConnected",
+                            "The following equipments ${elementsIds} in contingency ${contingencyId} are not connected")
+                    .withUntypedValue("elementsIds", elementsIds)
+                    .withUntypedValue("contingencyId", contingencyInfos.getId())
+                    .withSeverity(TypedValue.WARN_SEVERITY)
+                    .add();
+        });
     }
 
 }
