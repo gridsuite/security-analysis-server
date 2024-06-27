@@ -15,12 +15,8 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
 import java.io.UncheckedIOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.*;
 import static org.gridsuite.securityanalysis.server.computation.utils.MessageUtils.getNonNullHeader;
@@ -30,6 +26,7 @@ import static org.gridsuite.securityanalysis.server.computation.utils.MessageUti
  */
 public class SecurityAnalysisResultContext extends AbstractResultContext<SecurityAnalysisRunContext> {
     public static final String CONTINGENCY_LIST_NAMES_HEADER = "contingencyListNames";
+    public static final String LIMIT_REDUCTIONS_HEADER = "limitReductions";
 
     public SecurityAnalysisResultContext(UUID resultUuid, SecurityAnalysisRunContext runContext) {
         super(resultUuid, runContext);
@@ -53,6 +50,7 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
         String receiver = (String) headers.get(HEADER_RECEIVER);
         String provider = (String) headers.get(HEADER_PROVIDER);
         String userId = (String) headers.get(HEADER_USER_ID);
+        List<List<Double>> limitReductions = getLimitReductionsFromHeader(headers, LIMIT_REDUCTIONS_HEADER);
         SecurityAnalysisParameters parameters;
         try {
             parameters = objectMapper.readValue(message.getPayload(), SecurityAnalysisParameters.class);
@@ -70,14 +68,37 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
                 provider,
                 parameters,
                 new ReportInfos(reportUuid, reporterId, reportType),
-                userId
+                userId,
+                limitReductions
         );
         return new SecurityAnalysisResultContext(resultUuid, runContext);
+    }
+
+    private static List<List<Double>> getLimitReductionsFromHeader(MessageHeaders headers, String name) {
+        String header = (String) headers.get(name);
+        if (header == null || header.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        return Arrays.stream(header.split(";"))
+                .map(outer -> Arrays.stream(outer.split(","))
+                        .map(inner -> Double.parseDouble(inner.trim()))
+                        .collect(Collectors.toList()))
+                .collect(Collectors.toList());
     }
 
     @Override
     protected Map<String, String> getSpecificMsgHeaders() {
         return Map.of(
-                CONTINGENCY_LIST_NAMES_HEADER, String.join(",", runContext.getContingencyListNames()));
+                CONTINGENCY_LIST_NAMES_HEADER, String.join(",", runContext.getContingencyListNames()),
+                LIMIT_REDUCTIONS_HEADER, formatLimitReductionsToHeader(runContext.getLimitReductions()));
+    }
+
+    private static String formatLimitReductionsToHeader(List<List<Double>> limitReductions) {
+        return limitReductions.stream()
+                .map(innerList -> innerList.stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(",")))
+                .collect(Collectors.joining(";"));
     }
 }

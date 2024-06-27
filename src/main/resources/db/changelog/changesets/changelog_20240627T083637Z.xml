@@ -1,0 +1,29 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="bouhoursant (generated)" id="1719477406584-1">
+        <createTable tableName="limit_reduction_entity">
+            <column name="id" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="limit_reduction_entityPK"/>
+            </column>
+            <column name="security_analysis_parameters_id" type="UUID"/>
+            <column name="index" type="INT"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="bouhoursant (generated)" id="1719477406584-2">
+        <createTable tableName="limit_reduction_entity_values">
+            <column name="limit_reduction_entity_id" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="limit_reduction_entity_valuesPK"/>
+            </column>
+            <column name="values_" type="FLOAT(53)"/>
+            <column name="index" type="INT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="limit_reduction_entity_valuesPK"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="bouhoursant (generated)" id="1719477406584-3">
+        <addForeignKeyConstraint baseColumnNames="limit_reduction_entity_id" baseTableName="limit_reduction_entity_values" constraintName="limitReductionEntity_limitReductionEntityValues_fk" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="limit_reduction_entity" validate="true"/>
+    </changeSet>
+    <changeSet author="bouhoursant (generated)" id="1719477406584-4">
+        <addForeignKeyConstraint baseColumnNames="security_analysis_parameters_id" baseTableName="limit_reduction_entity" constraintName="securityAnalysisParametersEntity_limitReductions_fk" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="security_analysis_parameters" validate="true"/>
+    </changeSet>
+</databaseChangeLog>

@@ -32,9 +32,11 @@ public class SecurityAnalysisRunContext extends AbstractComputationRunContext<Se
     @Setter
     private List<ContingencyInfos> contingencies;
 
+    private final List<List<Double>> limitReductions;
+
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParameters parameters, LoadFlowParametersValues loadFlowParametersValues,
-                                      ReportInfos reportContext, String userId) {
+                                      ReportInfos reportContext, String userId, List<List<Double>> limitReductions) {
         this(
                 networkUuid,
                 variantId,
@@ -43,15 +45,17 @@ public class SecurityAnalysisRunContext extends AbstractComputationRunContext<Se
                 provider,
                 buildParameters(parameters, loadFlowParametersValues, provider),
                 new ReportInfos(reportContext.reportUuid(), reportContext.reporterId(), reportContext.computationType()),
-                userId
+                userId,
+                limitReductions
         );
     }
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParameters parameters,
-                                      ReportInfos reportContext, String userId) {
+                                      ReportInfos reportContext, String userId, List<List<Double>> limitReductions) {
         super(networkUuid, variantId, receiver, reportContext, userId, provider, parameters, null);
         this.contingencyListNames = Objects.requireNonNull(contingencyListNames);
+        this.limitReductions = limitReductions;
     }
 
     private static SecurityAnalysisParameters buildParameters(SecurityAnalysisParameters securityAnalysisParameters,

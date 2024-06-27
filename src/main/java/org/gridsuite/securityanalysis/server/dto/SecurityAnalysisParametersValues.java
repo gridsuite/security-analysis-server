@@ -12,6 +12,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 
+import java.util.List;
+
 /**
  * @author Abdelsalem Hedhili <abdelsalem.hedhili at rte-france.com>
  */
@@ -31,6 +33,8 @@ public class SecurityAnalysisParametersValues {
     private double highVoltageProportionalThreshold;
 
     private double flowProportionalThreshold;
+
+    private List<List<Double>> limitReductions;
 
     public SecurityAnalysisParametersEntity toEntity() {
         return new SecurityAnalysisParametersEntity(this);
