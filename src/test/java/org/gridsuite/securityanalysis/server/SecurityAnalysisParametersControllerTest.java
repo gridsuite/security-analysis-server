@@ -11,6 +11,7 @@ import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValue
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisParametersRepository;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
+import org.gridsuite.securityanalysis.server.util.LimitReductionConfig;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -23,6 +24,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
@@ -55,7 +58,10 @@ public class SecurityAnalysisParametersControllerTest {
     @Value("${security-analysis.default-provider}")
     private String defaultProvider;
 
-    private final SecurityAnalysisParametersValues defaultSecurityAnalysisParametersValues = getDefaultSecurityAnalysisParametersValues(defaultProvider);
+    @Autowired
+    private LimitReductionConfig limitReductionConfig;
+
+    private final SecurityAnalysisParametersValues defaultSecurityAnalysisParametersValues = getDefaultSecurityAnalysisParametersValues(defaultProvider, limitReductionConfig);
 
     @Test
     public void securityAnalysisParametersCreateAndGetTest() throws Exception {
@@ -63,12 +69,16 @@ public class SecurityAnalysisParametersControllerTest {
         String resultAsString;
 
         // create parameters
+        List<List<Double>> limitReductions = Arrays.asList(
+                Arrays.asList(1.0, 0.9, 0.8, 0.7)
+        );
         SecurityAnalysisParametersValues securityAnalysisParametersValues1 = SecurityAnalysisParametersValues.builder()
                 .lowVoltageAbsoluteThreshold(10)
                 .lowVoltageProportionalThreshold(11)
                 .highVoltageAbsoluteThreshold(12)
                 .highVoltageProportionalThreshold(13)
                 .flowProportionalThreshold(14)
+                .limitReductions(limitReductions)
                 .build();
 
         mvcResult = mockMvc.perform(post("/" + VERSION + "/parameters")
@@ -131,12 +141,16 @@ public class SecurityAnalysisParametersControllerTest {
                 defaultSecurityAnalysisParametersValues.getFlowProportionalThreshold());
 
         //update previous parameters
+        List<List<Double>> limitReductions = Arrays.asList(
+                Arrays.asList(0.2, 0.6, 0.5, 0.7)
+        );
         SecurityAnalysisParametersValues securityAnalysisParametersValues1 = SecurityAnalysisParametersValues.builder()
                 .lowVoltageAbsoluteThreshold(10)
                 .lowVoltageProportionalThreshold(11)
                 .highVoltageAbsoluteThreshold(12)
                 .highVoltageProportionalThreshold(13)
                 .flowProportionalThreshold(14)
+                .limitReductions(limitReductions)
                 .build();
 
         mvcResult = mockMvc.perform(put("/" + VERSION + "/parameters/" + createdParametersUuid)
@@ -188,12 +202,16 @@ public class SecurityAnalysisParametersControllerTest {
         String resultAsString;
 
         // create parameters
+        List<List<Double>> limitReductions = Arrays.asList(
+                Arrays.asList(1.0, 0.9, 0.8, 0.7)
+        );
         SecurityAnalysisParametersValues securityAnalysisParametersValues1 = SecurityAnalysisParametersValues.builder()
                 .lowVoltageAbsoluteThreshold(10)
                 .lowVoltageProportionalThreshold(11)
                 .highVoltageAbsoluteThreshold(12)
                 .highVoltageProportionalThreshold(13)
                 .flowProportionalThreshold(14)
+                .limitReductions(limitReductions)
                 .build();
 
         mvcResult = mockMvc.perform(post("/" + VERSION + "/parameters")
@@ -235,12 +253,16 @@ public class SecurityAnalysisParametersControllerTest {
         String resultAsString;
 
         // create parameters
+        List<List<Double>> limitReductions = Arrays.asList(
+                Arrays.asList(1.0, 0.9, 0.8, 0.7)
+        );
         SecurityAnalysisParametersValues securityAnalysisParametersValues1 = SecurityAnalysisParametersValues.builder()
                 .lowVoltageAbsoluteThreshold(10)
                 .lowVoltageProportionalThreshold(11)
                 .highVoltageAbsoluteThreshold(12)
                 .highVoltageProportionalThreshold(13)
                 .flowProportionalThreshold(14)
+                .limitReductions(limitReductions)
                 .build();
 
         mvcResult = mockMvc.perform(post("/" + VERSION + "/parameters")

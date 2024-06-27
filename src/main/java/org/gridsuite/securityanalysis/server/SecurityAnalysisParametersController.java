@@ -17,6 +17,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -102,5 +103,13 @@ public class SecurityAnalysisParametersController {
             @RequestBody(required = false) String provider) {
         parametersService.updateProvider(parametersUuid, provider);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping(value = "/limit-reduction-metadata")
+    @Operation(summary = "Get limit reduction metadata")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "security analysis limit reductions metadata")})
+    public ResponseEntity<Map<String, Object>> getLimitReductionMetadata() {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
+                .body(parametersService.getLimitReductionMetadata());
     }
 }

@@ -10,13 +10,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.report.ReportNode;
 import com.powsybl.commons.report.TypedValue;
 import com.powsybl.contingency.Contingency;
+import com.powsybl.iidm.criteria.AtLeastOneNominalVoltageCriterion;
+import com.powsybl.iidm.criteria.IdentifiableCriterion;
+import com.powsybl.iidm.criteria.VoltageInterval;
+import com.powsybl.iidm.criteria.duration.IntervalTemporaryDurationCriterion;
+import com.powsybl.iidm.criteria.duration.LimitDurationCriterion;
+import com.powsybl.iidm.criteria.duration.PermanentDurationCriterion;
+import com.powsybl.iidm.network.LimitType;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.security.*;
 import com.powsybl.security.detectors.DefaultLimitViolationDetector;
+import com.powsybl.security.limitreduction.LimitReduction;
 import com.powsybl.ws.commons.LogUtils;
+import org.gridsuite.securityanalysis.server.util.LimitReductionConfig;
 import org.gridsuite.securityanalysis.server.computation.service.*;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
@@ -47,15 +56,18 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     private final ActionsService actionsService;
 
+    private final LimitReductionConfig limitReductionConfig;
+
     private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier;
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService, ReportService reportService,
                                          SecurityAnalysisResultService resultService, ObjectMapper objectMapper,
                                          SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, NotificationService notificationService, ExecutionService executionService,
-                                         SecurityAnalysisObserver observer) {
+                                         SecurityAnalysisObserver observer, LimitReductionConfig limitReductionConfig) {
         super(networkStoreService, notificationService, reportService, resultService, executionService, observer, objectMapper);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
+        this.limitReductionConfig = limitReductionConfig;
     }
 
     public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier) {
@@ -90,6 +102,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 .map(ContingencyInfos::getContingency)
                 .filter(Objects::nonNull)
                 .toList();
+        List<LimitReduction> limitReductions = getLimitReductions(runContext);
 
         return securityAnalysisRunner.runAsync(
                         network,
@@ -103,9 +116,55 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                         Collections.emptyList(),
                         Collections.emptyList(),
                         Collections.emptyList(),
-                        Collections.emptyList(),
+                        limitReductions,
                         runContext.getReportNode())
                 .thenApply(SecurityAnalysisReport::getResult);
+    }
+
+    private List<LimitReduction> getLimitReductions(SecurityAnalysisRunContext runContext) {
+        List<IdentifiableCriterion> voltageLevelCriteria = getVoltageLevelCriteria();
+        List<LimitDurationCriterion> limitDurationCriteria = getLimitDurationCriteria();
+
+        //TODO add some check to see if the table is consistent ?? Maybe similar to voltage-init ?
+        List<List<Double>> rawLimitReductions = runContext.getLimitReductions();
+        List<LimitReduction> limitReductions = new ArrayList<>();
+        for (int i = 0; i < rawLimitReductions.size(); i++) {
+            List<Double> limitReductionRow = rawLimitReductions.get(i);
+            IdentifiableCriterion voltageLevelCriterion = voltageLevelCriteria.get(i);
+            for (int j = 0; j < limitReductionRow.size(); j++) {
+                Double limitReductionValue = limitReductionRow.get(j);
+                LimitDurationCriterion limitDurationCriterion = limitDurationCriteria.get(j);
+                LimitReduction limitReduction = LimitReduction.builder(LimitType.CURRENT, limitReductionValue)
+                        .withNetworkElementCriteria(voltageLevelCriterion)
+                        .withLimitDurationCriteria(limitDurationCriterion)
+                        .build();
+                limitReductions.add(limitReduction);
+            }
+        }
+        return limitReductions;
+    }
+
+    private List<LimitDurationCriterion> getLimitDurationCriteria() {
+        List<LimitDurationCriterion> limitDurationCriteria = new ArrayList<>();
+        List<LimitReductionConfig.LimitDuration> limitDurations = limitReductionConfig.getLimitDurations();
+        limitDurationCriteria.add(new PermanentDurationCriterion());
+        for (LimitReductionConfig.LimitDuration limitDuration : limitDurations) {
+            if (limitDuration.getHighBound() != null) {
+                limitDurationCriteria.add(IntervalTemporaryDurationCriterion.between(limitDuration.getLowBound(), limitDuration.getHighBound(), limitDuration.isLowClosed(), limitDuration.isHighClosed()));
+            } else {
+                limitDurationCriteria.add(IntervalTemporaryDurationCriterion.greaterThan(limitDuration.getLowBound(), limitDuration.isLowClosed()));
+            }
+        }
+        return limitDurationCriteria;
+    }
+
+    private List<IdentifiableCriterion> getVoltageLevelCriteria() {
+        List<IdentifiableCriterion> voltageLevelCriteria = new ArrayList<>();
+        List<LimitReductionConfig.VoltageLevel> voltageLevels = limitReductionConfig.getVoltageLevels();
+        for (LimitReductionConfig.VoltageLevel voltageLevel : voltageLevels) {
+            voltageLevelCriteria.add(new IdentifiableCriterion(new AtLeastOneNominalVoltageCriterion(VoltageInterval.between(voltageLevel.getLowBound(), voltageLevel.getHighBound(), false, true))));
+        }
+        return voltageLevelCriteria;
     }
 
     @Override
