@@ -13,7 +13,7 @@ import com.powsybl.security.SecurityAnalysisResult;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.NonNull;
-import org.gridsuite.securityanalysis.server.computation.service.AbstractComputationObserver;
+import com.powsybl.ws.commons.computation.service.AbstractComputationObserver;
 import org.springframework.stereotype.Service;
 
 /**
