@@ -1,8 +1,8 @@
 package org.gridsuite.securityanalysis.server.util;
 
 import com.powsybl.commons.report.ReportNode;
+import com.powsybl.ws.commons.computation.service.ReportService;
 import org.apache.commons.text.StringSubstitutor;
-import org.gridsuite.securityanalysis.server.computation.service.ReportService;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Iterator;
