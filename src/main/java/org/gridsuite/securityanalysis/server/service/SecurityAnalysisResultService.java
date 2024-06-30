@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
-import org.gridsuite.securityanalysis.server.computation.service.AbstractComputationResultService;
+import com.powsybl.ws.commons.computation.service.AbstractComputationResultService;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.*;
 import org.gridsuite.securityanalysis.server.repositories.*;
@@ -357,19 +357,31 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional(readOnly = true)
-    public List<LimitViolationType> findLimitTypes(UUID resultUuid) {
+    public List<LimitViolationType> findNResultLimitTypes(UUID resultUuid) {
+        Objects.requireNonNull(resultUuid);
+        return preContingencyLimitViolationRepository.findLimitTypes(resultUuid);
+    }
+
+    @Transactional(readOnly = true)
+    public List<LimitViolationType> findNmKResultLimitTypes(UUID resultUuid) {
         Objects.requireNonNull(resultUuid);
         return contingencyLimitViolationRepository.findLimitTypes(resultUuid);
     }
 
     @Transactional(readOnly = true)
-    public List<ThreeSides> findBranchSides(UUID resultUuid) {
+    public List<ThreeSides> findNResultBranchSides(UUID resultUuid) {
+        Objects.requireNonNull(resultUuid);
+        return preContingencyLimitViolationRepository.findBranchSides(resultUuid);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ThreeSides> findNmKResultBranchSides(UUID resultUuid) {
         Objects.requireNonNull(resultUuid);
         return contingencyLimitViolationRepository.findBranchSides(resultUuid);
     }
 
     @Transactional(readOnly = true)
-    public List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status> findComputingStatus(UUID resultUuid) {
+    public List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status> findNmKComputingStatus(UUID resultUuid) {
         Objects.requireNonNull(resultUuid);
         return contingencyRepository.findComputingStatus(resultUuid);
     }

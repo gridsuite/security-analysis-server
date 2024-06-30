@@ -10,9 +10,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisProvider;
-import org.gridsuite.securityanalysis.server.computation.service.AbstractComputationService;
-import org.gridsuite.securityanalysis.server.computation.service.NotificationService;
-import org.gridsuite.securityanalysis.server.computation.service.UuidGeneratorService;
+import com.powsybl.ws.commons.computation.service.AbstractComputationService;
+import com.powsybl.ws.commons.computation.service.NotificationService;
+import com.powsybl.ws.commons.computation.service.UuidGeneratorService;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -49,19 +49,27 @@ public class SecurityAnalysisService extends AbstractComputationService<Security
 
     public List<String> getProviders() {
         return SecurityAnalysisProvider.findAll().stream()
-                .map(SecurityAnalysisProvider::getName)
-                .toList();
+            .map(SecurityAnalysisProvider::getName)
+            .toList();
     }
 
-    public List<LimitViolationType> getLimitTypes(UUID resultUuid) {
-        return resultService.findLimitTypes(resultUuid);
+    public List<LimitViolationType> getNResultLimitTypes(UUID resultUuid) {
+        return resultService.findNResultLimitTypes(resultUuid);
     }
 
-    public List<ThreeSides> getBranchSides(UUID resultUuid) {
-        return resultService.findBranchSides(resultUuid);
+    public List<LimitViolationType> getNmKResultLimitTypes(UUID resultUuid) {
+        return resultService.findNmKResultLimitTypes(resultUuid);
     }
 
-    public List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status> getComputationStatus(UUID resultUuid) {
-        return resultService.findComputingStatus(resultUuid);
+    public List<ThreeSides> getNResultBranchSides(UUID resultUuid) {
+        return resultService.findNResultBranchSides(resultUuid);
+    }
+
+    public List<ThreeSides> getNmKResultBranchSides(UUID resultUuid) {
+        return resultService.findNmKResultBranchSides(resultUuid);
+    }
+
+    public List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status> getNmKComputationStatus(UUID resultUuid) {
+        return resultService.findNmKComputingStatus(resultUuid);
     }
 }

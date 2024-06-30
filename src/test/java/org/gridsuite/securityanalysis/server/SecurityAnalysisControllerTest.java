@@ -34,9 +34,9 @@ import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationR
 import org.gridsuite.securityanalysis.server.repositories.specifications.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.LoadFlowService;
-import org.gridsuite.securityanalysis.server.computation.service.ReportService;
+import com.powsybl.ws.commons.computation.service.ReportService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
-import org.gridsuite.securityanalysis.server.computation.service.UuidGeneratorService;
+import com.powsybl.ws.commons.computation.service.UuidGeneratorService;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
@@ -71,9 +71,7 @@ import java.util.zip.ZipInputStream;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
-import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.HEADER_USER_ID;
-import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.getFailedMessage;
-import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.*;
+import static com.powsybl.ws.commons.computation.service.NotificationService.*;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.gridsuite.securityanalysis.server.util.TestUtils.assertLogMessage;
@@ -348,6 +346,7 @@ public class SecurityAnalysisControllerTest {
                         content().contentType(MediaType.APPLICATION_JSON));
 
         assertFiltredResultN();
+        checkNResultEnumFilters(RESULT_UUID);
 
         mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result/paged"))
                 .andExpectAll(
@@ -358,6 +357,8 @@ public class SecurityAnalysisControllerTest {
                 .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON));
+
+        checkNmKResultEnumFilters(RESULT_UUID);
 
         // should throw not found if result does not exist
         assertResultNotFound(OTHER_RESULT_UUID);
@@ -464,32 +465,74 @@ public class SecurityAnalysisControllerTest {
         List<PreContingencyLimitViolationResultDTO> preContingencyResult = mapper.readValue(resultAsString, new TypeReference<>() {
         });
         assertEquals(1, preContingencyResult.size());
+    }
 
-        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/limit-types", RESULT_UUID))
-                .andExpectAll(
-                        status().isOk(),
-                        content().contentType(MediaType.APPLICATION_JSON)
-                ).andReturn();
+    private void checkNResultEnumFilters(UUID resultUuid) throws Exception {
+
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/n-result"))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON)).andReturn();
+
+        List<PreContingencyLimitViolationResultDTO> nResults = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {
+        });
+
+        List<LimitViolationType> expectedLimitTypes = nResults.stream().map(result -> result.getLimitViolation().getLimitType()).distinct().toList();
+        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/n-limit-types", resultUuid))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON)
+            ).andReturn();
         List<LimitViolationType> limitTypes = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
-        assertEquals(2, limitTypes.size());
-        assertFalse(limitTypes.contains(LimitViolationType.HIGH_SHORT_CIRCUIT_CURRENT));
+        Assertions.assertThat(limitTypes).hasSameElementsAs(expectedLimitTypes);
 
-        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/branch-sides", RESULT_UUID))
-                .andExpectAll(
-                        status().isOk(),
-                        content().contentType(MediaType.APPLICATION_JSON)
-                ).andReturn();
+        List<ThreeSides> expectedSides = nResults.stream().map(result -> result.getLimitViolation().getSide()).distinct().filter(side -> side != null).toList();
+        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/n-branch-sides", resultUuid))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON)
+            ).andReturn();
         List<ThreeSides> sides = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
-        assertEquals(1, sides.size());
-        assertTrue(sides.contains(ThreeSides.ONE));
+        Assertions.assertThat(sides).hasSameElementsAs(expectedSides);
+    }
 
-        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/computation-status", RESULT_UUID))
-                .andExpectAll(
-                        status().isOk(),
-                        content().contentType(MediaType.APPLICATION_JSON)
-                ).andReturn();
+    private void checkNmKResultEnumFilters(UUID resultUuid) throws Exception {
+        // getting 100 elements here because we want to fetch all test datas to check fetched filters belongs to fetched results
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result/paged?size=100"))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON)).andReturn();
+        // getting paged result as list
+        JsonNode resultsJsonNode = mapper.readTree(mvcResult.getResponse().getContentAsString());
+        ObjectReader resultsObjectReader = mapper.readerFor(new TypeReference<List<ContingencyResultDTO>>() { });
+        List<ContingencyResultDTO> nmkResult = resultsObjectReader.readValue(resultsJsonNode.get("content"));
+
+        List<LimitViolationType> expectedLimitTypes = nmkResult.stream().map(ContingencyResultDTO::getSubjectLimitViolations).flatMap(subjectLimitViolationDTOS -> subjectLimitViolationDTOS.stream().map(slm -> slm.getLimitViolation().getLimitType())).distinct().toList();
+        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/nmk-limit-types", resultUuid))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON)
+            ).andReturn();
+        List<LimitViolationType> limitTypes = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
+        Assertions.assertThat(limitTypes).hasSameElementsAs(expectedLimitTypes);
+
+        List<ThreeSides> expectedSides = nmkResult.stream().map(ContingencyResultDTO::getSubjectLimitViolations).flatMap(subjectLimitViolationDTOS -> subjectLimitViolationDTOS.stream().map(slm -> slm.getLimitViolation().getSide())).filter(Objects::nonNull).distinct().toList();
+        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/nmk-branch-sides", resultUuid))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON)
+            ).andReturn();
+        List<ThreeSides> sides = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
+        Assertions.assertThat(sides).hasSameElementsAs(expectedSides);
+
+        List<LoadFlowResult.ComponentResult.Status> expectedStatus = nmkResult.stream().map(result -> LoadFlowResult.ComponentResult.Status.valueOf(result.getContingency().getStatus())).distinct().toList();
+        mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/nmk-computation-status", resultUuid))
+            .andExpectAll(
+                status().isOk(),
+                content().contentType(MediaType.APPLICATION_JSON)
+            ).andReturn();
         List<LoadFlowResult.ComponentResult.Status> status = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
-        assertEquals(0, status.size());
+        Assertions.assertThat(status).hasSameElementsAs(expectedStatus);
     }
 
     @Test

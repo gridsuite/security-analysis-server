@@ -17,10 +17,12 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.security.*;
 import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.ws.commons.LogUtils;
-import org.gridsuite.securityanalysis.server.computation.service.*;
+import com.powsybl.ws.commons.computation.service.*;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
@@ -31,10 +33,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.getFailedMessage;
+import static com.powsybl.ws.commons.computation.service.NotificationService.getFailedMessage;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
 
 /**
@@ -43,7 +46,7 @@ import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisServ
  */
 @Service
 public class SecurityAnalysisWorkerService extends AbstractWorkerService<SecurityAnalysisResult, SecurityAnalysisRunContext, SecurityAnalysisParameters, SecurityAnalysisResultService> {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisWorkerService.class);
     private final ActionsService actionsService;
 
     private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier;
@@ -65,7 +68,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         try {
             Network network = getNetwork(runContext.getNetworkUuid(),
                     runContext.getVariantId());
-            return run(network, runContext, null);
+            runContext.setNetwork(network);
+            return run(runContext, null);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;
@@ -81,7 +85,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     }
 
     @Override
-    protected CompletableFuture<SecurityAnalysisResult> getCompletableFuture(Network network, SecurityAnalysisRunContext runContext, String provider, UUID resultUuid) {
+    protected CompletableFuture<SecurityAnalysisResult> getCompletableFuture(SecurityAnalysisRunContext runContext, String provider, UUID resultUuid) {
         SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(provider);
         String variantId = runContext.getVariantId() != null ? runContext.getVariantId() : VariantManagerConstants.INITIAL_VARIANT_ID;
 
@@ -91,7 +95,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 .toList();
 
         return securityAnalysisRunner.runAsync(
-                        network,
+                        runContext.getNetwork(),
                         variantId,
                         n -> contingencies,
                         runContext.getParameters(),
@@ -121,11 +125,12 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     }
 
     @Override
-    protected void postRun(SecurityAnalysisRunContext runContext) {
+    protected void postRun(SecurityAnalysisRunContext runContext, AtomicReference<ReportNode> rootReportNode, SecurityAnalysisResult ignoredResult) {
         if (runContext.getReportInfos().reportUuid() != null) {
             logContingencyEquipmentsNotConnected(runContext);
             logContingencyEquipmentsNotFound(runContext);
         }
+        super.postRun(runContext, rootReportNode, ignoredResult);
     }
 
     @Override
