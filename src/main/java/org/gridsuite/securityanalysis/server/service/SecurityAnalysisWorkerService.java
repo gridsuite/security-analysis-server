@@ -24,6 +24,7 @@ import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -156,7 +157,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     private static void logContingencyEquipmentsNotFound(SecurityAnalysisRunContext runContext) {
         List<ContingencyInfos> contingencyInfosList = runContext.getContingencies().stream()
-                .filter(contingencyInfos -> contingencyInfos.getNotFoundElements() != null && !contingencyInfos.getNotFoundElements().isEmpty()).toList();
+                .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements())).toList();
 
         if (contingencyInfosList.isEmpty()) {
             return;
@@ -180,7 +181,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     private void logContingencyEquipmentsNotConnected(SecurityAnalysisRunContext runContext) {
         List<ContingencyInfos> contingencyInfosList = runContext.getContingencies().stream()
-                .filter(contingencyInfos -> contingencyInfos.getNotConnectedElements() != null && !contingencyInfos.getNotConnectedElements().isEmpty()).toList();
+                .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotConnectedElements())).toList();
 
         if (contingencyInfosList.isEmpty()) {
             return;
