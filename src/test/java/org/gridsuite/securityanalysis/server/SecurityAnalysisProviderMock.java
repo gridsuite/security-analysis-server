@@ -46,17 +46,17 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     static final String CONTINGENCY_LIST_NAME_VARIANT = "listVariant";
 
     static final List<ContingencyInfos> CONTINGENCIES = List.of(
-        new ContingencyInfos(new Contingency("l1", new BranchContingency("l1")), Set.of("wrongId1, wrongId2")),
-        new ContingencyInfos(new Contingency("l2", new GeneratorContingency("l2")), Set.of("wrongId1, wrongId2")),
-        new ContingencyInfos(new Contingency("l3", new BusbarSectionContingency("l3")), Set.of("wrongId1, wrongId2")),
-        new ContingencyInfos(new Contingency("l4", new LineContingency("l4")), Set.of("wrongId1, wrongId2")),
+        new ContingencyInfos(new Contingency("l1", new BranchContingency("l1")), Set.of("wrongId1, wrongId2"), Set.of()),
+        new ContingencyInfos(new Contingency("l2", new GeneratorContingency("l2")), Set.of("wrongId1, wrongId2"), Set.of()),
+        new ContingencyInfos(new Contingency("l3", new BusbarSectionContingency("l3")), Set.of("wrongId1, wrongId2"), Set.of()),
+        new ContingencyInfos(new Contingency("l4", new LineContingency("l4")), Set.of("wrongId1, wrongId2"), Set.of("notConnectedId1")),
         //new Contingency("l5", new LoadContingency("l5")), //ContingencyElementDeserializer does not handle LOAD
-        new ContingencyInfos(new Contingency("l6", new HvdcLineContingency("l6")), Set.of("wrongId1, wrongId2")),
-        new ContingencyInfos(new Contingency("l7", new DanglingLineContingency("l7")), Set.of("wrongId1, wrongId2")),
-        new ContingencyInfos(new Contingency("l8", new ShuntCompensatorContingency("l8")), Set.of("wrongId1, wrongId2")),
-        new ContingencyInfos(new Contingency("l9", new TwoWindingsTransformerContingency("l9")), Set.of("wrongId1, wrongId2")),
-        new ContingencyInfos(new Contingency("la", new ThreeWindingsTransformerContingency("l0")), Set.of("wrongId1, wrongId2")), // Contingencies are reordered by id
-        new ContingencyInfos(new Contingency("lb", new StaticVarCompensatorContingency("la")), Set.of("wrongId1, wrongId2"))
+        new ContingencyInfos(new Contingency("l6", new HvdcLineContingency("l6")), Set.of("wrongId1, wrongId2"), Set.of()),
+        new ContingencyInfos(new Contingency("l7", new DanglingLineContingency("l7")), Set.of("wrongId1, wrongId2"), Set.of()),
+        new ContingencyInfos(new Contingency("l8", new ShuntCompensatorContingency("l8")), Set.of("wrongId1, wrongId2"), Set.of()),
+        new ContingencyInfos(new Contingency("l9", new TwoWindingsTransformerContingency("l9")), Set.of("wrongId1, wrongId2"), Set.of()),
+        new ContingencyInfos(new Contingency("la", new ThreeWindingsTransformerContingency("l0")), Set.of("wrongId1, wrongId2"), Set.of()), // Contingencies are reordered by id
+        new ContingencyInfos(new Contingency("lb", new StaticVarCompensatorContingency("la")), Set.of("wrongId1, wrongId2"), Set.of())
     );
 
     static final List<Contingency> FAILED_CONTINGENCIES = List.of(

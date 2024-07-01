@@ -27,13 +27,14 @@ public class ContingencyInfos {
     private String id;
     private Contingency contingency;
     private Set<String> notFoundElements;
+    private Set<String> notConnectedElements;
 
     public ContingencyInfos(Contingency contingency) {
-        this(contingency, Set.of());
+        this(contingency, Set.of(), Set.of());
     }
 
-    public ContingencyInfos(Contingency contingency, Set<String> notFoundElements) {
-        this(contingency == null ? null : contingency.getId(), contingency, notFoundElements);
+    public ContingencyInfos(Contingency contingency, Set<String> notFoundElements, Set<String> notConnectedElements) {
+        this(contingency == null ? null : contingency.getId(), contingency, notFoundElements, notConnectedElements);
     }
 }
 
