@@ -58,4 +58,21 @@ public class ActionsService {
 
         return restTemplate.exchange(baseUri + path, HttpMethod.GET, null, new ParameterizedTypeReference<List<ContingencyInfos>>() { }).getBody();
     }
+
+    public List<ContingencyInfos> getContingencyList(List<String> ids, UUID networkUuid, String variantId) {
+        Objects.requireNonNull(ids);
+        Objects.requireNonNull(networkUuid);
+        if (ids.isEmpty()) {
+            throw new IllegalArgumentException("List 'ids' must not be null or empty");
+        }
+
+        URI path = UriComponentsBuilder
+                .fromPath(DELIMITER + ACTIONS_API_VERSION + "/contingency-lists/contingency-infos/export")
+                .queryParam("networkUuid", networkUuid.toString())
+                .queryParamIfPresent("variantId", Optional.ofNullable(variantId))
+                .queryParam("ids", ids)
+                .build().toUri();
+
+        return restTemplate.exchange(baseUri + path, HttpMethod.GET, null, new ParameterizedTypeReference<List<ContingencyInfos>>() { }).getBody();
+    }
 }
