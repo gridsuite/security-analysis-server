@@ -54,6 +54,7 @@ public class ActionsServiceTest {
     private static final String VARIANT_ID = "variant_id";
 
     private static final String LIST_NAME = "myList";
+    private static final String LIST_NAME_VARIANT = "myListVariant";
 
     private static final String VERY_LARGE_LIST_NAME = "veryLargelist";
 
@@ -92,6 +93,7 @@ public class ActionsServiceTest {
         String jsonExpected = objectMapper.writeValueAsString(List.of(CONTINGENCY));
         String veryLargeJsonExpected = objectMapper.writeValueAsString(createVeryLargeList());
         String jsonVariantExpected = objectMapper.writeValueAsString(List.of(CONTINGENCY_VARIANT));
+        String jsonExpectedForList = objectMapper.writeValueAsString(List.of(CONTINGENCY, CONTINGENCY_VARIANT));
 
         final Dispatcher dispatcher = new Dispatcher() {
             @NotNull
@@ -111,6 +113,10 @@ public class ActionsServiceTest {
                            || requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/%s/export?networkUuid=%s", VERY_LARGE_LIST_NAME, NETWORK_UUID))) {
                     return new MockResponse().setResponseCode(HttpStatus.OK.value())
                             .setBody(veryLargeJsonExpected)
+                            .addHeader("Content-Type", "application/json; charset=utf-8");
+                } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s&ids=%s", NETWORK_UUID, LIST_NAME, LIST_NAME_VARIANT))) {
+                    return new MockResponse().setResponseCode(HttpStatus.OK.value())
+                            .setBody(jsonExpectedForList)
                             .addHeader("Content-Type", "application/json; charset=utf-8");
                 } else {
                     return new MockResponse().setResponseCode(HttpStatus.NOT_FOUND.value()).setBody("Path not supported: " + request.getPath());
@@ -147,5 +153,11 @@ public class ActionsServiceTest {
         assertEquals(createVeryLargeList().stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
         list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID);
         assertEquals(createVeryLargeList().stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
+    }
+
+    @Test
+    public void testGetContingenciesByListOfIds() {
+        List<ContingencyInfos> list = actionsService.getContingencyList(List.of(LIST_NAME, LIST_NAME_VARIANT), UUID.fromString(NETWORK_UUID), null);
+        assertEquals(Stream.of(CONTINGENCY, CONTINGENCY_VARIANT).map(ContingencyInfos::getContingency).toList(), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
     }
 }
