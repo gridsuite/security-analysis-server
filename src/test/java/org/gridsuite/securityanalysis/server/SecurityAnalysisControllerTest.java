@@ -178,26 +178,6 @@ public class SecurityAnalysisControllerTest {
             return network1;
         });
 
-        // action service mocking
-        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID, VARIANT_1_ID))
-                .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
-        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME_VARIANT, NETWORK_UUID, VARIANT_3_ID))
-            .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES_VARIANT.stream().map(ContingencyInfos::new).collect(Collectors.toList()));
-        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID, VARIANT_2_ID))
-            .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
-        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_UUID, null))
-            .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
-        given(actionsService.getContingencyList(CONTINGENCY_LIST2_NAME, NETWORK_UUID, VARIANT_1_ID))
-                .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
-        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_STOP_UUID, VARIANT_2_ID))
-                .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
-        given(actionsService.getContingencyList(CONTINGENCY_LIST2_NAME, NETWORK_STOP_UUID, VARIANT_2_ID))
-                .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
-        given(actionsService.getContingencyList(CONTINGENCY_LIST_ERROR_NAME, NETWORK_UUID, VARIANT_1_ID))
-                .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
-        given(actionsService.getContingencyList(CONTINGENCY_LIST_NAME, NETWORK_STOP_UUID, VARIANT_TO_STOP_ID))
-            .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
-
         // UUID service mocking to always generate the same result UUID
         given(uuidGeneratorService.generate()).willReturn(RESULT_UUID);
 
@@ -684,7 +664,7 @@ public class SecurityAnalysisControllerTest {
         MvcResult mvcResult;
         String resultAsString;
 
-        given(actionsService.getContingencyList(CONTINGENCY_LIST_ERROR_NAME, NETWORK_UUID, VARIANT_1_ID))
+        given(actionsService.getContingencyList(List.of(CONTINGENCY_LIST_ERROR_NAME), NETWORK_UUID, VARIANT_1_ID))
             .willThrow(new RuntimeException(ERROR_MESSAGE));
 
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_ERROR_NAME
@@ -735,6 +715,8 @@ public class SecurityAnalysisControllerTest {
 
         Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
         given(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).willReturn(network);
+        given(actionsService.getContingencyList(List.of(CONTINGENCY_LIST_NAME), NETWORK_UUID, null))
+                .willReturn(SecurityAnalysisProviderMock.CONTINGENCIES);
 
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME + "&provider=testProvider" + "&reportUuid=" + REPORT_UUID + "&reporterId=" + UUID.randomUUID() + "&loadFlowParametersUuid=" + UUID.randomUUID()).contentType(MediaType.APPLICATION_JSON)
                         .header(HEADER_USER_ID, "testUserId")

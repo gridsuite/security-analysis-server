@@ -98,6 +98,7 @@ public class ActionsServiceTest {
             @Override
             public MockResponse dispatch(RecordedRequest request) {
                 String requestPath = Objects.requireNonNull(request.getPath());
+
                 if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/%s/export?networkUuid=%s&variantId=%s", LIST_NAME, NETWORK_UUID, VARIANT_ID))) {
                     return new MockResponse().setResponseCode(HttpStatus.OK.value())
                             .setBody(jsonVariantExpected)
