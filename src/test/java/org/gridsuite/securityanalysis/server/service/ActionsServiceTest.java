@@ -101,16 +101,16 @@ public class ActionsServiceTest {
             public MockResponse dispatch(RecordedRequest request) {
                 String requestPath = Objects.requireNonNull(request.getPath());
 
-                if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/%s/export?networkUuid=%s&variantId=%s", LIST_NAME, NETWORK_UUID, VARIANT_ID))) {
+                if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&variantId=%s&ids=%s", NETWORK_UUID, VARIANT_ID, LIST_NAME))) {
                     return new MockResponse().setResponseCode(HttpStatus.OK.value())
                             .setBody(jsonVariantExpected)
                             .addHeader("Content-Type", "application/json; charset=utf-8");
-                } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/%s/export?networkUuid=%s", LIST_NAME, NETWORK_UUID))) {
+                } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s", NETWORK_UUID, LIST_NAME))) {
                     return new MockResponse().setResponseCode(HttpStatus.OK.value())
                         .setBody(jsonExpected)
                         .addHeader("Content-Type", "application/json; charset=utf-8");
-                } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/%s/export?networkUuid=%s&variantId=%s", VERY_LARGE_LIST_NAME, NETWORK_UUID, VARIANT_ID))
-                           || requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/%s/export?networkUuid=%s", VERY_LARGE_LIST_NAME, NETWORK_UUID))) {
+                } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&variantId=%s&ids=%s", NETWORK_UUID, VARIANT_ID, VERY_LARGE_LIST_NAME))
+                           || requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s", NETWORK_UUID, VERY_LARGE_LIST_NAME))) {
                     return new MockResponse().setResponseCode(HttpStatus.OK.value())
                             .setBody(veryLargeJsonExpected)
                             .addHeader("Content-Type", "application/json; charset=utf-8");
@@ -138,20 +138,20 @@ public class ActionsServiceTest {
 
     @Test
     public void test() {
-        List<ContingencyInfos> list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), null);
+        List<ContingencyInfos> list = actionsService.getContingencyList(List.of(LIST_NAME), UUID.fromString(NETWORK_UUID), null);
         list.forEach(contingencyInfos -> assertArrayEquals(List.of(WRONG_ID).toArray(new Object[0]), contingencyInfos.getNotFoundElements().toArray(new String[0])));
         assertEquals(Stream.of(CONTINGENCY).map(ContingencyInfos::getContingency).toList(), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
-        list = actionsService.getContingencyList(LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID);
+        list = actionsService.getContingencyList(List.of(LIST_NAME), UUID.fromString(NETWORK_UUID), VARIANT_ID);
         assertEquals(Stream.of(CONTINGENCY_VARIANT).map(ContingencyInfos::getContingency).toList(), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
     }
 
     @Test
     public void testVeryLargeList() {
         // DataBufferLimitException should not be thrown with this message : "Exceeded limit on max bytes to buffer : DATA_BUFFER_LIMIT"
-        List<ContingencyInfos> list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), null);
+        List<ContingencyInfos> list = actionsService.getContingencyList(List.of(VERY_LARGE_LIST_NAME), UUID.fromString(NETWORK_UUID), null);
         list.forEach(contingencyInfos -> assertArrayEquals(List.of().toArray(new Object[0]), contingencyInfos.getNotFoundElements().toArray(new String[0])));
         assertEquals(createVeryLargeList().stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
-        list = actionsService.getContingencyList(VERY_LARGE_LIST_NAME, UUID.fromString(NETWORK_UUID), VARIANT_ID);
+        list = actionsService.getContingencyList(List.of(VERY_LARGE_LIST_NAME), UUID.fromString(NETWORK_UUID), VARIANT_ID);
         assertEquals(createVeryLargeList().stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
     }
 

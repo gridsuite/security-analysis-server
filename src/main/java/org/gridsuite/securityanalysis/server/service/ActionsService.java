@@ -47,18 +47,6 @@ public class ActionsService {
         this.restTemplate = restTemplate;
     }
 
-    public List<ContingencyInfos> getContingencyList(String name, UUID networkUuid, String variantId) {
-        Objects.requireNonNull(name);
-        Objects.requireNonNull(networkUuid);
-
-        URI path = UriComponentsBuilder
-            .fromPath(DELIMITER + ACTIONS_API_VERSION + "/contingency-lists/contingency-infos/{name}/export")
-            .queryParam("networkUuid", networkUuid.toString())
-            .queryParamIfPresent("variantId", Optional.ofNullable(variantId)).build(name);
-
-        return restTemplate.exchange(baseUri + path, HttpMethod.GET, null, new ParameterizedTypeReference<List<ContingencyInfos>>() { }).getBody();
-    }
-
     public List<ContingencyInfos> getContingencyList(List<String> ids, UUID networkUuid, String variantId) {
         Objects.requireNonNull(ids);
         Objects.requireNonNull(networkUuid);
