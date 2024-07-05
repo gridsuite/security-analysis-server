@@ -9,8 +9,8 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisParameters;
-import org.gridsuite.securityanalysis.server.computation.dto.ReportInfos;
-import org.gridsuite.securityanalysis.server.computation.service.AbstractResultContext;
+import com.powsybl.ws.commons.computation.dto.ReportInfos;
+import com.powsybl.ws.commons.computation.service.AbstractResultContext;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
@@ -18,8 +18,8 @@ import java.io.UncheckedIOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.*;
-import static org.gridsuite.securityanalysis.server.computation.utils.MessageUtils.getNonNullHeader;
+import static com.powsybl.ws.commons.computation.service.NotificationService.*;
+import static com.powsybl.ws.commons.computation.utils.MessageUtils.getNonNullHeader;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -88,10 +88,10 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
     }
 
     @Override
-    protected Map<String, String> getSpecificMsgHeaders() {
+    protected Map<String, String> getSpecificMsgHeaders(ObjectMapper ignoredObjectMapper) {
         return Map.of(
-                CONTINGENCY_LIST_NAMES_HEADER, String.join(",", runContext.getContingencyListNames()),
-                LIMIT_REDUCTIONS_HEADER, formatLimitReductionsToHeader(runContext.getLimitReductions()));
+                CONTINGENCY_LIST_NAMES_HEADER, String.join(",", getRunContext().getContingencyListNames()),
+                LIMIT_REDUCTIONS_HEADER, formatLimitReductionsToHeader(getRunContext().getLimitReductions()));
     }
 
     private static String formatLimitReductionsToHeader(List<List<Double>> limitReductions) {

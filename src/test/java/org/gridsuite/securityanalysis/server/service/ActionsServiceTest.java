@@ -58,7 +58,7 @@ public class ActionsServiceTest {
     private static final String VERY_LARGE_LIST_NAME = "veryLargelist";
 
     public static final String WRONG_ID = "wrongID";
-    private static final ContingencyInfos CONTINGENCY = new ContingencyInfos(new Contingency("c1", new BranchContingency("b1")), Set.of(WRONG_ID));
+    private static final ContingencyInfos CONTINGENCY = new ContingencyInfos(new Contingency("c1", new BranchContingency("b1")), Set.of(WRONG_ID), Set.of());
 
     private static final ContingencyInfos CONTINGENCY_VARIANT = new ContingencyInfos(new Contingency("c2", new BranchContingency("b2")));
 

@@ -34,9 +34,9 @@ import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationR
 import org.gridsuite.securityanalysis.server.repositories.specifications.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.LoadFlowService;
-import org.gridsuite.securityanalysis.server.computation.service.ReportService;
+import com.powsybl.ws.commons.computation.service.ReportService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
-import org.gridsuite.securityanalysis.server.computation.service.UuidGeneratorService;
+import com.powsybl.ws.commons.computation.service.UuidGeneratorService;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
@@ -71,11 +71,10 @@ import java.util.zip.ZipInputStream;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
-import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.HEADER_USER_ID;
-import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.getFailedMessage;
-import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.*;
+import static com.powsybl.ws.commons.computation.service.NotificationService.*;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
+import static org.gridsuite.securityanalysis.server.util.TestUtils.assertLogMessage;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -727,6 +726,33 @@ public class SecurityAnalysisControllerTest {
         resultAsString = mvcResult.getResponse().getContentAsString();
         SecurityAnalysisResult securityAnalysisResult = mapper.readValue(resultAsString, SecurityAnalysisResult.class);
         assertThat(RESULT, new MatcherJson<>(mapper, securityAnalysisResult));
+    }
+
+    @Test
+    public void runWithReportTestElementsNotFoundAndNotConnected() throws Exception {
+        MvcResult mvcResult;
+        String resultAsString;
+
+        Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
+        given(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).willReturn(network);
+
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME + "&provider=testProvider" + "&reportUuid=" + REPORT_UUID + "&reporterId=" + UUID.randomUUID() + "&loadFlowParametersUuid=" + UUID.randomUUID()).contentType(MediaType.APPLICATION_JSON)
+                        .header(HEADER_USER_ID, "testUserId")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn();
+
+        resultAsString = mvcResult.getResponse().getContentAsString();
+        SecurityAnalysisResult securityAnalysisResult = mapper.readValue(resultAsString, SecurityAnalysisResult.class);
+        assertThat(RESULT, new MatcherJson<>(mapper, securityAnalysisResult));
+
+        assertLogMessage("Equipments not found", "notFoundEquipments", reportService);
+        assertLogMessage("Cannot find the following equipments wrongId1, wrongId2 in contingency l1", "contingencyEquipmentNotFound", reportService);
+
+        assertLogMessage("Equipments not connected", "notConnectedEquipments", reportService);
+        assertLogMessage("The following equipments notConnectedId1 in contingency l4 are not connected", "contingencyEquipmentNotConnected", reportService);
     }
 
     @Test

@@ -13,8 +13,8 @@ import com.powsybl.loadflow.LoadFlowProvider;
 import com.powsybl.security.SecurityAnalysisParameters;
 import lombok.Getter;
 import lombok.Setter;
-import org.gridsuite.securityanalysis.server.computation.dto.ReportInfos;
-import org.gridsuite.securityanalysis.server.computation.service.AbstractComputationRunContext;
+import com.powsybl.ws.commons.computation.dto.ReportInfos;
+import com.powsybl.ws.commons.computation.service.AbstractComputationRunContext;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersValues;
 
@@ -53,7 +53,7 @@ public class SecurityAnalysisRunContext extends AbstractComputationRunContext<Se
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
                                       String receiver, String provider, SecurityAnalysisParameters parameters,
                                       ReportInfos reportContext, String userId, List<List<Double>> limitReductions) {
-        super(networkUuid, variantId, receiver, reportContext, userId, provider, parameters, null);
+        super(networkUuid, variantId, receiver, reportContext, userId, provider, parameters);
         this.contingencyListNames = Objects.requireNonNull(contingencyListNames);
         this.limitReductions = limitReductions;
     }

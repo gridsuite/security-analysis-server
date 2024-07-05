@@ -25,12 +25,14 @@ import com.powsybl.security.*;
 import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.security.limitreduction.LimitReduction;
 import com.powsybl.ws.commons.LogUtils;
-import org.gridsuite.securityanalysis.server.computation.service.*;
+import com.powsybl.ws.commons.computation.service.*;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.util.LimitReductionConfig;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
@@ -38,10 +40,11 @@ import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static org.gridsuite.securityanalysis.server.computation.service.NotificationService.getFailedMessage;
+import static com.powsybl.ws.commons.computation.service.NotificationService.getFailedMessage;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
 
 /**
@@ -50,7 +53,7 @@ import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisServ
  */
 @Service
 public class SecurityAnalysisWorkerService extends AbstractWorkerService<SecurityAnalysisResult, SecurityAnalysisRunContext, SecurityAnalysisParameters, SecurityAnalysisResultService> {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisWorkerService.class);
     private final ActionsService actionsService;
 
     private final LimitReductionConfig limitReductionConfig;
@@ -75,7 +78,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         try {
             Network network = getNetwork(runContext.getNetworkUuid(),
                     runContext.getVariantId());
-            return run(network, runContext, null);
+            runContext.setNetwork(network);
+            return run(runContext, null);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;
@@ -91,7 +95,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     }
 
     @Override
-    protected CompletableFuture<SecurityAnalysisResult> getCompletableFuture(Network network, SecurityAnalysisRunContext runContext, String provider, UUID resultUuid) {
+    protected CompletableFuture<SecurityAnalysisResult> getCompletableFuture(SecurityAnalysisRunContext runContext, String provider, UUID resultUuid) {
         SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(provider);
         String variantId = runContext.getVariantId() != null ? runContext.getVariantId() : VariantManagerConstants.INITIAL_VARIANT_ID;
 
@@ -102,7 +106,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         List<LimitReduction> limitReductions = createLimitReductions(runContext);
 
         return securityAnalysisRunner.runAsync(
-                        network,
+                        runContext.getNetwork(),
                         variantId,
                         n -> contingencies,
                         runContext.getParameters(),
@@ -151,38 +155,22 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     protected void preRun(SecurityAnalysisRunContext runContext) {
         LOGGER.info("Run security analysis on contingency lists: {}", runContext.getContingencyListNames().stream().map(LogUtils::sanitizeParam).toList());
 
-        // enrich context
         List<ContingencyInfos> contingencies = observer.observe("contingencies.fetch", runContext,
-                () -> runContext.getContingencyListNames().stream()
-                        .map(contingencyListName -> actionsService.getContingencyList(contingencyListName, runContext.getNetworkUuid(), runContext.getVariantId()))
-                        .flatMap(List::stream)
+                () -> runContext.getContingencyListNames()
+                        .stream()
+                        .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, runContext.getNetworkUuid(), runContext.getVariantId()).stream())
                         .toList());
 
         runContext.setContingencies(contingencies);
     }
 
     @Override
-    protected void postRun(SecurityAnalysisRunContext runContext) {
+    protected void postRun(SecurityAnalysisRunContext runContext, AtomicReference<ReportNode> rootReportNode, SecurityAnalysisResult ignoredResult) {
         if (runContext.getReportInfos().reportUuid() != null) {
-            List<ReportNode> notFoundElementReports = new ArrayList<>();
-            runContext.getContingencies().stream()
-                    .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements()))
-                    .forEach(contingencyInfos -> {
-                        String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
-                        notFoundElementReports.add(ReportNode.newRootReportNode()
-                                .withMessageTemplate("contingencyElementNotFound_" + contingencyInfos.getId() + notFoundElementReports.size(),
-                                    String.format("Cannot find the following equipments %s in contingency %s", elementsIds, contingencyInfos.getId()))
-                                .withSeverity(TypedValue.WARN_SEVERITY)
-                                .build());
-                    });
-            if (!CollectionUtils.isEmpty(notFoundElementReports)) {
-                ReportNode elementNotFoundSubReporter = runContext.getReportNode().newReportNode()
-                    .withMessageTemplate(runContext.getReportInfos().reportUuid().toString() + "notFoundElements", "Elements not found")
-                    .add();
-                notFoundElementReports.forEach(r -> elementNotFoundSubReporter.newReportNode()
-                    .withMessageTemplate(r.getMessageKey(), r.getMessageTemplate()).add());
-            }
+            logContingencyEquipmentsNotConnected(runContext);
+            logContingencyEquipmentsNotFound(runContext);
         }
+        super.postRun(runContext, rootReportNode, ignoredResult);
     }
 
     @Override
@@ -211,4 +199,53 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     public Consumer<Message<String>> consumeCancel() {
         return super.consumeCancel();
     }
+
+    private static void logContingencyEquipmentsNotFound(SecurityAnalysisRunContext runContext) {
+        List<ContingencyInfos> contingencyInfosList = runContext.getContingencies().stream()
+                .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements())).toList();
+
+        if (contingencyInfosList.isEmpty()) {
+            return;
+        }
+
+        ReportNode elementsNotFoundSubReporter = runContext.getReportNode().newReportNode()
+                .withMessageTemplate("notFoundEquipments", "Equipments not found")
+                .add();
+
+        contingencyInfosList.forEach(contingencyInfos -> {
+            String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
+            elementsNotFoundSubReporter.newReportNode()
+                    .withMessageTemplate("contingencyEquipmentNotFound",
+                            "Cannot find the following equipments ${elementsIds} in contingency ${contingencyId}")
+                    .withUntypedValue("elementsIds", elementsIds)
+                    .withUntypedValue("contingencyId", contingencyInfos.getId())
+                    .withSeverity(TypedValue.WARN_SEVERITY)
+                    .add();
+        });
+    }
+
+    private void logContingencyEquipmentsNotConnected(SecurityAnalysisRunContext runContext) {
+        List<ContingencyInfos> contingencyInfosList = runContext.getContingencies().stream()
+                .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotConnectedElements())).toList();
+
+        if (contingencyInfosList.isEmpty()) {
+            return;
+        }
+
+        ReportNode elementsNotConnectedSubReporter = runContext.getReportNode().newReportNode()
+                .withMessageTemplate("notConnectedEquipments", "Equipments not connected")
+                .add();
+
+        contingencyInfosList.forEach(contingencyInfos -> {
+            String elementsIds = String.join(", ", contingencyInfos.getNotConnectedElements());
+            elementsNotConnectedSubReporter.newReportNode()
+                    .withMessageTemplate("contingencyEquipmentNotConnected",
+                            "The following equipments ${elementsIds} in contingency ${contingencyId} are not connected")
+                    .withUntypedValue("elementsIds", elementsIds)
+                    .withUntypedValue("contingencyId", contingencyInfos.getId())
+                    .withSeverity(TypedValue.WARN_SEVERITY)
+                    .add();
+        });
+    }
+
 }

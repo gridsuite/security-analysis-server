@@ -7,7 +7,7 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.security.SecurityAnalysisParameters;
-import org.gridsuite.securityanalysis.server.computation.dto.ReportInfos;
+import com.powsybl.ws.commons.computation.dto.ReportInfos;
 import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersValues;
 import org.gridsuite.securityanalysis.server.dto.RunContextParametersInfos;
