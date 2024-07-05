@@ -6,14 +6,11 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
-import lombok.*;
-
 import jakarta.persistence.*;
+import lombok.*;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -75,10 +72,12 @@ public class SecurityAnalysisParametersEntity {
                 .highVoltageProportionalThreshold(this.highVoltageProportionalThreshold)
                 .lowVoltageAbsoluteThreshold(this.lowVoltageAbsoluteThreshold)
                 .lowVoltageProportionalThreshold(this.lowVoltageProportionalThreshold)
-                .limitReductions(this.limitReductions.stream()
-                        .map(limitReductionEntity -> new ArrayList<>(limitReductionEntity.getValues()))
-                        .collect(Collectors.toList()))
+                .limitReductions(toLimitReductionsValues())
                 .build();
+    }
+
+    public List<List<Double>> toLimitReductionsValues() {
+        return this.limitReductions.stream().map(LimitReductionEntity::getValues).map(ArrayList::new).collect(Collectors.toList());
     }
 
     public void update(@NonNull SecurityAnalysisParametersValues securityAnalysisParametersValues) {
@@ -88,8 +87,12 @@ public class SecurityAnalysisParametersEntity {
         this.highVoltageProportionalThreshold = securityAnalysisParametersValues.getHighVoltageProportionalThreshold();
         this.lowVoltageAbsoluteThreshold = securityAnalysisParametersValues.getLowVoltageAbsoluteThreshold();
         this.lowVoltageProportionalThreshold = securityAnalysisParametersValues.getLowVoltageProportionalThreshold();
+        updateLimitReductions(securityAnalysisParametersValues.getLimitReductions());
+    }
+
+    private void updateLimitReductions(List<List<Double>> values) {
         this.limitReductions.clear();
-        this.limitReductions.addAll(securityAnalysisParametersValues.getLimitReductions().stream().map(LimitReductionEntity::new).toList());
+        this.limitReductions.addAll(values.stream().map(LimitReductionEntity::new).toList());
     }
 
     public void updateProvider(String provider) {

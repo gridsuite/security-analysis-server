@@ -7,12 +7,14 @@
 package org.gridsuite.securityanalysis.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisParametersRepository;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.gridsuite.securityanalysis.server.util.LimitReductionConfig;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
+import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +26,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -64,14 +65,53 @@ public class SecurityAnalysisParametersControllerTest {
     private final SecurityAnalysisParametersValues defaultSecurityAnalysisParametersValues = getDefaultSecurityAnalysisParametersValues(defaultProvider, limitReductionConfig);
 
     @Test
+    public void limitReductionConfigTest() {
+        List<LimitReductionsByVoltageLevel> limitReductions = limitReductionConfig.getDefaultLimitReductions();
+        assertNotNull(limitReductions);
+        assertFalse(limitReductions.isEmpty());
+
+        List<LimitReductionsByVoltageLevel.VoltageLevel> vls = limitReductionConfig.getVoltageLevels();
+        limitReductionConfig.setVoltageLevels(List.of());
+        assertEquals("No configuration for voltage levels", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+        limitReductionConfig.setVoltageLevels(vls);
+
+        List<LimitReductionsByVoltageLevel.LimitDuration> lrs = limitReductionConfig.getLimitDurations();
+        limitReductionConfig.setLimitDurations(List.of());
+        assertEquals("No configuration for limit durations", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+        limitReductionConfig.setLimitDurations(lrs);
+
+        limitReductionConfig.setDefaultValues(List.of());
+        assertEquals("No values provided", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+
+        limitReductionConfig.setDefaultValues(List.of(List.of()));
+        assertEquals("No values provided", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+
+        limitReductionConfig.setDefaultValues(List.of(List.of(1.0)));
+        assertEquals("Not enough values provided for voltage levels", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+
+        limitReductionConfig.setDefaultValues(List.of(List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0)));
+        assertEquals("Too many values provided for voltage levels", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+
+        limitReductionConfig.setDefaultValues(List.of(List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0)));
+        assertEquals("Not enough values provided for limit durations", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+
+        limitReductionConfig.setDefaultValues(List.of(List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0)));
+        assertEquals("Number of values for a voltage level is incorrect", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+
+        limitReductionConfig.setDefaultValues(List.of(List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0)));
+        assertEquals("Too many values provided for limit durations", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+
+        limitReductionConfig.setDefaultValues(List.of(List.of(2.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0)));
+        assertEquals("Value not between 0 and 1", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+    }
+
+    @Test
     public void securityAnalysisParametersCreateAndGetTest() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
 
         // create parameters
-        List<List<Double>> limitReductions = Arrays.asList(
-                Arrays.asList(1.0, 0.9, 0.8, 0.7)
-        );
+        List<List<Double>> limitReductions = List.of(List.of(1.0, 0.9, 0.8, 0.7));
         SecurityAnalysisParametersValues securityAnalysisParametersValues1 = SecurityAnalysisParametersValues.builder()
                 .lowVoltageAbsoluteThreshold(10)
                 .lowVoltageProportionalThreshold(11)
@@ -141,9 +181,7 @@ public class SecurityAnalysisParametersControllerTest {
                 defaultSecurityAnalysisParametersValues.getFlowProportionalThreshold());
 
         //update previous parameters
-        List<List<Double>> limitReductions = Arrays.asList(
-                Arrays.asList(0.2, 0.6, 0.5, 0.7)
-        );
+        List<List<Double>> limitReductions = List.of(List.of(0.2, 0.6, 0.5, 0.7));
         SecurityAnalysisParametersValues securityAnalysisParametersValues1 = SecurityAnalysisParametersValues.builder()
                 .lowVoltageAbsoluteThreshold(10)
                 .lowVoltageProportionalThreshold(11)
@@ -202,9 +240,7 @@ public class SecurityAnalysisParametersControllerTest {
         String resultAsString;
 
         // create parameters
-        List<List<Double>> limitReductions = Arrays.asList(
-                Arrays.asList(1.0, 0.9, 0.8, 0.7)
-        );
+        List<List<Double>> limitReductions = List.of(List.of(1.0, 0.9, 0.8, 0.7));
         SecurityAnalysisParametersValues securityAnalysisParametersValues1 = SecurityAnalysisParametersValues.builder()
                 .lowVoltageAbsoluteThreshold(10)
                 .lowVoltageProportionalThreshold(11)
@@ -253,9 +289,7 @@ public class SecurityAnalysisParametersControllerTest {
         String resultAsString;
 
         // create parameters
-        List<List<Double>> limitReductions = Arrays.asList(
-                Arrays.asList(1.0, 0.9, 0.8, 0.7)
-        );
+        List<List<Double>> limitReductions = List.of(List.of(1.0, 0.9, 0.8, 0.7));
         SecurityAnalysisParametersValues securityAnalysisParametersValues1 = SecurityAnalysisParametersValues.builder()
                 .lowVoltageAbsoluteThreshold(10)
                 .lowVoltageProportionalThreshold(11)

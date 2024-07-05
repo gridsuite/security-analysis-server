@@ -7,14 +7,14 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.security.SecurityAnalysisParameters;
-import org.gridsuite.securityanalysis.server.util.LimitReductionConfig;
 import org.gridsuite.securityanalysis.server.computation.dto.ReportInfos;
+import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersValues;
 import org.gridsuite.securityanalysis.server.dto.RunContextParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
-import org.gridsuite.securityanalysis.server.entities.LimitReductionEntity;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisParametersRepository;
+import org.gridsuite.securityanalysis.server.util.LimitReductionConfig;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -68,9 +68,7 @@ public class SecurityAnalysisParametersService {
 
         SecurityAnalysisParameters parameters = toSecurityAnalysisParameters(securityAnalysisParametersEntity.orElse(null));
         List<List<Double>> limitReductions = securityAnalysisParametersEntity
-                .map(entity -> entity.getLimitReductions().stream()
-                        .map(LimitReductionEntity::getValues)
-                        .toList())
+                .map(SecurityAnalysisParametersEntity::toLimitReductionsValues)
                 .orElse(limitReductionConfig.getDefaultValues());
         return new SecurityAnalysisRunContext(
                 networkUuid,
@@ -162,8 +160,8 @@ public class SecurityAnalysisParametersService {
     }
 
     public Map<String, Object> getLimitReductionMetadata() {
-        List<LimitReductionConfig.VoltageLevel> voltageLevels = limitReductionConfig.getVoltageLevels();
-        List<LimitReductionConfig.LimitDuration> limitDurations = limitReductionConfig.getLimitDurations();
+        List<LimitReductionsByVoltageLevel.VoltageLevel> voltageLevels = limitReductionConfig.getVoltageLevels();
+        List<LimitReductionsByVoltageLevel.LimitDuration> limitDurations = limitReductionConfig.getLimitDurations();
 
         Map<String, Object> limitReductionMetadata = new HashMap<>();
         limitReductionMetadata.put("voltageLevels", voltageLevels);
