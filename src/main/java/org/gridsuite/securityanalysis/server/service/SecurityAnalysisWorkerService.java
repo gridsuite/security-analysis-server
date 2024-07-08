@@ -28,8 +28,8 @@ import com.powsybl.ws.commons.LogUtils;
 import com.powsybl.ws.commons.computation.service.*;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
-import org.gridsuite.securityanalysis.server.util.LimitReductionConfig;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,22 +52,22 @@ import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisServ
  * @author Franck Lecuyer <franck.lecuyer at rte-france.com>
  */
 @Service
-public class SecurityAnalysisWorkerService extends AbstractWorkerService<SecurityAnalysisResult, SecurityAnalysisRunContext, SecurityAnalysisParameters, SecurityAnalysisResultService> {
+public class SecurityAnalysisWorkerService extends AbstractWorkerService<SecurityAnalysisResult, SecurityAnalysisRunContext, SecurityAnalysisParametersDTO, SecurityAnalysisResultService> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisWorkerService.class);
     private final ActionsService actionsService;
 
-    private final LimitReductionConfig limitReductionConfig;
+    private final LimitReductionService limitReductionService;
 
     private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier;
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService, ReportService reportService,
                                          SecurityAnalysisResultService resultService, ObjectMapper objectMapper,
                                          SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, NotificationService notificationService, ExecutionService executionService,
-                                         SecurityAnalysisObserver observer, LimitReductionConfig limitReductionConfig) {
+                                         SecurityAnalysisObserver observer, LimitReductionService limitReductionService) {
         super(networkStoreService, notificationService, reportService, resultService, executionService, observer, objectMapper);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
-        this.limitReductionConfig = limitReductionConfig;
+        this.limitReductionService = limitReductionService;
     }
 
     public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier) {
@@ -109,7 +109,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                         runContext.getNetwork(),
                         variantId,
                         n -> contingencies,
-                        runContext.getParameters(),
+                        runContext.getParameters().securityAnalysisParameters(),
                         executionService.getComputationManager(),
                         LimitViolationFilter.load(),
                         new DefaultLimitViolationDetector(),
@@ -123,9 +123,9 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     }
 
     private List<LimitReduction> createLimitReductions(SecurityAnalysisRunContext runContext) {
-        List<LimitReduction> limitReductions = new ArrayList<>(limitReductionConfig.getVoltageLevels().size() * limitReductionConfig.getLimitDurations().size());
+        List<LimitReduction> limitReductions = new ArrayList<>(limitReductionService.getVoltageLevels().size() * limitReductionService.getLimitDurations().size());
 
-        limitReductionConfig.createLimitReductions(runContext.getLimitReductions()).forEach(limitReduction -> {
+        limitReductionService.createLimitReductions(runContext.getParameters().limitReductions()).forEach(limitReduction -> {
             LimitReductionsByVoltageLevel.VoltageLevel voltageLevel = limitReduction.getVoltageLevel();
             IdentifiableCriterion voltageLevelCriterion = new IdentifiableCriterion(new AtLeastOneNominalVoltageCriterion(VoltageInterval.between(voltageLevel.getLowBound(), voltageLevel.getHighBound(), false, true)));
             limitReductions.add(createLimitReduction(voltageLevelCriterion, new PermanentDurationCriterion(), limitReduction.getPermanentLimitReduction()));

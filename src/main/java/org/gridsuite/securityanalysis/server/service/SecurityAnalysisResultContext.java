@@ -8,15 +8,14 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.ws.commons.computation.dto.ReportInfos;
 import com.powsybl.ws.commons.computation.service.AbstractResultContext;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersDTO;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
 import java.io.UncheckedIOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.powsybl.ws.commons.computation.service.NotificationService.*;
 import static com.powsybl.ws.commons.computation.utils.MessageUtils.getNonNullHeader;
@@ -26,7 +25,6 @@ import static com.powsybl.ws.commons.computation.utils.MessageUtils.getNonNullHe
  */
 public class SecurityAnalysisResultContext extends AbstractResultContext<SecurityAnalysisRunContext> {
     public static final String CONTINGENCY_LIST_NAMES_HEADER = "contingencyListNames";
-    public static final String LIMIT_REDUCTIONS_HEADER = "limitReductions";
 
     public SecurityAnalysisResultContext(UUID resultUuid, SecurityAnalysisRunContext runContext) {
         super(resultUuid, runContext);
@@ -50,10 +48,9 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
         String receiver = (String) headers.get(HEADER_RECEIVER);
         String provider = (String) headers.get(HEADER_PROVIDER);
         String userId = (String) headers.get(HEADER_USER_ID);
-        List<List<Double>> limitReductions = getLimitReductionsFromHeader(headers, LIMIT_REDUCTIONS_HEADER);
-        SecurityAnalysisParameters parameters;
+        SecurityAnalysisParametersDTO parameters;
         try {
-            parameters = objectMapper.readValue(message.getPayload(), SecurityAnalysisParameters.class);
+            parameters = objectMapper.readValue(message.getPayload(), SecurityAnalysisParametersDTO.class);
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }
@@ -68,37 +65,14 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
                 provider,
                 parameters,
                 new ReportInfos(reportUuid, reporterId, reportType),
-                userId,
-                limitReductions
+                userId
         );
         return new SecurityAnalysisResultContext(resultUuid, runContext);
-    }
-
-    private static List<List<Double>> getLimitReductionsFromHeader(MessageHeaders headers, String name) {
-        String header = (String) headers.get(name);
-        if (header == null || header.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        return Arrays.stream(header.split(";"))
-                .map(outer -> Arrays.stream(outer.split(","))
-                        .map(inner -> Double.parseDouble(inner.trim()))
-                        .collect(Collectors.toList()))
-                .collect(Collectors.toList());
     }
 
     @Override
     protected Map<String, String> getSpecificMsgHeaders(ObjectMapper ignoredObjectMapper) {
         return Map.of(
-                CONTINGENCY_LIST_NAMES_HEADER, String.join(",", getRunContext().getContingencyListNames()),
-                LIMIT_REDUCTIONS_HEADER, formatLimitReductionsToHeader(getRunContext().getLimitReductions()));
-    }
-
-    private static String formatLimitReductionsToHeader(List<List<Double>> limitReductions) {
-        return limitReductions.stream()
-                .map(innerList -> innerList.stream()
-                        .map(String::valueOf)
-                        .collect(Collectors.joining(",")))
-                .collect(Collectors.joining(";"));
+                CONTINGENCY_LIST_NAMES_HEADER, String.join(",", getRunContext().getContingencyListNames()));
     }
 }

@@ -4,12 +4,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
-package org.gridsuite.securityanalysis.server.util;
+package org.gridsuite.securityanalysis.server.service;
 
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.Range;
 import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
+import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Service;
 
@@ -20,8 +21,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Setter
 @Getter
 @Service
-@ConfigurationProperties(prefix = "default-limit-reductions")
-public class LimitReductionConfig {
+@ConfigurationProperties(prefix = "security-analysis.default-limit-reductions")
+public class LimitReductionService {
     private List<LimitReductionsByVoltageLevel.VoltageLevel> voltageLevels;
     private List<LimitReductionsByVoltageLevel.LimitDuration> limitDurations;
     private List<List<Double>> defaultValues;

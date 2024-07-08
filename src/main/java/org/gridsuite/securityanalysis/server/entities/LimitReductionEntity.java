@@ -1,3 +1,9 @@
+/**
+ * Copyright (c) 2023, RTE (http://www.rte-france.com)
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package org.gridsuite.securityanalysis.server.entities;
 
 import jakarta.persistence.*;
@@ -10,7 +16,7 @@ import java.util.UUID;
 @Getter
 @Entity
 @NoArgsConstructor
-@Table(name = "limit_reduction_entity")
+@Table(name = "limitReductionEntity", indexes = {@Index(name = "idx_security_analysis_parameters_id", columnList = "security_analysis_parameters_id")})
 public class LimitReductionEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -18,15 +24,15 @@ public class LimitReductionEntity {
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(
-            name = "limit_reduction_entity_values",
+            name = "limit_reduction_entity_reductions",
             joinColumns = @JoinColumn(name = "limit_reduction_entity_id"),
-            foreignKey = @ForeignKey(name = "limitReductionEntity_limitReductionEntityValues_fk")
+            foreignKey = @ForeignKey(name = "limitReductionEntity_limitReductionEntityReductions_fk")
     )
     @OrderColumn(name = "index")
-    @Column(name = "values_") // "values" is not supported in UT with H2
-    private List<Double> values;
+    @Column(name = "reductions")
+    private List<Double> reductions;
 
-    public LimitReductionEntity(List<Double> values) {
-        this.values = values;
+    public LimitReductionEntity(List<Double> reductions) {
+        this.reductions = reductions;
     }
 }
