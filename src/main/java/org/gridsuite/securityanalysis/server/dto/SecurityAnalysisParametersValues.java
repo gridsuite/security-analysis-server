@@ -6,10 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 
 import java.util.List;
@@ -17,10 +14,10 @@ import java.util.List;
 /**
  * @author Abdelsalem Hedhili <abdelsalem.hedhili at rte-france.com>
  */
-@Getter
-@AllArgsConstructor
-@Builder
 @NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Builder
 public class SecurityAnalysisParametersValues {
     private String provider;
 
@@ -34,7 +31,11 @@ public class SecurityAnalysisParametersValues {
 
     private double flowProportionalThreshold;
 
-    private List<List<Double>> limitReductions;
+     // Only to set/get values from db
+    private List<List<Double>> limitReductionsValues;
+
+    @Setter
+    private List<LimitReductionsByVoltageLevel> limitReductions;
 
     public SecurityAnalysisParametersEntity toEntity() {
         return new SecurityAnalysisParametersEntity(this);

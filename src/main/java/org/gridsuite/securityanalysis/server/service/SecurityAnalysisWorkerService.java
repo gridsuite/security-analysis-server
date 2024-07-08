@@ -125,7 +125,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     private List<LimitReduction> createLimitReductions(SecurityAnalysisRunContext runContext) {
         List<LimitReduction> limitReductions = new ArrayList<>(limitReductionConfig.getVoltageLevels().size() * limitReductionConfig.getLimitDurations().size());
 
-        limitReductionConfig.getLimitReductions(runContext.getLimitReductions()).forEach(limitReduction -> {
+        limitReductionConfig.createLimitReductions(runContext.getLimitReductions()).forEach(limitReduction -> {
             LimitReductionsByVoltageLevel.VoltageLevel voltageLevel = limitReduction.getVoltageLevel();
             IdentifiableCriterion voltageLevelCriterion = new IdentifiableCriterion(new AtLeastOneNominalVoltageCriterion(VoltageInterval.between(voltageLevel.getLowBound(), voltageLevel.getHighBound(), false, true)));
             limitReductions.add(createLimitReduction(voltageLevelCriterion, new PermanentDurationCriterion(), limitReduction.getPermanentLimitReduction()));

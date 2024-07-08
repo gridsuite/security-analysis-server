@@ -26,15 +26,11 @@ public class LimitReductionConfig {
     private List<LimitReductionsByVoltageLevel.LimitDuration> limitDurations;
     private List<List<Double>> defaultValues;
 
-    public List<LimitReductionsByVoltageLevel> getDefaultLimitReductions() {
-        return getLimitReductions(defaultValues);
+    public List<LimitReductionsByVoltageLevel> createDefaultLimitReductions() {
+        return createLimitReductions(defaultValues);
     }
 
-    public List<LimitReductionsByVoltageLevel> getLimitReductions(List<List<Double>> values) {
-        return initLimitReductions(values);
-    }
-
-    private List<LimitReductionsByVoltageLevel> initLimitReductions(List<List<Double>> values) {
+    public List<LimitReductionsByVoltageLevel> createLimitReductions(List<List<Double>> values) {
         assertValidConfig(values);
         List<LimitReductionsByVoltageLevel> limitReductions = new ArrayList<>(voltageLevels.size());
         AtomicInteger index = new AtomicInteger(0);

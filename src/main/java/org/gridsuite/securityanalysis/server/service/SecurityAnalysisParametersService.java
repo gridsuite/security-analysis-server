@@ -8,7 +8,6 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.ws.commons.computation.dto.ReportInfos;
-import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersValues;
 import org.gridsuite.securityanalysis.server.dto.RunContextParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
@@ -115,12 +114,17 @@ public class SecurityAnalysisParametersService {
                 .highVoltageAbsoluteThreshold(DEFAULT_HIGH_VOLTAGE_ABSOLUTE_THRESHOLD)
                 .highVoltageProportionalThreshold(DEFAULT_HIGH_VOLTAGE_PROPORTIONAL_THRESHOLD)
                 .flowProportionalThreshold(DEFAULT_FLOW_PROPORTIONAL_THRESHOLD)
-                .limitReductions(limitReductions)
+                .limitReductionsValues(limitReductions)
                 .build();
     }
 
     public Optional<SecurityAnalysisParametersValues> getParameters(UUID parametersUuid) {
-        return securityAnalysisParametersRepository.findById(parametersUuid).map(SecurityAnalysisParametersEntity::toSecurityAnalysisParametersValues);
+        return securityAnalysisParametersRepository.findById(parametersUuid)
+                .map(SecurityAnalysisParametersEntity::toSecurityAnalysisParametersValues)
+                .map(p -> {
+                    p.setLimitReductions(limitReductionConfig.createLimitReductions(p.getLimitReductionsValues()));
+                    return p;
+                });
     }
 
     public UUID createParameters(SecurityAnalysisParametersValues securityAnalysisParametersValues) {
@@ -157,15 +161,5 @@ public class SecurityAnalysisParametersService {
         securityAnalysisParametersRepository.findById(parametersUuid)
             .orElseThrow()
             .updateProvider(provider != null ? provider : defaultProvider);
-    }
-
-    public Map<String, Object> getLimitReductionMetadata() {
-        List<LimitReductionsByVoltageLevel.VoltageLevel> voltageLevels = limitReductionConfig.getVoltageLevels();
-        List<LimitReductionsByVoltageLevel.LimitDuration> limitDurations = limitReductionConfig.getLimitDurations();
-
-        Map<String, Object> limitReductionMetadata = new HashMap<>();
-        limitReductionMetadata.put("voltageLevels", voltageLevels);
-        limitReductionMetadata.put("limitDurations", limitDurations);
-        return limitReductionMetadata;
     }
 }

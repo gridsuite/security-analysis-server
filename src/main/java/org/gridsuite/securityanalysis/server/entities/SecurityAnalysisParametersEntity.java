@@ -33,7 +33,7 @@ public class SecurityAnalysisParametersEntity {
                 securityAnalysisParametersValues.getHighVoltageAbsoluteThreshold(),
                 securityAnalysisParametersValues.getHighVoltageProportionalThreshold(),
                 securityAnalysisParametersValues.getFlowProportionalThreshold(),
-                securityAnalysisParametersValues.getLimitReductions().stream().map(LimitReductionEntity::new).toList());
+                securityAnalysisParametersValues.getLimitReductionsValues().stream().map(LimitReductionEntity::new).toList());
     }
 
     @Id
@@ -72,7 +72,7 @@ public class SecurityAnalysisParametersEntity {
                 .highVoltageProportionalThreshold(this.highVoltageProportionalThreshold)
                 .lowVoltageAbsoluteThreshold(this.lowVoltageAbsoluteThreshold)
                 .lowVoltageProportionalThreshold(this.lowVoltageProportionalThreshold)
-                .limitReductions(toLimitReductionsValues())
+                .limitReductionsValues(toLimitReductionsValues())
                 .build();
     }
 
@@ -87,7 +87,7 @@ public class SecurityAnalysisParametersEntity {
         this.highVoltageProportionalThreshold = securityAnalysisParametersValues.getHighVoltageProportionalThreshold();
         this.lowVoltageAbsoluteThreshold = securityAnalysisParametersValues.getLowVoltageAbsoluteThreshold();
         this.lowVoltageProportionalThreshold = securityAnalysisParametersValues.getLowVoltageProportionalThreshold();
-        updateLimitReductions(securityAnalysisParametersValues.getLimitReductions());
+        updateLimitReductions(securityAnalysisParametersValues.getLimitReductionsValues());
     }
 
     private void updateLimitReductions(List<List<Double>> values) {

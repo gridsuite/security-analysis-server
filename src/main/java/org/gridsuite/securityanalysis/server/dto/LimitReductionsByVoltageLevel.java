@@ -12,10 +12,13 @@ import java.util.List;
 
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class LimitReductionsByVoltageLevel {
 
     @Setter
     @Getter
+    @NoArgsConstructor
     public static class LimitDuration {
         private Integer lowBound;
         private boolean lowClosed;
@@ -25,6 +28,7 @@ public class LimitReductionsByVoltageLevel {
 
     @Setter
     @Getter
+    @NoArgsConstructor
     public static class VoltageLevel {
         private double nominalV;
         private double lowBound;
@@ -34,6 +38,8 @@ public class LimitReductionsByVoltageLevel {
     @Builder
     @Setter
     @Getter
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class LimitReduction {
         double reduction;
         LimitDuration limitDuration;
