@@ -10,7 +10,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.ws.commons.computation.dto.ReportInfos;
 import com.powsybl.ws.commons.computation.service.AbstractResultContext;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersWrapper;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersDTO;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
 
@@ -48,9 +48,9 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
         String receiver = (String) headers.get(HEADER_RECEIVER);
         String provider = (String) headers.get(HEADER_PROVIDER);
         String userId = (String) headers.get(HEADER_USER_ID);
-        SecurityAnalysisParametersWrapper parameters;
+        SecurityAnalysisParametersDTO parameters;
         try {
-            parameters = objectMapper.readValue(message.getPayload(), SecurityAnalysisParametersWrapper.class);
+            parameters = objectMapper.readValue(message.getPayload(), SecurityAnalysisParametersDTO.class);
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }

@@ -28,7 +28,7 @@ import com.powsybl.ws.commons.LogUtils;
 import com.powsybl.ws.commons.computation.service.*;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersWrapper;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
 import org.slf4j.Logger;
@@ -52,7 +52,7 @@ import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisServ
  * @author Franck Lecuyer <franck.lecuyer at rte-france.com>
  */
 @Service
-public class SecurityAnalysisWorkerService extends AbstractWorkerService<SecurityAnalysisResult, SecurityAnalysisRunContext, SecurityAnalysisParametersWrapper, SecurityAnalysisResultService> {
+public class SecurityAnalysisWorkerService extends AbstractWorkerService<SecurityAnalysisResult, SecurityAnalysisRunContext, SecurityAnalysisParametersDTO, SecurityAnalysisResultService> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisWorkerService.class);
     private final ActionsService actionsService;
 

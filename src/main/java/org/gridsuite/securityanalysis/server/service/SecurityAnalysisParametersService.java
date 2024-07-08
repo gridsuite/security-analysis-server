@@ -62,7 +62,7 @@ public class SecurityAnalysisParametersService {
             loadFlowParametersValues = loadFlowService.getLoadFlowParameters(runContextParametersInfos.getLoadFlowParametersUuid(), providerToUse);
         }
 
-        SecurityAnalysisParametersWrapper parameters = toSecurityAnalysisParameters(securityAnalysisParametersEntity.orElse(null));
+        SecurityAnalysisParametersDTO parameters = toSecurityAnalysisParameters(securityAnalysisParametersEntity.orElse(null));
         return new SecurityAnalysisRunContext(
                 networkUuid,
                 variantId,
@@ -75,7 +75,7 @@ public class SecurityAnalysisParametersService {
                 userId);
     }
 
-    public SecurityAnalysisParametersWrapper toSecurityAnalysisParameters(SecurityAnalysisParametersEntity entity) {
+    public SecurityAnalysisParametersDTO toSecurityAnalysisParameters(SecurityAnalysisParametersEntity entity) {
         SecurityAnalysisParameters securityAnalysisParameters;
         List<List<Double>> limitReductions = new ArrayList<>();
         if (entity == null) {
@@ -90,7 +90,7 @@ public class SecurityAnalysisParametersService {
         if (limitReductions.isEmpty()) {
             limitReductions = limitReductionService.getDefaultValues();
         }
-        return SecurityAnalysisParametersWrapper.builder().securityAnalysisParameters(securityAnalysisParameters).limitReductions(limitReductions).build();
+        return SecurityAnalysisParametersDTO.builder().securityAnalysisParameters(securityAnalysisParameters).limitReductions(limitReductions).build();
     }
 
     public static SecurityAnalysisParameters.IncreasedViolationsParameters getIncreasedViolationsParameters(double flowProportionalThreshold, double lowVoltageProportionalThreshold, double lowVoltageAbsoluteThreshold, double highVoltageProportionalThreshold, double highVoltageAbsoluteThreshold) {

@@ -6,7 +6,7 @@ import lombok.Builder;
 import java.util.List;
 
 @Builder
-public record SecurityAnalysisParametersWrapper(
+public record SecurityAnalysisParametersDTO(
         SecurityAnalysisParameters securityAnalysisParameters,
         List<List<Double>> limitReductions
 ) { }

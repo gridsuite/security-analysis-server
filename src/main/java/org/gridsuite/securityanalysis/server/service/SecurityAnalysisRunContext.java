@@ -16,7 +16,7 @@ import com.powsybl.ws.commons.computation.dto.ReportInfos;
 import com.powsybl.ws.commons.computation.service.AbstractComputationRunContext;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersValues;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersWrapper;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersDTO;
 
 import java.util.List;
 import java.util.Objects;
@@ -26,14 +26,14 @@ import java.util.UUID;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @Getter
-public class SecurityAnalysisRunContext extends AbstractComputationRunContext<SecurityAnalysisParametersWrapper> {
+public class SecurityAnalysisRunContext extends AbstractComputationRunContext<SecurityAnalysisParametersDTO> {
 
     private final List<String> contingencyListNames;
     @Setter
     private List<ContingencyInfos> contingencies;
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
-                                      String receiver, String provider, SecurityAnalysisParametersWrapper parameters, LoadFlowParametersValues loadFlowParametersValues,
+                                      String receiver, String provider, SecurityAnalysisParametersDTO parameters, LoadFlowParametersValues loadFlowParametersValues,
                                       ReportInfos reportContext, String userId) {
         this(
                 networkUuid,
@@ -48,15 +48,15 @@ public class SecurityAnalysisRunContext extends AbstractComputationRunContext<Se
     }
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
-                                      String receiver, String provider, SecurityAnalysisParametersWrapper parameters,
+                                      String receiver, String provider, SecurityAnalysisParametersDTO parameters,
                                       ReportInfos reportContext, String userId) {
         super(networkUuid, variantId, receiver, reportContext, userId, provider, parameters);
         this.contingencyListNames = Objects.requireNonNull(contingencyListNames);
     }
 
-    private static SecurityAnalysisParametersWrapper buildParameters(SecurityAnalysisParametersWrapper parameters,
-                                                              LoadFlowParametersValues loadFlowParametersValues,
-                                                              String provider) {
+    private static SecurityAnalysisParametersDTO buildParameters(SecurityAnalysisParametersDTO parameters,
+                                                                 LoadFlowParametersValues loadFlowParametersValues,
+                                                                 String provider) {
         Objects.requireNonNull(loadFlowParametersValues);
         if (loadFlowParametersValues.getCommonParameters() == null) {
             parameters.securityAnalysisParameters().setLoadFlowParameters(new LoadFlowParameters());
