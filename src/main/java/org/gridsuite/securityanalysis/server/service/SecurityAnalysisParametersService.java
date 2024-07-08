@@ -14,7 +14,6 @@ import org.gridsuite.securityanalysis.server.dto.RunContextParametersInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisParametersRepository;
-import org.gridsuite.securityanalysis.server.util.LimitReductionConfig;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -36,7 +35,7 @@ public class SecurityAnalysisParametersService {
 
     private final String defaultProvider;
 
-    private final LimitReductionConfig limitReductionConfig;
+    private final LimitReductionService limitReductionService;
 
     private static final double DEFAULT_FLOW_PROPORTIONAL_THRESHOLD = 0.1; // meaning 10.0 %
     private static final double DEFAULT_LOW_VOLTAGE_PROPORTIONAL_THRESHOLD = 0.01; // meaning 1.0 %
@@ -45,11 +44,11 @@ public class SecurityAnalysisParametersService {
     private static final double DEFAULT_HIGH_VOLTAGE_ABSOLUTE_THRESHOLD = 1.0; // 1.0 kV
 
     public SecurityAnalysisParametersService(SecurityAnalysisParametersRepository securityAnalysisParametersRepository, LoadFlowService loadFlowService,
-                                             @Value("${security-analysis.default-provider}") String defaultProvider, LimitReductionConfig limitReductionConfig) {
+                                             @Value("${security-analysis.default-provider}") String defaultProvider, LimitReductionService limitReductionService) {
         this.securityAnalysisParametersRepository = Objects.requireNonNull(securityAnalysisParametersRepository);
         this.loadFlowService = loadFlowService;
         this.defaultProvider = defaultProvider;
-        this.limitReductionConfig = limitReductionConfig;
+        this.limitReductionService = limitReductionService;
     }
 
     public SecurityAnalysisRunContext createRunContext(UUID networkUuid, String variantId, RunContextParametersInfos runContextParametersInfos,
@@ -69,7 +68,7 @@ public class SecurityAnalysisParametersService {
         SecurityAnalysisParameters parameters = toSecurityAnalysisParameters(securityAnalysisParametersEntity.orElse(null));
         List<List<Double>> limitReductions = securityAnalysisParametersEntity
                 .map(SecurityAnalysisParametersEntity::toLimitReductionsValues)
-                .orElse(limitReductionConfig.getDefaultValues());
+                .orElse(limitReductionService.getDefaultValues());
         return new SecurityAnalysisRunContext(
                 networkUuid,
                 variantId,
@@ -104,9 +103,9 @@ public class SecurityAnalysisParametersService {
         return increasedViolationsParameters;
     }
 
-    public static SecurityAnalysisParametersValues getDefaultSecurityAnalysisParametersValues(String provider, LimitReductionConfig limitReductionConfig) {
-        List<List<Double>> limitReductions = Optional.ofNullable(limitReductionConfig)
-                .map(LimitReductionConfig::getDefaultValues)
+    public static SecurityAnalysisParametersValues getDefaultSecurityAnalysisParametersValues(String provider, LimitReductionService limitReductionService) {
+        List<List<Double>> limitReductions = Optional.ofNullable(limitReductionService)
+                .map(LimitReductionService::getDefaultValues)
                 .orElseGet(Collections::emptyList);
         return SecurityAnalysisParametersValues.builder()
                 .provider(provider)
@@ -128,7 +127,7 @@ public class SecurityAnalysisParametersService {
     }
 
     public UUID createDefaultParameters() {
-        return securityAnalysisParametersRepository.save(getDefaultSecurityAnalysisParametersValues(defaultProvider, limitReductionConfig).toEntity()).getId();
+        return securityAnalysisParametersRepository.save(getDefaultSecurityAnalysisParametersValues(defaultProvider, limitReductionService).toEntity()).getId();
     }
 
     public Optional<UUID> duplicateParameters(UUID sourceParametersUuid) {
@@ -141,7 +140,7 @@ public class SecurityAnalysisParametersService {
         SecurityAnalysisParametersEntity securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(parametersUuid).orElseThrow(() -> new SecurityAnalysisException(PARAMETERS_NOT_FOUND));
         //if the parameters is null it means it's a reset to defaultValues but we need to keep the provider because it's updated separately
         if (parametersInfos == null) {
-            securityAnalysisParametersEntity.update(getDefaultSecurityAnalysisParametersValues(securityAnalysisParametersEntity.getProvider(), limitReductionConfig));
+            securityAnalysisParametersEntity.update(getDefaultSecurityAnalysisParametersValues(securityAnalysisParametersEntity.getProvider(), limitReductionService));
         } else {
             securityAnalysisParametersEntity.update(parametersInfos);
         }
@@ -160,8 +159,8 @@ public class SecurityAnalysisParametersService {
     }
 
     public Map<String, Object> getLimitReductionMetadata() {
-        List<LimitReductionsByVoltageLevel.VoltageLevel> voltageLevels = limitReductionConfig.getVoltageLevels();
-        List<LimitReductionsByVoltageLevel.LimitDuration> limitDurations = limitReductionConfig.getLimitDurations();
+        List<LimitReductionsByVoltageLevel.VoltageLevel> voltageLevels = limitReductionService.getVoltageLevels();
+        List<LimitReductionsByVoltageLevel.LimitDuration> limitDurations = limitReductionService.getLimitDurations();
 
         Map<String, Object> limitReductionMetadata = new HashMap<>();
         limitReductionMetadata.put("voltageLevels", voltageLevels);

@@ -12,7 +12,7 @@ import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValue
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisParametersRepository;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
-import org.gridsuite.securityanalysis.server.util.LimitReductionConfig;
+import org.gridsuite.securityanalysis.server.service.LimitReductionService;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.junit.Test;
@@ -60,49 +60,49 @@ public class SecurityAnalysisParametersControllerTest {
     private String defaultProvider;
 
     @Autowired
-    private LimitReductionConfig limitReductionConfig;
+    private LimitReductionService limitReductionService;
 
-    private final SecurityAnalysisParametersValues defaultSecurityAnalysisParametersValues = getDefaultSecurityAnalysisParametersValues(defaultProvider, limitReductionConfig);
+    private final SecurityAnalysisParametersValues defaultSecurityAnalysisParametersValues = getDefaultSecurityAnalysisParametersValues(defaultProvider, limitReductionService);
 
     @Test
     public void limitReductionConfigTest() {
-        List<LimitReductionsByVoltageLevel> limitReductions = limitReductionConfig.getDefaultLimitReductions();
+        List<LimitReductionsByVoltageLevel> limitReductions = limitReductionService.getDefaultLimitReductions();
         assertNotNull(limitReductions);
         assertFalse(limitReductions.isEmpty());
 
-        List<LimitReductionsByVoltageLevel.VoltageLevel> vls = limitReductionConfig.getVoltageLevels();
-        limitReductionConfig.setVoltageLevels(List.of());
-        assertEquals("No configuration for voltage levels", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
-        limitReductionConfig.setVoltageLevels(vls);
+        List<LimitReductionsByVoltageLevel.VoltageLevel> vls = limitReductionService.getVoltageLevels();
+        limitReductionService.setVoltageLevels(List.of());
+        assertEquals("No configuration for voltage levels", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.getDefaultLimitReductions()).getMessage());
+        limitReductionService.setVoltageLevels(vls);
 
-        List<LimitReductionsByVoltageLevel.LimitDuration> lrs = limitReductionConfig.getLimitDurations();
-        limitReductionConfig.setLimitDurations(List.of());
-        assertEquals("No configuration for limit durations", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
-        limitReductionConfig.setLimitDurations(lrs);
+        List<LimitReductionsByVoltageLevel.LimitDuration> lrs = limitReductionService.getLimitDurations();
+        limitReductionService.setLimitDurations(List.of());
+        assertEquals("No configuration for limit durations", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.getDefaultLimitReductions()).getMessage());
+        limitReductionService.setLimitDurations(lrs);
 
-        limitReductionConfig.setDefaultValues(List.of());
-        assertEquals("No values provided", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+        limitReductionService.setDefaultValues(List.of());
+        assertEquals("No values provided", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.getDefaultLimitReductions()).getMessage());
 
-        limitReductionConfig.setDefaultValues(List.of(List.of()));
-        assertEquals("No values provided", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+        limitReductionService.setDefaultValues(List.of(List.of()));
+        assertEquals("No values provided", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.getDefaultLimitReductions()).getMessage());
 
-        limitReductionConfig.setDefaultValues(List.of(List.of(1.0)));
-        assertEquals("Not enough values provided for voltage levels", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+        limitReductionService.setDefaultValues(List.of(List.of(1.0)));
+        assertEquals("Not enough values provided for voltage levels", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.getDefaultLimitReductions()).getMessage());
 
-        limitReductionConfig.setDefaultValues(List.of(List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0)));
-        assertEquals("Too many values provided for voltage levels", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+        limitReductionService.setDefaultValues(List.of(List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0)));
+        assertEquals("Too many values provided for voltage levels", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.getDefaultLimitReductions()).getMessage());
 
-        limitReductionConfig.setDefaultValues(List.of(List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0)));
-        assertEquals("Not enough values provided for limit durations", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+        limitReductionService.setDefaultValues(List.of(List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0)));
+        assertEquals("Not enough values provided for limit durations", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.getDefaultLimitReductions()).getMessage());
 
-        limitReductionConfig.setDefaultValues(List.of(List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0)));
-        assertEquals("Number of values for a voltage level is incorrect", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+        limitReductionService.setDefaultValues(List.of(List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0), List.of(1.0)));
+        assertEquals("Number of values for a voltage level is incorrect", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.getDefaultLimitReductions()).getMessage());
 
-        limitReductionConfig.setDefaultValues(List.of(List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0)));
-        assertEquals("Too many values provided for limit durations", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+        limitReductionService.setDefaultValues(List.of(List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0)));
+        assertEquals("Too many values provided for limit durations", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.getDefaultLimitReductions()).getMessage());
 
-        limitReductionConfig.setDefaultValues(List.of(List.of(2.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0)));
-        assertEquals("Value not between 0 and 1", assertThrows(SecurityAnalysisException.class, () -> limitReductionConfig.getDefaultLimitReductions()).getMessage());
+        limitReductionService.setDefaultValues(List.of(List.of(2.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0)));
+        assertEquals("Value not between 0 and 1", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.getDefaultLimitReductions()).getMessage());
     }
 
     @Test

@@ -77,7 +77,7 @@ public class SecurityAnalysisParametersEntity {
     }
 
     public List<List<Double>> toLimitReductionsValues() {
-        return this.limitReductions.stream().map(LimitReductionEntity::getValues).map(ArrayList::new).collect(Collectors.toList());
+        return this.limitReductions.stream().map(LimitReductionEntity::getReductions).map(ArrayList::new).collect(Collectors.toList());
     }
 
     public void update(@NonNull SecurityAnalysisParametersValues securityAnalysisParametersValues) {

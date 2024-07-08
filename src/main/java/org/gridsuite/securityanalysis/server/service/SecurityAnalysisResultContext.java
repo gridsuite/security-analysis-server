@@ -11,12 +11,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.ws.commons.computation.dto.ReportInfos;
 import com.powsybl.ws.commons.computation.service.AbstractResultContext;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisPayload;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
+import org.springframework.messaging.support.MessageBuilder;
 
 import java.io.UncheckedIOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static com.powsybl.ws.commons.computation.service.NotificationService.*;
 import static com.powsybl.ws.commons.computation.utils.MessageUtils.getNonNullHeader;
@@ -25,19 +26,34 @@ import static com.powsybl.ws.commons.computation.utils.MessageUtils.getNonNullHe
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 public class SecurityAnalysisResultContext extends AbstractResultContext<SecurityAnalysisRunContext> {
-    public static final String CONTINGENCY_LIST_NAMES_HEADER = "contingencyListNames";
-    public static final String LIMIT_REDUCTIONS_HEADER = "limitReductions";
 
     public SecurityAnalysisResultContext(UUID resultUuid, SecurityAnalysisRunContext runContext) {
         super(resultUuid, runContext);
     }
 
-    private static List<String> getHeaderList(MessageHeaders headers, String name) {
-        String header = (String) headers.get(name);
-        if (header == null || header.isEmpty()) {
-            return Collections.emptyList();
+    @Override
+    public Message<String> toMessage(ObjectMapper objectMapper) {
+        String payloadJson = "";
+        if (objectMapper != null) {
+            try {
+                SecurityAnalysisPayload payload = new SecurityAnalysisPayload(getRunContext().getParameters(), getRunContext().getLimitReductions(), getRunContext().getContingencyListNames());
+                payloadJson = objectMapper.writeValueAsString(payload);
+            } catch (JsonProcessingException e) {
+                throw new UncheckedIOException(e);
+            }
         }
-        return Arrays.asList(header.split(","));
+        return MessageBuilder.withPayload(payloadJson)
+                .setHeader(RESULT_UUID_HEADER, getResultUuid().toString())
+                .setHeader(NETWORK_UUID_HEADER, getRunContext().getNetworkUuid().toString())
+                .setHeader(VARIANT_ID_HEADER, getRunContext().getVariantId())
+                .setHeader(HEADER_RECEIVER, getRunContext().getReceiver())
+                .setHeader(HEADER_PROVIDER, getRunContext().getProvider())
+                .setHeader(HEADER_USER_ID, getRunContext().getUserId())
+                .setHeader(REPORT_UUID_HEADER, getRunContext().getReportInfos().reportUuid() != null ? getRunContext().getReportInfos().reportUuid().toString() : null)
+                .setHeader(REPORTER_ID_HEADER, getRunContext().getReportInfos().reporterId())
+                .setHeader(REPORT_TYPE_HEADER, getRunContext().getReportInfos().computationType())
+                .copyHeaders(getSpecificMsgHeaders(objectMapper))
+                .build();
     }
 
     public static SecurityAnalysisResultContext fromMessage(Message<String> message, ObjectMapper objectMapper) {
@@ -46,14 +62,17 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
         UUID resultUuid = UUID.fromString(getNonNullHeader(headers, HEADER_RESULT_UUID));
         UUID networkUuid = UUID.fromString(getNonNullHeader(headers, NETWORK_UUID_HEADER));
         String variantId = (String) headers.get(VARIANT_ID_HEADER);
-        List<String> contingencyListNames = getHeaderList(headers, CONTINGENCY_LIST_NAMES_HEADER);
         String receiver = (String) headers.get(HEADER_RECEIVER);
         String provider = (String) headers.get(HEADER_PROVIDER);
         String userId = (String) headers.get(HEADER_USER_ID);
-        List<List<Double>> limitReductions = getLimitReductionsFromHeader(headers, LIMIT_REDUCTIONS_HEADER);
+        List<List<Double>> limitReductions;
         SecurityAnalysisParameters parameters;
+        List<String> contingencyListNames;
         try {
-            parameters = objectMapper.readValue(message.getPayload(), SecurityAnalysisParameters.class);
+            SecurityAnalysisPayload payload = objectMapper.readValue(message.getPayload(), SecurityAnalysisPayload.class);
+            parameters = payload.parameters();
+            limitReductions = payload.limitReductions();
+            contingencyListNames = payload.contingencyListNames();
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }
@@ -74,31 +93,4 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
         return new SecurityAnalysisResultContext(resultUuid, runContext);
     }
 
-    private static List<List<Double>> getLimitReductionsFromHeader(MessageHeaders headers, String name) {
-        String header = (String) headers.get(name);
-        if (header == null || header.isEmpty()) {
-            return Collections.emptyList();
-        }
-
-        return Arrays.stream(header.split(";"))
-                .map(outer -> Arrays.stream(outer.split(","))
-                        .map(inner -> Double.parseDouble(inner.trim()))
-                        .collect(Collectors.toList()))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    protected Map<String, String> getSpecificMsgHeaders(ObjectMapper ignoredObjectMapper) {
-        return Map.of(
-                CONTINGENCY_LIST_NAMES_HEADER, String.join(",", getRunContext().getContingencyListNames()),
-                LIMIT_REDUCTIONS_HEADER, formatLimitReductionsToHeader(getRunContext().getLimitReductions()));
-    }
-
-    private static String formatLimitReductionsToHeader(List<List<Double>> limitReductions) {
-        return limitReductions.stream()
-                .map(innerList -> innerList.stream()
-                        .map(String::valueOf)
-                        .collect(Collectors.joining(",")))
-                .collect(Collectors.joining(";"));
-    }
 }
