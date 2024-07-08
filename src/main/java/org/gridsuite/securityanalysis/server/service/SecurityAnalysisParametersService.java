@@ -158,13 +158,7 @@ public class SecurityAnalysisParametersService {
             .updateProvider(provider != null ? provider : defaultProvider);
     }
 
-    public Map<String, Object> getLimitReductionMetadata() {
-        List<LimitReductionsByVoltageLevel.VoltageLevel> voltageLevels = limitReductionService.getVoltageLevels();
-        List<LimitReductionsByVoltageLevel.LimitDuration> limitDurations = limitReductionService.getLimitDurations();
-
-        Map<String, Object> limitReductionMetadata = new HashMap<>();
-        limitReductionMetadata.put("voltageLevels", voltageLevels);
-        limitReductionMetadata.put("limitDurations", limitDurations);
-        return limitReductionMetadata;
+    public List<LimitReductionsByVoltageLevel> getDefaultLimitReductions() {
+        return limitReductionService.getDefaultLimitReductions();
     }
 }
