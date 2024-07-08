@@ -8,10 +8,7 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.ws.commons.computation.dto.ReportInfos;
-import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
-import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersValues;
-import org.gridsuite.securityanalysis.server.dto.RunContextParametersInfos;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
+import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisParametersRepository;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
@@ -65,10 +62,7 @@ public class SecurityAnalysisParametersService {
             loadFlowParametersValues = loadFlowService.getLoadFlowParameters(runContextParametersInfos.getLoadFlowParametersUuid(), providerToUse);
         }
 
-        SecurityAnalysisParameters parameters = toSecurityAnalysisParameters(securityAnalysisParametersEntity.orElse(null));
-        List<List<Double>> limitReductions = securityAnalysisParametersEntity
-                .map(SecurityAnalysisParametersEntity::toLimitReductionsValues)
-                .orElse(limitReductionService.getDefaultValues());
+        SecurityAnalysisParametersWrapper parameters = toSecurityAnalysisParameters(securityAnalysisParametersEntity.orElse(null));
         return new SecurityAnalysisRunContext(
                 networkUuid,
                 variantId,
@@ -78,19 +72,25 @@ public class SecurityAnalysisParametersService {
                 parameters,
                 loadFlowParametersValues,
                 new ReportInfos(reportInfos.reportUuid(), reportInfos.reporterId(), reportInfos.computationType()),
-                userId,
-                limitReductions);
+                userId);
     }
 
-    public static SecurityAnalysisParameters toSecurityAnalysisParameters(SecurityAnalysisParametersEntity entity) {
+    public SecurityAnalysisParametersWrapper toSecurityAnalysisParameters(SecurityAnalysisParametersEntity entity) {
+        SecurityAnalysisParameters securityAnalysisParameters;
+        List<List<Double>> limitReductions = new ArrayList<>();
         if (entity == null) {
-            return SecurityAnalysisParameters.load()
+            securityAnalysisParameters = SecurityAnalysisParameters.load()
                     // the default values are overloaded
                     .setIncreasedViolationsParameters(getIncreasedViolationsParameters(DEFAULT_FLOW_PROPORTIONAL_THRESHOLD, DEFAULT_LOW_VOLTAGE_PROPORTIONAL_THRESHOLD, DEFAULT_LOW_VOLTAGE_ABSOLUTE_THRESHOLD, DEFAULT_HIGH_VOLTAGE_PROPORTIONAL_THRESHOLD, DEFAULT_HIGH_VOLTAGE_ABSOLUTE_THRESHOLD));
+        } else {
+            securityAnalysisParameters = new SecurityAnalysisParameters().setIncreasedViolationsParameters(getIncreasedViolationsParameters(entity.getFlowProportionalThreshold(), entity.getLowVoltageProportionalThreshold(), entity.getLowVoltageAbsoluteThreshold(), entity.getHighVoltageProportionalThreshold(), entity.getHighVoltageAbsoluteThreshold()));
+            limitReductions = entity.toLimitReductionsValues();
         }
-        SecurityAnalysisParameters securityAnalysisParameters = new SecurityAnalysisParameters();
-        securityAnalysisParameters.setIncreasedViolationsParameters(getIncreasedViolationsParameters(entity.getFlowProportionalThreshold(), entity.getLowVoltageProportionalThreshold(), entity.getLowVoltageAbsoluteThreshold(), entity.getHighVoltageProportionalThreshold(), entity.getHighVoltageAbsoluteThreshold()));
-        return securityAnalysisParameters;
+
+        if (limitReductions.isEmpty()) {
+            limitReductions = limitReductionService.getDefaultValues();
+        }
+        return SecurityAnalysisParametersWrapper.builder().securityAnalysisParameters(securityAnalysisParameters).limitReductions(limitReductions).build();
     }
 
     public static SecurityAnalysisParameters.IncreasedViolationsParameters getIncreasedViolationsParameters(double flowProportionalThreshold, double lowVoltageProportionalThreshold, double lowVoltageAbsoluteThreshold, double highVoltageProportionalThreshold, double highVoltageAbsoluteThreshold) {

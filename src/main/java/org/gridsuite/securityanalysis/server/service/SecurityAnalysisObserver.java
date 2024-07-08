@@ -8,19 +8,19 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.loadflow.LoadFlowResult;
-import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.security.SecurityAnalysisResult;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.ObservationRegistry;
 import lombok.NonNull;
 import com.powsybl.ws.commons.computation.service.AbstractComputationObserver;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersWrapper;
 import org.springframework.stereotype.Service;
 
 /**
 * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
 */
 @Service
-public class SecurityAnalysisObserver extends AbstractComputationObserver<SecurityAnalysisResult, SecurityAnalysisParameters> {
+public class SecurityAnalysisObserver extends AbstractComputationObserver<SecurityAnalysisResult, SecurityAnalysisParametersWrapper> {
 
     private static final String COMPUTATION_TYPE = "sa";
 

@@ -8,13 +8,11 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.powsybl.security.SecurityAnalysisParameters;
 import com.powsybl.ws.commons.computation.dto.ReportInfos;
 import com.powsybl.ws.commons.computation.service.AbstractResultContext;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisPayload;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersWrapper;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.support.MessageBuilder;
 
 import java.io.UncheckedIOException;
 import java.util.*;
@@ -26,34 +24,18 @@ import static com.powsybl.ws.commons.computation.utils.MessageUtils.getNonNullHe
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 public class SecurityAnalysisResultContext extends AbstractResultContext<SecurityAnalysisRunContext> {
+    public static final String CONTINGENCY_LIST_NAMES_HEADER = "contingencyListNames";
 
     public SecurityAnalysisResultContext(UUID resultUuid, SecurityAnalysisRunContext runContext) {
         super(resultUuid, runContext);
     }
 
-    @Override
-    public Message<String> toMessage(ObjectMapper objectMapper) {
-        String payloadJson = "";
-        if (objectMapper != null) {
-            try {
-                SecurityAnalysisPayload payload = new SecurityAnalysisPayload(getRunContext().getParameters(), getRunContext().getLimitReductions(), getRunContext().getContingencyListNames());
-                payloadJson = objectMapper.writeValueAsString(payload);
-            } catch (JsonProcessingException e) {
-                throw new UncheckedIOException(e);
-            }
+    private static List<String> getHeaderList(MessageHeaders headers, String name) {
+        String header = (String) headers.get(name);
+        if (header == null || header.isEmpty()) {
+            return Collections.emptyList();
         }
-        return MessageBuilder.withPayload(payloadJson)
-                .setHeader(RESULT_UUID_HEADER, getResultUuid().toString())
-                .setHeader(NETWORK_UUID_HEADER, getRunContext().getNetworkUuid().toString())
-                .setHeader(VARIANT_ID_HEADER, getRunContext().getVariantId())
-                .setHeader(HEADER_RECEIVER, getRunContext().getReceiver())
-                .setHeader(HEADER_PROVIDER, getRunContext().getProvider())
-                .setHeader(HEADER_USER_ID, getRunContext().getUserId())
-                .setHeader(REPORT_UUID_HEADER, getRunContext().getReportInfos().reportUuid() != null ? getRunContext().getReportInfos().reportUuid().toString() : null)
-                .setHeader(REPORTER_ID_HEADER, getRunContext().getReportInfos().reporterId())
-                .setHeader(REPORT_TYPE_HEADER, getRunContext().getReportInfos().computationType())
-                .copyHeaders(getSpecificMsgHeaders(objectMapper))
-                .build();
+        return Arrays.asList(header.split(","));
     }
 
     public static SecurityAnalysisResultContext fromMessage(Message<String> message, ObjectMapper objectMapper) {
@@ -62,17 +44,13 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
         UUID resultUuid = UUID.fromString(getNonNullHeader(headers, HEADER_RESULT_UUID));
         UUID networkUuid = UUID.fromString(getNonNullHeader(headers, NETWORK_UUID_HEADER));
         String variantId = (String) headers.get(VARIANT_ID_HEADER);
+        List<String> contingencyListNames = getHeaderList(headers, CONTINGENCY_LIST_NAMES_HEADER);
         String receiver = (String) headers.get(HEADER_RECEIVER);
         String provider = (String) headers.get(HEADER_PROVIDER);
         String userId = (String) headers.get(HEADER_USER_ID);
-        List<List<Double>> limitReductions;
-        SecurityAnalysisParameters parameters;
-        List<String> contingencyListNames;
+        SecurityAnalysisParametersWrapper parameters;
         try {
-            SecurityAnalysisPayload payload = objectMapper.readValue(message.getPayload(), SecurityAnalysisPayload.class);
-            parameters = payload.parameters();
-            limitReductions = payload.limitReductions();
-            contingencyListNames = payload.contingencyListNames();
+            parameters = objectMapper.readValue(message.getPayload(), SecurityAnalysisParametersWrapper.class);
         } catch (JsonProcessingException e) {
             throw new UncheckedIOException(e);
         }
@@ -87,10 +65,14 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
                 provider,
                 parameters,
                 new ReportInfos(reportUuid, reporterId, reportType),
-                userId,
-                limitReductions
+                userId
         );
         return new SecurityAnalysisResultContext(resultUuid, runContext);
     }
 
+    @Override
+    protected Map<String, String> getSpecificMsgHeaders(ObjectMapper ignoredObjectMapper) {
+        return Map.of(
+                CONTINGENCY_LIST_NAMES_HEADER, String.join(",", getRunContext().getContingencyListNames()));
+    }
 }

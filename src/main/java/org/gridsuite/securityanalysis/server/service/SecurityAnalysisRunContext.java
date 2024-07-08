@@ -10,13 +10,13 @@ import com.powsybl.commons.PowsyblException;
 import com.powsybl.commons.extensions.Extension;
 import com.powsybl.loadflow.LoadFlowParameters;
 import com.powsybl.loadflow.LoadFlowProvider;
-import com.powsybl.security.SecurityAnalysisParameters;
 import lombok.Getter;
 import lombok.Setter;
 import com.powsybl.ws.commons.computation.dto.ReportInfos;
 import com.powsybl.ws.commons.computation.service.AbstractComputationRunContext;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.LoadFlowParametersValues;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersWrapper;
 
 import java.util.List;
 import java.util.Objects;
@@ -26,17 +26,15 @@ import java.util.UUID;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @Getter
-public class SecurityAnalysisRunContext extends AbstractComputationRunContext<SecurityAnalysisParameters> {
+public class SecurityAnalysisRunContext extends AbstractComputationRunContext<SecurityAnalysisParametersWrapper> {
 
     private final List<String> contingencyListNames;
     @Setter
     private List<ContingencyInfos> contingencies;
 
-    private final List<List<Double>> limitReductions;
-
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
-                                      String receiver, String provider, SecurityAnalysisParameters parameters, LoadFlowParametersValues loadFlowParametersValues,
-                                      ReportInfos reportContext, String userId, List<List<Double>> limitReductions) {
+                                      String receiver, String provider, SecurityAnalysisParametersWrapper parameters, LoadFlowParametersValues loadFlowParametersValues,
+                                      ReportInfos reportContext, String userId) {
         this(
                 networkUuid,
                 variantId,
@@ -45,38 +43,36 @@ public class SecurityAnalysisRunContext extends AbstractComputationRunContext<Se
                 provider,
                 buildParameters(parameters, loadFlowParametersValues, provider),
                 new ReportInfos(reportContext.reportUuid(), reportContext.reporterId(), reportContext.computationType()),
-                userId,
-                limitReductions
+                userId
         );
     }
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
-                                      String receiver, String provider, SecurityAnalysisParameters parameters,
-                                      ReportInfos reportContext, String userId, List<List<Double>> limitReductions) {
+                                      String receiver, String provider, SecurityAnalysisParametersWrapper parameters,
+                                      ReportInfos reportContext, String userId) {
         super(networkUuid, variantId, receiver, reportContext, userId, provider, parameters);
         this.contingencyListNames = Objects.requireNonNull(contingencyListNames);
-        this.limitReductions = limitReductions;
     }
 
-    private static SecurityAnalysisParameters buildParameters(SecurityAnalysisParameters securityAnalysisParameters,
+    private static SecurityAnalysisParametersWrapper buildParameters(SecurityAnalysisParametersWrapper parameters,
                                                               LoadFlowParametersValues loadFlowParametersValues,
                                                               String provider) {
         Objects.requireNonNull(loadFlowParametersValues);
         if (loadFlowParametersValues.getCommonParameters() == null) {
-            securityAnalysisParameters.setLoadFlowParameters(new LoadFlowParameters());
+            parameters.securityAnalysisParameters().setLoadFlowParameters(new LoadFlowParameters());
         } else {
-            securityAnalysisParameters.setLoadFlowParameters(loadFlowParametersValues.getCommonParameters());
+            parameters.securityAnalysisParameters().setLoadFlowParameters(loadFlowParametersValues.getCommonParameters());
         }
 
         if (loadFlowParametersValues.getSpecificParameters() == null || loadFlowParametersValues.getSpecificParameters().isEmpty()) {
-            return securityAnalysisParameters; // no specific LF params
+            return parameters; // no specific LF params
         }
         LoadFlowProvider lfProvider = LoadFlowProvider.findAll().stream()
                 .filter(p -> p.getName().equals(provider))
                 .findFirst().orElseThrow(() -> new PowsyblException("Security analysis provider not found " + provider));
         Extension<LoadFlowParameters> extension = lfProvider.loadSpecificParameters(loadFlowParametersValues.getSpecificParameters())
                 .orElseThrow(() -> new PowsyblException("Cannot add specific loadflow parameters with security analysis provider " + provider));
-        securityAnalysisParameters.getLoadFlowParameters().addExtension((Class) extension.getClass(), extension);
-        return securityAnalysisParameters;
+        parameters.securityAnalysisParameters().getLoadFlowParameters().addExtension((Class) extension.getClass(), extension);
+        return parameters;
     }
 }
