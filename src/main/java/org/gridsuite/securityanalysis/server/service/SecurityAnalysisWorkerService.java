@@ -156,10 +156,9 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         LOGGER.info("Run security analysis on contingency lists: {}", runContext.getContingencyListNames().stream().map(LogUtils::sanitizeParam).toList());
 
         List<ContingencyInfos> contingencies = observer.observe("contingencies.fetch", runContext,
-                () -> runContext.getContingencyListNames()
-                        .stream()
-                        .flatMap(contingencyListName -> actionsService.getContingencyList(contingencyListName, runContext.getNetworkUuid(), runContext.getVariantId()).stream())
-                        .toList());
+                () ->
+                    actionsService.getContingencyList(runContext.getContingencyListNames(), runContext.getNetworkUuid(), runContext.getVariantId())
+                );
 
         runContext.setContingencies(contingencies);
     }
