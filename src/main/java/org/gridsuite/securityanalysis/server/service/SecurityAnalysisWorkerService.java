@@ -15,7 +15,6 @@ import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.security.*;
-import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.ws.commons.LogUtils;
 import com.powsybl.ws.commons.computation.service.*;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
@@ -28,7 +27,6 @@ import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -69,7 +67,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
             Network network = getNetwork(runContext.getNetworkUuid(),
                     runContext.getVariantId());
             runContext.setNetwork(network);
-            return run(runContext, null);
+            AtomicReference<ReportNode> rootReporter = new AtomicReference<>();
+            return run(runContext, null, rootReporter);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;
@@ -94,20 +93,17 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 .filter(Objects::nonNull)
                 .toList();
 
+        SecurityAnalysisRunParameters runParameters = new SecurityAnalysisRunParameters()
+            .setSecurityAnalysisParameters(runContext.getParameters())
+            .setComputationManager(executionService.getComputationManager())
+            .setFilter(LimitViolationFilter.load())
+            .setReportNode(runContext.getReportNode());
+
         return securityAnalysisRunner.runAsync(
                         runContext.getNetwork(),
                         variantId,
                         n -> contingencies,
-                        runContext.getParameters(),
-                        executionService.getComputationManager(),
-                        LimitViolationFilter.load(),
-                        new DefaultLimitViolationDetector(),
-                        Collections.emptyList(),
-                        Collections.emptyList(),
-                        Collections.emptyList(),
-                        Collections.emptyList(),
-                        Collections.emptyList(),
-                        runContext.getReportNode())
+                        runParameters)
                 .thenApply(SecurityAnalysisReport::getResult);
     }
 
