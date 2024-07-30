@@ -132,7 +132,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
             limitReduction.getTemporaryLimitReductions().forEach(temporaryLimitReduction -> {
                 LimitDurationCriterion limitDurationCriterion;
                 LimitReductionsByVoltageLevel.LimitDuration limitDuration = temporaryLimitReduction.getLimitDuration();
-                if (temporaryLimitReduction.getLimitDuration().getHighBound() != null) {
+                if (limitDuration.getHighBound() != null) {
                     limitDurationCriterion = IntervalTemporaryDurationCriterion.between(limitDuration.getLowBound(), limitDuration.getHighBound(), limitDuration.isLowClosed(), limitDuration.isHighClosed());
                 } else {
                     limitDurationCriterion = IntervalTemporaryDurationCriterion.greaterThan(limitDuration.getLowBound(), limitDuration.isLowClosed());

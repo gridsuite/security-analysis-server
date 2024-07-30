@@ -6,9 +6,14 @@
  */
 package org.gridsuite.securityanalysis.server.dto;
 
-import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,13 +36,19 @@ public class SecurityAnalysisParametersValues {
 
     private double flowProportionalThreshold;
 
-     // Only to set/get values from db
-    private List<List<Double>> limitReductionsValues;
-
-    @Setter
     private List<LimitReductionsByVoltageLevel> limitReductions;
 
     public SecurityAnalysisParametersEntity toEntity() {
         return new SecurityAnalysisParametersEntity(this);
+    }
+
+    @JsonIgnore
+    public List<List<Double>> getLimitReductionsValues() {
+        return limitReductions.stream().map(reductionsByVL -> {
+            List<Double> values = new ArrayList<>(reductionsByVL.getTemporaryLimitReductions().size() + 1);
+            values.add(reductionsByVL.getPermanentLimitReduction());
+            reductionsByVL.getTemporaryLimitReductions().forEach(l -> values.add(l.getReduction()));
+            return values;
+        }).toList();
     }
 }

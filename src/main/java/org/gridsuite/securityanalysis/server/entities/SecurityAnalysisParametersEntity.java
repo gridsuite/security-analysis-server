@@ -10,7 +10,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -63,18 +65,6 @@ public class SecurityAnalysisParametersEntity {
     @JoinColumn(name = "security_analysis_parameters_id", foreignKey = @ForeignKey(name = "securityAnalysisParametersEntity_limitReductions_fk"))
     @OrderColumn(name = "index")
     private List<LimitReductionEntity> limitReductions;
-
-    public SecurityAnalysisParametersValues toSecurityAnalysisParametersValues() {
-        return SecurityAnalysisParametersValues.builder()
-                .provider(this.provider)
-                .flowProportionalThreshold(this.flowProportionalThreshold)
-                .highVoltageAbsoluteThreshold(this.highVoltageAbsoluteThreshold)
-                .highVoltageProportionalThreshold(this.highVoltageProportionalThreshold)
-                .lowVoltageAbsoluteThreshold(this.lowVoltageAbsoluteThreshold)
-                .lowVoltageProportionalThreshold(this.lowVoltageProportionalThreshold)
-                .limitReductionsValues(toLimitReductionsValues())
-                .build();
-    }
 
     public List<List<Double>> toLimitReductionsValues() {
         return this.limitReductions.stream().map(LimitReductionEntity::getReductions).map(ArrayList::new).collect(Collectors.toList());

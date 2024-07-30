@@ -11,6 +11,7 @@ import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisParametersRepository;
+import org.gridsuite.securityanalysis.server.service.SecurityAnalysisParametersService;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.gridsuite.securityanalysis.server.service.LimitReductionService;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
@@ -30,7 +31,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
-import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisParametersService.getDefaultSecurityAnalysisParametersValues;
 import static org.gridsuite.securityanalysis.server.util.SecurityAnalysisException.Type.PARAMETERS_NOT_FOUND;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.*;
@@ -60,9 +60,10 @@ public class SecurityAnalysisParametersControllerTest {
     private String defaultProvider;
 
     @Autowired
-    private LimitReductionService limitReductionService;
+    private SecurityAnalysisParametersService securityAnalysisParametersService;
 
-    private final SecurityAnalysisParametersValues defaultSecurityAnalysisParametersValues = getDefaultSecurityAnalysisParametersValues(defaultProvider, limitReductionService);
+    @Autowired
+    private LimitReductionService limitReductionService;
 
     @Test
     public void limitReductionConfigTest() {
@@ -118,7 +119,6 @@ public class SecurityAnalysisParametersControllerTest {
                 .highVoltageAbsoluteThreshold(12)
                 .highVoltageProportionalThreshold(13)
                 .flowProportionalThreshold(14)
-                .limitReductionsValues(limitReductions)
                 .limitReductions(limitReductionService.createLimitReductions(limitReductions))
                 .build();
 
@@ -174,6 +174,9 @@ public class SecurityAnalysisParametersControllerTest {
         UUID createdParametersUuid = objectMapper.readValue(resultAsString, UUID.class);
 
         assertNotNull(createdParametersUuid);
+
+        SecurityAnalysisParametersValues defaultSecurityAnalysisParametersValues = securityAnalysisParametersService.getDefaultSecurityAnalysisParametersValues(defaultProvider);
+
         assertSecurityAnalysisParametersEntityAreEquals(createdParametersUuid,
                 defaultSecurityAnalysisParametersValues.getLowVoltageAbsoluteThreshold(),
                 defaultSecurityAnalysisParametersValues.getLowVoltageProportionalThreshold(),
@@ -189,7 +192,7 @@ public class SecurityAnalysisParametersControllerTest {
                 .highVoltageAbsoluteThreshold(12)
                 .highVoltageProportionalThreshold(13)
                 .flowProportionalThreshold(14)
-                .limitReductionsValues(limitReductions)
+                .limitReductions(limitReductionService.createLimitReductions(limitReductions))
                 .build();
 
         mvcResult = mockMvc.perform(put("/" + VERSION + "/parameters/" + createdParametersUuid)
@@ -248,7 +251,7 @@ public class SecurityAnalysisParametersControllerTest {
                 .highVoltageAbsoluteThreshold(12)
                 .highVoltageProportionalThreshold(13)
                 .flowProportionalThreshold(14)
-                .limitReductionsValues(limitReductions)
+                .limitReductions(limitReductionService.createLimitReductions(limitReductions))
                 .build();
 
         mvcResult = mockMvc.perform(post("/" + VERSION + "/parameters")
@@ -297,7 +300,7 @@ public class SecurityAnalysisParametersControllerTest {
                 .highVoltageAbsoluteThreshold(12)
                 .highVoltageProportionalThreshold(13)
                 .flowProportionalThreshold(14)
-                .limitReductionsValues(limitReductions)
+                .limitReductions(limitReductionService.createLimitReductions(limitReductions))
                 .build();
 
         mvcResult = mockMvc.perform(post("/" + VERSION + "/parameters")
