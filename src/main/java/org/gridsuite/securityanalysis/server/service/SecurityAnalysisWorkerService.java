@@ -22,7 +22,6 @@ import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.security.*;
-import com.powsybl.security.detectors.DefaultLimitViolationDetector;
 import com.powsybl.security.limitreduction.LimitReduction;
 import com.powsybl.ws.commons.LogUtils;
 import com.powsybl.ws.commons.computation.service.*;
@@ -38,7 +37,10 @@ import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -79,7 +81,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
             Network network = getNetwork(runContext.getNetworkUuid(),
                     runContext.getVariantId());
             runContext.setNetwork(network);
-            return run(runContext, null);
+            AtomicReference<ReportNode> rootReporter = new AtomicReference<>();
+            return run(runContext, null, rootReporter);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return null;
@@ -105,20 +108,18 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 .toList();
         List<LimitReduction> limitReductions = createLimitReductions(runContext);
 
+        SecurityAnalysisRunParameters runParameters = new SecurityAnalysisRunParameters()
+                .setSecurityAnalysisParameters(runContext.getParameters().securityAnalysisParameters())
+                .setComputationManager(executionService.getComputationManager())
+                .setFilter(LimitViolationFilter.load())
+                .setLimitReductions(limitReductions)
+                .setReportNode(runContext.getReportNode());
+
         return securityAnalysisRunner.runAsync(
                         runContext.getNetwork(),
                         variantId,
                         n -> contingencies,
-                        runContext.getParameters().securityAnalysisParameters(),
-                        executionService.getComputationManager(),
-                        LimitViolationFilter.load(),
-                        new DefaultLimitViolationDetector(),
-                        Collections.emptyList(),
-                        Collections.emptyList(),
-                        Collections.emptyList(),
-                        Collections.emptyList(),
-                        limitReductions,
-                        runContext.getReportNode())
+                        runParameters)
                 .thenApply(SecurityAnalysisReport::getResult);
     }
 
