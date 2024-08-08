@@ -11,9 +11,9 @@ import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisParametersRepository;
+import org.gridsuite.securityanalysis.server.service.LimitReductionService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisParametersService;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
-import org.gridsuite.securityanalysis.server.service.LimitReductionService;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.junit.Test;
@@ -108,48 +108,69 @@ public class SecurityAnalysisParametersControllerTest {
 
     @Test
     public void securityAnalysisParametersCreateAndGetTest() throws Exception {
-        MvcResult mvcResult;
-        String resultAsString;
-
-        // create parameters
+        // Create parameters
         List<List<Double>> limitReductions = List.of(List.of(1.0, 0.9, 0.8, 0.7), List.of(1.0, 0.9, 0.8, 0.7));
-        SecurityAnalysisParametersValues securityAnalysisParametersValues1 = SecurityAnalysisParametersValues.builder()
+        SecurityAnalysisParametersValues.SecurityAnalysisParametersValuesBuilder builder = SecurityAnalysisParametersValues.builder()
                 .lowVoltageAbsoluteThreshold(10)
                 .lowVoltageProportionalThreshold(11)
                 .highVoltageAbsoluteThreshold(12)
                 .highVoltageProportionalThreshold(13)
-                .flowProportionalThreshold(14)
-                .limitReductions(limitReductionService.createLimitReductions(limitReductions))
-                .build();
+                .flowProportionalThreshold(14);
 
-        mvcResult = mockMvc.perform(post("/" + VERSION + "/parameters")
-                        .content(objectMapper.writeValueAsString(securityAnalysisParametersValues1))
+        // Get no limits with no provider
+        testParametersCreateAndGetTest(builder.build());
+
+        // Get no limits with a provider other than 'OpenLoadFlow'
+        testParametersCreateAndGetTest(builder.provider("provider").build());
+        testParametersCreateAndGetTest(builder
+                .provider("provider")
+                .limitReductions(limitReductionService.createLimitReductions(limitReductions))
+                .build(), builder.provider("provider").limitReductions(null).build());
+
+        // Get default limits with 'OpenLoadFlow' provider
+        String provider = "OpenLoadFlow";
+        testParametersCreateAndGetTest(builder.provider(provider).limitReductions(null).build(), builder
+                .provider(provider)
+                .limitReductions(limitReductionService.createDefaultLimitReductions())
+                .build());
+
+        // Get limits with 'OpenLoadFlow' provider
+        testParametersCreateAndGetTest(builder
+                .provider(provider)
+                .limitReductions(limitReductionService.createLimitReductions(limitReductions))
+                .build());
+
+        // Get not existing parameters and expect 404
+        mockMvc.perform(get("/" + VERSION + "/parameters/" + UUID.randomUUID()))
+                .andExpect(status().isNotFound());
+    }
+
+    private void testParametersCreateAndGetTest(SecurityAnalysisParametersValues parametersToCreate) throws Exception {
+        testParametersCreateAndGetTest(parametersToCreate, parametersToCreate);
+    }
+
+    private void testParametersCreateAndGetTest(SecurityAnalysisParametersValues parametersToCreate, SecurityAnalysisParametersValues parametersExpected) throws Exception {
+        MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/parameters")
+                        .content(objectMapper.writeValueAsString(parametersToCreate))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON)
                 ).andReturn();
 
-        resultAsString = mvcResult.getResponse().getContentAsString();
-        UUID createdParametersUuid = objectMapper.readValue(resultAsString, UUID.class);
+        UUID createdParametersUuid = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), UUID.class);
 
         assertNotNull(createdParametersUuid);
         assertSecurityAnalysisParametersEntityAreEquals(createdParametersUuid, 10, 11, 12, 13, 14);
 
-        //get the created parameters
+        // Get the created parameters
         mvcResult = mockMvc.perform(get("/" + VERSION + "/parameters/" + createdParametersUuid))
                 .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON)
                 ).andReturn();
 
-        resultAsString = mvcResult.getResponse().getContentAsString();
-        SecurityAnalysisParametersValues securityAnalysisParametersValues = objectMapper.readValue(resultAsString, SecurityAnalysisParametersValues.class);
-        assertThat(securityAnalysisParametersValues1, new MatcherJson<>(objectMapper, securityAnalysisParametersValues));
-
-        //get not existing parameters and expect 404
-        mockMvc.perform(get("/" + VERSION + "/parameters/" + UUID.randomUUID()))
-                .andExpect(status().isNotFound());
+        assertThat(objectMapper.readValue(mvcResult.getResponse().getContentAsString(), SecurityAnalysisParametersValues.class), new MatcherJson<>(objectMapper, parametersExpected));
     }
 
     @Test

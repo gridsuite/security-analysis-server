@@ -9,6 +9,7 @@ package org.gridsuite.securityanalysis.server.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
+import org.springframework.lang.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,14 +29,7 @@ import java.util.stream.Collectors;
 public class SecurityAnalysisParametersEntity {
 
     public SecurityAnalysisParametersEntity(SecurityAnalysisParametersValues securityAnalysisParametersValues) {
-        this(null,
-                securityAnalysisParametersValues.getProvider(),
-                securityAnalysisParametersValues.getLowVoltageAbsoluteThreshold(),
-                securityAnalysisParametersValues.getLowVoltageProportionalThreshold(),
-                securityAnalysisParametersValues.getHighVoltageAbsoluteThreshold(),
-                securityAnalysisParametersValues.getHighVoltageProportionalThreshold(),
-                securityAnalysisParametersValues.getFlowProportionalThreshold(),
-                securityAnalysisParametersValues.getLimitReductionsValues().stream().map(LimitReductionEntity::new).toList());
+        assignAttributes(securityAnalysisParametersValues);
     }
 
     @Id
@@ -71,18 +65,30 @@ public class SecurityAnalysisParametersEntity {
     }
 
     public void update(@NonNull SecurityAnalysisParametersValues securityAnalysisParametersValues) {
-        updateProvider(securityAnalysisParametersValues.getProvider());
+        assignAttributes(securityAnalysisParametersValues);
+    }
+
+    private void assignAttributes(SecurityAnalysisParametersValues securityAnalysisParametersValues) {
+        this.provider = securityAnalysisParametersValues.getProvider();
         this.flowProportionalThreshold = securityAnalysisParametersValues.getFlowProportionalThreshold();
         this.highVoltageAbsoluteThreshold = securityAnalysisParametersValues.getHighVoltageAbsoluteThreshold();
         this.highVoltageProportionalThreshold = securityAnalysisParametersValues.getHighVoltageProportionalThreshold();
         this.lowVoltageAbsoluteThreshold = securityAnalysisParametersValues.getLowVoltageAbsoluteThreshold();
         this.lowVoltageProportionalThreshold = securityAnalysisParametersValues.getLowVoltageProportionalThreshold();
-        updateLimitReductions(securityAnalysisParametersValues.getLimitReductionsValues());
+        assignLimitReductions(securityAnalysisParametersValues.getLimitReductionsValues());
     }
 
-    private void updateLimitReductions(List<List<Double>> values) {
-        this.limitReductions.clear();
-        this.limitReductions.addAll(values.stream().map(LimitReductionEntity::new).toList());
+    private void assignLimitReductions(@Nullable List<List<Double>> values) {
+        if (values == null) {
+            return;
+        }
+        List<LimitReductionEntity> entities = values.stream().map(LimitReductionEntity::new).toList();
+        if (limitReductions == null) {
+            limitReductions = entities;
+        } else {
+            limitReductions.clear();
+            limitReductions.addAll(entities);
+        }
     }
 
     public void updateProvider(String provider) {

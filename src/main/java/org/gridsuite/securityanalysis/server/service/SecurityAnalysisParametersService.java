@@ -95,7 +95,6 @@ public class SecurityAnalysisParametersService {
     }
 
     public SecurityAnalysisParametersValues toSecurityAnalysisParametersValues(SecurityAnalysisParametersEntity entity) {
-        List<List<Double>> limitReductionsValues = entity.toLimitReductionsValues();
         return SecurityAnalysisParametersValues.builder()
                 .provider(entity.getProvider())
                 .flowProportionalThreshold(entity.getFlowProportionalThreshold())
@@ -103,8 +102,17 @@ public class SecurityAnalysisParametersService {
                 .highVoltageProportionalThreshold(entity.getHighVoltageProportionalThreshold())
                 .lowVoltageAbsoluteThreshold(entity.getLowVoltageAbsoluteThreshold())
                 .lowVoltageProportionalThreshold(entity.getLowVoltageProportionalThreshold())
-                .limitReductions(limitReductionsValues.isEmpty() ? limitReductionService.createDefaultLimitReductions() : limitReductionService.createLimitReductions(limitReductionsValues))
+                .limitReductions(getLimitReductionsForProvider(entity).orElse(null))
                 .build();
+    }
+
+    private Optional<List<LimitReductionsByVoltageLevel>> getLimitReductionsForProvider(SecurityAnalysisParametersEntity entity) {
+        // Only for some providers
+        if (!limitReductionService.getProviders().contains(entity.getProvider())) {
+            return Optional.empty();
+        }
+        List<List<Double>> limitReductionsValues = entity.toLimitReductionsValues();
+        return Optional.of(limitReductionsValues.isEmpty() ? limitReductionService.createDefaultLimitReductions() : limitReductionService.createLimitReductions(limitReductionsValues));
     }
 
     public static SecurityAnalysisParameters.IncreasedViolationsParameters getIncreasedViolationsParameters(double flowProportionalThreshold, double lowVoltageProportionalThreshold, double lowVoltageAbsoluteThreshold, double highVoltageProportionalThreshold, double highVoltageAbsoluteThreshold) {
