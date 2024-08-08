@@ -10,14 +10,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.report.ReportNode;
 import com.powsybl.commons.report.TypedValue;
 import com.powsybl.contingency.Contingency;
+import com.powsybl.iidm.criteria.AtLeastOneNominalVoltageCriterion;
+import com.powsybl.iidm.criteria.IdentifiableCriterion;
+import com.powsybl.iidm.criteria.VoltageInterval;
+import com.powsybl.iidm.criteria.duration.IntervalTemporaryDurationCriterion;
+import com.powsybl.iidm.criteria.duration.LimitDurationCriterion;
+import com.powsybl.iidm.criteria.duration.PermanentDurationCriterion;
+import com.powsybl.iidm.network.LimitType;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.security.*;
+import com.powsybl.security.limitreduction.LimitReduction;
 import com.powsybl.ws.commons.LogUtils;
 import com.powsybl.ws.commons.computation.service.*;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
+import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
 import org.slf4j.Logger;
@@ -27,6 +37,7 @@ import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -43,19 +54,22 @@ import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisServ
  * @author Franck Lecuyer <franck.lecuyer at rte-france.com>
  */
 @Service
-public class SecurityAnalysisWorkerService extends AbstractWorkerService<SecurityAnalysisResult, SecurityAnalysisRunContext, SecurityAnalysisParameters, SecurityAnalysisResultService> {
+public class SecurityAnalysisWorkerService extends AbstractWorkerService<SecurityAnalysisResult, SecurityAnalysisRunContext, SecurityAnalysisParametersDTO, SecurityAnalysisResultService> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisWorkerService.class);
     private final ActionsService actionsService;
+
+    private final LimitReductionService limitReductionService;
 
     private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier;
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService, ReportService reportService,
                                          SecurityAnalysisResultService resultService, ObjectMapper objectMapper,
                                          SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, NotificationService notificationService, ExecutionService executionService,
-                                         SecurityAnalysisObserver observer) {
+                                         SecurityAnalysisObserver observer, LimitReductionService limitReductionService) {
         super(networkStoreService, notificationService, reportService, resultService, executionService, observer, objectMapper);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
+        this.limitReductionService = limitReductionService;
     }
 
     public void setSecurityAnalysisFactorySupplier(Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier) {
@@ -92,12 +106,14 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 .map(ContingencyInfos::getContingency)
                 .filter(Objects::nonNull)
                 .toList();
+        List<LimitReduction> limitReductions = createLimitReductions(runContext);
 
         SecurityAnalysisRunParameters runParameters = new SecurityAnalysisRunParameters()
-            .setSecurityAnalysisParameters(runContext.getParameters())
-            .setComputationManager(executionService.getComputationManager())
-            .setFilter(LimitViolationFilter.load())
-            .setReportNode(runContext.getReportNode());
+                .setSecurityAnalysisParameters(runContext.getParameters().securityAnalysisParameters())
+                .setComputationManager(executionService.getComputationManager())
+                .setFilter(LimitViolationFilter.load())
+                .setLimitReductions(limitReductions)
+                .setReportNode(runContext.getReportNode());
 
         return securityAnalysisRunner.runAsync(
                         runContext.getNetwork(),
@@ -105,6 +121,35 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                         n -> contingencies,
                         runParameters)
                 .thenApply(SecurityAnalysisReport::getResult);
+    }
+
+    private List<LimitReduction> createLimitReductions(SecurityAnalysisRunContext runContext) {
+        List<LimitReduction> limitReductions = new ArrayList<>(limitReductionService.getVoltageLevels().size() * limitReductionService.getLimitDurations().size());
+
+        limitReductionService.createLimitReductions(runContext.getParameters().limitReductions()).forEach(limitReduction -> {
+            LimitReductionsByVoltageLevel.VoltageLevel voltageLevel = limitReduction.getVoltageLevel();
+            IdentifiableCriterion voltageLevelCriterion = new IdentifiableCriterion(new AtLeastOneNominalVoltageCriterion(VoltageInterval.between(voltageLevel.getLowBound(), voltageLevel.getHighBound(), false, true)));
+            limitReductions.add(createLimitReduction(voltageLevelCriterion, new PermanentDurationCriterion(), limitReduction.getPermanentLimitReduction()));
+            limitReduction.getTemporaryLimitReductions().forEach(temporaryLimitReduction -> {
+                LimitDurationCriterion limitDurationCriterion;
+                LimitReductionsByVoltageLevel.LimitDuration limitDuration = temporaryLimitReduction.getLimitDuration();
+                if (limitDuration.getHighBound() != null) {
+                    limitDurationCriterion = IntervalTemporaryDurationCriterion.between(limitDuration.getLowBound(), limitDuration.getHighBound(), limitDuration.isLowClosed(), limitDuration.isHighClosed());
+                } else {
+                    limitDurationCriterion = IntervalTemporaryDurationCriterion.greaterThan(limitDuration.getLowBound(), limitDuration.isLowClosed());
+                }
+                limitReductions.add(createLimitReduction(voltageLevelCriterion, limitDurationCriterion, temporaryLimitReduction.getReduction()));
+            });
+        });
+
+        return limitReductions;
+    }
+
+    private LimitReduction createLimitReduction(IdentifiableCriterion voltageLevelCriterion, LimitDurationCriterion limitDurationCriterion, double value) {
+        return LimitReduction.builder(LimitType.CURRENT, value)
+                .withNetworkElementCriteria(voltageLevelCriterion)
+                .withLimitDurationCriteria(limitDurationCriterion)
+                .build();
     }
 
     @Override

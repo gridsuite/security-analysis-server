@@ -6,12 +6,15 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
-import lombok.*;
-
 import jakarta.persistence.*;
+import lombok.*;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
+import org.springframework.lang.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * @author Abdelsalem HEDHILI <abdelsalem.hedhili@rte-france.com>
@@ -32,7 +35,8 @@ public class SecurityAnalysisParametersEntity {
                 securityAnalysisParametersValues.getLowVoltageProportionalThreshold(),
                 securityAnalysisParametersValues.getHighVoltageAbsoluteThreshold(),
                 securityAnalysisParametersValues.getHighVoltageProportionalThreshold(),
-                securityAnalysisParametersValues.getFlowProportionalThreshold());
+                securityAnalysisParametersValues.getFlowProportionalThreshold(),
+                securityAnalysisParametersValues.getLimitReductionsValues().stream().map(LimitReductionEntity::new).toList());
     }
 
     @Id
@@ -58,15 +62,13 @@ public class SecurityAnalysisParametersEntity {
     @Column(name = "flowProportionalThreshold")
     private double flowProportionalThreshold;
 
-    public SecurityAnalysisParametersValues toSecurityAnalysisParametersValues() {
-        return SecurityAnalysisParametersValues.builder()
-                .provider(this.provider)
-                .flowProportionalThreshold(this.flowProportionalThreshold)
-                .highVoltageAbsoluteThreshold(this.highVoltageAbsoluteThreshold)
-                .highVoltageProportionalThreshold(this.highVoltageProportionalThreshold)
-                .lowVoltageAbsoluteThreshold(this.lowVoltageAbsoluteThreshold)
-                .lowVoltageProportionalThreshold(this.lowVoltageProportionalThreshold)
-                .build();
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "security_analysis_parameters_id", foreignKey = @ForeignKey(name = "securityAnalysisParametersEntity_limitReductions_fk"))
+    @OrderColumn(name = "index")
+    private List<LimitReductionEntity> limitReductions;
+
+    public List<List<Double>> toLimitReductionsValues() {
+        return this.limitReductions.stream().map(LimitReductionEntity::getReductions).map(ArrayList::new).collect(Collectors.toList());
     }
 
     public void update(@NonNull SecurityAnalysisParametersValues securityAnalysisParametersValues) {
@@ -76,6 +78,14 @@ public class SecurityAnalysisParametersEntity {
         this.highVoltageProportionalThreshold = securityAnalysisParametersValues.getHighVoltageProportionalThreshold();
         this.lowVoltageAbsoluteThreshold = securityAnalysisParametersValues.getLowVoltageAbsoluteThreshold();
         this.lowVoltageProportionalThreshold = securityAnalysisParametersValues.getLowVoltageProportionalThreshold();
+        updateLimitReductions(securityAnalysisParametersValues.getLimitReductionsValues());
+    }
+
+    private void updateLimitReductions(@Nullable List<List<Double>> values) {
+        if (values != null) {
+            this.limitReductions.clear();
+            this.limitReductions.addAll(values.stream().map(LimitReductionEntity::new).toList());
+        }
     }
 
     public void updateProvider(String provider) {
