@@ -9,6 +9,7 @@ package org.gridsuite.securityanalysis.server.entities;
 import jakarta.persistence.*;
 import lombok.*;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
+import org.springframework.lang.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -80,9 +81,11 @@ public class SecurityAnalysisParametersEntity {
         updateLimitReductions(securityAnalysisParametersValues.getLimitReductionsValues());
     }
 
-    private void updateLimitReductions(List<List<Double>> values) {
-        this.limitReductions.clear();
-        this.limitReductions.addAll(values.stream().map(LimitReductionEntity::new).toList());
+    private void updateLimitReductions(@Nullable List<List<Double>> values) {
+        if (values != null) {
+            this.limitReductions.clear();
+            this.limitReductions.addAll(values.stream().map(LimitReductionEntity::new).toList());
+        }
     }
 
     public void updateProvider(String provider) {
