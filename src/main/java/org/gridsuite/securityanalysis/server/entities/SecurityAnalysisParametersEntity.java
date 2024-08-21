@@ -6,12 +6,15 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
-import lombok.*;
-
 import jakarta.persistence.*;
+import lombok.*;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
+import org.springframework.lang.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * @author Abdelsalem HEDHILI <abdelsalem.hedhili@rte-france.com>
@@ -26,13 +29,7 @@ import java.util.UUID;
 public class SecurityAnalysisParametersEntity {
 
     public SecurityAnalysisParametersEntity(SecurityAnalysisParametersValues securityAnalysisParametersValues) {
-        this(null,
-                securityAnalysisParametersValues.getProvider(),
-                securityAnalysisParametersValues.getLowVoltageAbsoluteThreshold(),
-                securityAnalysisParametersValues.getLowVoltageProportionalThreshold(),
-                securityAnalysisParametersValues.getHighVoltageAbsoluteThreshold(),
-                securityAnalysisParametersValues.getHighVoltageProportionalThreshold(),
-                securityAnalysisParametersValues.getFlowProportionalThreshold());
+        assignAttributes(securityAnalysisParametersValues);
     }
 
     @Id
@@ -58,24 +55,40 @@ public class SecurityAnalysisParametersEntity {
     @Column(name = "flowProportionalThreshold")
     private double flowProportionalThreshold;
 
-    public SecurityAnalysisParametersValues toSecurityAnalysisParametersValues() {
-        return SecurityAnalysisParametersValues.builder()
-                .provider(this.provider)
-                .flowProportionalThreshold(this.flowProportionalThreshold)
-                .highVoltageAbsoluteThreshold(this.highVoltageAbsoluteThreshold)
-                .highVoltageProportionalThreshold(this.highVoltageProportionalThreshold)
-                .lowVoltageAbsoluteThreshold(this.lowVoltageAbsoluteThreshold)
-                .lowVoltageProportionalThreshold(this.lowVoltageProportionalThreshold)
-                .build();
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "security_analysis_parameters_id", foreignKey = @ForeignKey(name = "securityAnalysisParametersEntity_limitReductions_fk"))
+    @OrderColumn(name = "index")
+    private List<LimitReductionEntity> limitReductions;
+
+    public List<List<Double>> toLimitReductionsValues() {
+        return this.limitReductions.stream().map(LimitReductionEntity::getReductions).map(ArrayList::new).collect(Collectors.toList());
     }
 
     public void update(@NonNull SecurityAnalysisParametersValues securityAnalysisParametersValues) {
-        updateProvider(securityAnalysisParametersValues.getProvider());
+        assignAttributes(securityAnalysisParametersValues);
+    }
+
+    private void assignAttributes(SecurityAnalysisParametersValues securityAnalysisParametersValues) {
+        this.provider = securityAnalysisParametersValues.getProvider();
         this.flowProportionalThreshold = securityAnalysisParametersValues.getFlowProportionalThreshold();
         this.highVoltageAbsoluteThreshold = securityAnalysisParametersValues.getHighVoltageAbsoluteThreshold();
         this.highVoltageProportionalThreshold = securityAnalysisParametersValues.getHighVoltageProportionalThreshold();
         this.lowVoltageAbsoluteThreshold = securityAnalysisParametersValues.getLowVoltageAbsoluteThreshold();
         this.lowVoltageProportionalThreshold = securityAnalysisParametersValues.getLowVoltageProportionalThreshold();
+        assignLimitReductions(securityAnalysisParametersValues.getLimitReductionsValues());
+    }
+
+    private void assignLimitReductions(@Nullable List<List<Double>> values) {
+        if (values == null) {
+            return;
+        }
+        List<LimitReductionEntity> entities = values.stream().map(LimitReductionEntity::new).toList();
+        if (limitReductions == null) {
+            limitReductions = entities;
+        } else {
+            limitReductions.clear();
+            limitReductions.addAll(entities);
+        }
     }
 
     public void updateProvider(String provider) {

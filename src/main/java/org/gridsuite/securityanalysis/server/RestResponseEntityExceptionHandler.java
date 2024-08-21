@@ -7,10 +7,13 @@
 package org.gridsuite.securityanalysis.server;
 
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
@@ -18,8 +21,13 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 @ControllerAdvice
 public class RestResponseEntityExceptionHandler {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(RestResponseEntityExceptionHandler.class);
+
     @ExceptionHandler(SecurityAnalysisException.class)
     protected ResponseEntity<Object> handleStudyException(SecurityAnalysisException exception) {
+        if (LOGGER.isErrorEnabled()) {
+            LOGGER.error(exception.getMessage());
+        }
         switch (exception.getType()) {
             case RESULT_NOT_FOUND, PARAMETERS_NOT_FOUND:
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getType());

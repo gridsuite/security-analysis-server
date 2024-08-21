@@ -18,7 +18,8 @@ public class SecurityAnalysisException extends RuntimeException {
         INVALID_SORT_FORMAT,
         INVALID_FILTER,
         PARAMETERS_NOT_FOUND,
-        FILE_EXPORT_ERROR
+        FILE_EXPORT_ERROR,
+        LIMIT_REDUCTION_CONFIG_ERROR
     }
 
     private final Type type;
