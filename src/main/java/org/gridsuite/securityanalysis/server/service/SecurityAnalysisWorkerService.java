@@ -18,7 +18,9 @@ import com.powsybl.iidm.criteria.duration.LimitDurationCriterion;
 import com.powsybl.iidm.criteria.duration.PermanentDurationCriterion;
 import com.powsybl.iidm.network.LimitType;
 import com.powsybl.iidm.network.Network;
+import com.powsybl.iidm.network.NetworkFactory;
 import com.powsybl.iidm.network.VariantManagerConstants;
+import com.powsybl.iidm.serde.NetworkSerDe;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.security.*;
@@ -42,6 +44,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -108,6 +111,22 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 .toList();
         List<LimitReduction> limitReductions = createLimitReductions(runContext);
 
+        Network network = runContext.getNetwork();
+        // FIXME: Remove this part when multithread variant access is implemented in the network-store
+        if (runContext.getProvider().equals("OpenLoadFlow")) {
+            long startTime = System.nanoTime();
+            Network originalNetwork = runContext.getNetwork();
+            String originalVariant = originalNetwork.getVariantManager().getWorkingVariantId();
+            originalNetwork.getVariantManager().setWorkingVariant(variantId);
+
+            network = NetworkSerDe.copy(originalNetwork, NetworkFactory.find("Default"));
+            if (!variantId.equals(VariantManagerConstants.INITIAL_VARIANT_ID)) {
+                network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, variantId);
+            }
+            LOGGER.info("Network copied to iidm-impl in {} ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+            originalNetwork.getVariantManager().setWorkingVariant(originalVariant);
+        }
+
         SecurityAnalysisRunParameters runParameters = new SecurityAnalysisRunParameters()
                 .setSecurityAnalysisParameters(runContext.getParameters().securityAnalysisParameters())
                 .setComputationManager(executionService.getComputationManager())
@@ -116,7 +135,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 .setReportNode(runContext.getReportNode());
 
         return securityAnalysisRunner.runAsync(
-                        runContext.getNetwork(),
+                        network,
                         variantId,
                         n -> contingencies,
                         runParameters)
