@@ -23,6 +23,7 @@ import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.serde.NetworkSerDe;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
+import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.security.*;
 import com.powsybl.security.limitreduction.LimitReduction;
 import com.powsybl.ws.commons.LogUtils;
@@ -93,6 +94,11 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
             LOGGER.error(getFailedMessage(getComputationType()), e);
             return null;
         }
+    }
+
+    @Override
+    protected PreloadingStrategy getNetworkPreloadingStrategy() {
+        return PreloadingStrategy.ALL_COLLECTIONS_NEEDED_FOR_BUS_VIEW;
     }
 
     @Override
