@@ -656,6 +656,8 @@ public class SecurityAnalysisControllerTest {
         assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
         assertEquals("me", message.getHeaders().get("receiver"));
         assertEquals(getCancelFailedMessage(COMPUTATION_TYPE), message.getHeaders().get("message"));
+
+        //FIXME how to test the case when the computation is still in progress and we send a cancel request
     }
 
     @Test
