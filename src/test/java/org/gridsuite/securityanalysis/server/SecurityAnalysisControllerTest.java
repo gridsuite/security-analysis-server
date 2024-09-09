@@ -648,14 +648,14 @@ public class SecurityAnalysisControllerTest {
         // wait for security analysis to actually run before trying to stop it
         countDownLatch.await();
 
-        mockMvc.perform(put("/" + VERSION + "/results/" + RESULT_UUID + "/stop"
-            + "?receiver=me"))
+        mockMvc.perform(put("/" + VERSION + "/results/" + RESULT_UUID + "/stop" + "?receiver=me")
+                        .header(HEADER_USER_ID, "testUserId"))
                 .andExpect(status().isOk());
 
-        Message<byte[]> message = output.receive(TIMEOUT * 3, "sa.stopped");
+        Message<byte[]> message = output.receive(TIMEOUT * 3, "sa.cancelfailed");
         assertEquals(RESULT_UUID.toString(), message.getHeaders().get("resultUuid"));
         assertEquals("me", message.getHeaders().get("receiver"));
-        assertEquals(getCancelMessage(COMPUTATION_TYPE), message.getHeaders().get("message"));
+        assertEquals(getCancelFailedMessage(COMPUTATION_TYPE), message.getHeaders().get("message"));
     }
 
     @Test

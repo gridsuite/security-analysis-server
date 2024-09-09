@@ -32,7 +32,9 @@ spring:
           destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.stopped
         publishFailed-out-0:
           destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.failed
-      output-bindings: publishRun-out-0;publishResult-out-0;publishCancel-out-0;publishStopped-out-0;publishFailed-out-0
+        publishCancelFailed-out-0:
+          destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.cancelfailed
+      output-bindings: publishRun-out-0;publishResult-out-0;publishCancel-out-0;publishStopped-out-0;publishFailed-out-;publishCancelFailed-out-0
 
 powsybl-ws:
   database:
