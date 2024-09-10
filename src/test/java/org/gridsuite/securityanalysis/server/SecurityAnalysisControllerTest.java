@@ -659,6 +659,19 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
+    public void testStopAndFail() throws Exception {
+        UUID randomUuid = UUID.randomUUID();
+        mockMvc.perform(put("/" + VERSION + "/results/" + randomUuid + "/stop" + "?receiver=me")
+                        .header(HEADER_USER_ID, "testUserId"))
+                .andExpect(status().isOk());
+
+        Message<byte[]> message = output.receive(TIMEOUT * 3, "sa.cancelfailed");
+        assertEquals(randomUuid.toString(), message.getHeaders().get("resultUuid"));
+        assertEquals("me", message.getHeaders().get("receiver"));
+        assertEquals(getCancelFailedMessage(COMPUTATION_TYPE), message.getHeaders().get("message"));
+    }
+
+    @Test
     public void runTestWithError() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
