@@ -152,8 +152,8 @@ public class SecurityAnalysisController {
         String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
         Page<ContingencyResultDTO> result = securityAnalysisResultService.findNmKContingenciesPaged(resultUuid, decodedStringFilters, pageable);
         return result != null
-                ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
-                : ResponseEntity.notFound().build();
+            ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
+            : ResponseEntity.notFound().build();
     }
 
     @PostMapping(value = "/results/{resultUuid}/nmk-contingencies-result/csv", produces = APPLICATION_OCTET_STREAM_VALUE, consumes = APPLICATION_JSON_VALUE)
