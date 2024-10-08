@@ -138,6 +138,9 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         assertResultExists(resultUuid);
 
         Page<ContingencyEntity> contingencyPageBis = self.findContingenciesPage(resultUuid, fromStringFiltersToDTO(stringFilters), pageable);
+        if (contingencyPageBis.isEmpty()) {
+            return Page.empty();
+        }
         return contingencyPageBis.map(ContingencyResultDTO::toDto);
     }
 

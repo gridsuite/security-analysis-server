@@ -151,10 +151,13 @@ public class SecurityAnalysisController {
                                                                                     @Parameter(description = "Pagination parameters") Pageable pageable) {
         String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
         Page<ContingencyResultDTO> result = securityAnalysisResultService.findNmKContingenciesPaged(resultUuid, decodedStringFilters, pageable);
-
-        return result != null
-            ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
-            : ResponseEntity.notFound().build();
+        if (result == null) {
+            return ResponseEntity.notFound().build();
+        } else if (result.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
+        }
     }
 
     @PostMapping(value = "/results/{resultUuid}/nmk-contingencies-result/csv", produces = APPLICATION_OCTET_STREAM_VALUE, consumes = APPLICATION_JSON_VALUE)
