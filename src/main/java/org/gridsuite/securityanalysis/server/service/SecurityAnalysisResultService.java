@@ -138,9 +138,6 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         assertResultExists(resultUuid);
 
         Page<ContingencyEntity> contingencyPageBis = self.findContingenciesPage(resultUuid, fromStringFiltersToDTO(stringFilters), pageable);
-        if (contingencyPageBis.isEmpty()) {
-            return Page.empty();
-        }
         return contingencyPageBis.map(ContingencyResultDTO::toDto);
     }
 
@@ -290,6 +287,10 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         return securityAnalysisResult.get().getStatus();
     }
 
+    private static Page emptyPage() {
+        return new PageImpl(List.of(), Pageable.unpaged(), 0);
+    }
+
     @Transactional(readOnly = true)
     public Page<ContingencyEntity> findContingenciesPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
@@ -311,7 +312,8 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         );
 
         if (!uuidPage.hasContent()) {
-            return Page.empty();
+            // Since springboot 3.2, the return value of Page.empty() is not serializable. See https://github.com/spring-projects/spring-data-commons/issues/2987
+            return emptyPage();
         } else {
             List<UUID> uuids = uuidPage.map(ContingencyRepository.EntityUuid::getUuid).toList();
             // Then we fetch the main entities data for each UUID
@@ -344,7 +346,8 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         );
 
         if (!uuidPage.hasContent()) {
-            return Page.empty();
+            // Since springboot 3.2, the return value of Page.empty() is not serializable. See https://github.com/spring-projects/spring-data-commons/issues/2987
+            return emptyPage();
         } else {
             List<UUID> uuids = uuidPage.map(u -> u.getId()).toList();
             // Then we fetch the main entities data for each UUID
