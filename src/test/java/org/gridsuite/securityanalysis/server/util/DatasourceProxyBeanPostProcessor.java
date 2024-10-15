@@ -22,15 +22,15 @@ import org.springframework.util.ReflectionUtils;
 import javax.sql.DataSource;
 import java.lang.reflect.Method;
 
-@Component
 /**
  * The author of db-utils describes its library in https://vladmihalcea.com/how-to-detect-the-n-plus-one-query-problem-during-testing/
- * But the recommended method to select the datasource (using @bean public DataSource dataSource(DataSource originalDataSource) {...} )
+ * But the recommended method to select the datasource (using {@code @bean public DataSource dataSource(DataSource originalDataSource) {...}} )
  * doesn't work when you use the spring default profile for tests
- * It crashes with this exception : java.lang.IllegalStateException: Failed to load ApplicationContext : org.springframework.beans.factory.BeanCurrentlyInCreationException: Error creating bean with name 'dataSource': Requested bean is currently in creation: Is there an unresolvable circular reference
+ * It crashes with this exception : {@literal java.lang.IllegalStateException: Failed to load ApplicationContext : org.springframework.beans.factory.BeanCurrentlyInCreationException: Error creating bean with name 'dataSource': Requested bean is currently in creation: Is there an unresolvable circular reference}
  * Instead, the underlying datasource-proxy library author recommends to use a BeanPostProcessor:
  * https://github.com/ttddyy/datasource-proxy-examples/blob/master/springboot-autoconfig-example/src/main/java/net/ttddyy/dsproxy/example/DatasourceProxyBeanPostProcessor.java
  */
+@Component
 public class DatasourceProxyBeanPostProcessor implements BeanPostProcessor {
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) {

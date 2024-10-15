@@ -25,7 +25,7 @@ import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.asse
 class SecurityAnalysisResultServiceTest {
 
     @Autowired
-    SecurityAnalysisResultService securityAnalysisResultService;
+    private SecurityAnalysisResultService securityAnalysisResultService;
 
     @Test
     void deleteResultPerfTest() {

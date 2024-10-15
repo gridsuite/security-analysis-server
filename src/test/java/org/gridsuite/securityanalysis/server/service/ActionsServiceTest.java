@@ -9,22 +9,24 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.contingency.BranchContingency;
 import com.powsybl.contingency.Contingency;
+import mockwebserver3.Dispatcher;
+import mockwebserver3.MockResponse;
+import mockwebserver3.MockWebServer;
+import mockwebserver3.RecordedRequest;
+import mockwebserver3.junit5.internal.MockWebServerExtension;
+import okhttp3.Headers;
 import okhttp3.HttpUrl;
-import okhttp3.mockwebserver.Dispatcher;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.jetbrains.annotations.NotNull;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.http.MediaType;
 
 import java.io.IOException;
 import java.util.List;
@@ -35,17 +37,17 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  * @author Slimane Amar <slimane.amar at rte-france.com>
  */
+@ExtendWith(MockWebServerExtension.class)
 @SpringBootTest
-@RunWith(SpringRunner.class)
 @ContextConfigurationWithTestChannel
-public class ActionsServiceTest {
+class ActionsServiceTest {
 
     private static final int DATA_BUFFER_LIMIT = 256 * 1024; // AbstractJackson2Decoder.maxInMemorySize
 
@@ -66,30 +68,16 @@ public class ActionsServiceTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private MockWebServer server;
-
     @Autowired
     private ActionsService actionsService;
 
-    @Before
-    public void setUp() throws IOException {
-        String mockServerUri = initMockWebServer();
+    @BeforeEach
+    void setUp(final MockWebServer mockWebServer) throws Exception {
+        final String mockServerUri = initMockWebServer(mockWebServer);
         actionsService.setActionServiceBaseUri(mockServerUri);
     }
 
-    @After
-    public void tearDown() {
-        try {
-            server.shutdown();
-        } catch (Exception e) {
-            // Nothing to do
-        }
-    }
-
-    private String initMockWebServer() throws IOException {
-        server = new MockWebServer();
-        server.start();
-
+    private String initMockWebServer(final MockWebServer server) throws IOException {
         String jsonExpected = objectMapper.writeValueAsString(List.of(CONTINGENCY));
         String veryLargeJsonExpected = objectMapper.writeValueAsString(createVeryLargeList());
         String jsonVariantExpected = objectMapper.writeValueAsString(List.of(CONTINGENCY_VARIANT));
@@ -100,26 +88,17 @@ public class ActionsServiceTest {
             @Override
             public MockResponse dispatch(RecordedRequest request) {
                 String requestPath = Objects.requireNonNull(request.getPath());
-
                 if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&variantId=%s&ids=%s", NETWORK_UUID, VARIANT_ID, LIST_NAME))) {
-                    return new MockResponse().setResponseCode(HttpStatus.OK.value())
-                            .setBody(jsonVariantExpected)
-                            .addHeader("Content-Type", "application/json; charset=utf-8");
+                    return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE), jsonVariantExpected);
                 } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s", NETWORK_UUID, LIST_NAME))) {
-                    return new MockResponse().setResponseCode(HttpStatus.OK.value())
-                        .setBody(jsonExpected)
-                        .addHeader("Content-Type", "application/json; charset=utf-8");
+                    return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE), jsonExpected);
                 } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&variantId=%s&ids=%s", NETWORK_UUID, VARIANT_ID, VERY_LARGE_LIST_NAME))
                            || requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s", NETWORK_UUID, VERY_LARGE_LIST_NAME))) {
-                    return new MockResponse().setResponseCode(HttpStatus.OK.value())
-                            .setBody(veryLargeJsonExpected)
-                            .addHeader("Content-Type", "application/json; charset=utf-8");
+                    return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE), veryLargeJsonExpected);
                 } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s&ids=%s", NETWORK_UUID, LIST_NAME, LIST_NAME_VARIANT))) {
-                    return new MockResponse().setResponseCode(HttpStatus.OK.value())
-                            .setBody(jsonExpectedForList)
-                            .addHeader("Content-Type", "application/json; charset=utf-8");
+                    return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE), jsonExpectedForList);
                 } else {
-                    return new MockResponse().setResponseCode(HttpStatus.NOT_FOUND.value()).setBody("Path not supported: " + request.getPath());
+                    return new MockResponse.Builder().code(HttpStatus.NOT_FOUND.value()).body("Path not supported: " + request.getPath()).build();
                 }
             }
         };
@@ -132,12 +111,12 @@ public class ActionsServiceTest {
         return baseHttpUrl.toString().substring(0, baseHttpUrl.toString().length() - 1);
     }
 
-    private List<ContingencyInfos> createVeryLargeList() {
+    private static List<ContingencyInfos> createVeryLargeList() {
         return IntStream.range(0, DATA_BUFFER_LIMIT).mapToObj(i -> new ContingencyInfos(new Contingency("l" + i, new BranchContingency("l" + i)))).collect(Collectors.toList());
     }
 
     @Test
-    public void test() {
+    void test() {
         List<ContingencyInfos> list = actionsService.getContingencyList(List.of(LIST_NAME), UUID.fromString(NETWORK_UUID), null);
         list.forEach(contingencyInfos -> assertArrayEquals(List.of(WRONG_ID).toArray(new Object[0]), contingencyInfos.getNotFoundElements().toArray(new String[0])));
         assertEquals(Stream.of(CONTINGENCY).map(ContingencyInfos::getContingency).toList(), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
@@ -146,7 +125,7 @@ public class ActionsServiceTest {
     }
 
     @Test
-    public void testVeryLargeList() {
+    void testVeryLargeList() {
         // DataBufferLimitException should not be thrown with this message : "Exceeded limit on max bytes to buffer : DATA_BUFFER_LIMIT"
         List<ContingencyInfos> list = actionsService.getContingencyList(List.of(VERY_LARGE_LIST_NAME), UUID.fromString(NETWORK_UUID), null);
         list.forEach(contingencyInfos -> assertArrayEquals(List.of().toArray(new Object[0]), contingencyInfos.getNotFoundElements().toArray(new String[0])));
@@ -156,7 +135,7 @@ public class ActionsServiceTest {
     }
 
     @Test
-    public void testGetContingenciesByListOfIds() {
+    void testGetContingenciesByListOfIds() {
         List<ContingencyInfos> list = actionsService.getContingencyList(List.of(LIST_NAME, LIST_NAME_VARIANT), UUID.fromString(NETWORK_UUID), null);
         assertEquals(Stream.of(CONTINGENCY, CONTINGENCY_VARIANT).map(ContingencyInfos::getContingency).toList(), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
     }
