@@ -289,6 +289,10 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         return securityAnalysisResult.get().getStatus();
     }
 
+    private static Page<?> emptyPage(Pageable pageable) {
+        return new PageImpl<>(List.of(), pageable, 0);
+    }
+
     @Transactional(readOnly = true)
     public Page<ContingencyEntity> findContingenciesPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
@@ -310,7 +314,8 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         );
 
         if (!uuidPage.hasContent()) {
-            return Page.empty();
+            // Since springboot 3.2, the return value of Page.empty() is not serializable. See https://github.com/spring-projects/spring-data-commons/issues/2987
+            return (Page<ContingencyEntity>) emptyPage(pageable);
         } else {
             List<UUID> uuids = uuidPage.map(ContingencyRepository.EntityUuid::getUuid).toList();
             // Then we fetch the main entities data for each UUID
@@ -343,7 +348,8 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         );
 
         if (!uuidPage.hasContent()) {
-            return Page.empty();
+            // Since springboot 3.2, the return value of Page.empty() is not serializable. See https://github.com/spring-projects/spring-data-commons/issues/2987
+            return (Page<SubjectLimitViolationEntity>) emptyPage(pageable);
         } else {
             List<UUID> uuids = uuidPage.map(u -> u.getId()).toList();
             // Then we fetch the main entities data for each UUID
