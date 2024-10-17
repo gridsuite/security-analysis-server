@@ -6,11 +6,10 @@
  */
 package org.gridsuite.securityanalysis.server.util;
 
-import org.hamcrest.Description;
-import org.hamcrest.TypeSafeMatcher;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.SneakyThrows;
+import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
 
 /**
  * @author Slimane Amar <slimane.amar at rte-france.com>
@@ -40,8 +39,8 @@ public class MatcherJson<T> extends TypeSafeMatcher<T> {
     }
 
     @SneakyThrows
+    @Override
     protected void describeMismatchSafely(T item, Description mismatchDescription) {
         mismatchDescription.appendText("was ").appendText(mapper.writeValueAsString(item));
     }
-
 }

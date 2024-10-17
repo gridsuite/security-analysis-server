@@ -7,7 +7,6 @@
 package org.gridsuite.securityanalysis.server.util;
 
 import static com.vladmihalcea.sql.SQLStatementCountValidator.*;
-import static com.vladmihalcea.sql.SQLStatementCountValidator.assertDeleteCount;
 
 public final class DatabaseQueryUtils {
 

@@ -13,7 +13,7 @@ import com.powsybl.security.SecurityAnalysisProvider;
 import com.powsybl.ws.commons.computation.service.AbstractComputationService;
 import com.powsybl.ws.commons.computation.service.NotificationService;
 import com.powsybl.ws.commons.computation.service.UuidGeneratorService;
-import org.gridsuite.securityanalysis.server.dto.*;
+import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -37,6 +37,7 @@ public class SecurityAnalysisService extends AbstractComputationService<Security
         super(notificationService, securityAnalysisResultService, objectMapper, uuidGeneratorService, defaultProvider);
     }
 
+    @Override
     public UUID runAndSaveResult(SecurityAnalysisRunContext runContext) {
         Objects.requireNonNull(runContext);
         var resultUuid = uuidGeneratorService.generate();
@@ -47,6 +48,7 @@ public class SecurityAnalysisService extends AbstractComputationService<Security
         return resultUuid;
     }
 
+    @Override
     public List<String> getProviders() {
         return SecurityAnalysisProvider.findAll().stream()
             .map(SecurityAnalysisProvider::getName)

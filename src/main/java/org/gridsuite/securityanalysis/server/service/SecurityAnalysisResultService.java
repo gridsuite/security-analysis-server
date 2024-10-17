@@ -24,7 +24,6 @@ import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
@@ -91,7 +90,6 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         AbstractLimitViolationEntity.Fields.side
     );
 
-    @Autowired
     public SecurityAnalysisResultService(SecurityAnalysisResultRepository securityAnalysisResultRepository,
                                          ContingencyRepository contingencyRepository,
                                          PreContingencyLimitViolationRepository preContingencyLimitViolationRepository,
@@ -238,6 +236,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         securityAnalysisResultRepository.save(securityAnalysisResult);
     }
 
+    @Override
     @Transactional
     public void insertStatus(List<UUID> resultUuids, SecurityAnalysisStatus status) {
         Objects.requireNonNull(resultUuids);
@@ -248,6 +247,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         });
     }
 
+    @Override
     @Transactional
     public void delete(UUID resultUuid) {
         AtomicReference<Long> startTime = new AtomicReference<>();
@@ -271,11 +271,13 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         securityAnalysisResultRepository.deleteById(resultId);
     }
 
+    @Override
     @Transactional
     public void deleteAll() {
         securityAnalysisResultRepository.deleteAll();
     }
 
+    @Override
     @Transactional(readOnly = true)
     public SecurityAnalysisStatus findStatus(UUID resultUuid) {
         Objects.requireNonNull(resultUuid);

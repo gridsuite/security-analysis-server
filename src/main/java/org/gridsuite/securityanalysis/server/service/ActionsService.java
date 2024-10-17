@@ -7,7 +7,6 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -39,7 +38,6 @@ public class ActionsService {
         this.baseUri = baseUri;
     }
 
-    @Autowired
     public ActionsService(
             @Value("${gridsuite.services.actions-server.base-uri:http://actions-server/}") String baseUri,
             RestTemplate restTemplate) {
