@@ -89,14 +89,14 @@ class ActionsServiceTest {
             public MockResponse dispatch(RecordedRequest request) {
                 String requestPath = Objects.requireNonNull(request.getPath());
                 if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&variantId=%s&ids=%s", NETWORK_UUID, VARIANT_ID, LIST_NAME))) {
-                    return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE), jsonVariantExpected);
+                    return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE), jsonVariantExpected);
                 } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s", NETWORK_UUID, LIST_NAME))) {
-                    return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE), jsonExpected);
+                    return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE), jsonExpected);
                 } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&variantId=%s&ids=%s", NETWORK_UUID, VARIANT_ID, VERY_LARGE_LIST_NAME))
                            || requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s", NETWORK_UUID, VERY_LARGE_LIST_NAME))) {
-                    return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE), veryLargeJsonExpected);
+                    return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE), veryLargeJsonExpected);
                 } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s&ids=%s", NETWORK_UUID, LIST_NAME, LIST_NAME_VARIANT))) {
-                    return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_UTF8_VALUE), jsonExpectedForList);
+                    return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE), jsonExpectedForList);
                 } else {
                     return new MockResponse.Builder().code(HttpStatus.NOT_FOUND.value()).body("Path not supported: " + request.getPath()).build();
                 }
