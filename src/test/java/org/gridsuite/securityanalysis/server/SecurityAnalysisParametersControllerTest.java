@@ -16,14 +16,12 @@ import org.gridsuite.securityanalysis.server.service.SecurityAnalysisParametersS
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -33,7 +31,7 @@ import java.util.UUID;
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.securityanalysis.server.util.SecurityAnalysisException.Type.PARAMETERS_NOT_FOUND;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -41,11 +39,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * @author Abdelsalem Hedhili <abdelsalem.hedhili at rte-france.com>
  */
-@RunWith(SpringRunner.class)
 @AutoConfigureMockMvc
 @SpringBootTest
 @ContextConfigurationWithTestChannel
-public class SecurityAnalysisParametersControllerTest {
+class SecurityAnalysisParametersControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -66,7 +63,7 @@ public class SecurityAnalysisParametersControllerTest {
     private LimitReductionService limitReductionService;
 
     @Test
-    public void limitReductionConfigTest() {
+    void limitReductionConfigTest() {
         List<LimitReductionsByVoltageLevel> limitReductions = limitReductionService.createDefaultLimitReductions();
         assertNotNull(limitReductions);
         assertFalse(limitReductions.isEmpty());
@@ -107,7 +104,7 @@ public class SecurityAnalysisParametersControllerTest {
     }
 
     @Test
-    public void securityAnalysisParametersCreateAndGetTest() throws Exception {
+    void securityAnalysisParametersCreateAndGetTest() throws Exception {
         // Create parameters
         List<List<Double>> limitReductions = List.of(List.of(1.0, 0.9, 0.8, 0.7), List.of(1.0, 0.9, 0.8, 0.7));
         SecurityAnalysisParametersValues.SecurityAnalysisParametersValuesBuilder builder = SecurityAnalysisParametersValues.builder()
@@ -174,7 +171,7 @@ public class SecurityAnalysisParametersControllerTest {
     }
 
     @Test
-    public void securityAnalysisParametersUpdateTest() throws Exception {
+    void securityAnalysisParametersUpdateTest() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
 
@@ -260,7 +257,7 @@ public class SecurityAnalysisParametersControllerTest {
     }
 
     @Test
-    public void testDuplicateParameters() throws Exception {
+    void testDuplicateParameters() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
 
@@ -309,7 +306,7 @@ public class SecurityAnalysisParametersControllerTest {
     }
 
     @Test
-    public void testRemoveParameters() throws Exception {
+    void testRemoveParameters() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
 
@@ -344,7 +341,7 @@ public class SecurityAnalysisParametersControllerTest {
         assertNull(securityAnalysisParametersRepository.findById(createdParametersUuid).orElse(null));
     }
 
-    public void assertSecurityAnalysisParametersEntityAreEquals(UUID parametersUuid, double lowVoltageAbsoluteThreshold, double lowVoltageProportionalThreshold, double highVoltageAbsoluteThreshold, double highVoltageProportionalThreshold, double flowProportionalThreshold) {
+    private void assertSecurityAnalysisParametersEntityAreEquals(UUID parametersUuid, double lowVoltageAbsoluteThreshold, double lowVoltageProportionalThreshold, double highVoltageAbsoluteThreshold, double highVoltageProportionalThreshold, double flowProportionalThreshold) {
         SecurityAnalysisParametersEntity securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(parametersUuid).orElseThrow();
         assertEquals(lowVoltageAbsoluteThreshold, securityAnalysisParametersEntity.getLowVoltageAbsoluteThreshold(), 0.001);
         assertEquals(lowVoltageProportionalThreshold, securityAnalysisParametersEntity.getLowVoltageProportionalThreshold(), 0.001);

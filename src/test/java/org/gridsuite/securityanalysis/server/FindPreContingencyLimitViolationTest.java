@@ -44,12 +44,12 @@ import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock
 @TestInstance(TestInstance.Lifecycle.PER_CLASS) // improve tests speed as we only read DB
 class FindPreContingencyLimitViolationTest {
     @Autowired
-    SecurityAnalysisResultRepository securityAnalysisResultRepository;
+    private SecurityAnalysisResultRepository securityAnalysisResultRepository;
 
-    SecurityAnalysisResultEntity resultEntity;
+    private SecurityAnalysisResultEntity resultEntity;
 
     @Autowired
-    SecurityAnalysisResultService securityAnalysisResultService;
+    private SecurityAnalysisResultService securityAnalysisResultService;
 
     @BeforeAll
     void setUp() {
@@ -79,14 +79,14 @@ class FindPreContingencyLimitViolationTest {
         assertSelectCount(expectedSelectCount);
     }
 
-    private Stream<Arguments> provideSortOnly() {
+    private static Stream<Arguments> provideSortOnly() {
         return Stream.of(
                 Arguments.of(List.of(), Sort.by(Sort.Direction.ASC, AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId), RESULT_PRECONTINGENCY.stream().sorted(Comparator.comparing(PreContingencyLimitViolationResultDTO::getSubjectId)).toList(), 2),
                 Arguments.of(List.of(), Sort.by(Sort.Direction.DESC, AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId), RESULT_PRECONTINGENCY.stream().sorted(Comparator.comparing(PreContingencyLimitViolationResultDTO::getSubjectId).reversed()).toList(), 2)
         );
     }
 
-    private Stream<Arguments> provideParentFilter() {
+    private static Stream<Arguments> provideParentFilter() {
         return Stream.of(
                 Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId)), Sort.by(Sort.Direction.ASC, AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId),
                         RESULT_PRECONTINGENCY.stream().sorted(Comparator.comparing(PreContingencyLimitViolationResultDTO::getSubjectId)).filter(c -> c.getSubjectId().contains("3")).toList(), 2),
@@ -97,7 +97,7 @@ class FindPreContingencyLimitViolationTest {
         );
     }
 
-    private Stream<Arguments> provideChildFilter() {
+    private static Stream<Arguments> provideChildFilter() {
         return Stream.of(
                 Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "l6", AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId)), Sort.by(Sort.Direction.ASC, AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId),
                         getResultPreContingencyWithNestedFilter(p -> p.getSubjectId().contains("l6"))
@@ -108,7 +108,7 @@ class FindPreContingencyLimitViolationTest {
         );
     }
 
-    private Stream<Arguments> provideChildFilterWithTolerance() {
+    private static Stream<Arguments> provideChildFilterWithTolerance() {
         return Stream.of(
                 Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.NOT_EQUAL, "11.02425", AbstractLimitViolationEntity.Fields.value),
                                 new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, "10.51243", AbstractLimitViolationEntity.Fields.limit),
@@ -118,7 +118,7 @@ class FindPreContingencyLimitViolationTest {
         );
     }
 
-    private Stream<Arguments> provideEachColumnFilter() {
+    private static Stream<Arguments> provideEachColumnFilter() {
         return Stream.of(
                 Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "ONE", AbstractLimitViolationEntity.Fields.side)), Sort.by(Sort.Direction.ASC, AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId),
                         getResultPreContingencyWithNestedFilter(c -> c.getLimitViolation().getSide() != null && c.getLimitViolation().getSide().equals(ThreeSides.ONE)).stream().sorted(Comparator.comparing(PreContingencyLimitViolationResultDTO::getSubjectId)).toList(), 2),

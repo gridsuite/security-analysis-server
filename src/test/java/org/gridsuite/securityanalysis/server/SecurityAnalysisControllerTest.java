@@ -6,13 +6,13 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
-import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import com.powsybl.commons.report.ReportNode;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
@@ -24,8 +24,9 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.*;
+import com.powsybl.ws.commons.computation.service.ReportService;
+import com.powsybl.ws.commons.computation.service.UuidGeneratorService;
 import com.vladmihalcea.sql.SQLStatementCountValidator;
-import lombok.SneakyThrows;
 import org.assertj.core.api.Assertions;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
@@ -34,25 +35,22 @@ import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationR
 import org.gridsuite.securityanalysis.server.repositories.specifications.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.LoadFlowService;
-import com.powsybl.ws.commons.computation.service.ReportService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
-import com.powsybl.ws.commons.computation.service.UuidGeneratorService;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cloud.stream.binder.test.OutputDestination;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.Message;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.util.StreamUtils;
@@ -68,14 +66,15 @@ import java.util.concurrent.CountDownLatch;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static com.powsybl.ws.commons.computation.service.NotificationService.*;
+import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.gridsuite.securityanalysis.server.util.TestUtils.assertLogMessage;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
@@ -89,11 +88,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 
-@RunWith(SpringRunner.class)
 @AutoConfigureMockMvc
 @SpringBootTest
 @ContextConfigurationWithTestChannel
-public class SecurityAnalysisControllerTest {
+class SecurityAnalysisControllerTest {
 
     private static final UUID NETWORK_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e4");
     private static final UUID NETWORK_STOP_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e6");
@@ -133,9 +131,9 @@ public class SecurityAnalysisControllerTest {
     private ObjectMapper mapper;
 
     @Autowired
-    SubjectLimitViolationRepository subjectLimitViolationRepository;
+    private SubjectLimitViolationRepository subjectLimitViolationRepository;
 
-    private final Map<String, String> enumTranslationsEn = Map.of(
+    private static final Map<String, String> ENUM_TRANSLATIONS_EN = Map.of(
         "ONE", "Side 1",
         "TWO", "Side 2",
         "CURRENT", "Current",
@@ -145,7 +143,7 @@ public class SecurityAnalysisControllerTest {
         "permanent", "IST"
     );
 
-    private final Map<String, String> enumTranslationsFr = Map.of(
+    private static final Map<String, String> ENUM_TRANSLATIONS_FR = Map.of(
         "ONE", "Côté 1",
         "TWO", "Côté 2",
         "CURRENT", "Intensité",
@@ -155,8 +153,8 @@ public class SecurityAnalysisControllerTest {
         "permanent", "IST"
     );
 
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         WireMockServer wireMockServer = new WireMockServer(wireMockConfig().dynamicPort());
         wireMockServer.start();
 
@@ -196,7 +194,7 @@ public class SecurityAnalysisControllerTest {
             .specificParameters(Map.of("reactiveRangeCheckMode", "TARGET_P", "plausibleActivePowerLimit", "5000.0"))
             .build();
         wireMockServer.stubFor(WireMock.get(WireMock.urlMatching("/v1/parameters/.*/values\\?provider=.*"))
-            .willReturn(WireMock.ok().withHeader("Content-Type", "application/json").withBody(mapper.writeValueAsString(loadFlowParametersValues))));
+            .willReturn(WireMock.ok().withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).withBody(mapper.writeValueAsString(loadFlowParametersValues))));
 
         // purge messages
         while (output.receive(1000, "sa.result") != null) {
@@ -213,14 +211,13 @@ public class SecurityAnalysisControllerTest {
     }
 
     // added for testStatus can return null, after runTest
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         mockMvc.perform(delete("/" + VERSION + "/results"))
                 .andExpect(status().isOk());
     }
 
-    @SneakyThrows
-    public void simpleRunRequest(SecurityAnalysisParametersInfos lfParams) {
+    private void simpleRunRequest(SecurityAnalysisParametersInfos lfParams) throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME_VARIANT + "&variantId=" + VARIANT_3_ID + "&loadFlowParametersUuid=" + UUID.randomUUID())
                 .contentType(MediaType.APPLICATION_JSON)
                 .header(HEADER_USER_ID, "testUserId")
@@ -235,8 +232,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    @SneakyThrows
-    public void runTestWithLFParams() {
+    void runTestWithLFParams() throws Exception {
         // run with some empty params
         simpleRunRequest(SecurityAnalysisParametersInfos.builder().build());
         // with default LFParams
@@ -251,7 +247,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void runTest() throws Exception {
+    void runTest() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
 
@@ -283,7 +279,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void runAndSaveTest() throws Exception {
+    void runAndSaveTest() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
 
@@ -350,7 +346,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void testDeterministicResults() throws Exception {
+    void testDeterministicResults() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
         SQLStatementCountValidator.reset();
@@ -411,50 +407,35 @@ public class SecurityAnalysisControllerTest {
         assertEquals(expectedResultInOrder, result);
     }
 
-    private String buildFilterUrl() {
-        String filterUrl = "";
-        try {
-
-            List<ResourceFilterDTO> filters = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "vl1", AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId),
-                    new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, new String[]{"HIGH_VOLTAGE"}, AbstractLimitViolationEntity.Fields.limitType),
-                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.GREATER_THAN_OR_EQUAL, "399", AbstractLimitViolationEntity.Fields.limit),
-                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, "420", AbstractLimitViolationEntity.Fields.value),
-                    new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.NOT_EQUAL, "2", AbstractLimitViolationEntity.Fields.acceptableDuration)
-            );
-
-            String jsonFilters = new ObjectMapper().writeValueAsString(filters);
-
-            filterUrl = "filters=" + URLEncoder.encode(jsonFilters, StandardCharsets.UTF_8);
-
-            return filterUrl;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return filterUrl;
+    private static String buildFilterUrl() throws JsonProcessingException {
+        List<ResourceFilterDTO> filters = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "vl1", AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId),
+            new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, new String[]{"HIGH_VOLTAGE"}, AbstractLimitViolationEntity.Fields.limitType),
+            new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.GREATER_THAN_OR_EQUAL, "399", AbstractLimitViolationEntity.Fields.limit),
+            new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, "420", AbstractLimitViolationEntity.Fields.value),
+            new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.NOT_EQUAL, "2", AbstractLimitViolationEntity.Fields.acceptableDuration)
+        );
+        String jsonFilters = new ObjectMapper().writeValueAsString(filters);
+        return "filters=" + URLEncoder.encode(jsonFilters, StandardCharsets.UTF_8);
     }
 
     private void assertFiltredResultN() throws Exception {
-
         MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/n-result?" + buildFilterUrl()))
                 .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON)
                 ).andReturn();
         String resultAsString = mvcResult.getResponse().getContentAsString();
-        List<PreContingencyLimitViolationResultDTO> preContingencyResult = mapper.readValue(resultAsString, new TypeReference<>() {
-        });
+        List<PreContingencyLimitViolationResultDTO> preContingencyResult = mapper.readValue(resultAsString, new TypeReference<>() { });
         assertEquals(1, preContingencyResult.size());
     }
 
     private void checkNResultEnumFilters(UUID resultUuid) throws Exception {
-
         MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/n-result"))
             .andExpectAll(
                 status().isOk(),
                 content().contentType(MediaType.APPLICATION_JSON)).andReturn();
 
-        List<PreContingencyLimitViolationResultDTO> nResults = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() {
-        });
+        List<PreContingencyLimitViolationResultDTO> nResults = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
 
         List<LimitViolationType> expectedLimitTypes = nResults.stream().map(result -> result.getLimitViolation().getLimitType()).distinct().toList();
         mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/n-limit-types", resultUuid))
@@ -515,7 +496,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void runWithTwoLists() throws Exception {
+    void runWithTwoLists() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
         mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME +
@@ -532,7 +513,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void deleteResultsTest() throws Exception {
+    void deleteResultsTest() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
 
@@ -557,7 +538,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void testStatus() throws Exception {
+    void testStatus() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
 
@@ -620,7 +601,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void stopTest() throws Exception {
+    void stopTest() throws Exception {
         countDownLatch = new CountDownLatch(1);
 
         new Thread(() -> {
@@ -659,7 +640,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void testStopAndFail() throws Exception {
+    void testStopAndFail() throws Exception {
         UUID randomUuid = UUID.randomUUID();
         mockMvc.perform(put("/" + VERSION + "/results/" + randomUuid + "/stop" + "?receiver=me")
                         .header(HEADER_USER_ID, "testUserId"))
@@ -672,7 +653,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void runTestWithError() throws Exception {
+    void runTestWithError() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
 
@@ -703,7 +684,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void runWithReportTest() throws Exception {
+    void runWithReportTest() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
 
@@ -721,7 +702,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void runWithReportTestElementsNotFoundAndNotConnected() throws Exception {
+    void runWithReportTestElementsNotFoundAndNotConnected() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
 
@@ -750,7 +731,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void getProvidersTest() throws Exception {
+    void getProvidersTest() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
 
@@ -761,13 +742,12 @@ public class SecurityAnalysisControllerTest {
                 ).andReturn();
 
         resultAsString = mvcResult.getResponse().getContentAsString();
-        List<String> providers = mapper.readValue(resultAsString, new TypeReference<>() {
-        });
+        List<String> providers = mapper.readValue(resultAsString, new TypeReference<>() { });
         assertEquals(List.of("DynaFlow", "OpenLoadFlow"), providers);
     }
 
     @Test
-    public void getDefaultProviderTest() throws Exception {
+    void getDefaultProviderTest() throws Exception {
         mockMvc.perform(get("/" + VERSION + "/default-provider"))
             .andExpectAll(
                 status().isOk(),
@@ -777,7 +757,7 @@ public class SecurityAnalysisControllerTest {
     }
 
     @Test
-    public void getZippedCsvResults() throws Exception {
+    void getZippedCsvResults() throws Exception {
         // running computation to create result
         MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME
                 + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow" + "&loadFlowParametersUuid=" + UUID.randomUUID())
@@ -799,12 +779,12 @@ public class SecurityAnalysisControllerTest {
         checkAllZippedCsvResults();
     }
 
-    public void checkAllZippedCsvResults() throws Exception {
+    private void checkAllZippedCsvResults() throws Exception {
         SQLStatementCountValidator.reset();
         checkZippedCsvResult("n-result", "/results/n-result-en.csv",
             CsvTranslationDTO.builder()
                 .headers(List.of("Equipment", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
-                .enumValueTranslations(enumTranslationsEn)
+                .enumValueTranslations(ENUM_TRANSLATIONS_EN)
                 .build());
         /*
          * SELECT
@@ -817,7 +797,7 @@ public class SecurityAnalysisControllerTest {
         checkZippedCsvResult("n-result", "/results/n-result-fr.csv",
             CsvTranslationDTO.builder()
                 .headers(List.of("Ouvrage", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Valeur calculée (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
-                .enumValueTranslations(enumTranslationsFr)
+                .enumValueTranslations(ENUM_TRANSLATIONS_FR)
                 .build());
         assertRequestsCount(2, 0, 0, 0);
 
@@ -825,7 +805,7 @@ public class SecurityAnalysisControllerTest {
         checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-en.csv",
             CsvTranslationDTO.builder()
                 .headers(List.of("Contingency ID", "Status", "Constraint", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
-                .enumValueTranslations(enumTranslationsEn)
+                .enumValueTranslations(ENUM_TRANSLATIONS_EN)
                 .build());
         /*
          * SELECT
@@ -840,7 +820,7 @@ public class SecurityAnalysisControllerTest {
         checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-fr.csv",
             CsvTranslationDTO.builder()
                 .headers(List.of("Id aléa", "Statut", "Contrainte", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
-                .enumValueTranslations(enumTranslationsFr)
+                .enumValueTranslations(ENUM_TRANSLATIONS_FR)
                 .build());
         assertRequestsCount(4, 0, 0, 0);
 
@@ -848,7 +828,7 @@ public class SecurityAnalysisControllerTest {
         checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-en.csv",
             CsvTranslationDTO.builder()
                 .headers(List.of("Constraint", "Contingency ID", "Status", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
-                .enumValueTranslations(enumTranslationsEn)
+                .enumValueTranslations(ENUM_TRANSLATIONS_EN)
                 .build());
         /*
          * SELECT
@@ -863,12 +843,12 @@ public class SecurityAnalysisControllerTest {
         checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-fr.csv",
             CsvTranslationDTO.builder()
                 .headers(List.of("Contrainte", "ID aléa", "Statut", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Valeur calculée (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
-                .enumValueTranslations(enumTranslationsFr)
+                .enumValueTranslations(ENUM_TRANSLATIONS_FR)
                 .build());
         assertRequestsCount(4, 0, 0, 0);
     }
 
-    public void checkZippedCsvResult(String resultType, String resourcePath, CsvTranslationDTO csvTranslationDTO) throws Exception {
+    private void checkZippedCsvResult(String resultType, String resourcePath, CsvTranslationDTO csvTranslationDTO) throws Exception {
         // get csv file
         byte[] resultAsByteArray = mockMvc.perform(post("/" + VERSION + "/results/" + RESULT_UUID + "/" + resultType + "/csv")
                 .contentType(MediaType.APPLICATION_JSON)
