@@ -52,12 +52,20 @@ public final class SpecificationUtils {
         return (root, cq, cb) -> cb.like(cb.upper(getColumnPath(root, field)), EscapeCharacter.DEFAULT.escape(value).toUpperCase() + "%", EscapeCharacter.DEFAULT.getEscapeCharacter());
     }
 
+    /**
+     * Returns a specification where the field value is not equal within the given tolerance.
+     */
     public static <X> Specification<X> notEqual(String field, Double value, Double tolerance) {
         return (root, cq, cb) -> {
             Expression<Double> doubleExpression = getColumnPath(root, field).as(Double.class);
+            /**
+             * in order to be equal to doubleExpression, truncated value has to fit :
+             * value <= doubleExpression < value + tolerance
+             * therefore in order to be different at least one of the opposite comparison needs to be true :
+             */
             return cb.or(
-                    cb.greaterThan(doubleExpression, value + tolerance),
-                    cb.lessThanOrEqualTo(doubleExpression, value)
+                    cb.greaterThanOrEqualTo(doubleExpression, value + tolerance),
+                    cb.lessThan(doubleExpression, value)
             );
         };
     }
@@ -142,6 +150,9 @@ public final class SpecificationUtils {
     }
 
     private static <X> Specification<X> createNumberPredicate(Specification<X> specification, ResourceFilterDTO resourceFilter, String value) {
+        // the reference for the comparison is the number of digits after the decimal point in filterValue
+        // filterValue is truncated, not rounded
+        // extra digits are ignored, but the user may add '0's after the decimal point in order to get a better precision
         String[] splitValue = value.split("\\.");
         int numberOfDecimalAfterDot = 0;
         if (splitValue.length > 1) {
@@ -154,7 +165,7 @@ public final class SpecificationUtils {
             case LESS_THAN_OR_EQUAL ->
                     specification.and(lessThanOrEqual(resourceFilter.column(), valueDouble, tolerance));
             case GREATER_THAN_OR_EQUAL ->
-                    specification.and(greaterThanOrEqual(resourceFilter.column(), valueDouble, tolerance));
+                    specification.and(greaterThanOrEqual(resourceFilter.column(), valueDouble, 0.0));
             default ->
                     throw new IllegalArgumentException("The filter type " + resourceFilter.type() + " is not supported with the data type " + resourceFilter.dataType());
         };
