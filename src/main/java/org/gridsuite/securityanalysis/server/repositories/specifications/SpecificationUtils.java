@@ -157,7 +157,7 @@ public final class SpecificationUtils {
         if (splitValue.length > 1) {
             numberOfDecimalAfterDot = splitValue[1].length();
         }
-        // tolerance is multiplied by 5 to simulate the fact that the database value is rounded (in the front, from the user viewpoint)
+        // tolerance is multiplied by 0.5 to simulate the fact that the database value is rounded (in the front, from the user viewpoint)
         // more than 13 decimal after dot will likely cause rounding errors due to double precision
         final double tolerance = Math.pow(10, -numberOfDecimalAfterDot) * 0.5;
         Double valueDouble = Double.valueOf(filterValue);
@@ -166,7 +166,7 @@ public final class SpecificationUtils {
             case LESS_THAN_OR_EQUAL ->
                     specification.and(lessThanOrEqual(resourceFilter.column(), valueDouble, tolerance));
             case GREATER_THAN_OR_EQUAL ->
-                    specification.and(greaterThanOrEqual(resourceFilter.column(), valueDouble, 0.0));
+                    specification.and(greaterThanOrEqual(resourceFilter.column(), valueDouble, tolerance));
             default ->
                     throw new IllegalArgumentException("The filter type " + resourceFilter.type() + " is not supported with the data type " + resourceFilter.dataType());
         };
