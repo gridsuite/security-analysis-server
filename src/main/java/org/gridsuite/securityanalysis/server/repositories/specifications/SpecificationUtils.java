@@ -60,11 +60,11 @@ public final class SpecificationUtils {
             Expression<Double> doubleExpression = getColumnPath(root, field).as(Double.class);
             /**
              * in order to be equal to doubleExpression, value has to fit :
-             * value - tolerance <= doubleExpression < value + tolerance
+             * value - tolerance <= doubleExpression <= value + tolerance
              * therefore in order to be different at least one of the opposite comparison needs to be true :
              */
             return cb.or(
-                    cb.greaterThanOrEqualTo(doubleExpression, value + tolerance),
+                    cb.greaterThan(doubleExpression, value + tolerance),
                     cb.lessThan(doubleExpression, value - tolerance)
             );
         };
