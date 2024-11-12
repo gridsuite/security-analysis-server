@@ -59,13 +59,13 @@ public final class SpecificationUtils {
         return (root, cq, cb) -> {
             Expression<Double> doubleExpression = getColumnPath(root, field).as(Double.class);
             /**
-             * in order to be equal to doubleExpression, truncated value has to fit :
-             * value <= doubleExpression < value + tolerance
+             * in order to be equal to doubleExpression, value has to fit :
+             * value - tolerance <= doubleExpression < value + tolerance
              * therefore in order to be different at least one of the opposite comparison needs to be true :
              */
             return cb.or(
                     cb.greaterThanOrEqualTo(doubleExpression, value + tolerance),
-                    cb.lessThan(doubleExpression, value)
+                    cb.lessThan(doubleExpression, value - tolerance)
             );
         };
     }
@@ -149,17 +149,18 @@ public final class SpecificationUtils {
         return createNumberPredicate(specification, resourceFilter, value);
     }
 
-    private static <X> Specification<X> createNumberPredicate(Specification<X> specification, ResourceFilterDTO resourceFilter, String value) {
+    private static <X> Specification<X> createNumberPredicate(Specification<X> specification, ResourceFilterDTO resourceFilter, String filterValue) {
         // the reference for the comparison is the number of digits after the decimal point in filterValue
-        // filterValue is truncated, not rounded
         // extra digits are ignored, but the user may add '0's after the decimal point in order to get a better precision
-        String[] splitValue = value.split("\\.");
+        String[] splitValue = filterValue.split("\\.");
         int numberOfDecimalAfterDot = 0;
         if (splitValue.length > 1) {
             numberOfDecimalAfterDot = splitValue[1].length();
         }
-        final double tolerance = Math.pow(10, -numberOfDecimalAfterDot); // tolerance for comparison
-        Double valueDouble = Double.valueOf(value);
+        // tolerance is multiplied by 5 to simulate the fact that the database value is rounded (in the front, from the user viewpoint)
+        // more than 13 decimal after dot will likely cause rounding errors due to double precision
+        final double tolerance = Math.pow(10, -numberOfDecimalAfterDot) * 0.5;
+        Double valueDouble = Double.valueOf(filterValue);
         return switch (resourceFilter.type()) {
             case NOT_EQUAL -> specification.and(notEqual(resourceFilter.column(), valueDouble, tolerance));
             case LESS_THAN_OR_EQUAL ->
