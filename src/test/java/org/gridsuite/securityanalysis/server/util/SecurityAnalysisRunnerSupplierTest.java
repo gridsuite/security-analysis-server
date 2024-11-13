@@ -7,30 +7,28 @@
 package org.gridsuite.securityanalysis.server.util;
 
 import com.powsybl.commons.PowsyblException;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest
-public class SecurityAnalysisRunnerSupplierTest {
+class SecurityAnalysisRunnerSupplierTest {
 
     @Value("${security-analysis.default-provider}")
-    String defaultSecurityAnalysisProvider;
+    private String defaultSecurityAnalysisProvider;
 
     @Autowired
-    SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier;
+    private SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier;
 
     @Test
-    public void test() {
+    void test() {
         assertEquals("OpenLoadFlow", securityAnalysisRunnerSupplier.getRunner("OpenLoadFlow").getName());
         assertEquals("DynaFlow", securityAnalysisRunnerSupplier.getRunner("DynaFlow").getName());
         assertEquals(defaultSecurityAnalysisProvider, securityAnalysisRunnerSupplier.getRunner(null).getName());

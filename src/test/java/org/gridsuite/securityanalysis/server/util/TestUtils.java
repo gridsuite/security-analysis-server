@@ -9,7 +9,7 @@ import java.util.Iterator;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.verify;
@@ -17,6 +17,7 @@ import static org.mockito.Mockito.verify;
 public final class TestUtils {
 
     private TestUtils() {
+        throw new IllegalStateException("Utility class");
     }
 
     public static void assertLogNthMessage(String expectedMessage, String reportKey, ReportService reportService, int rank) {
