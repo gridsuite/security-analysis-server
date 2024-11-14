@@ -77,14 +77,13 @@ public class SecurityAnalysisParametersService {
     }
 
     public SecurityAnalysisParametersDTO toSecurityAnalysisParameters(SecurityAnalysisParametersEntity entity) {
-        SecurityAnalysisParameters securityAnalysisParameters;
+        SecurityAnalysisParameters securityAnalysisParameters = SecurityAnalysisParameters.load();
         List<List<Double>> limitReductions = new ArrayList<>();
         if (entity == null) {
-            securityAnalysisParameters = SecurityAnalysisParameters.load()
-                    // the default values are overloaded
-                    .setIncreasedViolationsParameters(getIncreasedViolationsParameters(DEFAULT_FLOW_PROPORTIONAL_THRESHOLD, DEFAULT_LOW_VOLTAGE_PROPORTIONAL_THRESHOLD, DEFAULT_LOW_VOLTAGE_ABSOLUTE_THRESHOLD, DEFAULT_HIGH_VOLTAGE_PROPORTIONAL_THRESHOLD, DEFAULT_HIGH_VOLTAGE_ABSOLUTE_THRESHOLD));
+            // the default values are overloaded
+            securityAnalysisParameters.setIncreasedViolationsParameters(getIncreasedViolationsParameters(DEFAULT_FLOW_PROPORTIONAL_THRESHOLD, DEFAULT_LOW_VOLTAGE_PROPORTIONAL_THRESHOLD, DEFAULT_LOW_VOLTAGE_ABSOLUTE_THRESHOLD, DEFAULT_HIGH_VOLTAGE_PROPORTIONAL_THRESHOLD, DEFAULT_HIGH_VOLTAGE_ABSOLUTE_THRESHOLD));
         } else {
-            securityAnalysisParameters = new SecurityAnalysisParameters().setIncreasedViolationsParameters(getIncreasedViolationsParameters(entity.getFlowProportionalThreshold(), entity.getLowVoltageProportionalThreshold(), entity.getLowVoltageAbsoluteThreshold(), entity.getHighVoltageProportionalThreshold(), entity.getHighVoltageAbsoluteThreshold()));
+            securityAnalysisParameters.setIncreasedViolationsParameters(getIncreasedViolationsParameters(entity.getFlowProportionalThreshold(), entity.getLowVoltageProportionalThreshold(), entity.getLowVoltageAbsoluteThreshold(), entity.getHighVoltageProportionalThreshold(), entity.getHighVoltageAbsoluteThreshold()));
             limitReductions = entity.toLimitReductionsValues();
         }
 
