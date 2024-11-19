@@ -7,6 +7,7 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.powsybl.commons.io.TreeDataFormat;
 import com.powsybl.commons.report.ReportNode;
 import com.powsybl.commons.report.TypedValue;
 import com.powsybl.contingency.Contingency;
@@ -20,6 +21,8 @@ import com.powsybl.iidm.network.LimitType;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.NetworkFactory;
 import com.powsybl.iidm.network.VariantManagerConstants;
+import com.powsybl.iidm.serde.ExportOptions;
+import com.powsybl.iidm.serde.ImportOptions;
 import com.powsybl.iidm.serde.NetworkSerDe;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
@@ -40,11 +43,10 @@ import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.io.*;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -65,6 +67,22 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     private final LimitReductionService limitReductionService;
 
     private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier;
+
+    private static final Set<String> OPENLOADFLOW_SECURITY_ANALYSIS_EXTENSIONS = Set.of(
+            "detail",
+            "slackTerminal",
+            "activePowerControl",
+            "voltageRegulation",
+            "lineFortescue",
+            "loadAsymmetrical",
+            "coordinatedReactiveControl",
+            "generatorFortescue",
+            "hvdcAngleDroopActivePowerControl",
+            "hvdcOperatorActivePowerRange",
+            "secondaryVoltageControl",
+            "voltagePerReactivePowerControl",
+            "standbyAutomaton",
+            "generatorRemoteReactivePowerControl");
 
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService, ReportService reportService,
                                          SecurityAnalysisResultService resultService, ObjectMapper objectMapper,
@@ -125,7 +143,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
             String originalVariant = originalNetwork.getVariantManager().getWorkingVariantId();
             originalNetwork.getVariantManager().setWorkingVariant(variantId);
 
-            network = NetworkSerDe.copy(originalNetwork, NetworkFactory.find("Default"));
+            network = copy(originalNetwork, NetworkFactory.find("Default"));
             if (!variantId.equals(VariantManagerConstants.INITIAL_VARIANT_ID)) {
                 network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, variantId);
             }
@@ -146,6 +164,30 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                         n -> contingencies,
                         runParameters)
                 .thenApply(SecurityAnalysisReport::getResult);
+    }
+
+    private static Network copy(Network network, NetworkFactory networkFactory) {
+        Objects.requireNonNull(network);
+        Objects.requireNonNull(networkFactory);
+        PipedOutputStream pos = new PipedOutputStream();
+        try (InputStream is = new PipedInputStream(pos)) {
+            ForkJoinPool.commonPool().execute(() -> {
+                try {
+                    NetworkSerDe.write(network, new ExportOptions().setExtensions(OPENLOADFLOW_SECURITY_ANALYSIS_EXTENSIONS).setFormat(TreeDataFormat.JSON), pos);
+                } catch (Exception t) {
+                    LOGGER.error(t.toString(), t);
+                } finally {
+                    try {
+                        pos.close();
+                    } catch (IOException e) {
+                        LOGGER.error(e.toString(), e);
+                    }
+                }
+            });
+            return NetworkSerDe.read(is, new ImportOptions().setExtensions(OPENLOADFLOW_SECURITY_ANALYSIS_EXTENSIONS).setFormat(TreeDataFormat.JSON), null, networkFactory, ReportNode.NO_OP);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     private List<LimitReduction> createLimitReductions(SecurityAnalysisRunContext runContext) {
