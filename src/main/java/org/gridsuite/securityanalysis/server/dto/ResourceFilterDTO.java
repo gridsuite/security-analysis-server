@@ -15,9 +15,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  * @param type the type of filter (contains, startsWith...)
  * @param value the value of the filter
  * @param column the column / field on which the filter will be applied
+ * @param tolerance precision/tolerance used for the comparisons (simulates the rounding of the database values) Only useful for numbers.
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
-public record ResourceFilterDTO(DataType dataType, Type type, Object value, String column) {
+public record ResourceFilterDTO(DataType dataType, Type type, Object value, String column, Double tolerance) {
+    public ResourceFilterDTO(DataType dataType, Type type, Object value, String column) {
+        this(dataType, type, value, column, null);
+    }
 
     public enum DataType {
         @JsonProperty("text")
