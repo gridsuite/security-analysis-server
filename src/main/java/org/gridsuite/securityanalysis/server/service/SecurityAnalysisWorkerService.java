@@ -17,10 +17,7 @@ import com.powsybl.iidm.criteria.VoltageInterval;
 import com.powsybl.iidm.criteria.duration.IntervalTemporaryDurationCriterion;
 import com.powsybl.iidm.criteria.duration.LimitDurationCriterion;
 import com.powsybl.iidm.criteria.duration.PermanentDurationCriterion;
-import com.powsybl.iidm.network.LimitType;
-import com.powsybl.iidm.network.Network;
-import com.powsybl.iidm.network.NetworkFactory;
-import com.powsybl.iidm.network.VariantManagerConstants;
+import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.serde.ExportOptions;
 import com.powsybl.iidm.serde.ImportOptions;
 import com.powsybl.iidm.serde.NetworkSerDe;
@@ -247,7 +244,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 result,
                 result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED
                         ? SecurityAnalysisStatus.CONVERGED
-                        : SecurityAnalysisStatus.DIVERGED);
+                        : SecurityAnalysisStatus.DIVERGED,
+                network);
     }
 
     @Override

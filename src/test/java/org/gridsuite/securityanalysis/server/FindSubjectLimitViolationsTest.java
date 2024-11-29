@@ -58,7 +58,7 @@ class FindSubjectLimitViolationsTest {
 
     @BeforeAll
     void setUp() {
-        resultEntity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), RESULT, SecurityAnalysisStatus.CONVERGED);
+        resultEntity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), RESULT, SecurityAnalysisStatus.CONVERGED, null);
         securityAnalysisResultRepository.save(resultEntity);
     }
 

@@ -6,7 +6,10 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
+import com.powsybl.iidm.network.Network;
+import com.powsybl.security.LimitViolation;
 import com.powsybl.security.SecurityAnalysisResult;
+import com.powsybl.security.ViolationLocation;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldNameConstants;
@@ -19,6 +22,9 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.gridsuite.securityanalysis.server.util.SecurityAnalysisResultUtils.getIdFromViolation;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
@@ -52,17 +58,17 @@ public class SecurityAnalysisResultEntity {
         this.id = id;
     }
 
-    public static SecurityAnalysisResultEntity toEntity(UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
-        Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId = getUniqueSubjectLimitViolationsFromResult(securityAnalysisResult)
+    public static SecurityAnalysisResultEntity toEntity(UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus, Network network) {
+        Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId = getUniqueSubjectLimitViolationsFromResult(securityAnalysisResult, network)
             .stream().collect(Collectors.toMap(
-                SubjectLimitViolationEntity::getSubjectId,
+                obj -> obj.getSubjectId(),
                 subjectLimitViolation -> subjectLimitViolation)
             );
 
         List<ContingencyEntity> contingencies = securityAnalysisResult.getPostContingencyResults().stream()
-            .map(postContingencyResult -> ContingencyEntity.toEntity(postContingencyResult, subjectLimitViolationsBySubjectId)).collect(Collectors.toList());
+            .map(postContingencyResult -> ContingencyEntity.toEntity(postContingencyResult, subjectLimitViolationsBySubjectId, network)).collect(Collectors.toList());
 
-        List<PreContingencyLimitViolationEntity> preContingencyLimitViolations = PreContingencyLimitViolationEntity.toEntityList(securityAnalysisResult.getPreContingencyResult(), subjectLimitViolationsBySubjectId);
+        List<PreContingencyLimitViolationEntity> preContingencyLimitViolations = PreContingencyLimitViolationEntity.toEntityList(securityAnalysisResult.getPreContingencyResult(), subjectLimitViolationsBySubjectId, network);
 
         List<SubjectLimitViolationEntity> subjectLimitViolations = Stream.concat(
                 contingencies.stream().flatMap(c -> c.getContingencyLimitViolations().stream()),
@@ -88,10 +94,24 @@ public class SecurityAnalysisResultEntity {
         return securityAnalysisResultEntity;
     }
 
-    private static List<SubjectLimitViolationEntity> getUniqueSubjectLimitViolationsFromResult(SecurityAnalysisResult securityAnalysisResult) {
+    private static List<SubjectLimitViolationEntity> getUniqueSubjectLimitViolationsFromResult(SecurityAnalysisResult securityAnalysisResult, Network network) {
+//        String getIdFromViolation(LimitViolation limitViolation, Network network)
+        Stream<LimitViolation> precontengecy = securityAnalysisResult.getPreContingencyResult()
+                .getLimitViolationsResult()
+                .getLimitViolations().stream().map(limitViolation -> {
+                    ViolationLocation violationLocation = null;
+                    if (limitViolation.getViolationLocation().isPresent()) {
+                        violationLocation = limitViolation.getViolationLocation().get();
+                    }
+                    return new LimitViolation(getIdFromViolation(limitViolation, network), limitViolation.getSubjectName(), limitViolation.getLimitType(),
+                            limitViolation.getLimitName(), limitViolation.getAcceptableDuration(),
+                            limitViolation.getLimit(), limitViolation.getLimitReduction(), limitViolation.getValue(),
+                            limitViolation.getSide(), violationLocation);
+                });
+
         return Stream.concat(
                 securityAnalysisResult.getPostContingencyResults().stream().flatMap(pcr -> pcr.getLimitViolationsResult().getLimitViolations().stream()),
-                securityAnalysisResult.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().stream())
+                        precontengecy)
             .map(lm -> new Pair<>(lm.getSubjectId(), lm.getSubjectName()))
             .distinct()
             .map(pair -> new SubjectLimitViolationEntity(pair.getFirst(), pair.getSecond()))

@@ -29,7 +29,7 @@ class SecurityAnalysisResultServiceTest {
     @Test
     void deleteResultPerfTest() {
         UUID resultUuid = UUID.randomUUID();
-        securityAnalysisResultService.insert(resultUuid, RESULT, SecurityAnalysisStatus.CONVERGED);
+        securityAnalysisResultService.insert(resultUuid, RESULT, SecurityAnalysisStatus.CONVERGED, null);
         SQLStatementCountValidator.reset();
 
         securityAnalysisResultService.delete(resultUuid);

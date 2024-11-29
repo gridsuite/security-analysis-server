@@ -53,7 +53,7 @@ class FindPreContingencyLimitViolationTest {
 
     @BeforeAll
     void setUp() {
-        resultEntity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), PRECONTINGENCY_RESULT, SecurityAnalysisStatus.CONVERGED);
+        resultEntity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), PRECONTINGENCY_RESULT, SecurityAnalysisStatus.CONVERGED, null);
         securityAnalysisResultRepository.save(resultEntity);
     }
 

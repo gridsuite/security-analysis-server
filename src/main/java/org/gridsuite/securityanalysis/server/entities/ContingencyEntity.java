@@ -6,6 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
+import com.powsybl.iidm.network.Network;
 import com.powsybl.security.results.PostContingencyResult;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -17,6 +18,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static org.gridsuite.securityanalysis.server.util.SecurityAnalysisResultUtils.getIdFromViolation;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
@@ -64,11 +67,11 @@ public class ContingencyEntity {
         }
     }
 
-    public static ContingencyEntity toEntity(PostContingencyResult postContingencyResult, Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId) {
+    public static ContingencyEntity toEntity(PostContingencyResult postContingencyResult, Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId, Network network) {
         List<ContingencyElementEmbeddable> contingencyElements = postContingencyResult.getContingency().getElements().stream().map(contingencyElement -> ContingencyElementEmbeddable.toEntity(contingencyElement)).collect(Collectors.toList());
 
         List<ContingencyLimitViolationEntity> contingencyLimitViolations = postContingencyResult.getLimitViolationsResult().getLimitViolations().stream()
-            .map(limitViolation -> ContingencyLimitViolationEntity.toEntity(limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId())))
+            .map(limitViolation -> ContingencyLimitViolationEntity.toEntity(limitViolation, subjectLimitViolationsBySubjectId.get(getIdFromViolation(limitViolation, network))))
             .collect(Collectors.toList());
         return new ContingencyEntity(postContingencyResult.getContingency().getId(), postContingencyResult.getStatus().name(), contingencyElements, contingencyLimitViolations);
     }
