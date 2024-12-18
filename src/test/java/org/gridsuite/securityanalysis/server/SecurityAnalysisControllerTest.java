@@ -75,6 +75,7 @@ import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.asse
 import static org.gridsuite.securityanalysis.server.util.TestUtils.assertLogMessage;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
@@ -673,11 +674,8 @@ class SecurityAnalysisControllerTest {
         UUID resultUuid = mapper.readValue(resultAsString, UUID.class);
         assertEquals(RESULT_UUID, resultUuid);
 
-        // Message stopped has been sent
-        Message<byte[]> cancelMessage = output.receive(TIMEOUT, "sa.failed");
-        assertEquals(RESULT_UUID.toString(), cancelMessage.getHeaders().get("resultUuid"));
-        assertEquals("me", cancelMessage.getHeaders().get("receiver"));
-        assertEquals(getFailedMessage(COMPUTATION_TYPE) + " : " + ERROR_MESSAGE, cancelMessage.getHeaders().get("message"));
+        // No result message
+        assertNull(output.receive(TIMEOUT, "sa.result"));
 
         // No result
         assertResultNotFound(RESULT_UUID);
