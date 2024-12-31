@@ -6,8 +6,10 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
+import com.powsybl.iidm.network.Network;
 import com.powsybl.security.LimitViolation;
 import com.powsybl.security.results.PreContingencyResult;
+import com.powsybl.ws.commons.computation.utils.ComputationResultUtils;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
@@ -40,11 +42,12 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
     @Setter
     SecurityAnalysisResultEntity result;
 
-    public static List<PreContingencyLimitViolationEntity> toEntityList(PreContingencyResult preContingencyResult, Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId) {
-        return preContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation -> toEntity(limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()))).collect(Collectors.toList());
+    public static List<PreContingencyLimitViolationEntity> toEntityList(Network network, PreContingencyResult preContingencyResult, Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId) {
+        return preContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation -> toEntity(network, limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()))).collect(Collectors.toList());
     }
 
-    public static PreContingencyLimitViolationEntity toEntity(LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
+    public static PreContingencyLimitViolationEntity toEntity(Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
+        subjectLimitViolation.setLocationId(ComputationResultUtils.getViolationLocationId(limitViolation, network));
         return PreContingencyLimitViolationEntity.builder()
             .subjectLimitViolation(subjectLimitViolation)
             .limit(limitViolation.getLimit())
