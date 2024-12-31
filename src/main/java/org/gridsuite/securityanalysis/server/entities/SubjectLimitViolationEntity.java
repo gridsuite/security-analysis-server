@@ -39,6 +39,11 @@ public class SubjectLimitViolationEntity {
 
     private String subjectName;
 
+    @Column
+    @Setter
+    @Getter
+    private String locationId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @Setter
     @Getter

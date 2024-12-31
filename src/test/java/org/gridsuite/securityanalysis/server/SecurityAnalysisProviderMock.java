@@ -150,6 +150,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         return RESULT_CONSTRAINTS.stream().map(r ->
             new SubjectLimitViolationResultDTO(
                 r.getSubjectId(),
+                r.getSubjectId() + "_0",
                 r.getContingencies().stream()
                     .filter(filterMethod::apply)
                     .toList()
@@ -163,6 +164,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         return RESULT_CONSTRAINTS.stream().map(r ->
                 new SubjectLimitViolationResultDTO(
                     r.getSubjectId(),
+                    r.getSubjectId() + "_0",
                     r.getContingencies().stream()
                         .sorted(limitViolationDTOComparator)
                         .toList()
@@ -228,6 +230,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
 
         return new SubjectLimitViolationDTO(
             limitViolation.getSubjectId(),
+            limitViolation.getSubjectId(),
             new LimitViolationDTO(
                 limitViolation.getLimitType(),
                 limitViolation.getLimitName(),
@@ -244,6 +247,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     private static SubjectLimitViolationResultDTO toSubjectLimitViolationResultDTO(LimitViolation limitViolation, List<Contingency> convergedContingencies, LoadFlowResult.ComponentResult.Status status) {
         return new SubjectLimitViolationResultDTO(
             limitViolation.getSubjectId(),
+            limitViolation.getSubjectId() + "_0",
             convergedContingencies.stream().map(c -> toContingencyLimitViolationDTO(c, limitViolation, status.name())).toList());
     }
 
@@ -253,6 +257,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                 : null;
         return new PreContingencyLimitViolationResultDTO(
                 limitViolation.getSubjectId(),
+                limitViolation.getSubjectId() + "_0",
                 status.name(),
                 new LimitViolationDTO(
                         limitViolation.getLimitType(),
