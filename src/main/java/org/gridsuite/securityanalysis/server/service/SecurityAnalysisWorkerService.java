@@ -105,9 +105,6 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
             runContext.setNetwork(network);
             AtomicReference<ReportNode> rootReporter = new AtomicReference<>();
             return run(runContext, null, rootReporter);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return null;
         } catch (Exception e) {
             LOGGER.error(getFailedMessage(getComputationType()), e);
             return null;
