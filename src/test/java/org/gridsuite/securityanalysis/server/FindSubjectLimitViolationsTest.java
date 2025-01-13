@@ -124,8 +124,9 @@ class FindSubjectLimitViolationsTest {
         reset();
         Page<SubjectLimitViolationEntity> subjectLimitViolationPage = securityAnalysisResultService.findSubjectLimitViolationsPage(resultEntity.getId(), filters, pageable);
 
-        // assert subject ids to check parent filters
+        //à assert subject ids to check parent filters
         assertThat(subjectLimitViolationPage.getContent()).extracting("subjectId").containsExactlyElementsOf(expectedResult.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList());
+        assertThat(subjectLimitViolationPage.getContent()).extracting("locationId").containsExactlyElementsOf(expectedResult.stream().map(SubjectLimitViolationResultDTO::getLocationId).toList());
         // assert limit violation contingency ids to check nested filters
         assertThat(subjectLimitViolationPage.getContent().stream()
             .map(SubjectLimitViolationResultDTO::toDto)

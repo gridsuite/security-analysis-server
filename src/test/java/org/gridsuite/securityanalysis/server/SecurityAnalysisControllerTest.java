@@ -385,15 +385,15 @@ class SecurityAnalysisControllerTest {
         JsonNode resultsPageNode0 = mapper.readTree(res);
         ObjectReader faultResultsReader = mapper.readerFor(new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
         List<SubjectLimitViolationResultDTO> subjectLimitViolationResultDTOS = faultResultsReader.readValue(resultsPageNode0.get("content"));
-        List<String> result = subjectLimitViolationResultDTOS.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList();
-        List<String> expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(o -> o.getId().toString())).map(SubjectLimitViolationEntity::getSubjectId).toList();
+        List<String> result = subjectLimitViolationResultDTOS.stream().map(SubjectLimitViolationResultDTO::getLocationId).toList();
+        List<String> expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(o -> o.getId().toString())).map(SubjectLimitViolationEntity::getLocationId).toList();
         assertEquals(expectedResultInOrder, result);
 
         //test with a sorted paged request
         res = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged")
                         .param("page", "0")
                         .param("size", "10")
-                        .param("sort", "subjectId"))
+                        .param("sort", "locationId"))
                 .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON))
@@ -402,8 +402,8 @@ class SecurityAnalysisControllerTest {
         resultsPageNode0 = mapper.readTree(res);
         faultResultsReader = mapper.readerFor(new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
         subjectLimitViolationResultDTOS = faultResultsReader.readValue(resultsPageNode0.get("content"));
-        result = subjectLimitViolationResultDTOS.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList();
-        expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(SubjectLimitViolationEntity::getSubjectId).thenComparing(SubjectLimitViolationEntity::getId)).map(SubjectLimitViolationEntity::getSubjectId).toList();
+        result = subjectLimitViolationResultDTOS.stream().map(SubjectLimitViolationResultDTO::getLocationId).toList();
+        expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(SubjectLimitViolationEntity::getLocationId).thenComparing(SubjectLimitViolationEntity::getId)).map(SubjectLimitViolationEntity::getLocationId).toList();
         assertEquals(expectedResultInOrder, result);
     }
 
@@ -427,6 +427,8 @@ class SecurityAnalysisControllerTest {
         String resultAsString = mvcResult.getResponse().getContentAsString();
         List<PreContingencyLimitViolationResultDTO> preContingencyResult = mapper.readValue(resultAsString, new TypeReference<>() { });
         assertEquals(1, preContingencyResult.size());
+        assertEquals("vl1 (VLGEN_0, VLLOAD_0)", preContingencyResult.get(0).getLocationId());
+
     }
 
     private void checkNResultEnumFilters(UUID resultUuid) throws Exception {
@@ -436,7 +438,7 @@ class SecurityAnalysisControllerTest {
                 content().contentType(MediaType.APPLICATION_JSON)).andReturn();
 
         List<PreContingencyLimitViolationResultDTO> nResults = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
-
+        verifynResultsLocationId(nResults);
         List<LimitViolationType> expectedLimitTypes = nResults.stream().map(result -> result.getLimitViolation().getLimitType()).distinct().toList();
         mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/n-limit-types", resultUuid))
             .andExpectAll(
@@ -456,6 +458,10 @@ class SecurityAnalysisControllerTest {
         Assertions.assertThat(sides).hasSameElementsAs(expectedSides);
     }
 
+    private void verifynResultsLocationId(List<PreContingencyLimitViolationResultDTO> nResults) {
+        Assertions.assertThat(nResults.stream().map(PreContingencyLimitViolationResultDTO::getLocationId).toList()).hasSameElementsAs(List.of("l3", "vl1 (VLGEN_0, VLLOAD_0)", "l6"));
+    }
+
     private void checkNmKResultEnumFilters(UUID resultUuid) throws Exception {
         // getting 100 elements here because we want to fetch all test datas to check fetched filters belongs to fetched results
         MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result/paged?size=100"))
@@ -466,7 +472,7 @@ class SecurityAnalysisControllerTest {
         JsonNode resultsJsonNode = mapper.readTree(mvcResult.getResponse().getContentAsString());
         ObjectReader resultsObjectReader = mapper.readerFor(new TypeReference<List<ContingencyResultDTO>>() { });
         List<ContingencyResultDTO> nmkResult = resultsObjectReader.readValue(resultsJsonNode.get("content"));
-
+        verifyNmkContingrnciesResultLocationIds(nmkResult);
         List<LimitViolationType> expectedLimitTypes = nmkResult.stream().map(ContingencyResultDTO::getSubjectLimitViolations).flatMap(subjectLimitViolationDTOS -> subjectLimitViolationDTOS.stream().map(slm -> slm.getLimitViolation().getLimitType())).distinct().toList();
         mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/nmk-limit-types", resultUuid))
             .andExpectAll(
@@ -493,6 +499,17 @@ class SecurityAnalysisControllerTest {
             ).andReturn();
         List<LoadFlowResult.ComponentResult.Status> status = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
         Assertions.assertThat(status).hasSameElementsAs(expectedStatus);
+    }
+
+    private void verifyNmkContingrnciesResultLocationIds(List<ContingencyResultDTO> nmkResult) {
+        List<String> locationIds = nmkResult.stream()
+                .flatMap(result -> result.getSubjectLimitViolations().stream())
+                .map(SubjectLimitViolationDTO::getLocationId)
+                .distinct()
+                .toList();
+
+        Assertions.assertThat(locationIds).hasSameElementsAs(List.of("l3", "vl1 (VLGEN_0, VLLOAD_0)", "l6", "vl7"));
+
     }
 
     @Test
