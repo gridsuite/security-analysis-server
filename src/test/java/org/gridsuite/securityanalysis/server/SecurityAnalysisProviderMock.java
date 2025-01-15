@@ -9,9 +9,12 @@ package org.gridsuite.securityanalysis.server;
 import com.powsybl.contingency.*;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.TwoSides;
+import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.loadflow.LoadFlowResult;
+import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.*;
 import com.powsybl.security.results.PostContingencyResult;
+import com.powsybl.ws.commons.computation.utils.ComputationResultUtils;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,10 +80,10 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
 
     //MAX VALUE for acceptable duration here is important to check this value is actually set to null when exporting it
     static final LimitViolation LIMIT_VIOLATION_1 = new LimitViolation("l3", LimitViolationType.CURRENT, "l3_name", Integer.MAX_VALUE, 10, 1, 11, TwoSides.ONE);
-    static final LimitViolation LIMIT_VIOLATION_2 = new LimitViolation("vl1", LimitViolationType.HIGH_VOLTAGE, "permanent", 0, 400, 1, 410);
+    static final LimitViolation LIMIT_VIOLATION_2 = new LimitViolation("vl1", null, LimitViolationType.HIGH_VOLTAGE, "permanent", 0, 400, 1, 410, null, new BusBreakerViolationLocation(List.of("NGEN", "NLOAD")));
     static final LimitViolation LIMIT_VIOLATION_3 = new LimitViolation("l6", LimitViolationType.CURRENT, "l6_name", 20 * 60, 10, 1, 11, TwoSides.ONE);
     static final LimitViolation LIMIT_VIOLATION_4 = new LimitViolation("vl7", LimitViolationType.HIGH_VOLTAGE, "vl7_name", 0, 400, 2, 410);
-    static final LimitViolation LIMIT_VIOLATION_5 = new LimitViolation("vl5", LimitViolationType.LOW_VOLTAGE, "vl5_name", 0, 350, 3, 416, TwoSides.TWO);
+    static final LimitViolation LIMIT_VIOLATION_5 = new LimitViolation("vl5", null, LimitViolationType.LOW_VOLTAGE, "vl5_name", 0, 400, 1, 410, null, new BusBreakerViolationLocation(List.of("NLOAD")));
     static final LimitViolation LIMIT_VIOLATION_6 = new LimitViolation("l7", LimitViolationType.CURRENT, "l7_name", 20 * 60, 10.51242140448186, 1.00001290229799f, 11.024281313654868, TwoSides.ONE);
     static final List<LimitViolation> RESULT_LIMIT_VIOLATIONS = List.of(LIMIT_VIOLATION_1, LIMIT_VIOLATION_2);
     static final List<LimitViolation> FAILED_LIMIT_VIOLATIONS = List.of(LIMIT_VIOLATION_3, LIMIT_VIOLATION_4);
@@ -150,6 +153,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         return RESULT_CONSTRAINTS.stream().map(r ->
             new SubjectLimitViolationResultDTO(
                 r.getSubjectId(),
+                r.getLocationId(),
                 r.getContingencies().stream()
                     .filter(filterMethod::apply)
                     .toList()
@@ -163,6 +167,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         return RESULT_CONSTRAINTS.stream().map(r ->
                 new SubjectLimitViolationResultDTO(
                     r.getSubjectId(),
+                    r.getLocationId(),
                     r.getContingencies().stream()
                         .sorted(limitViolationDTOComparator)
                         .toList()
@@ -228,6 +233,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
 
         return new SubjectLimitViolationDTO(
             limitViolation.getSubjectId(),
+            ComputationResultUtils.getViolationLocationId(limitViolation, getNetwork()),
             new LimitViolationDTO(
                 limitViolation.getLimitType(),
                 limitViolation.getLimitName(),
@@ -244,6 +250,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     private static SubjectLimitViolationResultDTO toSubjectLimitViolationResultDTO(LimitViolation limitViolation, List<Contingency> convergedContingencies, LoadFlowResult.ComponentResult.Status status) {
         return new SubjectLimitViolationResultDTO(
             limitViolation.getSubjectId(),
+                ComputationResultUtils.getViolationLocationId(limitViolation, getNetwork()),
             convergedContingencies.stream().map(c -> toContingencyLimitViolationDTO(c, limitViolation, status.name())).toList());
     }
 
@@ -253,6 +260,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                 : null;
         return new PreContingencyLimitViolationResultDTO(
                 limitViolation.getSubjectId(),
+                ComputationResultUtils.getViolationLocationId(limitViolation, getNetwork()),
                 status.name(),
                 new LimitViolationDTO(
                         limitViolation.getLimitType(),
@@ -301,5 +309,9 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                 computedLoading
             )
         );
+    }
+
+    private static Network getNetwork() {
+        return EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
     }
 }
