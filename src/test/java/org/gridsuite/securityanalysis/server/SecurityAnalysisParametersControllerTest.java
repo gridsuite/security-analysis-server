@@ -6,6 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
@@ -339,6 +340,20 @@ class SecurityAnalysisParametersControllerTest {
         mockMvc.perform(delete("/" + VERSION + "/parameters/" + createdParametersUuid))
                 .andExpectAll(status().isOk());
         assertNull(securityAnalysisParametersRepository.findById(createdParametersUuid).orElse(null));
+    }
+
+    @Test
+    void testGetDefaultLimitReductions() throws Exception {
+        MvcResult mvcResult = mockMvc.perform(get("/v1/parameters/default-limit-reductions")
+                .contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andReturn();
+
+        String responseContent = mvcResult.getResponse().getContentAsString();
+        List<LimitReductionsByVoltageLevel> limitReductions = objectMapper.readValue(responseContent, new TypeReference<>() { });
+
+        assertNotNull(limitReductions);
+        assertFalse(limitReductions.isEmpty());
     }
 
     private void assertSecurityAnalysisParametersEntityAreEquals(UUID parametersUuid, double lowVoltageAbsoluteThreshold, double lowVoltageProportionalThreshold, double highVoltageAbsoluteThreshold, double highVoltageProportionalThreshold, double flowProportionalThreshold) {
