@@ -16,6 +16,7 @@ import com.powsybl.ws.commons.computation.service.UuidGeneratorService;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
@@ -38,6 +39,7 @@ public class SecurityAnalysisService extends AbstractComputationService<Security
     }
 
     @Override
+    @Transactional
     public UUID runAndSaveResult(SecurityAnalysisRunContext runContext) {
         Objects.requireNonNull(runContext);
         var resultUuid = uuidGeneratorService.generate();
