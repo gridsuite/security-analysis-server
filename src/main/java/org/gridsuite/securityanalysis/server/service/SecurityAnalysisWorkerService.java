@@ -41,7 +41,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 
 import java.io.*;
@@ -99,7 +98,6 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         this.securityAnalysisFactorySupplier = Objects.requireNonNull(securityAnalysisFactorySupplier);
     }
 
-    @Transactional(readOnly = true)
     public SecurityAnalysisResult run(SecurityAnalysisRunContext runContext) {
         try {
             Network network = getNetwork(runContext.getNetworkUuid(),
