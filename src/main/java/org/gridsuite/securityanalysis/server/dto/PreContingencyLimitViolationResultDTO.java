@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 public class PreContingencyLimitViolationResultDTO {
 
     private String subjectId;
+    private String locationId;
     private String status;
     private LimitViolationDTO limitViolation;
 
@@ -31,9 +32,12 @@ public class PreContingencyLimitViolationResultDTO {
         String subjectId = preContingencyLimitViolation.getSubjectLimitViolation() != null
                 ? preContingencyLimitViolation.getSubjectLimitViolation().getSubjectId()
                 : null;
-
+        String locationId = preContingencyLimitViolation.getSubjectLimitViolation() != null
+                ? preContingencyLimitViolation.getSubjectLimitViolation().getLocationId()
+                : null;
         return PreContingencyLimitViolationResultDTO.builder()
                 .subjectId(subjectId)
+                .locationId(locationId)
                 .status(preContingencyLimitViolation.getResult().getPreContingencyStatus())
                 .limitViolation(LimitViolationDTO.toDto(preContingencyLimitViolation))
                 .build();
