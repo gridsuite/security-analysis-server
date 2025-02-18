@@ -11,12 +11,14 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisParametersService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -103,4 +105,13 @@ public class SecurityAnalysisParametersController {
         parametersService.updateProvider(parametersUuid, provider);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping(value = "/default-limit-reductions", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get default limit reductions")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The default limit reductions")})
+    public ResponseEntity<List<LimitReductionsByVoltageLevel>> getDefaultLimitReductions() {
+        return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
+                .body(parametersService.getDefaultLimitReductions());
+    }
+
 }

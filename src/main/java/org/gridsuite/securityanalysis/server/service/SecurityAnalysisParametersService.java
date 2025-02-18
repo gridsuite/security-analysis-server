@@ -176,4 +176,8 @@ public class SecurityAnalysisParametersService {
             .orElseThrow()
             .updateProvider(provider != null ? provider : defaultProvider);
     }
+
+    public List<LimitReductionsByVoltageLevel> getDefaultLimitReductions() {
+        return limitReductionService.createDefaultLimitReductions();
+    }
 }
