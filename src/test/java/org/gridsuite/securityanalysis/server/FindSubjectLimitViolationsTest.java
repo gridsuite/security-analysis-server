@@ -124,9 +124,11 @@ class FindSubjectLimitViolationsTest {
         reset();
         Page<SubjectLimitViolationEntity> subjectLimitViolationPage = securityAnalysisResultService.findSubjectLimitViolationsPage(resultEntity.getId(), filters, pageable);
 
-        //à assert subject ids to check parent filters
+        // assert subject ids to check parent filters
         assertThat(subjectLimitViolationPage.getContent()).extracting("subjectId").containsExactlyElementsOf(expectedResult.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList());
-        assertThat(subjectLimitViolationPage.getContent()).extracting("locationId").containsExactlyElementsOf(expectedResult.stream().map(SubjectLimitViolationResultDTO::getLocationId).toList());
+        assertThat(subjectLimitViolationPage.getContent().stream()
+                .map(SubjectLimitViolationResultDTO::toDto).map(lm -> lm.getContingencies().stream().map(c -> c.getLimitViolation().getLocationId()).toList()))
+                .containsExactlyElementsOf(expectedResult.stream().map(slm -> slm.getContingencies().stream().map(FindSubjectLimitViolationsTest::getContingencyLimitViolationDTOLocationId).toList()).toList());
         // assert limit violation contingency ids to check nested filters
         assertThat(subjectLimitViolationPage.getContent().stream()
             .map(SubjectLimitViolationResultDTO::toDto)
@@ -268,5 +270,9 @@ class FindSubjectLimitViolationsTest {
 
     private static String getContingencyLimitViolationDTOContingencyId(ContingencyLimitViolationDTO contingencyLimitViolationDTO) {
         return contingencyLimitViolationDTO.getContingency().getContingencyId();
+    }
+
+    private static String getContingencyLimitViolationDTOLocationId(ContingencyLimitViolationDTO contingencyLimitViolationDTO) {
+        return contingencyLimitViolationDTO.getLimitViolation().getLocationId();
     }
 }

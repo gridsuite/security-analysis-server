@@ -153,7 +153,6 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         return RESULT_CONSTRAINTS.stream().map(r ->
             new SubjectLimitViolationResultDTO(
                 r.getSubjectId(),
-                r.getLocationId(),
                 r.getContingencies().stream()
                     .filter(filterMethod::apply)
                     .toList()
@@ -167,7 +166,6 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         return RESULT_CONSTRAINTS.stream().map(r ->
                 new SubjectLimitViolationResultDTO(
                     r.getSubjectId(),
-                    r.getLocationId(),
                     r.getContingencies().stream()
                         .sorted(limitViolationDTOComparator)
                         .toList()
@@ -233,7 +231,6 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
 
         return new SubjectLimitViolationDTO(
             limitViolation.getSubjectId(),
-            ComputationResultUtils.getViolationLocationId(limitViolation, getNetwork()),
             new LimitViolationDTO(
                 limitViolation.getLimitType(),
                 limitViolation.getLimitName(),
@@ -242,7 +239,8 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                 limitViolation.getLimit(),
                 limitViolation.getLimitReduction(),
                 limitViolation.getValue(),
-                computedLoading
+                computedLoading,
+                ComputationResultUtils.getViolationLocationId(limitViolation, getNetwork())
             )
         );
     }
@@ -250,7 +248,6 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     private static SubjectLimitViolationResultDTO toSubjectLimitViolationResultDTO(LimitViolation limitViolation, List<Contingency> convergedContingencies, LoadFlowResult.ComponentResult.Status status) {
         return new SubjectLimitViolationResultDTO(
             limitViolation.getSubjectId(),
-                ComputationResultUtils.getViolationLocationId(limitViolation, getNetwork()),
             convergedContingencies.stream().map(c -> toContingencyLimitViolationDTO(c, limitViolation, status.name())).toList());
     }
 
@@ -260,7 +257,6 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                 : null;
         return new PreContingencyLimitViolationResultDTO(
                 limitViolation.getSubjectId(),
-                ComputationResultUtils.getViolationLocationId(limitViolation, getNetwork()),
                 status.name(),
                 new LimitViolationDTO(
                         limitViolation.getLimitType(),
@@ -270,7 +266,8 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                         limitViolation.getLimit(),
                         limitViolation.getLimitReduction(),
                         limitViolation.getValue(),
-                        computedLoading
+                        computedLoading,
+                        ComputationResultUtils.getViolationLocationId(limitViolation, getNetwork())
                 ));
     }
 
@@ -306,7 +303,8 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                 limitViolation.getLimit(),
                 limitViolation.getLimitReduction(),
                 limitViolation.getValue(),
-                computedLoading
+                computedLoading,
+                ComputationResultUtils.getViolationLocationId(limitViolation, getNetwork())
             )
         );
     }

@@ -57,6 +57,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     private static final List<String> ALLOWED_NMK_CONTINGENCIES_RESULT_SORT_PROPERTIES = List.of(
         ContingencyEntity.Fields.contingencyId,
         ContingencyEntity.Fields.status,
+        ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.locationId,
         ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitType,
         ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitName,
         ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limit,
@@ -64,13 +65,12 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.loading,
         ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.acceptableDuration,
         ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side,
-        ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId,
-        ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.locationId
+        ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId
     );
 
     private static final List<String> ALLOWED_NMK_SUBJECT_LIMIT_VIOLATIONS_RESULT_SORT_PROPERTIES = List.of(
         SubjectLimitViolationEntity.Fields.subjectId,
-        SubjectLimitViolationEntity.Fields.locationId,
+        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.locationId,
         SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitType,
         SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitName,
         SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limit,
@@ -91,8 +91,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         AbstractLimitViolationEntity.Fields.loading,
         AbstractLimitViolationEntity.Fields.acceptableDuration,
         AbstractLimitViolationEntity.Fields.side,
-        AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.locationId
-
+        AbstractLimitViolationEntity.Fields.locationId
             );
 
     public SecurityAnalysisResultService(SecurityAnalysisResultRepository securityAnalysisResultRepository,
@@ -484,11 +483,6 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
                     + SpecificationUtils.FIELD_SEPARATOR
                     + SubjectLimitViolationEntity.Fields.subjectId ->
                     Comparator.comparing(value -> value.getSubjectLimitViolation().getSubjectId(), Comparator.nullsLast(Comparator.naturalOrder()));
-
-                case AbstractLimitViolationEntity.Fields.subjectLimitViolation
-                             + SpecificationUtils.FIELD_SEPARATOR
-                             + SubjectLimitViolationEntity.Fields.locationId ->
-                        Comparator.comparing(value -> value.getSubjectLimitViolation().getLocationId(), Comparator.nullsLast(Comparator.naturalOrder()));
                 default -> getCommonComparator(field);
             };
         } else {
@@ -532,6 +526,8 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
                 Comparator.comparing(AbstractLimitViolationEntity::getSide, Comparator.nullsLast(Comparator.naturalOrder()));
             case AbstractLimitViolationEntity.Fields.loading ->
                 Comparator.comparing(AbstractLimitViolationEntity::getLoading, Comparator.nullsLast(Comparator.naturalOrder()));
+            case AbstractLimitViolationEntity.Fields.locationId ->
+                Comparator.comparing(AbstractLimitViolationEntity::getLocationId, Comparator.nullsLast(Comparator.naturalOrder()));
             default -> throw new IllegalArgumentException("Sorting on the column '" + field + "' is not supported"); // not supposed to happen
         };
     }

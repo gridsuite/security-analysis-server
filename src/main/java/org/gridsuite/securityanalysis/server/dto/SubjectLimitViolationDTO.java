@@ -21,22 +21,14 @@ import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationE
 @Builder
 public class SubjectLimitViolationDTO {
     private String subjectId;
-    private String locationId;
-
     private LimitViolationDTO limitViolation;
 
     public static SubjectLimitViolationDTO toDto(ContingencyLimitViolationEntity limitViolation) {
         String subjectId = limitViolation.getSubjectLimitViolation() != null
             ? limitViolation.getSubjectLimitViolation().getSubjectId()
             : null;
-
-        String locationId = limitViolation.getSubjectLimitViolation() != null
-                ? limitViolation.getSubjectLimitViolation().getLocationId()
-                : null;
-
         return SubjectLimitViolationDTO.builder()
             .subjectId(subjectId)
-            .locationId(locationId)
             .limitViolation(LimitViolationDTO.toDto(limitViolation))
             .build();
     }

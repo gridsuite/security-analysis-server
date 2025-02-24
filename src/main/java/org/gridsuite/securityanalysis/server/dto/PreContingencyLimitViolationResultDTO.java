@@ -11,6 +11,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldNameConstants;
 import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
 
 import java.util.List;
@@ -21,10 +22,10 @@ import java.util.stream.Stream;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
+@FieldNameConstants
 public class PreContingencyLimitViolationResultDTO {
 
     private String subjectId;
-    private String locationId;
     private String status;
     private LimitViolationDTO limitViolation;
 
@@ -32,19 +33,15 @@ public class PreContingencyLimitViolationResultDTO {
         String subjectId = preContingencyLimitViolation.getSubjectLimitViolation() != null
                 ? preContingencyLimitViolation.getSubjectLimitViolation().getSubjectId()
                 : null;
-        String locationId = preContingencyLimitViolation.getSubjectLimitViolation() != null
-                ? preContingencyLimitViolation.getSubjectLimitViolation().getLocationId()
-                : null;
         return PreContingencyLimitViolationResultDTO.builder()
                 .subjectId(subjectId)
-                .locationId(locationId)
                 .status(preContingencyLimitViolation.getResult().getPreContingencyStatus())
                 .limitViolation(LimitViolationDTO.toDto(preContingencyLimitViolation))
                 .build();
     }
 
     public List<String> toCsvRow(Map<String, String> translations) {
-        List<String> csvRow = List.of(this.getSubjectId());
+        List<String> csvRow = List.of();
 
         if (this.getLimitViolation() != null) {
             return Stream.concat(csvRow.stream(), this.getLimitViolation().toCsvRow(translations).stream()).toList();

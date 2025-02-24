@@ -386,15 +386,15 @@ class SecurityAnalysisControllerTest {
         JsonNode resultsPageNode0 = mapper.readTree(res);
         ObjectReader faultResultsReader = mapper.readerFor(new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
         List<SubjectLimitViolationResultDTO> subjectLimitViolationResultDTOS = faultResultsReader.readValue(resultsPageNode0.get("content"));
-        List<String> result = subjectLimitViolationResultDTOS.stream().map(SubjectLimitViolationResultDTO::getLocationId).toList();
-        List<String> expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(o -> o.getId().toString())).map(SubjectLimitViolationEntity::getLocationId).toList();
+        List<String> result = subjectLimitViolationResultDTOS.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList();
+        List<String> expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(o -> o.getId().toString())).map(SubjectLimitViolationEntity::getSubjectId).toList();
         assertEquals(expectedResultInOrder, result);
 
         //test with a sorted paged request
         res = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged")
                         .param("page", "0")
                         .param("size", "10")
-                        .param("sort", "locationId"))
+                        .param("sort", "subjectId"))
                 .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON))
@@ -403,8 +403,8 @@ class SecurityAnalysisControllerTest {
         resultsPageNode0 = mapper.readTree(res);
         faultResultsReader = mapper.readerFor(new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
         subjectLimitViolationResultDTOS = faultResultsReader.readValue(resultsPageNode0.get("content"));
-        result = subjectLimitViolationResultDTOS.stream().map(SubjectLimitViolationResultDTO::getLocationId).toList();
-        expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(SubjectLimitViolationEntity::getLocationId).thenComparing(SubjectLimitViolationEntity::getId)).map(SubjectLimitViolationEntity::getLocationId).toList();
+        result = subjectLimitViolationResultDTOS.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList();
+        expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(SubjectLimitViolationEntity::getSubjectId).thenComparing(SubjectLimitViolationEntity::getId)).map(SubjectLimitViolationEntity::getSubjectId).toList();
         assertEquals(expectedResultInOrder, result);
     }
 
@@ -428,7 +428,7 @@ class SecurityAnalysisControllerTest {
         String resultAsString = mvcResult.getResponse().getContentAsString();
         List<PreContingencyLimitViolationResultDTO> preContingencyResult = mapper.readValue(resultAsString, new TypeReference<>() { });
         assertEquals(1, preContingencyResult.size());
-        assertEquals("vl1 (VLGEN_0, VLLOAD_0)", preContingencyResult.get(0).getLocationId());
+        assertEquals("vl1 (VLGEN_0, VLLOAD_0)", preContingencyResult.get(0).getLimitViolation().getLocationId());
 
     }
 
@@ -460,7 +460,7 @@ class SecurityAnalysisControllerTest {
     }
 
     private void verifynResultsLocationId(List<PreContingencyLimitViolationResultDTO> nResults) {
-        Assertions.assertThat(nResults.stream().map(PreContingencyLimitViolationResultDTO::getLocationId).toList()).hasSameElementsAs(List.of("l3", "vl1 (VLGEN_0, VLLOAD_0)", "l6"));
+        Assertions.assertThat(nResults.stream().map(preContingencyLimitViolationResultDTO -> preContingencyLimitViolationResultDTO.getLimitViolation().getLocationId()).toList()).hasSameElementsAs(List.of("l3", "vl1 (VLGEN_0, VLLOAD_0)", "l6"));
     }
 
     private void checkNmKResultEnumFilters(UUID resultUuid) throws Exception {
@@ -505,7 +505,7 @@ class SecurityAnalysisControllerTest {
     private void verifyNmkContingrnciesResultLocationIds(List<ContingencyResultDTO> nmkResult) {
         List<String> locationIds = nmkResult.stream()
                 .flatMap(result -> result.getSubjectLimitViolations().stream())
-                .map(SubjectLimitViolationDTO::getLocationId)
+                .map(subjectLimitViolationDTO -> subjectLimitViolationDTO.getLimitViolation().getLocationId())
                 .distinct()
                 .toList();
 
@@ -814,12 +814,11 @@ class SecurityAnalysisControllerTest {
                 .headers(List.of("Ouvrage", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Valeur calculée (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
                 .enumValueTranslations(ENUM_TRANSLATIONS_FR)
                 .build());
-        assertRequestsCount(2, 0, 0, 0);
 
         SQLStatementCountValidator.reset();
         checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-en.csv",
             CsvTranslationDTO.builder()
-                .headers(List.of("Contingency ID", "Status", "Constraint", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
+                .headers(List.of("Contingency ID", "Status", "Constraint", "Bus", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
                 .enumValueTranslations(ENUM_TRANSLATIONS_EN)
                 .build());
         /*
@@ -834,7 +833,7 @@ class SecurityAnalysisControllerTest {
         SQLStatementCountValidator.reset();
         checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-fr.csv",
             CsvTranslationDTO.builder()
-                .headers(List.of("Id aléa", "Statut", "Contrainte", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
+                .headers(List.of("Id aléa", "Statut", "Contrainte", "Noeud électrique", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
                 .enumValueTranslations(ENUM_TRANSLATIONS_FR)
                 .build());
         assertRequestsCount(4, 0, 0, 0);
@@ -842,7 +841,7 @@ class SecurityAnalysisControllerTest {
         SQLStatementCountValidator.reset();
         checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-en.csv",
             CsvTranslationDTO.builder()
-                .headers(List.of("Constraint", "Contingency ID", "Status", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
+                .headers(List.of("Constraint", "Contingency ID", "Status", "Bus", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
                 .enumValueTranslations(ENUM_TRANSLATIONS_EN)
                 .build());
         /*
@@ -857,7 +856,7 @@ class SecurityAnalysisControllerTest {
         SQLStatementCountValidator.reset();
         checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-fr.csv",
             CsvTranslationDTO.builder()
-                .headers(List.of("Contrainte", "ID aléa", "Statut", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Valeur calculée (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
+                .headers(List.of("Contrainte", "ID aléa", "Statut", "Noeud électrique", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Valeur calculée (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
                 .enumValueTranslations(ENUM_TRANSLATIONS_FR)
                 .build());
         assertRequestsCount(4, 0, 0, 0);

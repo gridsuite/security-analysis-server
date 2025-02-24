@@ -10,10 +10,7 @@ import com.powsybl.iidm.network.Network;
 import com.powsybl.security.LimitViolation;
 import com.powsybl.security.results.PreContingencyResult;
 import com.powsybl.ws.commons.computation.utils.ComputationResultUtils;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,7 +34,6 @@ import java.util.stream.Collectors;
 @FieldNameConstants
 @Table(name = "pre_contingency_limit_violation")
 public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEntity {
-
     @ManyToOne(fetch = FetchType.LAZY)
     @Setter
     SecurityAnalysisResultEntity result;
@@ -47,7 +43,6 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
     }
 
     public static PreContingencyLimitViolationEntity toEntity(Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
-        subjectLimitViolation.setLocationId(ComputationResultUtils.getViolationLocationId(limitViolation, network));
         return PreContingencyLimitViolationEntity.builder()
             .subjectLimitViolation(subjectLimitViolation)
             .limit(limitViolation.getLimit())
@@ -58,6 +53,7 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
             .value(limitViolation.getValue())
             .side(limitViolation.getSide())
             .loading(computeLoading(limitViolation))
+            .locationId(ComputationResultUtils.getViolationLocationId(limitViolation, network))
             .build();
     }
 }

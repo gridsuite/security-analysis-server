@@ -58,6 +58,9 @@ public abstract class AbstractLimitViolationEntity {
     @Column(name = "loading")
     private Double loading;
 
+    @Column
+    private String locationId;
+
     public static Double computeLoading(LimitViolation limitViolation) {
         return LimitViolationType.CURRENT.equals(limitViolation.getLimitType())
                 ? (100 * limitViolation.getValue()) / (limitViolation.getLimit() * limitViolation.getLimitReduction())

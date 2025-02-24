@@ -17,13 +17,8 @@ import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.ws.commons.computation.service.ReportService;
 import com.powsybl.ws.commons.computation.service.UuidGeneratorService;
-import org.gridsuite.securityanalysis.server.dto.PreContingencyLimitViolationResultDTO;
-import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
-import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationResultDTO;
-import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
-import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
-import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.dto.*;
+import org.gridsuite.securityanalysis.server.entities.*;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
 import org.gridsuite.securityanalysis.server.repositories.specifications.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
@@ -124,9 +119,10 @@ class FindPreContingencyLimitViolationTest {
                 expectedResult.stream().map(PreContingencyLimitViolationResultDTO::getSubjectId).toList()
         );
 
-        assertThat(preContingencyLimitViolation).extracting(SubjectLimitViolationEntity.Fields.locationId)
+        // assert location ids
+        assertThat(preContingencyLimitViolation).extracting(PreContingencyLimitViolationResultDTO.Fields.limitViolation + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.locationId)
                 .containsExactlyElementsOf(
-                        expectedResult.stream().map(PreContingencyLimitViolationResultDTO::getLocationId).toList()
+                        expectedResult.stream().map(preContingencyLimitViolationResultDTO -> preContingencyLimitViolationResultDTO.getLimitViolation().getLocationId()).toList()
         );
 
         assertSelectCount(expectedSelectCount);
@@ -145,7 +141,7 @@ class FindPreContingencyLimitViolationTest {
                         RESULT_PRECONTINGENCY.stream().sorted(Comparator.comparing(PreContingencyLimitViolationResultDTO::getSubjectId)).filter(c -> c.getSubjectId().contains("3")).toList(), 2),
                 Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "l", AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId)), Sort.by(Sort.Direction.ASC, AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId),
                         RESULT_PRECONTINGENCY.stream().sorted(Comparator.comparing(PreContingencyLimitViolationResultDTO::getSubjectId)).filter(c -> c.getSubjectId().startsWith("l")).toList(), 2),
-                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.locationId)), Sort.by(Sort.Direction.ASC, AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId),
+                Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", AbstractLimitViolationEntity.Fields.locationId)), Sort.by(Sort.Direction.ASC, AbstractLimitViolationEntity.Fields.locationId),
                         RESULT_PRECONTINGENCY.stream().sorted(Comparator.comparing(PreContingencyLimitViolationResultDTO::getSubjectId)).filter(c -> c.getSubjectId().startsWith("3")).toList(), 2)
         );
     }

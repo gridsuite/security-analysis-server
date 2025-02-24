@@ -33,7 +33,6 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
     private ContingencyEntity contingency;
 
     public static ContingencyLimitViolationEntity toEntity(Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
-        subjectLimitViolation.setLocationId(ComputationResultUtils.getViolationLocationId(limitViolation, network));
         ContingencyLimitViolationEntity contingencyLimitViolationEntity = ContingencyLimitViolationEntity.builder()
             .limit(limitViolation.getLimit())
             .limitName(limitViolation.getLimitName())
@@ -43,6 +42,7 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
             .value(limitViolation.getValue())
             .side(limitViolation.getSide())
             .loading(computeLoading(limitViolation))
+            .locationId(ComputationResultUtils.getViolationLocationId(limitViolation, network))
             .subjectLimitViolation(subjectLimitViolation)
             .build();
 
