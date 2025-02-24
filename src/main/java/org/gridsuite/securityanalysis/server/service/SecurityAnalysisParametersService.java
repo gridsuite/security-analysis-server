@@ -136,6 +136,7 @@ public class SecurityAnalysisParametersService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
     public Optional<SecurityAnalysisParametersValues> getParameters(UUID parametersUuid) {
         return securityAnalysisParametersRepository.findById(parametersUuid)
                 .map(this::toSecurityAnalysisParametersValues);
