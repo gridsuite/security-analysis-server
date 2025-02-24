@@ -63,7 +63,7 @@ public abstract class AbstractLimitViolationEntity {
 
     public static Double computeLoading(LimitViolation limitViolation) {
         return LimitViolationType.CURRENT.equals(limitViolation.getLimitType())
-                ? (100 * limitViolation.getValue()) / (limitViolation.getLimit() * limitViolation.getLimitReduction())
+                ? 100 * limitViolation.getValue() / limitViolation.getLimit()
                 : null;
     }
 }
