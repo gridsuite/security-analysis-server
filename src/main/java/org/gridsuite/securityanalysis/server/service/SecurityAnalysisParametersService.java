@@ -49,6 +49,7 @@ public class SecurityAnalysisParametersService {
         this.limitReductionService = limitReductionService;
     }
 
+    @Transactional(readOnly = true)
     public SecurityAnalysisRunContext createRunContext(UUID networkUuid, String variantId, RunContextParametersInfos runContextParametersInfos,
                                                        String receiver, ReportInfos reportInfos, String userId) {
         Optional<SecurityAnalysisParametersEntity> securityAnalysisParametersEntity = Optional.empty();
