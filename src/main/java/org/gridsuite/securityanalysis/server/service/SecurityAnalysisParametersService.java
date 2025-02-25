@@ -49,6 +49,7 @@ public class SecurityAnalysisParametersService {
         this.limitReductionService = limitReductionService;
     }
 
+    @Transactional(readOnly = true)
     public SecurityAnalysisRunContext createRunContext(UUID networkUuid, String variantId, RunContextParametersInfos runContextParametersInfos,
                                                        String receiver, ReportInfos reportInfos, String userId) {
         Optional<SecurityAnalysisParametersEntity> securityAnalysisParametersEntity = Optional.empty();
@@ -136,6 +137,7 @@ public class SecurityAnalysisParametersService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
     public Optional<SecurityAnalysisParametersValues> getParameters(UUID parametersUuid) {
         return securityAnalysisParametersRepository.findById(parametersUuid)
                 .map(this::toSecurityAnalysisParametersValues);
