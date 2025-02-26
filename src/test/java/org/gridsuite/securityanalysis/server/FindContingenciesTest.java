@@ -8,7 +8,6 @@ package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
-import com.powsybl.iidm.network.VariantManagerConstants;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.LimitViolationType;
@@ -67,9 +66,6 @@ class FindContingenciesTest {
     void setUp() {
         // network store service mocking
         Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
-        network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_1_ID);
-        network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_2_ID);
-        network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_3_ID);
         resultEntity = SecurityAnalysisResultEntity.toEntity(network, UUID.randomUUID(), RESULT, SecurityAnalysisStatus.CONVERGED);
         securityAnalysisResultRepository.save(resultEntity);
     }
