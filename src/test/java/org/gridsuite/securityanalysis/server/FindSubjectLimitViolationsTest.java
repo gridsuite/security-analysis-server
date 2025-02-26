@@ -6,7 +6,10 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
+import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
+import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.LimitViolationType;
 import org.gridsuite.securityanalysis.server.dto.ContingencyLimitViolationDTO;
 import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
@@ -58,7 +61,9 @@ class FindSubjectLimitViolationsTest {
 
     @BeforeAll
     void setUp() {
-        resultEntity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), RESULT, SecurityAnalysisStatus.CONVERGED);
+        // network store service mocking
+        Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
+        resultEntity = SecurityAnalysisResultEntity.toEntity(network, UUID.randomUUID(), RESULT, SecurityAnalysisStatus.CONVERGED);
         securityAnalysisResultRepository.save(resultEntity);
     }
 
@@ -81,6 +86,9 @@ class FindSubjectLimitViolationsTest {
 
         // assert subject ids to check parent filters
         assertThat(subjectLimitViolationPage.getContent()).extracting("subjectId").containsExactlyElementsOf(expectedResult.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList());
+        assertThat(subjectLimitViolationPage.getContent().stream()
+                .map(SubjectLimitViolationResultDTO::toDto).map(lm -> lm.getContingencies().stream().map(c -> c.getLimitViolation().getLocationId()).toList()))
+                .containsExactlyElementsOf(expectedResult.stream().map(slm -> slm.getContingencies().stream().map(FindSubjectLimitViolationsTest::getContingencyLimitViolationDTOLocationId).toList()).toList());
         // assert limit violation contingency ids to check nested filters
         assertThat(subjectLimitViolationPage.getContent().stream()
             .map(SubjectLimitViolationResultDTO::toDto)
@@ -222,5 +230,9 @@ class FindSubjectLimitViolationsTest {
 
     private static String getContingencyLimitViolationDTOContingencyId(ContingencyLimitViolationDTO contingencyLimitViolationDTO) {
         return contingencyLimitViolationDTO.getContingency().getContingencyId();
+    }
+
+    private static String getContingencyLimitViolationDTOLocationId(ContingencyLimitViolationDTO contingencyLimitViolationDTO) {
+        return contingencyLimitViolationDTO.getLimitViolation().getLocationId();
     }
 }
