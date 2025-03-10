@@ -27,7 +27,6 @@ import java.util.Map;
 @NoArgsConstructor
 public class SubjectLimitViolationResultDTO {
     private String subjectId;
-
     private List<ContingencyLimitViolationDTO> contingencies;
 
     public static SubjectLimitViolationResultDTO toDto(SubjectLimitViolationEntity subjectLimitViolation) {
