@@ -340,7 +340,7 @@ class SecurityAnalysisControllerTest {
         assertResultNotFound(OTHER_RESULT_UUID);
 
         // test one result deletion
-        mockMvc.perform(delete("/" + VERSION + "/results/" + RESULT_UUID))
+        mockMvc.perform(delete("/" + VERSION + "/results").queryParam("resultsUuids", RESULT_UUID.toString()))
                 .andExpect(status().isOk());
 
         assertResultNotFound(RESULT_UUID);
