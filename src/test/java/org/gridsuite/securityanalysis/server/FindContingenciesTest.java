@@ -9,6 +9,7 @@ package org.gridsuite.securityanalysis.server;
 import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.ws.commons.computation.dto.ResourceFilterDTO;
+import com.powsybl.ws.commons.computation.ComputationException;
 import com.powsybl.ws.commons.computation.utils.specification.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.dto.ContingencyResultDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
@@ -19,7 +20,6 @@ import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEnti
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
-import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -248,8 +248,8 @@ class FindContingenciesTest {
 
     private static Stream<Arguments> provideForbiddenSort() {
         return Stream.of(
-            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "limitType")), new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_SORT_FORMAT)),
-            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "side")), new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_SORT_FORMAT))
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "limitType")), new ComputationException(ComputationException.Type.INVALID_SORT_FORMAT)),
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "side")), new ComputationException(ComputationException.Type.INVALID_SORT_FORMAT))
         );
     }
 

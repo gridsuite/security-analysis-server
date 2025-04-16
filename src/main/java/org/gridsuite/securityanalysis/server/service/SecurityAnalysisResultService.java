@@ -6,15 +6,15 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.ws.commons.computation.dto.ResourceFilterDTO;
 import com.powsybl.ws.commons.computation.service.AbstractComputationResultService;
+import com.powsybl.ws.commons.computation.ComputationException;
 import com.powsybl.ws.commons.computation.utils.specification.SpecificationUtils;
+import lombok.Getter;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.*;
 import org.gridsuite.securityanalysis.server.repositories.*;
@@ -22,7 +22,6 @@ import org.gridsuite.securityanalysis.server.repositories.specifications.Conting
 import org.gridsuite.securityanalysis.server.repositories.specifications.PreContingencyLimitViolationSpecificationBuilder;
 import org.gridsuite.securityanalysis.server.repositories.specifications.SubjectLimitViolationSpecificationBuilder;
 import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
-import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
@@ -34,6 +33,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static com.powsybl.ws.commons.computation.utils.FilterUtils.fromStringFiltersToDTO;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -49,6 +50,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     private final ContingencySpecificationBuilder contingencySpecificationBuilder;
     private final SubjectLimitViolationSpecificationBuilder subjectLimitViolationSpecificationBuilder;
     private final PreContingencyLimitViolationSpecificationBuilder preContingencyLimitViolationSpecificationBuilder;
+    @Getter
     private final ObjectMapper objectMapper;
     private SecurityAnalysisResultService self;
 
@@ -136,7 +138,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     public Page<ContingencyResultDTO> findNmKContingenciesPaged(UUID resultUuid, String stringFilters, Pageable pageable) {
         assertResultExists(resultUuid);
 
-        Page<ContingencyEntity> contingencyPageBis = self.findContingenciesPage(resultUuid, fromStringFiltersToDTO(stringFilters), pageable);
+        Page<ContingencyEntity> contingencyPageBis = self.findContingenciesPage(resultUuid, fromStringFiltersToDTO(stringFilters, objectMapper), pageable);
         return contingencyPageBis.map(ContingencyResultDTO::toDto);
     }
 
@@ -165,7 +167,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     public Page<SubjectLimitViolationResultDTO> findNmKConstraintsResultPaged(UUID resultUuid, String stringFilters, Pageable pageable) {
         assertResultExists(resultUuid);
 
-        Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = self.findSubjectLimitViolationsPage(resultUuid, fromStringFiltersToDTO(stringFilters), pageable);
+        Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = self.findSubjectLimitViolationsPage(resultUuid, fromStringFiltersToDTO(stringFilters, objectMapper), pageable);
         return subjectLimitViolationsPage.map(SubjectLimitViolationResultDTO::toDto);
     }
 
@@ -206,25 +208,13 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
 
     private void assertSortAllowed(Sort sort, List<String> allowedSortProperties) {
         if (!sort.stream().allMatch(order -> allowedSortProperties.contains(order.getProperty()))) {
-            throw new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_SORT_FORMAT);
-        }
-    }
-
-    public List<ResourceFilterDTO> fromStringFiltersToDTO(String stringFilters) {
-        if (stringFilters == null || stringFilters.isEmpty()) {
-            return List.of();
-        }
-        try {
-            return objectMapper.readValue(stringFilters, new TypeReference<>() {
-            });
-        } catch (JsonProcessingException e) {
-            throw new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_FILTER_FORMAT);
+            throw new ComputationException(ComputationException.Type.INVALID_SORT_FORMAT);
         }
     }
 
     public void assertResultExists(UUID resultUuid) {
         if (securityAnalysisResultRepository.findById(resultUuid).isEmpty()) {
-            throw new SecurityAnalysisException(SecurityAnalysisException.Type.RESULT_NOT_FOUND);
+            throw new ComputationException(ComputationException.Type.RESULT_NOT_FOUND);
         }
     }
 

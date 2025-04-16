@@ -6,7 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
+import com.powsybl.ws.commons.computation.ComputationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -23,8 +23,8 @@ public class RestResponseEntityExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RestResponseEntityExceptionHandler.class);
 
-    @ExceptionHandler(SecurityAnalysisException.class)
-    protected ResponseEntity<Object> handleStudyException(SecurityAnalysisException exception) {
+    @ExceptionHandler(ComputationException.class)
+    protected ResponseEntity<Object> handleStudyException(ComputationException exception) {
         if (LOGGER.isErrorEnabled()) {
             LOGGER.error(exception.getMessage());
         }

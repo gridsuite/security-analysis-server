@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.powsybl.ws.commons.computation.service.NotificationService.HEADER_USER_ID;
+import static com.powsybl.ws.commons.computation.utils.FilterUtils.fromStringFiltersToDTO;
 import static org.springframework.http.MediaType.*;
 
 /**
@@ -124,7 +125,10 @@ public class SecurityAnalysisController {
                                                                                   @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
                                                                                   @Parameter(description = "Pageable parameters for pagination and sorting") Sort sort) {
         String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
-        List<PreContingencyLimitViolationResultDTO> result = securityAnalysisResultService.findNResult(resultUuid, securityAnalysisResultService.fromStringFiltersToDTO(decodedStringFilters), sort);
+        List<PreContingencyLimitViolationResultDTO> result = securityAnalysisResultService.findNResult(
+                resultUuid,
+                fromStringFiltersToDTO(decodedStringFilters, securityAnalysisResultService.getObjectMapper()),
+                sort);
 
         return result != null
                 ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
