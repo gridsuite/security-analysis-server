@@ -1,5 +1,6 @@
 package org.gridsuite.securityanalysis.server.util;
 
+import com.powsybl.ws.commons.computation.ComputationException;
 import com.univocity.parsers.csv.CsvFormat;
 import com.univocity.parsers.csv.CsvWriter;
 import com.univocity.parsers.csv.CsvWriterSettings;
@@ -40,7 +41,7 @@ public final class CsvExportUtils {
             csvWriter.close();
             return outputStream.toByteArray();
         } catch (IOException e) {
-            throw new SecurityAnalysisException(SecurityAnalysisException.Type.FILE_EXPORT_ERROR);
+            throw new ComputationException(ComputationException.Type.FILE_EXPORT_ERROR);
         }
     }
 
