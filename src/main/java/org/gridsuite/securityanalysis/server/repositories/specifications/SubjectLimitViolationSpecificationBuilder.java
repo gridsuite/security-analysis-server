@@ -39,12 +39,12 @@ public class SubjectLimitViolationSpecificationBuilder extends AbstractCommonSpe
     }
 
     @Override
-    public Specification<SubjectLimitViolationEntity> childrenNotEmpty() {
+    public Specification<SubjectLimitViolationEntity> addSpecificFilterWhenChildrenFilters() {
         return SpecificationUtils.isNotEmpty(SubjectLimitViolationEntity.Fields.contingencyLimitViolations);
     }
 
     @Override
     public Specification<SubjectLimitViolationEntity> addSpecificFilterWhenNoChildrenFilter() {
-        return this.childrenNotEmpty();
+        return this.addSpecificFilterWhenChildrenFilters();
     }
 }
