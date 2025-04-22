@@ -228,14 +228,13 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         }
 
         ReportNode elementsNotFoundSubReporter = runContext.getReportNode().newReportNode()
-                .withMessageTemplate("notFoundEquipments", "Equipments not found")
+                .withMessageTemplate("notFoundEquipments")
                 .add();
 
         contingencyInfosList.forEach(contingencyInfos -> {
             String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
             elementsNotFoundSubReporter.newReportNode()
-                    .withMessageTemplate("contingencyEquipmentNotFound",
-                            "Cannot find the following equipments ${elementsIds} in contingency ${contingencyId}")
+                    .withMessageTemplate("contingencyEquipmentNotFound")
                     .withUntypedValue("elementsIds", elementsIds)
                     .withUntypedValue("contingencyId", contingencyInfos.getId())
                     .withSeverity(TypedValue.WARN_SEVERITY)
@@ -252,14 +251,13 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         }
 
         ReportNode elementsNotConnectedSubReporter = runContext.getReportNode().newReportNode()
-                .withMessageTemplate("notConnectedEquipments", "Equipments not connected")
+                .withMessageTemplate("notConnectedEquipments")
                 .add();
 
         contingencyInfosList.forEach(contingencyInfos -> {
             String elementsIds = String.join(", ", contingencyInfos.getNotConnectedElements());
             elementsNotConnectedSubReporter.newReportNode()
-                    .withMessageTemplate("contingencyEquipmentNotConnected",
-                            "The following equipments ${elementsIds} in contingency ${contingencyId} are not connected")
+                    .withMessageTemplate("contingencyEquipmentNotConnected")
                     .withUntypedValue("elementsIds", elementsIds)
                     .withUntypedValue("contingencyId", contingencyInfos.getId())
                     .withSeverity(TypedValue.WARN_SEVERITY)
