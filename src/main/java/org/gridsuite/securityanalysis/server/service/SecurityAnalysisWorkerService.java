@@ -228,13 +228,13 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         }
 
         ReportNode elementsNotFoundSubReporter = runContext.getReportNode().newReportNode()
-                .withMessageTemplate("notFoundEquipments")
+                .withMessageTemplate("security.analysis.server.notFoundEquipments")
                 .add();
 
         contingencyInfosList.forEach(contingencyInfos -> {
             String elementsIds = String.join(", ", contingencyInfos.getNotFoundElements());
             elementsNotFoundSubReporter.newReportNode()
-                    .withMessageTemplate("contingencyEquipmentNotFound")
+                    .withMessageTemplate("security.analysis.server.contingencyEquipmentNotFound")
                     .withUntypedValue("elementsIds", elementsIds)
                     .withUntypedValue("contingencyId", contingencyInfos.getId())
                     .withSeverity(TypedValue.WARN_SEVERITY)
@@ -251,13 +251,13 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         }
 
         ReportNode elementsNotConnectedSubReporter = runContext.getReportNode().newReportNode()
-                .withMessageTemplate("notConnectedEquipments")
+                .withMessageTemplate("security.analysis.server.notConnectedEquipments")
                 .add();
 
         contingencyInfosList.forEach(contingencyInfos -> {
             String elementsIds = String.join(", ", contingencyInfos.getNotConnectedElements());
             elementsNotConnectedSubReporter.newReportNode()
-                    .withMessageTemplate("contingencyEquipmentNotConnected")
+                    .withMessageTemplate("security.analysis.server.contingencyEquipmentNotConnected")
                     .withUntypedValue("elementsIds", elementsIds)
                     .withUntypedValue("contingencyId", contingencyInfos.getId())
                     .withSeverity(TypedValue.WARN_SEVERITY)
