@@ -26,6 +26,7 @@ public class LimitViolationDTO {
     private double limitReduction;
     private double value;
     private Double loading;
+    private String locationId;
 
     public static LimitViolationDTO toDto(AbstractLimitViolationEntity limitViolation) {
         return LimitViolationDTO.builder()
@@ -37,11 +38,13 @@ public class LimitViolationDTO {
             .limitReduction(limitViolation.getLimitReduction())
             .value(limitViolation.getValue())
             .loading(limitViolation.getLoading())
+            .locationId(limitViolation.getLocationId())
             .build();
     }
 
     public List<String> toCsvRow(Map<String, String> translations) {
         List<String> csvRow = new ArrayList<>();
+        csvRow.add(this.getLocationId());
         csvRow.add(this.getLimitType() != null ? CsvExportUtils.translate(this.getLimitType().name(), translations) : "");
         csvRow.add(CsvExportUtils.replaceNullWithEmptyString(CsvExportUtils.translate(this.getLimitName(), translations)));
         csvRow.add(Double.toString(this.getLimit()));
