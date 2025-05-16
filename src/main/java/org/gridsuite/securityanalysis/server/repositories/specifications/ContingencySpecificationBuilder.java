@@ -7,9 +7,11 @@
 package org.gridsuite.securityanalysis.server.repositories.specifications;
 
 import com.powsybl.loadflow.LoadFlowResult;
+import com.powsybl.ws.commons.computation.dto.ResourceFilterDTO;
+import com.powsybl.ws.commons.computation.specification.AbstractCommonSpecificationBuilder;
+import com.powsybl.ws.commons.computation.utils.SpecificationUtils;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Root;
-import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.springframework.data.jpa.domain.Specification;
@@ -40,11 +42,11 @@ public class ContingencySpecificationBuilder extends AbstractCommonSpecification
 
     @Override
     public Specification<ContingencyEntity> addSpecificFilterWhenNoChildrenFilter() {
-        return this.childrenNotEmpty().or(SpecificationUtils.notEqual(ContingencyEntity.Fields.status, LoadFlowResult.ComponentResult.Status.CONVERGED.name()));
+        return this.addSpecificFilterWhenChildrenFilters().or(SpecificationUtils.notEqual(ContingencyEntity.Fields.status, LoadFlowResult.ComponentResult.Status.CONVERGED.name()));
     }
 
     @Override
-    public Specification<ContingencyEntity> childrenNotEmpty() {
+    public Specification<ContingencyEntity> addSpecificFilterWhenChildrenFilters() {
         return SpecificationUtils.isNotEmpty(ContingencyEntity.Fields.contingencyLimitViolations);
     }
 }
