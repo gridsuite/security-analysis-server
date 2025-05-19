@@ -40,7 +40,10 @@ import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -129,7 +132,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
         SecurityAnalysisRunParameters runParameters = new SecurityAnalysisRunParameters()
                 .setSecurityAnalysisParameters(runContext.getParameters().securityAnalysisParameters())
-                .setComputationManager(executionService.getComputationManager())
+                .setComputationManager(runContext.getComputationManager())
                 .setFilter(LimitViolationFilter.load())
                 .setLimitReductions(limitReductions)
                 .setReportNode(runContext.getReportNode());
@@ -173,6 +176,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     @Override
     protected void preRun(SecurityAnalysisRunContext runContext) {
+        super.preRun(runContext);
+
         LOGGER.info("Run security analysis on contingency lists: {}", runContext.getContingencyListNames().stream().map(LogUtils::sanitizeParam).toList());
 
         List<ContingencyInfos> contingencies = observer.observe("contingencies.fetch", runContext,
