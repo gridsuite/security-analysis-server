@@ -27,7 +27,7 @@ import com.powsybl.security.*;
 import com.powsybl.ws.commons.computation.dto.ResourceFilterDTO;
 import com.powsybl.ws.commons.computation.service.ReportService;
 import com.powsybl.ws.commons.computation.service.UuidGeneratorService;
-import com.powsybl.ws.commons.computation.utils.specification.SpecificationUtils;
+import com.powsybl.ws.commons.computation.utils.SpecificationUtils;
 import com.vladmihalcea.sql.SQLStatementCountValidator;
 import org.assertj.core.api.Assertions;
 import org.gridsuite.securityanalysis.server.dto.*;

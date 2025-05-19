@@ -8,7 +8,7 @@ package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.ws.commons.computation.dto.ResourceFilterDTO;
-import com.powsybl.ws.commons.computation.utils.specification.SpecificationUtils;
+import com.powsybl.ws.commons.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.dto.PreContingencyLimitViolationResultDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationResultDTO;

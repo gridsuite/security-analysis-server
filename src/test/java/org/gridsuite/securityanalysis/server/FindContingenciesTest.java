@@ -10,7 +10,7 @@ import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.ws.commons.computation.dto.ResourceFilterDTO;
 import com.powsybl.ws.commons.computation.ComputationException;
-import com.powsybl.ws.commons.computation.utils.specification.SpecificationUtils;
+import com.powsybl.ws.commons.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.dto.ContingencyResultDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationDTO;
