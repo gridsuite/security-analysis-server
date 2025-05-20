@@ -9,6 +9,7 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
@@ -56,6 +57,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     private static final List<String> ALLOWED_NMK_CONTINGENCIES_RESULT_SORT_PROPERTIES = List.of(
         ContingencyEntity.Fields.contingencyId,
         ContingencyEntity.Fields.status,
+        ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.locationId,
         ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitType,
         ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitName,
         ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limit,
@@ -68,6 +70,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
 
     private static final List<String> ALLOWED_NMK_SUBJECT_LIMIT_VIOLATIONS_RESULT_SORT_PROPERTIES = List.of(
         SubjectLimitViolationEntity.Fields.subjectId,
+        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.locationId,
         SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitType,
         SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitName,
         SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limit,
@@ -87,8 +90,9 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         AbstractLimitViolationEntity.Fields.value,
         AbstractLimitViolationEntity.Fields.loading,
         AbstractLimitViolationEntity.Fields.acceptableDuration,
-        AbstractLimitViolationEntity.Fields.side
-    );
+        AbstractLimitViolationEntity.Fields.side,
+        AbstractLimitViolationEntity.Fields.locationId
+            );
 
     public SecurityAnalysisResultService(SecurityAnalysisResultRepository securityAnalysisResultRepository,
                                          ContingencyRepository contingencyRepository,
@@ -228,11 +232,11 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional
-    public void insert(UUID resultUuid, SecurityAnalysisResult result, SecurityAnalysisStatus status) {
+    public void insert(Network network, UUID resultUuid, SecurityAnalysisResult result, SecurityAnalysisStatus status) {
         Objects.requireNonNull(resultUuid);
         Objects.requireNonNull(result);
 
-        SecurityAnalysisResultEntity securityAnalysisResult = SecurityAnalysisResultEntity.toEntity(resultUuid, result, status);
+        SecurityAnalysisResultEntity securityAnalysisResult = SecurityAnalysisResultEntity.toEntity(network, resultUuid, result, status);
         securityAnalysisResultRepository.save(securityAnalysisResult);
     }
 
@@ -522,6 +526,8 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
                 Comparator.comparing(AbstractLimitViolationEntity::getSide, Comparator.nullsLast(Comparator.naturalOrder()));
             case AbstractLimitViolationEntity.Fields.loading ->
                 Comparator.comparing(AbstractLimitViolationEntity::getLoading, Comparator.nullsLast(Comparator.naturalOrder()));
+            case AbstractLimitViolationEntity.Fields.locationId ->
+                Comparator.comparing(AbstractLimitViolationEntity::getLocationId, Comparator.nullsLast(Comparator.naturalOrder()));
             default -> throw new IllegalArgumentException("Sorting on the column '" + field + "' is not supported"); // not supposed to happen
         };
     }
