@@ -193,19 +193,11 @@ public class SecurityAnalysisController {
             .body(securityAnalysisResultService.findNmKConstraintsResultZippedCsv(resultUuid, csvTranslations));
     }
 
-    @DeleteMapping(value = "/results/{resultUuid}", produces = APPLICATION_JSON_VALUE)
-    @Operation(summary = "Delete a security analysis result from the database")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result has been deleted")})
-    public ResponseEntity<Void> deleteResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
-        securityAnalysisService.deleteResult(resultUuid);
-        return ResponseEntity.ok().build();
-    }
-
     @DeleteMapping(value = "/results", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Delete all security analysis results from the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "All security analysis results have been deleted")})
-    public ResponseEntity<Void> deleteResults() {
-        securityAnalysisService.deleteResults();
+    public ResponseEntity<Void> deleteResults(@Parameter(description = "Results UUID") @RequestParam(value = "resultsUuids", required = false) List<UUID> resultsUuids) {
+        securityAnalysisService.deleteResults(resultsUuids);
         return ResponseEntity.ok().build();
     }
 

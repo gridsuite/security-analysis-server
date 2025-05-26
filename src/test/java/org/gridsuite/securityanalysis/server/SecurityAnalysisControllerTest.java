@@ -340,7 +340,7 @@ class SecurityAnalysisControllerTest {
         assertResultNotFound(OTHER_RESULT_UUID);
 
         // test one result deletion
-        mockMvc.perform(delete("/" + VERSION + "/results/" + RESULT_UUID))
+        mockMvc.perform(delete("/" + VERSION + "/results").queryParam("resultsUuids", RESULT_UUID.toString()))
                 .andExpect(status().isOk());
 
         assertResultNotFound(RESULT_UUID);
@@ -738,11 +738,11 @@ class SecurityAnalysisControllerTest {
         SecurityAnalysisResult securityAnalysisResult = mapper.readValue(resultAsString, SecurityAnalysisResult.class);
         assertThat(RESULT, new MatcherJson<>(mapper, securityAnalysisResult));
 
-        assertLogMessage("Equipments not found", "notFoundEquipments", reportService);
-        assertLogMessage("Cannot find the following equipments wrongId1, wrongId2 in contingency l1", "contingencyEquipmentNotFound", reportService);
+        assertLogMessage("Equipments not found", "security.analysis.server.notFoundEquipments", reportService);
+        assertLogMessage("Cannot find the following equipments wrongId1, wrongId2 in contingency l1", "security.analysis.server.contingencyEquipmentNotFound", reportService);
 
-        assertLogMessage("Equipments not connected", "notConnectedEquipments", reportService);
-        assertLogMessage("The following equipments notConnectedId1 in contingency l4 are not connected", "contingencyEquipmentNotConnected", reportService);
+        assertLogMessage("Equipments not connected", "security.analysis.server.notConnectedEquipments", reportService);
+        assertLogMessage("The following equipments notConnectedId1 in contingency l4 are not connected", "security.analysis.server.contingencyEquipmentNotConnected", reportService);
     }
 
     @Test
