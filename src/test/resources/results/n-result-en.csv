@@ -1,4 +1,4 @@
 ﻿Equipment,Violation type,Limit name,Limit value (A or kV),Calculated value (A or kV),Load (%),Overload,Side
 l3,Current,l3_name,10.0,11.0,110.0,,Side 1
 l6,Current,l6_name,10.0,11.0,110.0,1200,Side 1
-vl1,High voltage,IST,400.0,410.0,,0,
+"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400.0,410.0,,0,

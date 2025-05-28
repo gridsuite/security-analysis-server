@@ -6,7 +6,9 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
+import com.powsybl.iidm.network.Network;
 import com.powsybl.security.LimitViolation;
+import com.powsybl.ws.commons.computation.utils.ComputationResultUtils;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldNameConstants;
@@ -30,7 +32,7 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
     @Setter
     private ContingencyEntity contingency;
 
-    public static ContingencyLimitViolationEntity toEntity(LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
+    public static ContingencyLimitViolationEntity toEntity(Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
         ContingencyLimitViolationEntity contingencyLimitViolationEntity = ContingencyLimitViolationEntity.builder()
             .limit(limitViolation.getLimit())
             .limitName(limitViolation.getLimitName())
@@ -40,6 +42,7 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
             .value(limitViolation.getValue())
             .side(limitViolation.getSide())
             .loading(computeLoading(limitViolation))
+            .locationId(ComputationResultUtils.getViolationLocationId(limitViolation, network))
             .subjectLimitViolation(subjectLimitViolation)
             .build();
 
