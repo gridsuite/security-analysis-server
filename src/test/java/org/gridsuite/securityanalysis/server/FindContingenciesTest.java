@@ -6,7 +6,10 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
+import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
+import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.ws.commons.computation.dto.ResourceFilterDTO;
 import com.powsybl.ws.commons.computation.ComputationException;
@@ -61,7 +64,9 @@ class FindContingenciesTest {
 
     @BeforeAll
     void setUp() {
-        resultEntity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), RESULT, SecurityAnalysisStatus.CONVERGED);
+        // network store service mocking
+        Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
+        resultEntity = SecurityAnalysisResultEntity.toEntity(network, UUID.randomUUID(), RESULT, SecurityAnalysisStatus.CONVERGED);
         securityAnalysisResultRepository.save(resultEntity);
     }
 
