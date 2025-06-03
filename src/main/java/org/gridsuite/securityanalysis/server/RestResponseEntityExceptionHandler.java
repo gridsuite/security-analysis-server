@@ -28,13 +28,13 @@ public class RestResponseEntityExceptionHandler {
         if (LOGGER.isErrorEnabled()) {
             LOGGER.error(exception.getMessage());
         }
-        switch (exception.getType()) {
+        switch (exception.getExceptionType()) {
             case RESULT_NOT_FOUND, PARAMETERS_NOT_FOUND:
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getType());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getExceptionType());
             case INVALID_FILTER_FORMAT, INVALID_FILTER, INVALID_SORT_FORMAT:
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getType());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getExceptionType());
             default:
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getType());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getExceptionType());
         }
     }
 }
