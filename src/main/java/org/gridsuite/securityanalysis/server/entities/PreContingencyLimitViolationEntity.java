@@ -6,12 +6,11 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
+import com.powsybl.iidm.network.Network;
 import com.powsybl.security.LimitViolation;
 import com.powsybl.security.results.PreContingencyResult;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import com.powsybl.ws.commons.computation.utils.ComputationResultUtils;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -35,16 +34,15 @@ import java.util.stream.Collectors;
 @FieldNameConstants
 @Table(name = "pre_contingency_limit_violation")
 public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEntity {
-
     @ManyToOne(fetch = FetchType.LAZY)
     @Setter
     SecurityAnalysisResultEntity result;
 
-    public static List<PreContingencyLimitViolationEntity> toEntityList(PreContingencyResult preContingencyResult, Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId) {
-        return preContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation -> toEntity(limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()))).collect(Collectors.toList());
+    public static List<PreContingencyLimitViolationEntity> toEntityList(Network network, PreContingencyResult preContingencyResult, Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId) {
+        return preContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation -> toEntity(network, limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()))).collect(Collectors.toList());
     }
 
-    public static PreContingencyLimitViolationEntity toEntity(LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
+    public static PreContingencyLimitViolationEntity toEntity(Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
         return PreContingencyLimitViolationEntity.builder()
             .subjectLimitViolation(subjectLimitViolation)
             .limit(limitViolation.getLimit())
@@ -55,6 +53,7 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
             .value(limitViolation.getValue())
             .side(limitViolation.getSide())
             .loading(computeLoading(limitViolation))
+            .locationId(ComputationResultUtils.getViolationLocationId(limitViolation, network))
             .build();
     }
 }

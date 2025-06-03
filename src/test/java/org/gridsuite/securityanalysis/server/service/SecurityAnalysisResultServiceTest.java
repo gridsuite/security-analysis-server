@@ -6,6 +6,9 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
+import com.powsybl.iidm.network.Network;
+import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
+import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.vladmihalcea.sql.SQLStatementCountValidator;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.junit.jupiter.api.Test;
@@ -14,7 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.UUID;
 
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.RESULT;
+import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 
 /**
@@ -22,14 +25,14 @@ import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.asse
  */
 @SpringBootTest
 class SecurityAnalysisResultServiceTest {
-
     @Autowired
     private SecurityAnalysisResultService securityAnalysisResultService;
 
     @Test
     void deleteResultPerfTest() {
+        Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
         UUID resultUuid = UUID.randomUUID();
-        securityAnalysisResultService.insert(resultUuid, RESULT, SecurityAnalysisStatus.CONVERGED);
+        securityAnalysisResultService.insert(network, resultUuid, RESULT, SecurityAnalysisStatus.CONVERGED);
         SQLStatementCountValidator.reset();
 
         securityAnalysisResultService.delete(resultUuid);

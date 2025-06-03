@@ -199,7 +199,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     @Override
     protected void saveResult(Network network, AbstractResultContext<SecurityAnalysisRunContext> resultContext, SecurityAnalysisResult result) {
-        resultService.insert(
+        resultService.insert(network,
                 resultContext.getResultUuid(),
                 result,
                 result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED

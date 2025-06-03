@@ -6,6 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
+import com.powsybl.iidm.network.Network;
 import com.powsybl.security.SecurityAnalysisResult;
 import jakarta.persistence.*;
 import lombok.*;
@@ -52,7 +53,7 @@ public class SecurityAnalysisResultEntity {
         this.id = id;
     }
 
-    public static SecurityAnalysisResultEntity toEntity(UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
+    public static SecurityAnalysisResultEntity toEntity(Network network, UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
         Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId = getUniqueSubjectLimitViolationsFromResult(securityAnalysisResult)
             .stream().collect(Collectors.toMap(
                 SubjectLimitViolationEntity::getSubjectId,
@@ -60,9 +61,9 @@ public class SecurityAnalysisResultEntity {
             );
 
         List<ContingencyEntity> contingencies = securityAnalysisResult.getPostContingencyResults().stream()
-            .map(postContingencyResult -> ContingencyEntity.toEntity(postContingencyResult, subjectLimitViolationsBySubjectId)).collect(Collectors.toList());
+            .map(postContingencyResult -> ContingencyEntity.toEntity(network, postContingencyResult, subjectLimitViolationsBySubjectId)).collect(Collectors.toList());
 
-        List<PreContingencyLimitViolationEntity> preContingencyLimitViolations = PreContingencyLimitViolationEntity.toEntityList(securityAnalysisResult.getPreContingencyResult(), subjectLimitViolationsBySubjectId);
+        List<PreContingencyLimitViolationEntity> preContingencyLimitViolations = PreContingencyLimitViolationEntity.toEntityList(network, securityAnalysisResult.getPreContingencyResult(), subjectLimitViolationsBySubjectId);
 
         List<SubjectLimitViolationEntity> subjectLimitViolations = Stream.concat(
                 contingencies.stream().flatMap(c -> c.getContingencyLimitViolations().stream()),
