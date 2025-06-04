@@ -6,7 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
+import com.powsybl.ws.commons.computation.ComputationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -23,18 +23,18 @@ public class RestResponseEntityExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RestResponseEntityExceptionHandler.class);
 
-    @ExceptionHandler(SecurityAnalysisException.class)
-    protected ResponseEntity<Object> handleStudyException(SecurityAnalysisException exception) {
+    @ExceptionHandler(ComputationException.class)
+    protected ResponseEntity<Object> handleStudyException(ComputationException exception) {
         if (LOGGER.isErrorEnabled()) {
             LOGGER.error(exception.getMessage());
         }
-        switch (exception.getType()) {
+        switch (exception.getExceptionType()) {
             case RESULT_NOT_FOUND, PARAMETERS_NOT_FOUND:
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getType());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getExceptionType());
             case INVALID_FILTER_FORMAT, INVALID_FILTER, INVALID_SORT_FORMAT:
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getType());
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getExceptionType());
             default:
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getType());
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getExceptionType());
         }
     }
 }
