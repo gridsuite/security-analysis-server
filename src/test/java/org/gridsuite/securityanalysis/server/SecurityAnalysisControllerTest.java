@@ -461,7 +461,7 @@ class SecurityAnalysisControllerTest {
     }
 
     private void verifynResultsLocationId(List<PreContingencyLimitViolationResultDTO> nResults) {
-        Assertions.assertThat(nResults.stream().map(preContingencyLimitViolationResultDTO -> preContingencyLimitViolationResultDTO.getLimitViolation().getLocationId()).toList()).hasSameElementsAs(List.of("l3", "vl1 (VLGEN_0, VLLOAD_0)", "l6"));
+        Assertions.assertThat(nResults.stream().map(preContingencyLimitViolationResultDTO -> preContingencyLimitViolationResultDTO.getLimitViolation().getLocationId()).toList()).hasSameElementsAs(Arrays.asList(null, "vl1 (VLGEN_0, VLLOAD_0)", null));
     }
 
     private void checkNmKResultEnumFilters(UUID resultUuid) throws Exception {
@@ -510,8 +510,7 @@ class SecurityAnalysisControllerTest {
                 .distinct()
                 .toList();
 
-        Assertions.assertThat(locationIds).hasSameElementsAs(List.of("l3", "vl1 (VLGEN_0, VLLOAD_0)", "l6", "vl7"));
-
+        Assertions.assertThat(locationIds).hasSameElementsAs(Arrays.asList(null, "vl1 (VLGEN_0, VLLOAD_0)", "vl7"));
     }
 
     @Test

@@ -1,14 +1,14 @@
 ﻿Constraint,Contingency ID,Status,Bus,Violation type,Limit name,Limit value (A or kV),Calculated value (A or kV),Load (%),Overload,Side
-l3,l1,Converged,l3,Current,l3_name,10.0,11.0,110.0,,Side 1
-l3,l2,Converged,l3,Current,l3_name,10.0,11.0,110.0,,Side 1
-l3,l3,Converged,l3,Current,l3_name,10.0,11.0,110.0,,Side 1
-l3,l4,Converged,l3,Current,l3_name,10.0,11.0,110.0,,Side 1
-l3,l6,Converged,l3,Current,l3_name,10.0,11.0,110.0,,Side 1
-l3,l7,Converged,l3,Current,l3_name,10.0,11.0,110.0,,Side 1
-l3,l8,Converged,l3,Current,l3_name,10.0,11.0,110.0,,Side 1
-l3,l9,Converged,l3,Current,l3_name,10.0,11.0,110.0,,Side 1
-l3,la,Converged,l3,Current,l3_name,10.0,11.0,110.0,,Side 1
-l3,lb,Converged,l3,Current,l3_name,10.0,11.0,110.0,,Side 1
+l3,l1,Converged,,Current,l3_name,10.0,11.0,110.0,,Side 1
+l3,l2,Converged,,Current,l3_name,10.0,11.0,110.0,,Side 1
+l3,l3,Converged,,Current,l3_name,10.0,11.0,110.0,,Side 1
+l3,l4,Converged,,Current,l3_name,10.0,11.0,110.0,,Side 1
+l3,l6,Converged,,Current,l3_name,10.0,11.0,110.0,,Side 1
+l3,l7,Converged,,Current,l3_name,10.0,11.0,110.0,,Side 1
+l3,l8,Converged,,Current,l3_name,10.0,11.0,110.0,,Side 1
+l3,l9,Converged,,Current,l3_name,10.0,11.0,110.0,,Side 1
+l3,la,Converged,,Current,l3_name,10.0,11.0,110.0,,Side 1
+l3,lb,Converged,,Current,l3_name,10.0,11.0,110.0,,Side 1
 vl1,l1,Converged,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400.0,410.0,,0,
 vl1,l2,Converged,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400.0,410.0,,0,
 vl1,l3,Converged,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400.0,410.0,,0,
@@ -19,9 +19,9 @@ vl1,l8,Converged,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400.0,410.0,,0,
 vl1,l9,Converged,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400.0,410.0,,0,
 vl1,la,Converged,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400.0,410.0,,0,
 vl1,lb,Converged,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400.0,410.0,,0,
-l6,f1,Failed,l6,Current,l6_name,10.0,11.0,110.0,1200,Side 1
-l6,f2,Failed,l6,Current,l6_name,10.0,11.0,110.0,1200,Side 1
-l6,f3,Failed,l6,Current,l6_name,10.0,11.0,110.0,1200,Side 1
+l6,f1,Failed,,Current,l6_name,10.0,11.0,110.0,1200,Side 1
+l6,f2,Failed,,Current,l6_name,10.0,11.0,110.0,1200,Side 1
+l6,f3,Failed,,Current,l6_name,10.0,11.0,110.0,1200,Side 1
 vl7,f1,Failed,vl7,High voltage,vl7_name,400.0,410.0,,0,
 vl7,f2,Failed,vl7,High voltage,vl7_name,400.0,410.0,,0,
 vl7,f3,Failed,vl7,High voltage,vl7_name,400.0,410.0,,0,
