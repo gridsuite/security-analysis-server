@@ -96,7 +96,7 @@ public class SecurityAnalysisParametersController {
         return ResponseEntity.ok().build();
     }
 
-    @PatchMapping(value = "/{uuid}/provider")
+    @PutMapping(value = "/{uuid}/provider")
     @Operation(summary = "Update provider")
     @ApiResponse(responseCode = "200", description = "provider was updated")
     public ResponseEntity<Void> updateProvider(
