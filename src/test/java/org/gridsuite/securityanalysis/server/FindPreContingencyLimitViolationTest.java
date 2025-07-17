@@ -72,7 +72,7 @@ class FindPreContingencyLimitViolationTest {
     })
     void findFilteredPrecontingencyLimitViolationResultsTest(List<ResourceFilterDTO> filters, Sort sort, List<PreContingencyLimitViolationResultDTO> expectedResult, Integer expectedSelectCount) {
         reset();
-        List<PreContingencyLimitViolationResultDTO> preContingencyLimitViolation = securityAnalysisResultService.findNResult(resultEntity.getId(), filters, sort);
+        List<PreContingencyLimitViolationResultDTO> preContingencyLimitViolation = securityAnalysisResultService.findNResult(resultEntity.getId(), null, null, filters, null, sort);
 
         // assert subject ids to check parent filters
         assertThat(preContingencyLimitViolation).extracting(SubjectLimitViolationEntity.Fields.subjectId)
