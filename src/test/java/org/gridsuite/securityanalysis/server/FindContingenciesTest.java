@@ -87,7 +87,7 @@ class FindContingenciesTest {
     })
     void findFilteredContingencyResultsTest(List<ResourceFilterDTO> filters, Pageable pageable, List<ContingencyResultDTO> expectedResult, Integer expectedSelectCount) {
         reset();
-        Page<ContingencyEntity> contingenciesPage = securityAnalysisResultService.findContingenciesPage(resultEntity.getId(), filters, pageable);
+        Page<ContingencyEntity> contingenciesPage = securityAnalysisResultService.findContingenciesPage(resultEntity.getId(), null, null, filters, null, pageable);
 
         // assert contingency ids to check parent filters
         assertThat(contingenciesPage.getContent()).extracting(ContingencyEntity.Fields.contingencyId).containsExactlyElementsOf(expectedResult.stream().map(c -> c.getContingency().getContingencyId()).toList());
@@ -110,7 +110,7 @@ class FindContingenciesTest {
         "provideForbiddenFilter"
     })
     void testSortAndFilterErrors(List<ResourceFilterDTO> filters, Pageable pageable, Exception expectedException) {
-        Exception exception = assertThrows(expectedException.getClass(), () -> securityAnalysisResultService.findContingenciesPage(resultEntity.getId(), filters, pageable));
+        Exception exception = assertThrows(expectedException.getClass(), () -> securityAnalysisResultService.findContingenciesPage(resultEntity.getId(), null, null, filters, null, pageable));
         assertEquals(expectedException.getMessage(), exception.getMessage());
     }
 
