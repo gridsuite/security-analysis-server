@@ -11,7 +11,6 @@ import com.powsybl.ws.commons.computation.dto.GlobalFilter;
 import com.powsybl.ws.commons.computation.dto.ResourceFilterDTO;
 import lombok.NonNull;
 import org.gridsuite.filter.utils.EquipmentType;
-import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -29,10 +28,6 @@ public class FilterService extends AbstractFilterService {
     }
 
     public Optional<ResourceFilterDTO> getResourceFilter(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {
-        // Get equipment types from violation types
-        List<EquipmentType> equipmentTypes = List.of(EquipmentType.LINE, EquipmentType.TWO_WINDINGS_TRANSFORMER);
-
-        // Call the common implementation with specific parameters
-        return super.getResourceFilter(networkUuid, variantId, globalFilter, equipmentTypes, SecurityAnalysisResultEntity.Fields.id);
+        return super.getResourceFilter(networkUuid, variantId, globalFilter, List.of(EquipmentType.VOLTAGE_LEVEL), "subjectId");
     }
 }
