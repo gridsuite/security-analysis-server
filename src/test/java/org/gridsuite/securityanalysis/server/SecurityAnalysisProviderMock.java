@@ -14,7 +14,7 @@ import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.*;
 import com.powsybl.security.results.PostContingencyResult;
-import com.powsybl.ws.commons.computation.utils.ComputationResultUtils;
+import org.gridsuite.computation.utils.ComputationResultUtils;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

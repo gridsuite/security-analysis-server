@@ -6,7 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server;
 
-import com.powsybl.ws.commons.computation.ComputationException;
+import org.gridsuite.computation.ComputationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;

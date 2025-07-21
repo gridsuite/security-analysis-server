@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.powsybl.commons.report.ReportNode;
+import com.powsybl.iidm.network.Country;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.iidm.network.VariantManagerConstants;
@@ -24,17 +25,19 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.*;
-import com.powsybl.ws.commons.computation.dto.ResourceFilterDTO;
-import com.powsybl.ws.commons.computation.service.ReportService;
-import com.powsybl.ws.commons.computation.service.UuidGeneratorService;
-import com.powsybl.ws.commons.computation.utils.SpecificationUtils;
 import com.vladmihalcea.sql.SQLStatementCountValidator;
 import org.assertj.core.api.Assertions;
+import org.gridsuite.computation.dto.GlobalFilter;
+import org.gridsuite.computation.dto.ResourceFilterDTO;
+import org.gridsuite.computation.service.ReportService;
+import org.gridsuite.computation.service.UuidGeneratorService;
+import org.gridsuite.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationRepository;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
+import org.gridsuite.securityanalysis.server.service.FilterService;
 import org.gridsuite.securityanalysis.server.service.LoadFlowService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
@@ -43,7 +46,9 @@ import org.gridsuite.securityanalysis.server.util.MatcherJson;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -69,15 +74,15 @@ import java.util.zip.ZipInputStream;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
-import static com.powsybl.ws.commons.computation.service.NotificationService.*;
+import static org.gridsuite.computation.service.NotificationService.*;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.gridsuite.securityanalysis.server.util.TestUtils.assertLogMessage;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -100,6 +105,7 @@ class SecurityAnalysisControllerTest {
     private static final UUID RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5d");
     private static final UUID REPORT_UUID = UUID.fromString("0c4de370-3e6a-4d72-b292-d355a97e0d53");
     private static final UUID OTHER_RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5a");
+    private static final UUID LIST_UUID = UUID.randomUUID();
 
     private static final int TIMEOUT = 1000;
 
@@ -125,6 +131,12 @@ class SecurityAnalysisControllerTest {
 
     @MockBean
     private UuidGeneratorService uuidGeneratorService;
+
+    @Mock
+    private Network network;
+
+    @Autowired
+    private FilterService filterService;
 
     @Autowired
     private SecurityAnalysisWorkerService workerService;
@@ -163,7 +175,7 @@ class SecurityAnalysisControllerTest {
         MockitoAnnotations.initMocks(this);
 
         // network store service mocking
-        Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
+        network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
         network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_1_ID);
         network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_2_ID);
         network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_3_ID);
@@ -181,6 +193,7 @@ class SecurityAnalysisControllerTest {
         given(uuidGeneratorService.generate()).willReturn(RESULT_UUID);
 
         doNothing().when(reportService).sendReport(any(UUID.class), any(ReportNode.class));
+        filterService = new FilterService(networkStoreService, wireMockServer.baseUrl());
 
         // SecurityAnalysis.Runner constructor is private..
         Constructor<SecurityAnalysis.Runner> constructor = SecurityAnalysis.Runner.class.getDeclaredConstructor(SecurityAnalysisProvider.class);
@@ -322,7 +335,7 @@ class SecurityAnalysisControllerTest {
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON));
 
-        assertFiltredResultN();
+        assertFiltredResultN(NETWORK_UUID, VARIANT_2_ID);
         checkNResultEnumFilters(RESULT_UUID);
 
         mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result/paged"))
@@ -376,7 +389,7 @@ class SecurityAnalysisControllerTest {
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON));
 
-        assertFiltredResultN();
+        assertFiltredResultN(NETWORK_UUID, VARIANT_2_ID);
 
         var res = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged"))
                 .andExpectAll(
@@ -409,19 +422,26 @@ class SecurityAnalysisControllerTest {
         assertEquals(expectedResultInOrder, result);
     }
 
-    private static String buildFilterUrl() throws JsonProcessingException {
+    private static String buildFilterUrl(UUID networkUuid, String variantId) throws JsonProcessingException {
         List<ResourceFilterDTO> filters = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "vl1", AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId),
             new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, new String[]{"HIGH_VOLTAGE"}, AbstractLimitViolationEntity.Fields.limitType),
             new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.GREATER_THAN_OR_EQUAL, "399", AbstractLimitViolationEntity.Fields.limit),
             new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, "420", AbstractLimitViolationEntity.Fields.value),
             new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.NOT_EQUAL, "2", AbstractLimitViolationEntity.Fields.acceptableDuration)
         );
+        GlobalFilter globalFilter = GlobalFilter.builder()
+                .genericFilter(List.of(LIST_UUID))
+                .nominalV(List.of("400.0"))
+                .countryCode(List.of(Country.FR))
+                .build();
         String jsonFilters = new ObjectMapper().writeValueAsString(filters);
-        return "filters=" + URLEncoder.encode(jsonFilters, StandardCharsets.UTF_8);
+        String jsonGlobalFilters = new ObjectMapper().writeValueAsString(globalFilter);
+        return "filters=" + URLEncoder.encode(jsonFilters, StandardCharsets.UTF_8) +
+                "&globalFilters=" + URLEncoder.encode(jsonGlobalFilters, StandardCharsets.UTF_8) + "&networkUuid=" + networkUuid + "&variantId=" + variantId;
     }
 
-    private void assertFiltredResultN() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/n-result?" + buildFilterUrl()))
+    private void assertFiltredResultN(UUID networkUuid, String variantId) throws Exception {
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/n-result?" + buildFilterUrl(networkUuid, variantId)))
                 .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON)

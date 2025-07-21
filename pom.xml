@@ -44,6 +44,8 @@
     <properties>
         <!-- FIXME to remove at next upgrade of powsybl-ws-dependencies -->
         <powsybl-network-store.version>1.28.0</powsybl-network-store.version>
+        <!-- FIXME to remove at next upgrade of gridsuite-dependencies -->
+        <gridsuite-computation.version>1.0.0</gridsuite-computation.version>
         <jib.from.image>powsybl/java-dynawo:3.0.0</jib.from.image>
         <gridsuite-dependencies.version>41.0.0</gridsuite-dependencies.version>
         <liquibase-hibernate-package>org.gridsuite.securityanalysis.server</liquibase-hibernate-package>
@@ -189,7 +191,8 @@
         </dependency>
         <dependency>
             <groupId>org.gridsuite</groupId>
-            <artifactId>gridsuite-filter</artifactId>
+            <artifactId>gridsuite-computation</artifactId>
+            <version>${gridsuite-computation.version}</version>
         </dependency>
 
         <!-- Runtime dependencies -->
@@ -280,12 +283,6 @@
             <groupId>org.wiremock</groupId>
             <artifactId>wiremock-jetty12</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.gridsuite</groupId>
-            <artifactId>gridsuite-computation</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

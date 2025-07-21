@@ -8,8 +8,8 @@ package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
-import com.powsybl.ws.commons.computation.dto.ResourceFilterDTO;
-import com.powsybl.ws.commons.computation.utils.SpecificationUtils;
+import org.gridsuite.computation.dto.ResourceFilterDTO;
+import org.gridsuite.computation.utils.SpecificationUtils;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import org.gridsuite.securityanalysis.server.dto.*;

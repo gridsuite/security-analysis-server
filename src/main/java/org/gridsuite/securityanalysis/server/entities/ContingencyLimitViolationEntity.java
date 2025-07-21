@@ -8,7 +8,7 @@ package org.gridsuite.securityanalysis.server.entities;
 
 import com.powsybl.iidm.network.Network;
 import com.powsybl.security.LimitViolation;
-import com.powsybl.ws.commons.computation.utils.ComputationResultUtils;
+import org.gridsuite.computation.utils.ComputationResultUtils;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldNameConstants;
