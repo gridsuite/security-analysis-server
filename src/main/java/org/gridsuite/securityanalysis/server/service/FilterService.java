@@ -7,11 +7,13 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.network.store.client.NetworkStoreService;
+import lombok.NonNull;
 import org.gridsuite.computation.dto.GlobalFilter;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
-import lombok.NonNull;
 import org.gridsuite.computation.service.AbstractFilterService;
 import org.gridsuite.filter.utils.EquipmentType;
+import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
+import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +30,15 @@ public class FilterService extends AbstractFilterService {
         super(networkStoreService, filterServerBaseUri);
     }
 
-    public Optional<ResourceFilterDTO> getResourceFilter(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {
-        return super.getResourceFilter(networkUuid, variantId, globalFilter, List.of(EquipmentType.VOLTAGE_LEVEL), "subjectId");
+    public Optional<ResourceFilterDTO> getResourceFilterN(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {
+        return super.getResourceFilter(networkUuid, variantId, globalFilter, List.of(EquipmentType.VOLTAGE_LEVEL), "subjectLimitViolation.subjectId");
+    }
+
+    public Optional<ResourceFilterDTO> getResourceFilterContingencies(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {
+        return super.getResourceFilter(networkUuid, variantId, globalFilter, List.of(EquipmentType.LINE), ContingencyEntity.Fields.contingencyId);
+    }
+
+    public Optional<ResourceFilterDTO> getResourceFilterSubjectLimitViolations(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {
+        return super.getResourceFilter(networkUuid, variantId, globalFilter, List.of(EquipmentType.VOLTAGE_LEVEL), SubjectLimitViolationEntity.Fields.subjectId);
     }
 }

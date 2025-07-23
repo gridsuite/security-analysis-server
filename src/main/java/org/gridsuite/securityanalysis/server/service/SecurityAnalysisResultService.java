@@ -133,7 +133,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
             allResourceFilters.addAll(resourceFilters);
         }
         if (globalFilter != null) {
-            Optional<ResourceFilterDTO> resourceGlobalFilters = filterService.getResourceFilter(networkUuid, variantId, globalFilter);
+            Optional<ResourceFilterDTO> resourceGlobalFilters = filterService.getResourceFilterN(networkUuid, variantId, globalFilter);
             resourceGlobalFilters.ifPresent(allResourceFilters::add);
         }
         Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationSpecificationBuilder.buildSpecification(resultUuid, allResourceFilters);
@@ -311,7 +311,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
             allResourceFilters.addAll(resourceFilters);
         }
         if (globalFilter != null) {
-            Optional<ResourceFilterDTO> resourceGlobalFilters = filterService.getResourceFilter(networkUuid, variantId, globalFilter);
+            Optional<ResourceFilterDTO> resourceGlobalFilters = filterService.getResourceFilterContingencies(networkUuid, variantId, globalFilter);
             resourceGlobalFilters.ifPresent(allResourceFilters::add);
         }
         Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildSpecification(resultUuid, allResourceFilters);
@@ -355,7 +355,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
             allResourceFilters.addAll(resourceFilters);
         }
         if (globalFilter != null) {
-            Optional<ResourceFilterDTO> resourceGlobalFilters = filterService.getResourceFilter(networkUuid, variantId, globalFilter);
+            Optional<ResourceFilterDTO> resourceGlobalFilters = filterService.getResourceFilterSubjectLimitViolations(networkUuid, variantId, globalFilter);
             resourceGlobalFilters.ifPresent(allResourceFilters::add);
         }
         Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationSpecificationBuilder.buildSpecification(resultUuid, allResourceFilters);
