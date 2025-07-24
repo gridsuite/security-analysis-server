@@ -6,7 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
-import com.powsybl.ws.commons.computation.ComputationException;
+import org.gridsuite.computation.ComputationException;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.Range;

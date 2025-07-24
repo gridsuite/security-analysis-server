@@ -7,8 +7,8 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.security.SecurityAnalysisParameters;
-import com.powsybl.ws.commons.computation.ComputationException;
-import com.powsybl.ws.commons.computation.dto.ReportInfos;
+import org.gridsuite.computation.ComputationException;
+import org.gridsuite.computation.dto.ReportInfos;
 import lombok.NonNull;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
-import static com.powsybl.ws.commons.computation.ComputationException.Type.PARAMETERS_NOT_FOUND;
+import static org.gridsuite.computation.ComputationException.Type.PARAMETERS_NOT_FOUND;
 
 /**
  * @author Abdelsalem HEDHILI <abdelsalem.hedhili@rte-france.com>
