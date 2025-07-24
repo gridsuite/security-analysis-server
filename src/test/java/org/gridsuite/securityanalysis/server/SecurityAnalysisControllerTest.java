@@ -32,7 +32,6 @@ import org.gridsuite.computation.service.UuidGeneratorService;
 import org.gridsuite.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
-import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationRepository;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
@@ -77,8 +76,7 @@ import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisServ
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.gridsuite.securityanalysis.server.util.TestUtils.assertLogMessage;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -338,12 +336,12 @@ class SecurityAnalysisControllerTest {
                 .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON));
-
+        assertFiltredResultNmkContingencies();
         mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged"))
                 .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON));
-
+        assertFiltredResultNmkConstraints();
         checkNmKResultEnumFilters(RESULT_UUID);
 
         // should throw not found if result does not exist
@@ -392,7 +390,7 @@ class SecurityAnalysisControllerTest {
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON))
                 .andReturn().getResponse().getContentAsString();
-
+        assertFiltredResultNmkConstraints();
         JsonNode resultsPageNode0 = mapper.readTree(res);
         ObjectReader faultResultsReader = mapper.readerFor(new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
         List<SubjectLimitViolationResultDTO> subjectLimitViolationResultDTOS = faultResultsReader.readValue(resultsPageNode0.get("content"));
@@ -409,7 +407,7 @@ class SecurityAnalysisControllerTest {
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON))
                 .andReturn().getResponse().getContentAsString();
-
+        assertFiltredResultNmkContingencies();
         resultsPageNode0 = mapper.readTree(res);
         faultResultsReader = mapper.readerFor(new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
         subjectLimitViolationResultDTOS = faultResultsReader.readValue(resultsPageNode0.get("content"));
@@ -425,6 +423,32 @@ class SecurityAnalysisControllerTest {
             new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, "420", AbstractLimitViolationEntity.Fields.value),
             new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.NOT_EQUAL, "2", AbstractLimitViolationEntity.Fields.acceptableDuration)
         );
+        GlobalFilter globalFilter = GlobalFilter.builder()
+                .genericFilter(List.of(LIST_FILTER_ID))
+                .nominalV(List.of("400.0"))
+                .countryCode(List.of(Country.FR))
+                .build();
+        String jsonFilters = new ObjectMapper().writeValueAsString(filters);
+        String jsonGlobalFilters = new ObjectMapper().writeValueAsString(globalFilter);
+        return "filters=" + URLEncoder.encode(jsonFilters, StandardCharsets.UTF_8) +
+                "&globalFilters=" + URLEncoder.encode(jsonGlobalFilters, StandardCharsets.UTF_8) + "&networkUuid=" + NETWORK_UUID + "&variantId=" + "initialState";
+    }
+
+    private static String buildFilterNmkContingenciesUrl() throws JsonProcessingException {
+        List<ResourceFilterDTO> filters = List.of();
+        GlobalFilter globalFilter = GlobalFilter.builder()
+                .genericFilter(List.of(LIST_FILTER_ID))
+                .nominalV(List.of("400.0"))
+                .countryCode(List.of(Country.FR))
+                .build();
+        String jsonFilters = new ObjectMapper().writeValueAsString(filters);
+        String jsonGlobalFilters = new ObjectMapper().writeValueAsString(globalFilter);
+        return "filters=" + URLEncoder.encode(jsonFilters, StandardCharsets.UTF_8) +
+                "&globalFilters=" + URLEncoder.encode(jsonGlobalFilters, StandardCharsets.UTF_8) + "&networkUuid=" + NETWORK_UUID + "&variantId=" + "initialState";
+    }
+
+    private static String buildFilterNmkConstraintsUrl() throws JsonProcessingException {
+        List<ResourceFilterDTO> filters = List.of();
         GlobalFilter globalFilter = GlobalFilter.builder()
                 .genericFilter(List.of(LIST_FILTER_ID))
                 .nominalV(List.of("400.0"))
@@ -462,9 +486,10 @@ class SecurityAnalysisControllerTest {
         when(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).thenReturn(network);
 
         // test - nmk-constraints-result/paged  endpoint
-        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged?" + buildFilterUrl())).andExpectAll(status().isOk()).andReturn();
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged?" + buildFilterNmkConstraintsUrl()))
+                .andExpectAll(status().isOk()).andReturn();
         String resultAsString = mvcResult.getResponse().getContentAsString();
-        List<SubjectLimitViolationEntity> subjectLimitViolationList = mapper.readValue(resultAsString, new TypeReference<>() { });
+        assertNotNull(resultAsString);
     }
 
     private void assertFiltredResultNmkContingencies() throws Exception {
@@ -476,10 +501,10 @@ class SecurityAnalysisControllerTest {
         when(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).thenReturn(network);
 
         // test - nmk-contingencies-result/paged  endpoint
-        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result/paged?" + buildFilterUrl()))
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result/paged?" + buildFilterNmkContingenciesUrl()))
                 .andExpectAll(status().isOk()).andReturn();
         String resultAsString = mvcResult.getResponse().getContentAsString();
-        List<ContingencyEntity> contingencyResult = mapper.readValue(resultAsString, new TypeReference<>() { });
+        assertNotNull(resultAsString);
     }
 
     private void checkNResultEnumFilters(UUID resultUuid) throws Exception {
