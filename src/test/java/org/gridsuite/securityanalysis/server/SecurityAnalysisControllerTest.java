@@ -69,7 +69,7 @@ import java.util.zip.ZipInputStream;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
-import static com.powsybl.ws.commons.computation.service.NotificationService.*;
+import static org.gridsuite.computation.service.NotificationService.*;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;

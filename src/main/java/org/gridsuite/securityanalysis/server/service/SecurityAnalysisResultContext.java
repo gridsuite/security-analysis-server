@@ -17,8 +17,8 @@ import org.springframework.messaging.MessageHeaders;
 import java.io.UncheckedIOException;
 import java.util.*;
 
-import static com.powsybl.ws.commons.computation.service.NotificationService.*;
-import static com.powsybl.ws.commons.computation.utils.MessageUtils.getNonNullHeader;
+import static org.gridsuite.computation.service.NotificationService.*;
+import static org.gridsuite.computation.utils.MessageUtils.getNonNullHeader;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>

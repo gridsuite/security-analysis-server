@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
-import static com.powsybl.ws.commons.computation.ComputationException.Type.PARAMETERS_NOT_FOUND;
+import static org.gridsuite.computation.ComputationException.Type.PARAMETERS_NOT_FOUND;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
