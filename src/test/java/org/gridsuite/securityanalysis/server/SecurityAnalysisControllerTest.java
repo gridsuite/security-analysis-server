@@ -416,7 +416,7 @@ class SecurityAnalysisControllerTest {
         assertEquals(expectedResultInOrder, result);
     }
 
-    private static String buildFilterUrl() throws JsonProcessingException {
+    private static String buildFilterNUrl() throws JsonProcessingException {
         List<ResourceFilterDTO> filters = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "vl1", AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId),
             new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, new String[]{"HIGH_VOLTAGE"}, AbstractLimitViolationEntity.Fields.limitType),
             new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.GREATER_THAN_OR_EQUAL, "399", AbstractLimitViolationEntity.Fields.limit),
@@ -434,20 +434,7 @@ class SecurityAnalysisControllerTest {
                 "&globalFilters=" + URLEncoder.encode(jsonGlobalFilters, StandardCharsets.UTF_8) + "&networkUuid=" + NETWORK_UUID + "&variantId=" + "initialState";
     }
 
-    private static String buildFilterNmkContingenciesUrl() throws JsonProcessingException {
-        List<ResourceFilterDTO> filters = List.of();
-        GlobalFilter globalFilter = GlobalFilter.builder()
-                .genericFilter(List.of(LIST_FILTER_ID))
-                .nominalV(List.of("400.0"))
-                .countryCode(List.of(Country.FR))
-                .build();
-        String jsonFilters = new ObjectMapper().writeValueAsString(filters);
-        String jsonGlobalFilters = new ObjectMapper().writeValueAsString(globalFilter);
-        return "filters=" + URLEncoder.encode(jsonFilters, StandardCharsets.UTF_8) +
-                "&globalFilters=" + URLEncoder.encode(jsonGlobalFilters, StandardCharsets.UTF_8) + "&networkUuid=" + NETWORK_UUID + "&variantId=" + "initialState";
-    }
-
-    private static String buildFilterNmkConstraintsUrl() throws JsonProcessingException {
+    private static String buildFilterNmkUrl() throws JsonProcessingException {
         List<ResourceFilterDTO> filters = List.of();
         GlobalFilter globalFilter = GlobalFilter.builder()
                 .genericFilter(List.of(LIST_FILTER_ID))
@@ -469,7 +456,7 @@ class SecurityAnalysisControllerTest {
         when(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).thenReturn(network);
 
         // test - n-result endpoint
-        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/n-result?" + buildFilterUrl()))
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/n-result?" + buildFilterNUrl()))
                 .andExpectAll(status().isOk()).andReturn();
         String resultAsString = mvcResult.getResponse().getContentAsString();
         List<PreContingencyLimitViolationResultDTO> preContingencyResult = mapper.readValue(resultAsString, new TypeReference<>() { });
@@ -486,7 +473,7 @@ class SecurityAnalysisControllerTest {
         when(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).thenReturn(network);
 
         // test - nmk-constraints-result/paged  endpoint
-        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged?" + buildFilterNmkConstraintsUrl()))
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged?" + buildFilterNmkUrl()))
                 .andExpectAll(status().isOk()).andReturn();
         String resultAsString = mvcResult.getResponse().getContentAsString();
         assertNotNull(resultAsString);
@@ -501,7 +488,7 @@ class SecurityAnalysisControllerTest {
         when(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).thenReturn(network);
 
         // test - nmk-contingencies-result/paged  endpoint
-        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result/paged?" + buildFilterNmkContingenciesUrl()))
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result/paged?" + buildFilterNmkUrl()))
                 .andExpectAll(status().isOk()).andReturn();
         String resultAsString = mvcResult.getResponse().getContentAsString();
         assertNotNull(resultAsString);
