@@ -36,6 +36,7 @@ import java.util.UUID;
 
 import static org.gridsuite.computation.service.NotificationService.HEADER_USER_ID;
 import static org.gridsuite.computation.utils.FilterUtils.fromStringFiltersToDTO;
+import static org.gridsuite.computation.utils.FilterUtils.fromStringGlobalFiltersToDTO;
 import static org.springframework.http.MediaType.*;
 
 /**
@@ -122,12 +123,19 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<List<PreContingencyLimitViolationResultDTO>> getNResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                                                                  @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
+                                                                                  @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
                                                                                   @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
+                                                                                  @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
                                                                                   @Parameter(description = "Pageable parameters for pagination and sorting") Sort sort) {
         String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
+        String decodedStringGlobalFilters = globalFilters != null ? URLDecoder.decode(globalFilters, StandardCharsets.UTF_8) : null;
         List<PreContingencyLimitViolationResultDTO> result = securityAnalysisResultService.findNResult(
                 resultUuid,
+                networkUuid,
+                variantId,
                 fromStringFiltersToDTO(decodedStringFilters, securityAnalysisResultService.getObjectMapper()),
+                fromStringGlobalFiltersToDTO(decodedStringGlobalFilters, securityAnalysisResultService.getObjectMapper()),
                 sort);
 
         return result != null
@@ -151,10 +159,14 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<Page<ContingencyResultDTO>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
-                                                                                    @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
-                                                                                    @Parameter(description = "Pagination parameters") Pageable pageable) {
+                                                                                @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
+                                                                                @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
+                                                                                @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
+                                                                                @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
+                                                                                @Parameter(description = "Pagination parameters") Pageable pageable) {
         String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
-        Page<ContingencyResultDTO> result = securityAnalysisResultService.findNmKContingenciesPaged(resultUuid, decodedStringFilters, pageable);
+        String decodedStringGlobalFilters = globalFilters != null ? URLDecoder.decode(globalFilters, StandardCharsets.UTF_8) : null;
+        Page<ContingencyResultDTO> result = securityAnalysisResultService.findNmKContingenciesPaged(resultUuid, networkUuid, variantId, decodedStringFilters, decodedStringGlobalFilters, pageable);
 
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
@@ -177,10 +189,14 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<Page<SubjectLimitViolationResultDTO>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                                                                        @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
+                                                                                        @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
                                                                                         @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
+                                                                                        @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
                                                                                         @Parameter(description = "Pagination parameters") Pageable pageable) {
         String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
-        Page<SubjectLimitViolationResultDTO> result = securityAnalysisResultService.findNmKConstraintsResultPaged(resultUuid, decodedStringFilters, pageable);
+        String decodedStringGlobalFilters = globalFilters != null ? URLDecoder.decode(globalFilters, StandardCharsets.UTF_8) : null;
+        Page<SubjectLimitViolationResultDTO> result = securityAnalysisResultService.findNmKConstraintsResultPaged(resultUuid, networkUuid, variantId, decodedStringFilters, decodedStringGlobalFilters, pageable);
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
             : ResponseEntity.notFound().build();

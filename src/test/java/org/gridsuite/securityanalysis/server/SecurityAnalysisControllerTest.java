@@ -14,9 +14,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.powsybl.commons.report.ReportNode;
-import com.powsybl.iidm.network.Network;
-import com.powsybl.iidm.network.ThreeSides;
-import com.powsybl.iidm.network.VariantManagerConstants;
+import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.loadflow.LoadFlowParameters;
 import com.powsybl.loadflow.LoadFlowResult;
@@ -24,12 +22,14 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.*;
+import com.vladmihalcea.sql.SQLStatementCountValidator;
+import org.assertj.core.api.Assertions;
+import org.gridsuite.computation.dto.GlobalFilter;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
+import org.gridsuite.computation.service.AbstractFilterService;
 import org.gridsuite.computation.service.ReportService;
 import org.gridsuite.computation.service.UuidGeneratorService;
 import org.gridsuite.computation.utils.SpecificationUtils;
-import com.vladmihalcea.sql.SQLStatementCountValidator;
-import org.assertj.core.api.Assertions;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
@@ -52,6 +52,7 @@ import org.springframework.cloud.stream.binder.test.OutputDestination;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.Message;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.util.StreamUtils;
@@ -75,12 +76,10 @@ import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisServ
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.gridsuite.securityanalysis.server.util.TestUtils.assertLogMessage;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -100,6 +99,7 @@ class SecurityAnalysisControllerTest {
     private static final UUID RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5d");
     private static final UUID REPORT_UUID = UUID.fromString("0c4de370-3e6a-4d72-b292-d355a97e0d53");
     private static final UUID OTHER_RESULT_UUID = UUID.fromString("0c8de370-3e6c-4d72-b292-d355a97e0d5a");
+    private static final UUID LIST_FILTER_ID = UUID.fromString("762b72a8-8c0f-11ed-a1eb-0242ac120003");
 
     private static final int TIMEOUT = 1000;
 
@@ -125,6 +125,9 @@ class SecurityAnalysisControllerTest {
 
     @MockBean
     private UuidGeneratorService uuidGeneratorService;
+
+    @Autowired
+    private AbstractFilterService filterService;
 
     @Autowired
     private SecurityAnalysisWorkerService workerService;
@@ -161,7 +164,7 @@ class SecurityAnalysisControllerTest {
         wireMockServer.start();
 
         MockitoAnnotations.initMocks(this);
-
+        ReflectionTestUtils.setField(filterService, "filterServerBaseUri", wireMockServer.baseUrl());
         // network store service mocking
         Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
         network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_1_ID);
@@ -198,6 +201,10 @@ class SecurityAnalysisControllerTest {
         wireMockServer.stubFor(WireMock.get(WireMock.urlMatching("/v1/parameters/.*/values\\?provider=.*"))
             .willReturn(WireMock.ok().withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE).withBody(mapper.writeValueAsString(loadFlowParametersValues))));
 
+        wireMockServer.stubFor(WireMock.get(WireMock.urlMatching("/v1/filters/metadata\\?ids=" + LIST_FILTER_ID))
+                .willReturn(WireMock.ok()
+                        .withBody(mapper.writeValueAsString(List.of()))
+                        .withHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE))).getId();
         // purge messages
         while (output.receive(1000, "sa.result") != null) {
         }
@@ -329,12 +336,12 @@ class SecurityAnalysisControllerTest {
                 .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON));
-
+        assertFiltredResultNmkContingencies();
         mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged"))
                 .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON));
-
+        assertFiltredResultNmkConstraints();
         checkNmKResultEnumFilters(RESULT_UUID);
 
         // should throw not found if result does not exist
@@ -383,7 +390,7 @@ class SecurityAnalysisControllerTest {
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON))
                 .andReturn().getResponse().getContentAsString();
-
+        assertFiltredResultNmkConstraints();
         JsonNode resultsPageNode0 = mapper.readTree(res);
         ObjectReader faultResultsReader = mapper.readerFor(new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
         List<SubjectLimitViolationResultDTO> subjectLimitViolationResultDTOS = faultResultsReader.readValue(resultsPageNode0.get("content"));
@@ -400,7 +407,7 @@ class SecurityAnalysisControllerTest {
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON))
                 .andReturn().getResponse().getContentAsString();
-
+        assertFiltredResultNmkContingencies();
         resultsPageNode0 = mapper.readTree(res);
         faultResultsReader = mapper.readerFor(new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
         subjectLimitViolationResultDTOS = faultResultsReader.readValue(resultsPageNode0.get("content"));
@@ -409,28 +416,82 @@ class SecurityAnalysisControllerTest {
         assertEquals(expectedResultInOrder, result);
     }
 
-    private static String buildFilterUrl() throws JsonProcessingException {
+    private static String buildFilterNUrl() throws JsonProcessingException {
         List<ResourceFilterDTO> filters = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "vl1", AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId),
             new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, new String[]{"HIGH_VOLTAGE"}, AbstractLimitViolationEntity.Fields.limitType),
             new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.GREATER_THAN_OR_EQUAL, "399", AbstractLimitViolationEntity.Fields.limit),
             new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, "420", AbstractLimitViolationEntity.Fields.value),
             new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.NOT_EQUAL, "2", AbstractLimitViolationEntity.Fields.acceptableDuration)
         );
+        GlobalFilter globalFilter = GlobalFilter.builder()
+                .genericFilter(List.of(LIST_FILTER_ID))
+                .nominalV(List.of("400.0"))
+                .countryCode(List.of(Country.FR))
+                .build();
         String jsonFilters = new ObjectMapper().writeValueAsString(filters);
-        return "filters=" + URLEncoder.encode(jsonFilters, StandardCharsets.UTF_8);
+        String jsonGlobalFilters = new ObjectMapper().writeValueAsString(globalFilter);
+        return "filters=" + URLEncoder.encode(jsonFilters, StandardCharsets.UTF_8) +
+                "&globalFilters=" + URLEncoder.encode(jsonGlobalFilters, StandardCharsets.UTF_8) + "&networkUuid=" + NETWORK_UUID + "&variantId=" + "initialState";
+    }
+
+    private static String buildFilterNmkUrl() throws JsonProcessingException {
+        List<ResourceFilterDTO> filters = List.of();
+        GlobalFilter globalFilter = GlobalFilter.builder()
+                .genericFilter(List.of(LIST_FILTER_ID))
+                .nominalV(List.of("400.0"))
+                .countryCode(List.of(Country.FR))
+                .build();
+        String jsonFilters = new ObjectMapper().writeValueAsString(filters);
+        String jsonGlobalFilters = new ObjectMapper().writeValueAsString(globalFilter);
+        return "filters=" + URLEncoder.encode(jsonFilters, StandardCharsets.UTF_8) +
+                "&globalFilters=" + URLEncoder.encode(jsonGlobalFilters, StandardCharsets.UTF_8) + "&networkUuid=" + NETWORK_UUID + "&variantId=" + "initialState";
     }
 
     private void assertFiltredResultN() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/n-result?" + buildFilterUrl()))
-                .andExpectAll(
-                        status().isOk(),
-                        content().contentType(MediaType.APPLICATION_JSON)
-                ).andReturn();
+        Network network = mock(Network.class);
+        VariantManager variantManager = mock(VariantManager.class);
+        when(network.getVariantManager()).thenReturn(variantManager);
+        doNothing().when(variantManager).setWorkingVariant(anyString());
+
+        when(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).thenReturn(network);
+
+        // test - n-result endpoint
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/n-result?" + buildFilterNUrl()))
+                .andExpectAll(status().isOk()).andReturn();
         String resultAsString = mvcResult.getResponse().getContentAsString();
         List<PreContingencyLimitViolationResultDTO> preContingencyResult = mapper.readValue(resultAsString, new TypeReference<>() { });
         assertEquals(1, preContingencyResult.size());
         assertEquals("vl1 (VLGEN_0, VLLOAD_0)", preContingencyResult.get(0).getLimitViolation().getLocationId());
+    }
 
+    private void assertFiltredResultNmkConstraints() throws Exception {
+        Network network = mock(Network.class);
+        VariantManager variantManager = mock(VariantManager.class);
+        when(network.getVariantManager()).thenReturn(variantManager);
+        doNothing().when(variantManager).setWorkingVariant(anyString());
+
+        when(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).thenReturn(network);
+
+        // test - nmk-constraints-result/paged  endpoint
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-constraints-result/paged?" + buildFilterNmkUrl()))
+                .andExpectAll(status().isOk()).andReturn();
+        String resultAsString = mvcResult.getResponse().getContentAsString();
+        assertNotNull(resultAsString);
+    }
+
+    private void assertFiltredResultNmkContingencies() throws Exception {
+        Network network = mock(Network.class);
+        VariantManager variantManager = mock(VariantManager.class);
+        when(network.getVariantManager()).thenReturn(variantManager);
+        doNothing().when(variantManager).setWorkingVariant(anyString());
+
+        when(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).thenReturn(network);
+
+        // test - nmk-contingencies-result/paged  endpoint
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-contingencies-result/paged?" + buildFilterNmkUrl()))
+                .andExpectAll(status().isOk()).andReturn();
+        String resultAsString = mvcResult.getResponse().getContentAsString();
+        assertNotNull(resultAsString);
     }
 
     private void checkNResultEnumFilters(UUID resultUuid) throws Exception {
