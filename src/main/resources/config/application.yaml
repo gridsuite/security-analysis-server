@@ -70,6 +70,9 @@ security-analysis:
         highBound: 75
       - nominalV: 90
         lowBound: 75
+        highBound: 120
+      - nominalV: 150
+        lowBound: 120
         highBound: 180
       - nominalV: 225
         lowBound: 180
@@ -99,6 +102,7 @@ security-analysis:
         highBound: 60
         highClosed: false
     defaultValues:
+      - [ 1, 1, 1, 1, 1, 1 ]
       - [ 1, 1, 1, 1, 1, 1 ]
       - [ 1, 1, 1, 1, 1, 1 ]
       - [ 1, 1, 1, 1, 1, 1 ]
