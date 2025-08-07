@@ -8,7 +8,15 @@
         </sql>
     </changeSet>
 
-    <changeSet id="insert-new-limit-reduction-entity" author="labidiayo">
+    <changeSet id="insert-new-limit-reduction-entity-h2" author="labidiayo" dbms="h2">
+        <sql>
+            INSERT INTO limit_reduction_entity (id, security_analysis_parameters_id, index)
+            SELECT RANDOM_UUID(), id, 4
+            FROM security_analysis_parameters;
+        </sql>
+    </changeSet>
+
+    <changeSet id="insert-new-limit-reduction-entity-pg" author="labidiayo" dbms="postgresql">
         <sql>
             INSERT INTO limit_reduction_entity (id, security_analysis_parameters_id, index)
             SELECT gen_random_uuid(), id, 4
