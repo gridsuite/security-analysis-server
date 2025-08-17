@@ -132,7 +132,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
         SecurityAnalysisRunParameters runParameters = new SecurityAnalysisRunParameters()
                 .setSecurityAnalysisParameters(runContext.getParameters().securityAnalysisParameters())
-                .setComputationManager(executionService.getComputationManager())
+                .setComputationManager(runContext.getComputationManager())
                 .setFilter(LimitViolationFilter.load())
                 .setLimitReductions(limitReductions)
                 .setReportNode(runContext.getReportNode());
@@ -176,6 +176,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     @Override
     protected void preRun(SecurityAnalysisRunContext runContext) {
+        super.preRun(runContext);
+
         LOGGER.info("Run security analysis on contingency lists: {}", runContext.getContingencyListNames().stream().map(LogUtils::sanitizeParam).toList());
 
         List<ContingencyInfos> contingencies = observer.observe("contingencies.fetch", runContext,
