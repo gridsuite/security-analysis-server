@@ -1,4 +1,4 @@
-﻿Ouvrage,Type de contrainte,Nom du seuil,Valeur du seuil (A ou kV),Valeur calculée (A ou kV),Charge (%),Surcharge,Côté
-,Intensité,l3_name,10.0,11.0,110.0,,Côté 1
-,Intensité,l6_name,10.0,11.0,110.0,1200,Côté 1
-"vl1 (VLGEN_0, VLLOAD_0)",Tension haute,IST,400.0,410.0,,0,
+﻿Ouvrage;Type de contrainte;Nom du seuil;Valeur du seuil (A ou kV);Valeur calculée (A ou kV);Charge (%);Surcharge;Côté
+;Intensité;l3_name;10;11;110;;Côté 1
+;Intensité;l6_name;10;11;110;1200;Côté 1
+vl1 (VLGEN_0, VLLOAD_0);Tension haute;IST;400;410;;0;

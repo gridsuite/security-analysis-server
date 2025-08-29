@@ -41,14 +41,14 @@ public class SubjectLimitViolationResultDTO {
     }
 
     // each SubjectLimitViolationResultDTO will return multiple line (one for each contingency)
-    public List<List<String>> toCsvRows(Map<String, String> translations) {
+    public List<List<String>> toCsvRows(Map<String, String> translations, String language) {
         return this.getContingencies().stream().map(contingency -> {
             List<String> csvRow = new ArrayList<>();
             csvRow.add(this.getSubjectId());
             csvRow.add(contingency.getContingency().getContingencyId());
             csvRow.add(CsvExportUtils.translate(contingency.getContingency().getStatus(), translations));
 
-            csvRow.addAll(contingency.getLimitViolation().toCsvRow(translations));
+            csvRow.addAll(contingency.getLimitViolation().toCsvRow(translations, language));
             return csvRow;
         }).toList();
     }
