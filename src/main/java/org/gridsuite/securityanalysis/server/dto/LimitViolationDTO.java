@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 
-import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -45,7 +45,7 @@ public class LimitViolationDTO {
     }
 
     private static String convertDoubleToLocale(Double value, String language) {
-        return DecimalFormat.getInstance(language != null && language.equals("fr") ? Locale.FRENCH : Locale.US).format(value);
+        return NumberFormat.getInstance(language != null && language.equals("fr") ? Locale.FRENCH : Locale.US).format(value);
     }
 
     public List<String> toCsvRow(Map<String, String> translations, String language) {
