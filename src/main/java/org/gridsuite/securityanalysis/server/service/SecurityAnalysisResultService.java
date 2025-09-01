@@ -148,7 +148,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     public byte[] findNResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
         List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, null, null, List.of(), null, Sort.by(Sort.Direction.ASC, AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId));
 
-        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), result.stream().map(r -> r.toCsvRow(csvTranslations.enumValueTranslations())).toList());
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRow(csvTranslations.enumValueTranslations(), csvTranslations.language())).toList());
     }
 
     @Transactional(readOnly = true)
@@ -177,7 +177,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     public byte[] findNmKContingenciesResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
         List<ContingencyResultDTO> result = self.findNmKContingenciesResult(resultUuid);
 
-        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations())).flatMap(List::stream).toList());
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations(), csvTranslations.language())).flatMap(List::stream).toList());
     }
 
     @Transactional(readOnly = true)
@@ -208,7 +208,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     public byte[] findNmKConstraintsResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
         List<SubjectLimitViolationResultDTO> result = self.findNmKConstraintsResult(resultUuid);
 
-        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations())).flatMap(List::stream).toList());
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations(), csvTranslations.language())).flatMap(List::stream).toList());
     }
 
     private void assertNmKContingenciesSortAllowed(Sort sort) {

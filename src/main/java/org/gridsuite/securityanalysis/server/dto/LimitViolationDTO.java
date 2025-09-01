@@ -9,8 +9,10 @@ import lombok.NoArgsConstructor;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @AllArgsConstructor
@@ -42,14 +44,18 @@ public class LimitViolationDTO {
             .build();
     }
 
-    public List<String> toCsvRow(Map<String, String> translations) {
+    private static String convertDoubleToLocale(Double value, String language) {
+        return NumberFormat.getInstance(language != null && language.equals("fr") ? Locale.FRENCH : Locale.US).format(value);
+    }
+
+    public List<String> toCsvRow(Map<String, String> translations, String language) {
         List<String> csvRow = new ArrayList<>();
         csvRow.add(this.getLocationId());
         csvRow.add(this.getLimitType() != null ? CsvExportUtils.translate(this.getLimitType().name(), translations) : "");
         csvRow.add(CsvExportUtils.replaceNullWithEmptyString(CsvExportUtils.translate(this.getLimitName(), translations)));
-        csvRow.add(Double.toString(this.getLimit()));
-        csvRow.add(Double.toString(this.getValue()));
-        csvRow.add(CsvExportUtils.replaceNullWithEmptyString(this.getLoading()));
+        csvRow.add(convertDoubleToLocale(this.getLimit(), language));
+        csvRow.add(convertDoubleToLocale(this.getValue(), language));
+        csvRow.add(this.getLoading() == null ? "" : convertDoubleToLocale(this.getLoading(), language));
         csvRow.add(this.getAcceptableDuration() == Integer.MAX_VALUE ? null : Integer.toString(this.getAcceptableDuration()));
         csvRow.add(this.getSide() != null ? CsvExportUtils.translate(this.getSide().name(), translations) : "");
         return csvRow;

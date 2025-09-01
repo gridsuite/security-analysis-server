@@ -862,6 +862,7 @@ class SecurityAnalysisControllerTest {
             CsvTranslationDTO.builder()
                 .headers(List.of("Equipment", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
                 .enumValueTranslations(ENUM_TRANSLATIONS_EN)
+                .language("en")
                 .build());
         /*
          * SELECT
@@ -875,6 +876,7 @@ class SecurityAnalysisControllerTest {
             CsvTranslationDTO.builder()
                 .headers(List.of("Ouvrage", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Valeur calculée (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
                 .enumValueTranslations(ENUM_TRANSLATIONS_FR)
+                .language("fr")
                 .build());
 
         SQLStatementCountValidator.reset();
@@ -882,6 +884,7 @@ class SecurityAnalysisControllerTest {
             CsvTranslationDTO.builder()
                 .headers(List.of("Contingency ID", "Status", "Constraint", "Bus", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
                 .enumValueTranslations(ENUM_TRANSLATIONS_EN)
+                .language("en")
                 .build());
         /*
          * SELECT
@@ -897,6 +900,7 @@ class SecurityAnalysisControllerTest {
             CsvTranslationDTO.builder()
                 .headers(List.of("Id aléa", "Statut", "Contrainte", "Noeud électrique", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
                 .enumValueTranslations(ENUM_TRANSLATIONS_FR)
+                .language("fr")
                 .build());
         assertRequestsCount(4, 0, 0, 0);
 
@@ -905,6 +909,7 @@ class SecurityAnalysisControllerTest {
             CsvTranslationDTO.builder()
                 .headers(List.of("Constraint", "Contingency ID", "Status", "Bus", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
                 .enumValueTranslations(ENUM_TRANSLATIONS_EN)
+                .language("en")
                 .build());
         /*
          * SELECT
@@ -920,6 +925,7 @@ class SecurityAnalysisControllerTest {
             CsvTranslationDTO.builder()
                 .headers(List.of("Contrainte", "ID aléa", "Statut", "Noeud électrique", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Valeur calculée (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
                 .enumValueTranslations(ENUM_TRANSLATIONS_FR)
+                .language("fr")
                 .build());
         assertRequestsCount(4, 0, 0, 0);
     }

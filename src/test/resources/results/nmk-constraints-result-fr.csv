@@ -1,27 +1,27 @@
-﻿Contrainte,ID aléa,Statut,Noeud électrique,Type de contrainte,Nom du seuil,Valeur du seuil (A ou kV),Valeur calculée (A ou kV),Charge (%),Surcharge,Côté
-l3,l1,Convergence,,Intensité,l3_name,10.0,11.0,110.0,,Côté 1
-l3,l2,Convergence,,Intensité,l3_name,10.0,11.0,110.0,,Côté 1
-l3,l3,Convergence,,Intensité,l3_name,10.0,11.0,110.0,,Côté 1
-l3,l4,Convergence,,Intensité,l3_name,10.0,11.0,110.0,,Côté 1
-l3,l6,Convergence,,Intensité,l3_name,10.0,11.0,110.0,,Côté 1
-l3,l7,Convergence,,Intensité,l3_name,10.0,11.0,110.0,,Côté 1
-l3,l8,Convergence,,Intensité,l3_name,10.0,11.0,110.0,,Côté 1
-l3,l9,Convergence,,Intensité,l3_name,10.0,11.0,110.0,,Côté 1
-l3,la,Convergence,,Intensité,l3_name,10.0,11.0,110.0,,Côté 1
-l3,lb,Convergence,,Intensité,l3_name,10.0,11.0,110.0,,Côté 1
-vl1,l1,Convergence,"vl1 (VLGEN_0, VLLOAD_0)",Tension haute,IST,400.0,410.0,,0,
-vl1,l2,Convergence,"vl1 (VLGEN_0, VLLOAD_0)",Tension haute,IST,400.0,410.0,,0,
-vl1,l3,Convergence,"vl1 (VLGEN_0, VLLOAD_0)",Tension haute,IST,400.0,410.0,,0,
-vl1,l4,Convergence,"vl1 (VLGEN_0, VLLOAD_0)",Tension haute,IST,400.0,410.0,,0,
-vl1,l6,Convergence,"vl1 (VLGEN_0, VLLOAD_0)",Tension haute,IST,400.0,410.0,,0,
-vl1,l7,Convergence,"vl1 (VLGEN_0, VLLOAD_0)",Tension haute,IST,400.0,410.0,,0,
-vl1,l8,Convergence,"vl1 (VLGEN_0, VLLOAD_0)",Tension haute,IST,400.0,410.0,,0,
-vl1,l9,Convergence,"vl1 (VLGEN_0, VLLOAD_0)",Tension haute,IST,400.0,410.0,,0,
-vl1,la,Convergence,"vl1 (VLGEN_0, VLLOAD_0)",Tension haute,IST,400.0,410.0,,0,
-vl1,lb,Convergence,"vl1 (VLGEN_0, VLLOAD_0)",Tension haute,IST,400.0,410.0,,0,
-l6,f1,Echec,,Intensité,l6_name,10.0,11.0,110.0,1200,Côté 1
-l6,f2,Echec,,Intensité,l6_name,10.0,11.0,110.0,1200,Côté 1
-l6,f3,Echec,,Intensité,l6_name,10.0,11.0,110.0,1200,Côté 1
-vl7,f1,Echec,vl7,Tension haute,vl7_name,400.0,410.0,,0,
-vl7,f2,Echec,vl7,Tension haute,vl7_name,400.0,410.0,,0,
-vl7,f3,Echec,vl7,Tension haute,vl7_name,400.0,410.0,,0,
+﻿Contrainte;ID aléa;Statut;Noeud électrique;Type de contrainte;Nom du seuil;Valeur du seuil (A ou kV);Valeur calculée (A ou kV);Charge (%);Surcharge;Côté
+l3;l1;Convergence;;Intensité;l3_name;10;11;110;;Côté 1
+l3;l2;Convergence;;Intensité;l3_name;10;11;110;;Côté 1
+l3;l3;Convergence;;Intensité;l3_name;10;11;110;;Côté 1
+l3;l4;Convergence;;Intensité;l3_name;10;11;110;;Côté 1
+l3;l6;Convergence;;Intensité;l3_name;10;11;110;;Côté 1
+l3;l7;Convergence;;Intensité;l3_name;10;11;110;;Côté 1
+l3;l8;Convergence;;Intensité;l3_name;10;11;110;;Côté 1
+l3;l9;Convergence;;Intensité;l3_name;10;11;110;;Côté 1
+l3;la;Convergence;;Intensité;l3_name;10;11;110;;Côté 1
+l3;lb;Convergence;;Intensité;l3_name;10;11;110;;Côté 1
+vl1;l1;Convergence;vl1 (VLGEN_0, VLLOAD_0);Tension haute;IST;400;410;;0;
+vl1;l2;Convergence;vl1 (VLGEN_0, VLLOAD_0);Tension haute;IST;400;410;;0;
+vl1;l3;Convergence;vl1 (VLGEN_0, VLLOAD_0);Tension haute;IST;400;410;;0;
+vl1;l4;Convergence;vl1 (VLGEN_0, VLLOAD_0);Tension haute;IST;400;410;;0;
+vl1;l6;Convergence;vl1 (VLGEN_0, VLLOAD_0);Tension haute;IST;400;410;;0;
+vl1;l7;Convergence;vl1 (VLGEN_0, VLLOAD_0);Tension haute;IST;400;410;;0;
+vl1;l8;Convergence;vl1 (VLGEN_0, VLLOAD_0);Tension haute;IST;400;410;;0;
+vl1;l9;Convergence;vl1 (VLGEN_0, VLLOAD_0);Tension haute;IST;400;410;;0;
+vl1;la;Convergence;vl1 (VLGEN_0, VLLOAD_0);Tension haute;IST;400;410;;0;
+vl1;lb;Convergence;vl1 (VLGEN_0, VLLOAD_0);Tension haute;IST;400;410;;0;
+l6;f1;Echec;;Intensité;l6_name;10;11;110;1200;Côté 1
+l6;f2;Echec;;Intensité;l6_name;10;11;110;1200;Côté 1
+l6;f3;Echec;;Intensité;l6_name;10;11;110;1200;Côté 1
+vl7;f1;Echec;vl7;Tension haute;vl7_name;400;410;;0;
+vl7;f2;Echec;vl7;Tension haute;vl7_name;400;410;;0;
+vl7;f3;Echec;vl7;Tension haute;vl7_name;400;410;;0;
