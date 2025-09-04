@@ -45,7 +45,9 @@ public class LimitViolationDTO {
     }
 
     private static String convertDoubleToLocale(Double value, String language) {
-        return NumberFormat.getInstance(language != null && language.equals("fr") ? Locale.FRENCH : Locale.US).format(value);
+        NumberFormat nf = NumberFormat.getInstance(language != null && language.equals("fr") ? Locale.FRENCH : Locale.US);
+        nf.setGroupingUsed(false);
+        return nf.format(value);
     }
 
     public List<String> toCsvRow(Map<String, String> translations, String language) {
