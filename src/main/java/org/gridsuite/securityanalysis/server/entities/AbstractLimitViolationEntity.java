@@ -6,7 +6,8 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
-import com.powsybl.iidm.network.ThreeSides;
+import com.powsybl.iidm.network.*;
+import com.powsybl.iidm.network.util.LimitViolationUtils;
 import com.powsybl.security.LimitViolation;
 import com.powsybl.security.LimitViolationType;
 import jakarta.persistence.*;
@@ -16,6 +17,8 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
+import java.util.Iterator;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -40,7 +43,11 @@ public abstract class AbstractLimitViolationEntity {
     @Column(name = "limitValue")
     private double limit;
 
+    private Double patlLimit;
+
     private String limitName;
+
+    private String nextLimitName;
 
     @Enumerated(EnumType.STRING)
     private LimitViolationType limitType;
@@ -58,12 +65,67 @@ public abstract class AbstractLimitViolationEntity {
     @Column(name = "loading")
     private Double loading;
 
+    private Double patlLoading;
+
     @Column
     private String locationId;
 
-    public static Double computeLoading(LimitViolation limitViolation) {
-        return LimitViolationType.CURRENT.equals(limitViolation.getLimitType())
-                ? 100 * limitViolation.getValue() / limitViolation.getLimit()
+    public static Double computeLoading(LimitViolation limitViolation, Double limit) {
+        return LimitViolationType.CURRENT.equals(limitViolation.getLimitType()) && limit != null
+                ? 100 * limitViolation.getValue() / limit
                 : null;
+    }
+
+    public static Double getPatlLimit(LimitViolation limitViolation, Network network) {
+        String equipmentId = limitViolation.getSubjectId();
+        Branch<?> branch = network.getBranch(equipmentId);
+        ThreeSides limitViolationSide = limitViolation.getSide();
+        if (branch == null || limitViolationSide == null) {
+            return null;
+        }
+
+        Optional<CurrentLimits> currentLimits = limitViolationSide.name().equals(TwoSides.ONE.name()) ? branch.getCurrentLimits1() : branch.getCurrentLimits2();
+        if (currentLimits.isPresent()) {
+            return currentLimits.get().getPermanentLimit();
+        }
+        return null;
+    }
+
+    public static String getNextLimitName(LimitViolation limitViolation, Network network) {
+        String equipmentId = limitViolation.getSubjectId();
+        Branch<?> branch = network.getBranch(equipmentId);
+        if (branch == null) {
+            return null;
+        }
+        LoadingLimits.TemporaryLimit temporaryLimit = getNextTemporaryLimit(branch, limitViolation);
+        return temporaryLimit != null ? temporaryLimit.getName() : null;
+    }
+
+    private static LoadingLimits.TemporaryLimit getNextTemporaryLimit(Branch<?> branch, LimitViolation limitViolation) {
+        // limits are returned from the store by DESC duration / ASC value
+        ThreeSides limitViolationSide = limitViolation.getSide();
+        String limitName = limitViolation.getLimitName();
+        if (limitViolationSide == null || limitName == null) {
+            return null;
+        }
+
+        Optional<CurrentLimits> currentLimits = limitViolationSide.name().equals(TwoSides.ONE.name()) ? branch.getCurrentLimits1() : branch.getCurrentLimits2();
+        if (currentLimits.isEmpty()) {
+            return null;
+        }
+
+        if (limitName.equals(LimitViolationUtils.PERMANENT_LIMIT_NAME)) {
+            return currentLimits.get().getTemporaryLimits().stream().findFirst().orElse(null);
+        }
+
+        Iterator<LoadingLimits.TemporaryLimit> temporaryLimitIterator = currentLimits.get().getTemporaryLimits().iterator();
+        while (temporaryLimitIterator.hasNext()) {
+            LoadingLimits.TemporaryLimit currentTemporaryLimit = temporaryLimitIterator.next();
+            if (currentTemporaryLimit.getName().equals(limitViolation.getLimitName())) {
+                return temporaryLimitIterator.hasNext() ? temporaryLimitIterator.next() : null;
+            }
+        }
+
+        return null;
     }
 }

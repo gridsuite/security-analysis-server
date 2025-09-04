@@ -22,24 +22,30 @@ import java.util.Map;
 public class LimitViolationDTO {
     private LimitViolationType limitType;
     private String limitName;
+    private String nextLimitName;
     private ThreeSides side;
     private int acceptableDuration;
     private double limit;
+    private Double patlLimit;
     private double limitReduction;
     private double value;
     private Double loading;
+    private Double patlLoading;
     private String locationId;
 
     public static LimitViolationDTO toDto(AbstractLimitViolationEntity limitViolation) {
         return LimitViolationDTO.builder()
             .limitType(limitViolation.getLimitType())
             .limitName(limitViolation.getLimitName())
+            .nextLimitName(limitViolation.getNextLimitName())
             .side(limitViolation.getSide())
             .acceptableDuration((int) limitViolation.getAcceptableDuration())
             .limit(limitViolation.getLimit())
+            .patlLimit(limitViolation.getPatlLimit())
             .limitReduction(limitViolation.getLimitReduction())
             .value(limitViolation.getValue())
             .loading(limitViolation.getLoading())
+            .patlLoading(limitViolation.getPatlLoading())
             .locationId(limitViolation.getLocationId())
             .build();
     }
