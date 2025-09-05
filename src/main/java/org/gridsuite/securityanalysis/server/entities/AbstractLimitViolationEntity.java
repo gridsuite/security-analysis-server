@@ -17,6 +17,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.UUID;
@@ -84,7 +85,7 @@ public abstract class AbstractLimitViolationEntity {
             return null;
         }
 
-        Optional<CurrentLimits> currentLimits = limitViolationSide.name().equals(TwoSides.ONE.name()) ? branch.getCurrentLimits1() : branch.getCurrentLimits2();
+        Optional<CurrentLimits> currentLimits = branch.getCurrentLimits(limitViolationSide.toTwoSides());
         if (currentLimits.isPresent()) {
             return currentLimits.get().getPermanentLimit();
         }
@@ -109,16 +110,17 @@ public abstract class AbstractLimitViolationEntity {
             return null;
         }
 
-        Optional<CurrentLimits> currentLimits = limitViolationSide.name().equals(TwoSides.ONE.name()) ? branch.getCurrentLimits1() : branch.getCurrentLimits2();
+        Optional<CurrentLimits> currentLimits = branch.getCurrentLimits(limitViolationSide.toTwoSides());
         if (currentLimits.isEmpty()) {
             return null;
         }
 
+        Collection<LoadingLimits.TemporaryLimit> temporaryLimits = currentLimits.get().getTemporaryLimits();
         if (limitName.equals(LimitViolationUtils.PERMANENT_LIMIT_NAME)) {
-            return currentLimits.get().getTemporaryLimits().stream().findFirst().orElse(null);
+            return temporaryLimits.stream().findFirst().orElse(null);
         }
 
-        Iterator<LoadingLimits.TemporaryLimit> temporaryLimitIterator = currentLimits.get().getTemporaryLimits().iterator();
+        Iterator<LoadingLimits.TemporaryLimit> temporaryLimitIterator = temporaryLimits.iterator();
         while (temporaryLimitIterator.hasNext()) {
             LoadingLimits.TemporaryLimit currentTemporaryLimit = temporaryLimitIterator.next();
             if (currentTemporaryLimit.getName().equals(limitViolation.getLimitName())) {
