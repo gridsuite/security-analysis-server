@@ -70,13 +70,13 @@ public abstract class AbstractLimitViolationEntity {
     @Column
     private String locationId;
 
-    public static Double computeLoading(LimitViolation limitViolation, Double limit) {
+    protected static Double computeLoading(LimitViolation limitViolation, Double limit) {
         return LimitViolationType.CURRENT.equals(limitViolation.getLimitType()) && limit != null
                 ? 100 * limitViolation.getValue() / limit
                 : null;
     }
 
-    public static Double getPatlLimit(LimitViolation limitViolation, Network network) {
+    protected static Double getPatlLimit(LimitViolation limitViolation, Network network) {
         String equipmentId = limitViolation.getSubjectId();
         Branch<?> branch = network.getBranch(equipmentId);
         ThreeSides limitViolationSide = limitViolation.getSide();
@@ -91,7 +91,7 @@ public abstract class AbstractLimitViolationEntity {
         return null;
     }
 
-    public static String getNextLimitName(LimitViolation limitViolation, Network network) {
+    protected static String getNextLimitName(LimitViolation limitViolation, Network network) {
         String equipmentId = limitViolation.getSubjectId();
         Branch<?> branch = network.getBranch(equipmentId);
         if (branch == null) {
