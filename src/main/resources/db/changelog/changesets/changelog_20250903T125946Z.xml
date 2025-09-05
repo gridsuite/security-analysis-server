@@ -20,16 +20,6 @@
             <column name="patl_limit" type="float(53)"/>
         </addColumn>
     </changeSet>
-    <changeSet author="lesaulnierkev (generated)" id="1756904408172-5">
-        <addColumn tableName="contingency_limit_violation">
-            <column name="upcoming_acceptable_duration" type="integer"/>
-        </addColumn>
-    </changeSet>
-    <changeSet author="lesaulnierkev (generated)" id="1756904408172-46">
-        <addColumn tableName="pre_contingency_limit_violation">
-            <column name="upcoming_acceptable_duration" type="integer"/>
-        </addColumn>
-    </changeSet>
     <changeSet author="lesaulnierkev (generated)" id="1756904408172-7">
         <addColumn tableName="contingency_limit_violation">
             <column name="patl_loading" type="float(53)"/>
