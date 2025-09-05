@@ -27,29 +27,34 @@ class ContingencyLimitViolationTest {
 
     @Test
     void testContingencyLimitViolationEntityNewFields() {
-        Network network = EurostagTutorialExample1Factory.createWithFixedCurrentLimits();
-        LimitViolation limitViolation = new LimitViolation("NHV1_NHV2_1", "NHV1_NHV2_1", LimitViolationType.CURRENT, "10'", 10 * 60, 1200, 1, 1250, TwoSides.TWO);
-
-        SubjectLimitViolationEntity subjectLimitViolationEntity = new SubjectLimitViolationEntity("NHV1_NHV2_1", "NHV1_NHV2_1_name");
-
-        ContingencyLimitViolationEntity contingencyLimitViolationEntity = ContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationEntity);
-
-        assertEquals("1'", contingencyLimitViolationEntity.getNextLimitName());
-        assertEquals(1100, contingencyLimitViolationEntity.getPatlLimit());
-        assertEquals(100 * limitViolation.getValue() / contingencyLimitViolationEntity.getPatlLimit(), contingencyLimitViolationEntity.getPatlLoading());
+        testContingencyLimitViolationMapping("10'", 10 * 60, 1200, 1250, TwoSides.TWO, "1'", 1100);
     }
 
     @Test
     void testContingencyLimitViolationEntityNewFieldsWithPermanentLimitReached() {
+        testContingencyLimitViolationMapping(LimitViolationUtils.PERMANENT_LIMIT_NAME, Integer.MAX_VALUE, 1100, 1150, TwoSides.TWO, "10'", 1100);
+    }
+
+    @Test
+    void testContingencyLimitViolationEntityNewFieldsWithPermanentLimitReachedAndNoTemporaryLimit() {
+        testContingencyLimitViolationMapping(LimitViolationUtils.PERMANENT_LIMIT_NAME, Integer.MAX_VALUE, 500, 1000, TwoSides.ONE, null, 500);
+    }
+
+    @Test
+    void testContingencyLimitViolationEntityNewFieldsWithLastLimitReached() {
+        testContingencyLimitViolationMapping("N/A", 0, 1100, 3000, TwoSides.TWO, null, 1100);
+    }
+
+    private void testContingencyLimitViolationMapping(String limitName, int acceptableDuration, double limit, double value, TwoSides side, String expectedNextLimitName, long expectedPatlLimit) {
         Network network = EurostagTutorialExample1Factory.createWithFixedCurrentLimits();
-        LimitViolation limitViolation = new LimitViolation("NHV1_NHV2_1", "NHV1_NHV2_1", LimitViolationType.CURRENT, LimitViolationUtils.PERMANENT_LIMIT_NAME, 10 * 60, 1100, 1, 1150, TwoSides.TWO);
+        LimitViolation limitViolation = new LimitViolation("NHV1_NHV2_1", "NHV1_NHV2_1_name", LimitViolationType.CURRENT, limitName, acceptableDuration, limit, 1, value, side);
 
         SubjectLimitViolationEntity subjectLimitViolationEntity = new SubjectLimitViolationEntity("NHV1_NHV2_1", "NHV1_NHV2_1_name");
 
         ContingencyLimitViolationEntity contingencyLimitViolationEntity = ContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationEntity);
 
-        assertEquals("10'", contingencyLimitViolationEntity.getNextLimitName());
-        assertEquals(1100, contingencyLimitViolationEntity.getPatlLimit());
+        assertEquals(expectedNextLimitName, contingencyLimitViolationEntity.getNextLimitName());
+        assertEquals(expectedPatlLimit, contingencyLimitViolationEntity.getPatlLimit());
         assertEquals(100 * limitViolation.getValue() / contingencyLimitViolationEntity.getPatlLimit(), contingencyLimitViolationEntity.getPatlLoading());
     }
 }
