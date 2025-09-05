@@ -231,17 +231,17 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
 
         return new SubjectLimitViolationDTO(
             limitViolation.getSubjectId(),
-            new LimitViolationDTO(
-                limitViolation.getLimitType(),
-                limitViolation.getLimitName(),
-                limitViolation.getSide(),
-                limitViolation.getAcceptableDuration(),
-                limitViolation.getLimit(),
-                limitViolation.getLimitReduction(),
-                limitViolation.getValue(),
-                computedLoading,
-                ComputationResultUtils.getViolationLocationId(limitViolation, getNetwork())
-            )
+            LimitViolationDTO.builder()
+                .limitType(limitViolation.getLimitType())
+                .limitName(limitViolation.getLimitName())
+                .side(limitViolation.getSide())
+                .acceptableDuration(limitViolation.getAcceptableDuration())
+                .limit(limitViolation.getLimit())
+                .limitReduction(limitViolation.getLimitReduction())
+                .value(limitViolation.getValue())
+                .loading(computedLoading)
+                .locationId(ComputationResultUtils.getViolationLocationId(limitViolation, getNetwork()))
+                .build()
         );
     }
 
@@ -258,17 +258,17 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         return new PreContingencyLimitViolationResultDTO(
                 limitViolation.getSubjectId(),
                 status.name(),
-                new LimitViolationDTO(
-                        limitViolation.getLimitType(),
-                        limitViolation.getLimitName(),
-                        limitViolation.getSide(),
-                        limitViolation.getAcceptableDuration(),
-                        limitViolation.getLimit(),
-                        limitViolation.getLimitReduction(),
-                        limitViolation.getValue(),
-                        computedLoading,
-                        ComputationResultUtils.getViolationLocationId(limitViolation, getNetwork())
-                ));
+                LimitViolationDTO.builder()
+                    .limitType(limitViolation.getLimitType())
+                    .limitName(limitViolation.getLimitName())
+                    .side(limitViolation.getSide())
+                    .acceptableDuration(limitViolation.getAcceptableDuration())
+                    .limit(limitViolation.getLimit())
+                    .limitReduction(limitViolation.getLimitReduction())
+                    .value(limitViolation.getValue())
+                    .loading(computedLoading)
+                    .locationId(ComputationResultUtils.getViolationLocationId(limitViolation, getNetwork()))
+                    .build());
     }
 
     private static ContingencyResultDTO toContingencyResultDTO(Contingency contingency, String status, List<LimitViolation> limitViolations) {
@@ -295,17 +295,17 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                 status,
                 contingency.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).toList()
             ),
-            new LimitViolationDTO(
-                limitViolation.getLimitType(),
-                limitViolation.getLimitName(),
-                limitViolation.getSide(),
-                limitViolation.getAcceptableDuration(),
-                limitViolation.getLimit(),
-                limitViolation.getLimitReduction(),
-                limitViolation.getValue(),
-                computedLoading,
-                ComputationResultUtils.getViolationLocationId(limitViolation, getNetwork())
-            )
+            LimitViolationDTO.builder()
+                .limitType(limitViolation.getLimitType())
+                .limitName(limitViolation.getLimitName())
+                .side(limitViolation.getSide())
+                .acceptableDuration(limitViolation.getAcceptableDuration())
+                .limit(limitViolation.getLimit())
+                .limitReduction(limitViolation.getLimitReduction())
+                .value(limitViolation.getValue())
+                .loading(computedLoading)
+                .locationId(ComputationResultUtils.getViolationLocationId(limitViolation, getNetwork()))
+                .build()
         );
     }
 
