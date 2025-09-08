@@ -6,15 +6,13 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
-import com.powsybl.iidm.network.Network;
+import com.powsybl.iidm.network.*;
 import com.powsybl.security.LimitViolation;
 import org.gridsuite.computation.utils.ComputationResultUtils;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-
-
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
@@ -33,17 +31,22 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
     private ContingencyEntity contingency;
 
     public static ContingencyLimitViolationEntity toEntity(Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
+        Double patlLimit = getPatlLimit(limitViolation, network);
+
         ContingencyLimitViolationEntity contingencyLimitViolationEntity = ContingencyLimitViolationEntity.builder()
             .limit(limitViolation.getLimit())
             .limitName(limitViolation.getLimitName())
             .limitType(limitViolation.getLimitType())
-            .acceptableDuration(limitViolation.getAcceptableDuration())
             .limitReduction(limitViolation.getLimitReduction())
             .value(limitViolation.getValue())
             .side(limitViolation.getSide())
-            .loading(computeLoading(limitViolation))
+            .loading(computeLoading(limitViolation, limitViolation.getLimit()))
             .locationId(ComputationResultUtils.getViolationLocationId(limitViolation, network))
             .subjectLimitViolation(subjectLimitViolation)
+            .patlLimit(patlLimit)
+            .patlLoading(computeLoading(limitViolation, patlLimit))
+            .nextLimitName(getNextLimitName(limitViolation, network))
+            .acceptableDuration(limitViolation.getAcceptableDuration())
             .build();
 
         subjectLimitViolation.addContingencyLimitViolation(contingencyLimitViolationEntity);
