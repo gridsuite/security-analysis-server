@@ -1,0 +1,27 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="lesaulnierkev (generated)" id="1757342382341-1">
+        <addColumn tableName="contingency_limit_violation">
+            <column name="upcoming_acceptable_duration" type="integer"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1757342382341-2">
+        <addColumn tableName="pre_contingency_limit_violation">
+            <column name="upcoming_acceptable_duration" type="integer"/>
+        </addColumn>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1757342382341-3">
+        <modifyDataType
+                tableName="contingency_limit_violation"
+                columnName="acceptable_duration"
+                newDataType="INTEGER"/>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1757342382341-4">
+        <modifyDataType
+                tableName="pre_contingency_limit_violation"
+                columnName="acceptable_duration"
+                newDataType="INTEGER"/>
+        <!-- CHECK CONVERSION ?????-->
+    </changeSet>
+
+</databaseChangeLog>

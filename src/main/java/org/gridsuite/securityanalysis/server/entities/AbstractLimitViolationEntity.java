@@ -17,10 +17,7 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
@@ -53,7 +50,9 @@ public abstract class AbstractLimitViolationEntity {
     @Enumerated(EnumType.STRING)
     private LimitViolationType limitType;
 
-    private long acceptableDuration;
+    private Integer acceptableDuration;
+
+    private Integer upcomingAcceptableDuration;
 
     private double limitReduction;
 
@@ -128,6 +127,49 @@ public abstract class AbstractLimitViolationEntity {
             }
         }
 
+        return null;
+    }
+
+    protected static Integer calculateActualOverloadDuration(LimitViolation limitViolation, Network network) {
+        if (limitViolation.getValue() > limitViolation.getLimit()) {
+            return limitViolation.getAcceptableDuration();
+        } else {
+            String equipmentId = limitViolation.getSubjectId();
+            LoadingLimits.TemporaryLimit tempLimit = null;
+
+            Line line = network.getLine(equipmentId);
+            if (line != null) {
+                tempLimit = getBranchLimitViolationAboveCurrentValue(line, limitViolation);
+            } else {
+                TwoWindingsTransformer twoWindingsTransformer = network.getTwoWindingsTransformer(equipmentId);
+                if (twoWindingsTransformer != null) {
+                    tempLimit = getBranchLimitViolationAboveCurrentValue(twoWindingsTransformer, limitViolation);
+                }
+            }
+            return (tempLimit != null) ? tempLimit.getAcceptableDuration() : Integer.MAX_VALUE;
+        }
+    }
+
+    protected static Integer calculateUpcomingOverloadDuration(LimitViolation limitViolation) {
+        if (limitViolation.getValue() < limitViolation.getLimit()) {
+            return limitViolation.getAcceptableDuration();
+        }
+        return null;
+    }
+
+    private static LoadingLimits.TemporaryLimit getBranchLimitViolationAboveCurrentValue(Branch<?> branch, LimitViolation limitViolation) {
+        // limits are returned from the store by DESC duration / ASC value
+        Optional<CurrentLimits> currentLimits = limitViolation.getSideAsTwoSides().equals(TwoSides.ONE) ? branch.getCurrentLimits1() : branch.getCurrentLimits2();
+        if (currentLimits.isEmpty() || limitViolation.getValue() < currentLimits.get().getPermanentLimit()) {
+            return null;
+        } else {
+            Optional<LoadingLimits.TemporaryLimit> nextTemporaryLimit = currentLimits.get().getTemporaryLimits().stream()
+                .filter(tl -> limitViolation.getValue() < tl.getValue())
+                .findFirst();
+            if (nextTemporaryLimit.isPresent()) {
+                return nextTemporaryLimit.get();
+            }
+        }
         return null;
     }
 }

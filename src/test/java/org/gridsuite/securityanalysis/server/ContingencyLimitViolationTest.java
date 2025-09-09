@@ -25,29 +25,36 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SpringBootTest
 class ContingencyLimitViolationTest {
 
+
     @Test
     void testContingencyLimitViolationEntityNewFields() {
-        testContingencyLimitViolationMapping("10'", 10 * 60, 1200, 1250, TwoSides.TWO, "1'", 1100);
+        testContingencyLimitViolationMapping("10'", 10 * 60, 1200, 1, 1250, TwoSides.TWO, "1'", 1100, 10 * 60, null);
     }
 
     @Test
     void testContingencyLimitViolationEntityNewFieldsWithPermanentLimitReached() {
-        testContingencyLimitViolationMapping(LimitViolationUtils.PERMANENT_LIMIT_NAME, Integer.MAX_VALUE, 1100, 1150, TwoSides.TWO, "10'", 1100);
+        testContingencyLimitViolationMapping(LimitViolationUtils.PERMANENT_LIMIT_NAME, Integer.MAX_VALUE, 1100, 1, 1150, TwoSides.TWO, "10'", 1100, Integer.MAX_VALUE, null);
     }
 
     @Test
     void testContingencyLimitViolationEntityNewFieldsWithPermanentLimitReachedAndNoTemporaryLimit() {
-        testContingencyLimitViolationMapping(LimitViolationUtils.PERMANENT_LIMIT_NAME, Integer.MAX_VALUE, 500, 1000, TwoSides.ONE, null, 500);
+        testContingencyLimitViolationMapping(LimitViolationUtils.PERMANENT_LIMIT_NAME, Integer.MAX_VALUE, 500, 1, 1000, TwoSides.ONE, null, 500, Integer.MAX_VALUE, null);
     }
 
     @Test
     void testContingencyLimitViolationEntityNewFieldsWithLastLimitReached() {
-        testContingencyLimitViolationMapping("N/A", 0, 1100, 3000, TwoSides.TWO, null, 1100);
+        testContingencyLimitViolationMapping("N/A", 0, 1100, 1, 3000, TwoSides.TWO, null, 1100, 0, null);
     }
 
-    private void testContingencyLimitViolationMapping(String limitName, int acceptableDuration, double limit, double value, TwoSides side, String expectedNextLimitName, long expectedPatlLimit) {
+    @Test
+    void testContingencyLimitViolationEntityNewFieldsWithLimitReductionEffective() {
+        // for this test to be relevant, "value" needs to be less that "limit"
+        testContingencyLimitViolationMapping("10'", 60, 1200, 0.8, 1150, TwoSides.TWO, "1'", 1100, 10 * 60, 60);
+    }
+
+    private void testContingencyLimitViolationMapping(String limitName, int acceptableDuration, double limit, double limitReduction, double value, TwoSides side, String expectedNextLimitName, long expectedPatlLimit, Integer expectedAcceptableDuration, Integer expectedUpcomingAcceptableDuration) {
         Network network = EurostagTutorialExample1Factory.createWithFixedCurrentLimits();
-        LimitViolation limitViolation = new LimitViolation("NHV1_NHV2_1", "NHV1_NHV2_1_name", LimitViolationType.CURRENT, limitName, acceptableDuration, limit, 1, value, side);
+        LimitViolation limitViolation = new LimitViolation("NHV1_NHV2_1", "NHV1_NHV2_1_name", LimitViolationType.CURRENT, limitName, acceptableDuration, limit, limitReduction, value, side);
 
         SubjectLimitViolationEntity subjectLimitViolationEntity = new SubjectLimitViolationEntity("NHV1_NHV2_1", "NHV1_NHV2_1_name");
 
@@ -55,6 +62,8 @@ class ContingencyLimitViolationTest {
 
         assertEquals(expectedNextLimitName, contingencyLimitViolationEntity.getNextLimitName());
         assertEquals(expectedPatlLimit, contingencyLimitViolationEntity.getPatlLimit());
+        assertEquals(expectedAcceptableDuration, contingencyLimitViolationEntity.getAcceptableDuration());
+        assertEquals(expectedUpcomingAcceptableDuration, contingencyLimitViolationEntity.getUpcomingAcceptableDuration());
         assertEquals(100 * limitViolation.getValue() / contingencyLimitViolationEntity.getPatlLimit(), contingencyLimitViolationEntity.getPatlLoading());
     }
 }
