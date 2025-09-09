@@ -75,7 +75,7 @@ class ContingencyLimitViolationTest {
             .setAcceptableDuration(0)
             .endTemporaryLimit()
             .add();
-        
+
         LimitViolation limitViolation = new LimitViolation(NGEN_NHV1, "NGEN_NHV1_name", LimitViolationType.CURRENT, "10'", 60, 200, 0.8, 180, TwoSides.ONE);
 
         SubjectLimitViolationEntity subjectLimitViolationEntity = new SubjectLimitViolationEntity(NGEN_NHV1, "NGEN_NHV1_name");
