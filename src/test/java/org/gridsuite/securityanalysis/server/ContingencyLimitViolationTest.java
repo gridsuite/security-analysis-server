@@ -24,8 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 @SpringBootTest
 class ContingencyLimitViolationTest {
-
-
     @Test
     void testContingencyLimitViolationEntityNewFields() {
         testContingencyLimitViolationMapping("10'", 10 * 60, 1200, 1, 1250, TwoSides.TWO, "1'", 1100, 10 * 60, null);

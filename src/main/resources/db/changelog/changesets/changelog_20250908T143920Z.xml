@@ -10,18 +10,28 @@
             <column name="upcoming_acceptable_duration" type="integer"/>
         </addColumn>
     </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="fix-overflowed-values-1">
+        <update tableName="pre_contingency_limit_violation">
+            <column name="acceptable_duration" value="NULL"/>
+            <where>acceptable_duration &lt; -2147483648 OR acceptable_duration &gt; 2147483647</where>
+        </update>
+    </changeSet>
     <changeSet author="lesaulnierkev (generated)" id="1757342382341-3">
         <modifyDataType
                 tableName="contingency_limit_violation"
                 columnName="acceptable_duration"
                 newDataType="INTEGER"/>
     </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="fix-overflowed-values-2">
+        <update tableName="contingency_limit_violation">
+            <column name="acceptable_duration" value="NULL"/>
+            <where>acceptable_duration &lt; -2147483648 OR acceptable_duration &gt; 2147483647</where>
+        </update>
+    </changeSet>
     <changeSet author="lesaulnierkev (generated)" id="1757342382341-4">
         <modifyDataType
                 tableName="pre_contingency_limit_violation"
                 columnName="acceptable_duration"
                 newDataType="INTEGER"/>
-        <!-- CHECK CONVERSION ?????-->
     </changeSet>
-
 </databaseChangeLog>
