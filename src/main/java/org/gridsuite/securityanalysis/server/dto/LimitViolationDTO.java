@@ -24,7 +24,8 @@ public class LimitViolationDTO {
     private String limitName;
     private String nextLimitName;
     private ThreeSides side;
-    private int acceptableDuration;
+    private Integer acceptableDuration;
+    private Integer upcomingAcceptableDuration;
     private double limit;
     private Double patlLimit;
     private double limitReduction;
@@ -39,7 +40,8 @@ public class LimitViolationDTO {
             .limitName(limitViolation.getLimitName())
             .nextLimitName(limitViolation.getNextLimitName())
             .side(limitViolation.getSide())
-            .acceptableDuration((int) limitViolation.getAcceptableDuration())
+            .acceptableDuration(limitViolation.getAcceptableDuration())
+            .upcomingAcceptableDuration(limitViolation.getUpcomingAcceptableDuration())
             .limit(limitViolation.getLimit())
             .patlLimit(limitViolation.getPatlLimit())
             .limitReduction(limitViolation.getLimitReduction())
