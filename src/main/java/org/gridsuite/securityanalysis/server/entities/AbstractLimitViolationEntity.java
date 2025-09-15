@@ -137,14 +137,9 @@ public abstract class AbstractLimitViolationEntity {
             String equipmentId = limitViolation.getSubjectId();
             LoadingLimits.TemporaryLimit tempLimit = null;
 
-            Line line = network.getLine(equipmentId);
-            if (line != null) {
-                tempLimit = getBranchLimitViolationAboveCurrentValue(line, limitViolation);
-            } else {
-                TwoWindingsTransformer twoWindingsTransformer = network.getTwoWindingsTransformer(equipmentId);
-                if (twoWindingsTransformer != null) {
-                    tempLimit = getBranchLimitViolationAboveCurrentValue(twoWindingsTransformer, limitViolation);
-                }
+            Branch<?> branch = network.getBranch(equipmentId);
+            if (branch != null) {
+                tempLimit = getBranchLimitViolationAboveCurrentValue(branch, limitViolation);
             }
             return (tempLimit != null) ? tempLimit.getAcceptableDuration() : Integer.MAX_VALUE;
         }
@@ -159,7 +154,7 @@ public abstract class AbstractLimitViolationEntity {
 
     private static LoadingLimits.TemporaryLimit getBranchLimitViolationAboveCurrentValue(Branch<?> branch, LimitViolation limitViolation) {
         // limits are returned from the store by DESC duration / ASC value
-        Optional<CurrentLimits> currentLimits = limitViolation.getSideAsTwoSides().equals(TwoSides.ONE) ? branch.getCurrentLimits1() : branch.getCurrentLimits2();
+        Optional<CurrentLimits> currentLimits = branch.getCurrentLimits(limitViolation.getSideAsTwoSides());
         if (currentLimits.isEmpty() || limitViolation.getValue() < currentLimits.get().getPermanentLimit()) {
             return null;
         } else {
