@@ -46,7 +46,8 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
             .patlLimit(patlLimit)
             .patlLoading(computeLoading(limitViolation, patlLimit))
             .nextLimitName(getNextLimitName(limitViolation, network))
-            .acceptableDuration(limitViolation.getAcceptableDuration())
+            .acceptableDuration(calculateActualOverloadDuration(limitViolation, network))
+            .upcomingAcceptableDuration(calculateUpcomingOverloadDuration(limitViolation))
             .build();
 
         subjectLimitViolation.addContingencyLimitViolation(contingencyLimitViolationEntity);
