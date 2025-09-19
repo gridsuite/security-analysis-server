@@ -21,9 +21,6 @@ import static com.powsybl.iidm.network.test.EurostagTutorialExample1Factory.NGEN
 import static com.powsybl.iidm.network.test.EurostagTutorialExample1Factory.NHV1_NHV2_1;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/**
- * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
- */
 @SpringBootTest
 class PreContingencyLimitViolationTest {
     @Test
