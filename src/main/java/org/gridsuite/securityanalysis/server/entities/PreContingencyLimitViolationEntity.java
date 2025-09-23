@@ -43,17 +43,22 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
     }
 
     public static PreContingencyLimitViolationEntity toEntity(Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
+        Double patlLimit = getPatlLimit(limitViolation, network);
         return PreContingencyLimitViolationEntity.builder()
             .subjectLimitViolation(subjectLimitViolation)
             .limit(limitViolation.getLimit())
             .limitName(limitViolation.getLimitName())
             .limitType(limitViolation.getLimitType())
-            .acceptableDuration(limitViolation.getAcceptableDuration())
+            .acceptableDuration(calculateActualOverloadDuration(limitViolation, network))
+            .upcomingAcceptableDuration(calculateUpcomingOverloadDuration(limitViolation))
             .limitReduction(limitViolation.getLimitReduction())
             .value(limitViolation.getValue())
             .side(limitViolation.getSide())
+            .patlLimit(patlLimit)
             .loading(computeLoading(limitViolation, limitViolation.getLimit()))
+            .patlLoading(computeLoading(limitViolation, patlLimit))
             .locationId(ComputationResultUtils.getViolationLocationId(limitViolation, network))
+            .nextLimitName(getNextLimitName(limitViolation, network))
             .build();
     }
 }

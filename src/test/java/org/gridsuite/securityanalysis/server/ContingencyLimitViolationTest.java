@@ -7,100 +7,17 @@
 package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.iidm.network.Network;
-import com.powsybl.iidm.network.TwoSides;
-import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
-import com.powsybl.iidm.network.util.LimitViolationUtils;
 import com.powsybl.security.LimitViolation;
-import com.powsybl.security.LimitViolationType;
 import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-
-import static com.powsybl.iidm.network.test.EurostagTutorialExample1Factory.NGEN_NHV1;
-import static com.powsybl.iidm.network.test.EurostagTutorialExample1Factory.NHV1_NHV2_1;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
-@SpringBootTest
-class ContingencyLimitViolationTest {
-    @Test
-    void testContingencyLimitViolationEntityNewFields() {
-        testContingencyLimitViolationMapping("10'", 10 * 60, 1200, 1, 1250, TwoSides.TWO, "1'", 1100, 10 * 60, null);
-    }
+class ContingencyLimitViolationTest extends AbstractLimitViolationTest<ContingencyLimitViolationEntity> {
 
-    @Test
-    void testContingencyLimitViolationEntityNewFieldsWithPermanentLimitReached() {
-        testContingencyLimitViolationMapping(LimitViolationUtils.PERMANENT_LIMIT_NAME, Integer.MAX_VALUE, 1100, 1, 1150, TwoSides.TWO, "10'", 1100, Integer.MAX_VALUE, null);
-    }
-
-    @Test
-    void testContingencyLimitViolationEntityNewFieldsWithPermanentLimitReachedAndNoTemporaryLimit() {
-        testContingencyLimitViolationMapping(LimitViolationUtils.PERMANENT_LIMIT_NAME, Integer.MAX_VALUE, 500, 1, 1000, TwoSides.ONE, null, 500, Integer.MAX_VALUE, null);
-    }
-
-    @Test
-    void testContingencyLimitViolationEntityNewFieldsWithLastLimitReached() {
-        testContingencyLimitViolationMapping("N/A", 0, 1100, 1, 3000, TwoSides.TWO, null, 1100, 0, null);
-    }
-
-    @Test
-    void testContingencyLimitViolationEntityNewFieldsWithLimitReductionEffective() {
-        // for this test to be relevant, "value" needs to be less that "limit"
-        testContingencyLimitViolationMapping("10'", 60, 1200, 0.8, 1150, TwoSides.TWO, "1'", 1100, 10 * 60, 60);
-    }
-
-    @Test
-    void test2wtContingencyLimitViolationEntityNewFieldsWithLimitReductionEffective() {
-        // for this test to be relevant, "value" needs to be less that "limit"
-        Network network = EurostagTutorialExample1Factory.createWithFixedCurrentLimits();
-        // create limit set for two windings transformer
-        network.getTwoWindingsTransformer(NGEN_NHV1).getOrCreateSelectedOperationalLimitsGroup1().newCurrentLimits()
-            .setPermanentLimit(100)
-            .beginTemporaryLimit()
-            .setName("10'")
-            .setValue(200)
-            .setAcceptableDuration(60 * 10)
-            .endTemporaryLimit()
-            .beginTemporaryLimit()
-            .setName("1'")
-            .setValue(300)
-            .setAcceptableDuration(60)
-            .endTemporaryLimit()
-            .beginTemporaryLimit()
-            .setName("N/A")
-            .setValue(Double.MAX_VALUE)
-            .setAcceptableDuration(0)
-            .endTemporaryLimit()
-            .add();
-
-        LimitViolation limitViolation = new LimitViolation(NGEN_NHV1, "NGEN_NHV1_name", LimitViolationType.CURRENT, "10'", 60, 200, 0.8, 180, TwoSides.ONE);
-
-        SubjectLimitViolationEntity subjectLimitViolationEntity = new SubjectLimitViolationEntity(NGEN_NHV1, "NGEN_NHV1_name");
-
-        ContingencyLimitViolationEntity contingencyLimitViolationEntity = ContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationEntity);
-
-        assertEquals("1'", contingencyLimitViolationEntity.getNextLimitName());
-        assertEquals(100, contingencyLimitViolationEntity.getPatlLimit());
-        assertEquals(60 * 10, contingencyLimitViolationEntity.getAcceptableDuration());
-        assertEquals(60, contingencyLimitViolationEntity.getUpcomingAcceptableDuration());
-        assertEquals(100 * limitViolation.getValue() / contingencyLimitViolationEntity.getPatlLimit(), contingencyLimitViolationEntity.getPatlLoading());
-    }
-
-    private void testContingencyLimitViolationMapping(String limitName, int acceptableDuration, double limit, double limitReduction, double value, TwoSides side, String expectedNextLimitName, long expectedPatlLimit, Integer expectedAcceptableDuration, Integer expectedUpcomingAcceptableDuration) {
-        Network network = EurostagTutorialExample1Factory.createWithFixedCurrentLimits();
-        LimitViolation limitViolation = new LimitViolation(NHV1_NHV2_1, "NHV1_NHV2_1_name", LimitViolationType.CURRENT, limitName, acceptableDuration, limit, limitReduction, value, side);
-
-        SubjectLimitViolationEntity subjectLimitViolationEntity = new SubjectLimitViolationEntity(NHV1_NHV2_1, "NHV1_NHV2_1_name");
-
-        ContingencyLimitViolationEntity contingencyLimitViolationEntity = ContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationEntity);
-
-        assertEquals(expectedNextLimitName, contingencyLimitViolationEntity.getNextLimitName());
-        assertEquals(expectedPatlLimit, contingencyLimitViolationEntity.getPatlLimit());
-        assertEquals(expectedAcceptableDuration, contingencyLimitViolationEntity.getAcceptableDuration());
-        assertEquals(expectedUpcomingAcceptableDuration, contingencyLimitViolationEntity.getUpcomingAcceptableDuration());
-        assertEquals(100 * limitViolation.getValue() / contingencyLimitViolationEntity.getPatlLimit(), contingencyLimitViolationEntity.getPatlLoading());
+    @Override
+    protected ContingencyLimitViolationEntity createLimitViolationEntity(Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolationEntity) {
+        return ContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationEntity);
     }
 }
