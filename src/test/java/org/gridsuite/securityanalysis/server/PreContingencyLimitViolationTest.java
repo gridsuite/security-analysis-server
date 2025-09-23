@@ -20,7 +20,6 @@ class PreContingencyLimitViolationTest extends AbstractLimitViolationTest {
 
     @Override
     protected PreContingencyLimitViolationEntity createLimitViolationEntity(Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolationEntity) {
-        PreContingencyLimitViolationEntity preContingencyLimitViolationEntity = PreContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationEntity);
-        return preContingencyLimitViolationEntity;
+        return PreContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationEntity);
     }
 }
