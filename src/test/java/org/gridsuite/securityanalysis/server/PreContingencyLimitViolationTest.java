@@ -8,7 +8,6 @@ package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.iidm.network.Network;
 import com.powsybl.security.LimitViolation;
-
 import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,6 +17,7 @@ import org.springframework.boot.test.context.SpringBootTest;
  */
 @SpringBootTest
 class PreContingencyLimitViolationTest extends AbstractLimitViolationTest {
+
     @Override
     protected PreContingencyLimitViolationEntity createLimitViolationEntity(Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolationEntity) {
         PreContingencyLimitViolationEntity preContingencyLimitViolationEntity = PreContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationEntity);
