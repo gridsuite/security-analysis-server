@@ -15,7 +15,6 @@ import com.powsybl.security.LimitViolationType;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import static com.powsybl.iidm.network.test.EurostagTutorialExample1Factory.NGEN_NHV1;
 import static com.powsybl.iidm.network.test.EurostagTutorialExample1Factory.NHV1_NHV2_1;
@@ -24,39 +23,38 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * @author Caroline Jeandat <caroline.jeandat at rte-france.com>
  */
-@SpringBootTest
-abstract class AbstractLimitViolationTest {
+abstract class AbstractLimitViolationTest<T extends AbstractLimitViolationEntity> {
 
     @Test
-    void testAbstractLimitViolationEntityNewFields() {
-        testAbstractLimitViolationMapping("10'", 10 * 60, 1200, 1, 1250, TwoSides.TWO, "1'", 1100, 10 * 60, null);
+    void testLimitViolationEntityNewFields() {
+        testLimitViolationMapping("10'", 10 * 60, 1200, 1, 1250, TwoSides.TWO, "1'", 1100, 10 * 60, null);
     }
 
     @Test
-    void testAbstractLimitViolationEntityNewFieldsWithPermanentLimitReached() {
-        testAbstractLimitViolationMapping(LimitViolationUtils.PERMANENT_LIMIT_NAME, Integer.MAX_VALUE, 1100, 1, 1150,
+    void testLimitViolationEntityNewFieldsWithPermanentLimitReached() {
+        testLimitViolationMapping(LimitViolationUtils.PERMANENT_LIMIT_NAME, Integer.MAX_VALUE, 1100, 1, 1150,
                 TwoSides.TWO, "10'", 1100, Integer.MAX_VALUE, null);
     }
 
     @Test
-    void testAbstractLimitViolationEntityNewFieldsWithPermanentLimitReachedAndNoTemporaryLimit() {
-        testAbstractLimitViolationMapping(LimitViolationUtils.PERMANENT_LIMIT_NAME, Integer.MAX_VALUE, 500, 1, 1000,
+    void testLimitViolationEntityNewFieldsWithPermanentLimitReachedAndNoTemporaryLimit() {
+        testLimitViolationMapping(LimitViolationUtils.PERMANENT_LIMIT_NAME, Integer.MAX_VALUE, 500, 1, 1000,
                 TwoSides.ONE, null, 500, Integer.MAX_VALUE, null);
     }
 
     @Test
-    void testAbstractLimitViolationEntityNewFieldsWithLastLimitReached() {
-        testAbstractLimitViolationMapping("N/A", 0, 1100, 1, 3000, TwoSides.TWO, null, 1100, 0, null);
+    void testLimitViolationEntityNewFieldsWithLastLimitReached() {
+        testLimitViolationMapping("N/A", 0, 1100, 1, 3000, TwoSides.TWO, null, 1100, 0, null);
     }
 
     @Test
-    void testAbstractLimitViolationEntityNewFieldsWithLimitReductionEffective() {
+    void testLimitViolationEntityNewFieldsWithLimitReductionEffective() {
         // for this test to be relevant, "value" needs to be less that "limit"
-        testAbstractLimitViolationMapping("10'", 60, 1200, 0.8, 1150, TwoSides.TWO, "1'", 1100, 10 * 60, 60);
+        testLimitViolationMapping("10'", 60, 1200, 0.8, 1150, TwoSides.TWO, "1'", 1100, 10 * 60, 60);
     }
 
     @Test
-    void test2wtContingencyLimitViolationEntityNewFieldsWithLimitReductionEffective() {
+    void test2wtLimitViolationEntityNewFieldsWithLimitReductionEffective() {
         // for this test to be relevant, "value" needs to be less that "limit"
         Network network = EurostagTutorialExample1Factory.createWithFixedCurrentLimits();
         // create limit set for two windings transformer
@@ -96,7 +94,7 @@ abstract class AbstractLimitViolationTest {
                 limitViolationEntity.getPatlLoading());
     }
 
-    private void testAbstractLimitViolationMapping(String limitName, int acceptableDuration, double limit,
+    private void testLimitViolationMapping(String limitName, int acceptableDuration, double limit,
             double limitReduction, double value, TwoSides side, String expectedNextLimitName, long expectedPatlLimit,
             Integer expectedAcceptableDuration, Integer expectedUpcomingAcceptableDuration) {
         Network network = EurostagTutorialExample1Factory.createWithFixedCurrentLimits();
@@ -106,7 +104,7 @@ abstract class AbstractLimitViolationTest {
         SubjectLimitViolationEntity subjectLimitViolationEntity = new SubjectLimitViolationEntity(NHV1_NHV2_1,
                 "NHV1_NHV2_1_name");
 
-        AbstractLimitViolationEntity limitViolationEntity = createLimitViolationEntity(network, limitViolation,
+        T limitViolationEntity = createLimitViolationEntity(network, limitViolation,
                 subjectLimitViolationEntity);
 
         assertEquals(expectedNextLimitName, limitViolationEntity.getNextLimitName());
@@ -117,6 +115,6 @@ abstract class AbstractLimitViolationTest {
                 limitViolationEntity.getPatlLoading());
     }
 
-    protected abstract AbstractLimitViolationEntity createLimitViolationEntity(Network network,
+    protected abstract T createLimitViolationEntity(Network network,
             LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolationEntity);
 }

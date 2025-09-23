@@ -10,13 +10,11 @@ import com.powsybl.iidm.network.Network;
 import com.powsybl.security.LimitViolation;
 import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
-import org.springframework.boot.test.context.SpringBootTest;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
-@SpringBootTest
-class ContingencyLimitViolationTest extends AbstractLimitViolationTest {
+class ContingencyLimitViolationTest extends AbstractLimitViolationTest<ContingencyLimitViolationEntity> {
 
     @Override
     protected ContingencyLimitViolationEntity createLimitViolationEntity(Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolationEntity) {
