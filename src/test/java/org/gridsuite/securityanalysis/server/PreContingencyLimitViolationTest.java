@@ -20,7 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 class PreContingencyLimitViolationTest extends AbstractLimitViolationTest {
     @Override
     protected PreContingencyLimitViolationEntity createLimitViolationEntity(Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolationEntity) {
-        PreContingencyLimitViolationEntity contingencyLimitViolationEntity = PreContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationEntity);
-        return contingencyLimitViolationEntity;
+        PreContingencyLimitViolationEntity preContingencyLimitViolationEntity = PreContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationEntity);
+        return preContingencyLimitViolationEntity;
     }
 }
