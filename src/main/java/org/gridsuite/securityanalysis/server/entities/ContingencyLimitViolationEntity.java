@@ -18,12 +18,12 @@ import lombok.experimental.SuperBuilder;
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
 
-@Data
 @NoArgsConstructor
 @SuperBuilder
 @Getter
 @Entity
 @FieldNameConstants
+@EqualsAndHashCode(callSuper = true)
 @Table(name = "contingency_limit_violation")
 public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntity {
     @ManyToOne(fetch = FetchType.LAZY)
