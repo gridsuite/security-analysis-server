@@ -77,13 +77,11 @@ public final class TestUtils {
             InputStream inputStream = Files.newInputStream(resourceFilePath);
             try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
                 String line;
-                int lineCount = 0;
-                while ((line = br.readLine()) != null && (nbLines == -1 || lineCount < nbLines)) {
-                    if (lineCount == 0 && line.startsWith(utf8Bom)) {
+                while ((line = br.readLine()) != null && (nbLines == -1 || lines.size() < nbLines)) {
+                    if (lines.isEmpty() && line.startsWith(utf8Bom)) {
                         line = line.substring(utf8Bom.length()); // skip BOM
                     }
                     lines.add(line);
-                    lineCount++;
                 }
             }
         } catch (IOException ex) {
