@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
-import static org.gridsuite.computation.ComputationException.Type.PARAMETERS_NOT_FOUND;
+import static org.gridsuite.computation.ComputationBusinessErrorCode.PARAMETERS_NOT_FOUND;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -181,7 +181,7 @@ class SecurityAnalysisParametersControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpectAll(
                         status().isNotFound(),
-                        result -> assertTrue(result.getResponse().getContentAsString().contains(PARAMETERS_NOT_FOUND.name())));
+                        result -> assertTrue(result.getResponse().getContentAsString().contains(PARAMETERS_NOT_FOUND.value())));
 
         //create default parameters and return id
         mvcResult = mockMvc.perform(post("/" + VERSION + "/parameters/default"))

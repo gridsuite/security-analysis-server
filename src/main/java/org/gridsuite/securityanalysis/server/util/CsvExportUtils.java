@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import static org.gridsuite.computation.ComputationBusinessErrorCode.FILE_EXPORT_ERROR;
+
 public final class CsvExportUtils {
     public static final char CSV_DELIMITER_FR = ';';
     public static final char CSV_DELIMITER_EN = ',';
@@ -42,7 +44,7 @@ public final class CsvExportUtils {
             csvWriter.close();
             return outputStream.toByteArray();
         } catch (IOException e) {
-            throw new ComputationException(ComputationException.Type.FILE_EXPORT_ERROR);
+            throw new ComputationException(FILE_EXPORT_ERROR, "Error occured during data csv export");
         }
     }
 

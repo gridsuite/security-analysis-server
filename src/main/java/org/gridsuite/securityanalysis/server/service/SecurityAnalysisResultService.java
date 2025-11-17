@@ -36,6 +36,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.gridsuite.computation.ComputationBusinessErrorCode.INVALID_SORT_FORMAT;
+import static org.gridsuite.computation.ComputationBusinessErrorCode.RESULT_NOT_FOUND;
 import static org.gridsuite.computation.utils.FilterUtils.fromStringFiltersToDTO;
 import static org.gridsuite.computation.utils.FilterUtils.fromStringGlobalFiltersToDTO;
 
@@ -225,13 +227,13 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
 
     private void assertSortAllowed(Sort sort, List<String> allowedSortProperties) {
         if (!sort.stream().allMatch(order -> allowedSortProperties.contains(order.getProperty()))) {
-            throw new ComputationException(ComputationException.Type.INVALID_SORT_FORMAT);
+            throw new ComputationException(INVALID_SORT_FORMAT, "Invalid sort format");
         }
     }
 
     public void assertResultExists(UUID resultUuid) {
         if (securityAnalysisResultRepository.findById(resultUuid).isEmpty()) {
-            throw new ComputationException(ComputationException.Type.RESULT_NOT_FOUND);
+            throw new ComputationException(RESULT_NOT_FOUND, "Result not found");
         }
     }
 

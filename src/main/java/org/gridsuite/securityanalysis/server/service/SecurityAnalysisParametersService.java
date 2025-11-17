@@ -19,7 +19,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
-import static org.gridsuite.computation.ComputationException.Type.PARAMETERS_NOT_FOUND;
+import static org.gridsuite.computation.ComputationBusinessErrorCode.PARAMETERS_NOT_FOUND;
+
 
 /**
  * @author Abdelsalem HEDHILI <abdelsalem.hedhili@rte-france.com>
@@ -159,7 +160,7 @@ public class SecurityAnalysisParametersService {
 
     @Transactional
     public UUID updateParameters(UUID parametersUuid, SecurityAnalysisParametersValues parametersInfos) {
-        SecurityAnalysisParametersEntity securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(parametersUuid).orElseThrow(() -> new ComputationException(PARAMETERS_NOT_FOUND));
+        SecurityAnalysisParametersEntity securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(parametersUuid).orElseThrow(() -> new ComputationException(PARAMETERS_NOT_FOUND, "Could not find provided parameters"));
         //if the parameters is null it means it's a reset to defaultValues, but we need to keep the provider because it's updated separately
         if (parametersInfos == null) {
             securityAnalysisParametersEntity.update(getDefaultSecurityAnalysisParametersValues(securityAnalysisParametersEntity.getProvider()));

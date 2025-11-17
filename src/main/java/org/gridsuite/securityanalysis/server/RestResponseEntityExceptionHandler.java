@@ -6,35 +6,36 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.powsybl.ws.commons.error.AbstractBaseRestExceptionHandler;
+import com.powsybl.ws.commons.error.ServerNameProvider;
+import lombok.NonNull;
+import org.gridsuite.computation.ComputationBusinessErrorCode;
 import org.gridsuite.computation.ComputationException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
 
 @ControllerAdvice
-public class RestResponseEntityExceptionHandler {
+public class RestResponseEntityExceptionHandler extends AbstractBaseRestExceptionHandler<ComputationException, ComputationBusinessErrorCode> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RestResponseEntityExceptionHandler.class);
+    protected RestResponseEntityExceptionHandler(ServerNameProvider serverNameProvider) {
+        super(serverNameProvider);
+    }
 
-    @ExceptionHandler(ComputationException.class)
-    protected ResponseEntity<Object> handleStudyException(ComputationException exception) {
-        if (LOGGER.isErrorEnabled()) {
-            LOGGER.error(exception.getMessage());
-        }
-        switch (exception.getExceptionType()) {
-            case RESULT_NOT_FOUND, PARAMETERS_NOT_FOUND:
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(exception.getExceptionType());
-            case INVALID_FILTER_FORMAT, INVALID_FILTER, INVALID_SORT_FORMAT:
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(exception.getExceptionType());
-            default:
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(exception.getExceptionType());
-        }
+    @Override
+    protected @NonNull ComputationBusinessErrorCode getBusinessCode(ComputationException e) {
+        return e.getBusinessErrorCode();
+    }
+
+    @Override
+    protected HttpStatus mapStatus(ComputationBusinessErrorCode errorCode) {
+        return switch (errorCode) {
+            case RESULT_NOT_FOUND, PARAMETERS_NOT_FOUND -> HttpStatus.NOT_FOUND;
+            case INVALID_FILTER_FORMAT, INVALID_FILTER, INVALID_SORT_FORMAT -> HttpStatus.BAD_REQUEST;
+            default -> HttpStatus.INTERNAL_SERVER_ERROR;
+        };
     }
 }
