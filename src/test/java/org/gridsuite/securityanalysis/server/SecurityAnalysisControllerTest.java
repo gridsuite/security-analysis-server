@@ -44,6 +44,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -73,8 +75,10 @@ import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.computation.service.NotificationService.*;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
+import static org.gridsuite.securityanalysis.server.util.CsvExportUtils.csvRowsToZippedCsv;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.gridsuite.securityanalysis.server.util.TestUtils.assertLogMessage;
+import static org.gridsuite.securityanalysis.server.util.TestUtils.readLinesFromFilePath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -93,6 +97,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @ContextConfigurationWithTestChannel
 class SecurityAnalysisControllerTest {
+    private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisControllerTest.class);
 
     private static final UUID NETWORK_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e4");
     private static final UUID NETWORK_STOP_UUID = UUID.fromString("7928181c-7977-4592-ba19-88027e4254e6");
@@ -512,7 +517,7 @@ class SecurityAnalysisControllerTest {
         List<LimitViolationType> limitTypes = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
         Assertions.assertThat(limitTypes).hasSameElementsAs(expectedLimitTypes);
 
-        List<ThreeSides> expectedSides = nResults.stream().map(result -> result.getLimitViolation().getSide()).distinct().filter(side -> side != null).toList();
+        List<ThreeSides> expectedSides = nResults.stream().map(result -> result.getLimitViolation().getSide()).distinct().filter(Objects::nonNull).toList();
         mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/n-branch-sides", resultUuid))
             .andExpectAll(
                 status().isOk(),
@@ -835,7 +840,7 @@ class SecurityAnalysisControllerTest {
 
     @Test
     void getZippedCsvResults() throws Exception {
-        // running computation to create result
+        // running computation to create some results
         MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME
                 + "&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow" + "&loadFlowParametersUuid=" + UUID.randomUUID())
                 .header(HEADER_USER_ID, "testUserId")
@@ -856,14 +861,50 @@ class SecurityAnalysisControllerTest {
         checkAllZippedCsvResults();
     }
 
+    @Test
+    void getZippedCsvResultsFromCustomData() throws Exception {
+        final String expectedCsvFile = "/results/n-result-fr-custom.csv";
+        final String lang = "fr";
+        final List<String> header = getCsvHeaderFromResource(expectedCsvFile, lang);
+
+        // Build binary/zipped data from custom DTOs rather than from AS results.
+        PreContingencyLimitViolationResultDTO dto = PreContingencyLimitViolationResultDTO.builder()
+                .subjectId("Ouvrage")
+                .limitViolation(LimitViolationDTO.builder()
+                    .locationId("BUS")
+                    .limitName("lim_name")
+                    .acceptableDuration(100)
+                    .patlLoading(111.5)
+                    .patlLimit(80.66)
+                    .upcomingAcceptableDuration(Integer.MAX_VALUE)
+                    .build())
+                .build();
+        PreContingencyLimitViolationResultDTO dto2 = PreContingencyLimitViolationResultDTO.builder()
+                .subjectId("Ouvrage2")
+                .limitViolation(LimitViolationDTO.builder()
+                        .locationId("BUS2")
+                        .limitName("lim_name2")
+                        .acceptableDuration(100)
+                        .patlLoading(111.5)
+                        .patlLimit(80.66)
+                        .upcomingAcceptableDuration(1000)
+                        .build())
+                .build();
+        List<List<String>> csvRows = List.of(dto.toCsvRow(ENUM_TRANSLATIONS_FR, lang), dto2.toCsvRow(ENUM_TRANSLATIONS_FR, lang));
+        byte[] resultAsByteArray = csvRowsToZippedCsv(header, lang, csvRows);
+        // and compare with the expected file
+        checkCsvResultFromBytes(expectedCsvFile, resultAsByteArray);
+    }
+
+    private List<String> getCsvHeaderFromResource(String resourcePath, String lang) {
+        List<String> lines = readLinesFromFilePath(resourcePath, 1);
+        String header = lines.isEmpty() ? "" : lines.getFirst();
+        return Arrays.asList(header.strip().split("en".equalsIgnoreCase(lang) ? "," : ";"));
+    }
+
     private void checkAllZippedCsvResults() throws Exception {
         SQLStatementCountValidator.reset();
-        checkZippedCsvResult("n-result", "/results/n-result-en.csv",
-            CsvTranslationDTO.builder()
-                .headers(List.of("Equipment", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
-                .enumValueTranslations(ENUM_TRANSLATIONS_EN)
-                .language("en")
-                .build());
+        checkZippedCsvResult("n-result", "/results/n-result-en.csv", "en");
         /*
          * SELECT
          * assert result exists
@@ -872,20 +913,11 @@ class SecurityAnalysisControllerTest {
         assertRequestsCount(2, 0, 0, 0);
 
         SQLStatementCountValidator.reset();
-        checkZippedCsvResult("n-result", "/results/n-result-fr.csv",
-            CsvTranslationDTO.builder()
-                .headers(List.of("Ouvrage", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Valeur calculée (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
-                .enumValueTranslations(ENUM_TRANSLATIONS_FR)
-                .language("fr")
-                .build());
+        checkZippedCsvResult("n-result", "/results/n-result-fr.csv", "fr");
 
         SQLStatementCountValidator.reset();
-        checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-en.csv",
-            CsvTranslationDTO.builder()
-                .headers(List.of("Contingency ID", "Status", "Constraint", "Bus", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
-                .enumValueTranslations(ENUM_TRANSLATIONS_EN)
-                .language("en")
-                .build());
+        checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-en.csv", "en");
+
         /*
          * SELECT
          * assert result exists
@@ -896,21 +928,11 @@ class SecurityAnalysisControllerTest {
         assertRequestsCount(4, 0, 0, 0);
 
         SQLStatementCountValidator.reset();
-        checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-fr.csv",
-            CsvTranslationDTO.builder()
-                .headers(List.of("Id aléa", "Statut", "Contrainte", "Noeud électrique", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
-                .enumValueTranslations(ENUM_TRANSLATIONS_FR)
-                .language("fr")
-                .build());
+        checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-fr.csv", "fr");
         assertRequestsCount(4, 0, 0, 0);
 
         SQLStatementCountValidator.reset();
-        checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-en.csv",
-            CsvTranslationDTO.builder()
-                .headers(List.of("Constraint", "Contingency ID", "Status", "Bus", "Violation type", "Limit name", "Limit value (A or kV)", "Calculated value (A or kV)", "Load (%)", "Overload", "Side"))
-                .enumValueTranslations(ENUM_TRANSLATIONS_EN)
-                .language("en")
-                .build());
+        checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-en.csv", "en");
         /*
          * SELECT
          * assert result exists
@@ -921,17 +943,44 @@ class SecurityAnalysisControllerTest {
         assertRequestsCount(4, 0, 0, 0);
 
         SQLStatementCountValidator.reset();
-        checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-fr.csv",
-            CsvTranslationDTO.builder()
-                .headers(List.of("Contrainte", "ID aléa", "Statut", "Noeud électrique", "Type de contrainte", "Nom du seuil", "Valeur du seuil (A ou kV)", "Valeur calculée (A ou kV)", "Charge (%)", "Surcharge", "Côté"))
-                .enumValueTranslations(ENUM_TRANSLATIONS_FR)
-                .language("fr")
-                .build());
+        checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-fr.csv", "fr");
         assertRequestsCount(4, 0, 0, 0);
     }
 
-    private void checkZippedCsvResult(String resultType, String resourcePath, CsvTranslationDTO csvTranslationDTO) throws Exception {
-        // get csv file
+    private void checkCsvResultFromBytes(String expectedCsvResource, byte[] resultAsByteArray) throws Exception {
+        // get zip file stream
+        try (ZipInputStream zin = new ZipInputStream(new ByteArrayInputStream(resultAsByteArray));
+            ByteArrayOutputStream contentOutputStream = new ByteArrayOutputStream();
+            ByteArrayOutputStream expectedContentOutputStream = new ByteArrayOutputStream()) {
+            // get first entry
+            ZipEntry zipEntry = zin.getNextEntry();
+            // check zip entry name
+            assertEquals(CsvExportUtils.CSV_RESULT_FILE_NAME, zipEntry.getName());
+            // get entry content as outputStream
+            StreamUtils.copy(zin, contentOutputStream);
+
+            // get expected content as outputStream
+            InputStream csvStream = getClass().getResourceAsStream(expectedCsvResource);
+            StreamUtils.copy(csvStream, expectedContentOutputStream);
+
+            // For debug
+            LOGGER.info("CSV result  :\n {}", contentOutputStream);
+            LOGGER.info("CSV expected:\n {}", expectedContentOutputStream);
+
+            // using bytearray comparison to check BOM presence in CSV files
+            Assertions.assertThat(contentOutputStream.toByteArray()).isEqualTo(expectedContentOutputStream.toByteArray());
+            zin.closeEntry();
+        }
+    }
+
+    private void checkZippedCsvResult(String resultType, String expectedCsvResource, String lang) throws Exception {
+        CsvTranslationDTO csvTranslationDTO = CsvTranslationDTO.builder()
+                .headers(getCsvHeaderFromResource(expectedCsvResource, lang))
+                .enumValueTranslations("en".equalsIgnoreCase(lang) ? ENUM_TRANSLATIONS_EN : ENUM_TRANSLATIONS_FR)
+                .language(lang)
+                .build();
+
+        // get csv file as binary (zip)
         byte[] resultAsByteArray = mockMvc.perform(post("/" + VERSION + "/results/" + RESULT_UUID + "/" + resultType + "/csv")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(csvTranslationDTO)))
@@ -940,26 +989,7 @@ class SecurityAnalysisControllerTest {
                 content().contentType(APPLICATION_OCTET_STREAM_VALUE)
             ).andReturn().getResponse().getContentAsByteArray();
 
-        // get zip file stream
-        try (ZipInputStream zin = new ZipInputStream(new ByteArrayInputStream(resultAsByteArray));
-             ByteArrayOutputStream contentOutputStream = new ByteArrayOutputStream();
-             ByteArrayOutputStream expectedContentOutputStream = new ByteArrayOutputStream()) {
-            // get first entry
-            ZipEntry zipEntry = zin.getNextEntry();
-            // check zip entry name
-            assertEquals(CsvExportUtils.CSV_RESULT_FILE_NAME, zipEntry.getName());
-
-            // get entry content as outputStream
-            StreamUtils.copy(zin, contentOutputStream);
-
-            // get expected content as outputStream
-            InputStream csvStream = getClass().getResourceAsStream(resourcePath);
-            StreamUtils.copy(csvStream, expectedContentOutputStream);
-
-            // using bytearray comparison to check BOM presence in CSV files
-            Assertions.assertThat(expectedContentOutputStream.toByteArray()).isEqualTo(contentOutputStream.toByteArray());
-            zin.closeEntry();
-        }
+        checkCsvResultFromBytes(expectedCsvResource, resultAsByteArray);
     }
 
     private void assertResultNotFound(UUID resultUuid) throws Exception {

@@ -44,6 +44,7 @@ public class PreContingencyLimitViolationResultDTO {
         List<String> csvRow = List.of();
 
         if (this.getLimitViolation() != null) {
+            csvRow = List.of(this.getSubjectId());
             return Stream.concat(csvRow.stream(), this.getLimitViolation().toCsvRow(translations, language).stream()).toList();
         }
 

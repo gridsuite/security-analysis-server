@@ -60,13 +60,17 @@ public class LimitViolationDTO {
 
     public List<String> toCsvRow(Map<String, String> translations, String language) {
         List<String> csvRow = new ArrayList<>();
-        csvRow.add(this.getLocationId());
         csvRow.add(this.getLimitType() != null ? CsvExportUtils.translate(this.getLimitType().name(), translations) : "");
+        csvRow.add(this.getLocationId());  // busId
         csvRow.add(CsvExportUtils.replaceNullWithEmptyString(CsvExportUtils.translate(this.getLimitName(), translations)));
-        csvRow.add(convertDoubleToLocale(this.getLimit(), language));
-        csvRow.add(convertDoubleToLocale(this.getValue(), language));
         csvRow.add(this.getLoading() == null ? "" : convertDoubleToLocale(this.getLoading(), language));
+        csvRow.add(this.getPatlLoading() == null ? "" : convertDoubleToLocale(this.getPatlLoading(), language));
         csvRow.add(this.getAcceptableDuration() == Integer.MAX_VALUE ? null : Integer.toString(this.getAcceptableDuration()));
+        csvRow.add(this.getUpcomingAcceptableDuration() == null || this.getUpcomingAcceptableDuration() == Integer.MAX_VALUE ? null : Integer.toString(this.getUpcomingAcceptableDuration()));
+        csvRow.add(CsvExportUtils.replaceNullWithEmptyString(CsvExportUtils.translate(this.getNextLimitName(), translations)));
+        csvRow.add(convertDoubleToLocale(this.getLimit(), language));
+        csvRow.add(this.getPatlLimit() == null ? "" : convertDoubleToLocale(this.getPatlLimit(), language));
+        csvRow.add(convertDoubleToLocale(this.getValue(), language));
         csvRow.add(this.getSide() != null ? CsvExportUtils.translate(this.getSide().name(), translations) : "");
         return csvRow;
     }

@@ -1,4 +1,4 @@
-﻿Equipment,Violation type,Limit name,Limit value (A or kV),Calculated value (A or kV),Load (%),Overload,Side
-,Current,l3_name,10,11,110,,Side 1
-,Current,l6_name,10,11,110,1200,Side 1
-"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400,410,,0,
+﻿Equipment,Violation type,Bus,Limit name,Load (% limit),Load (% PATL),Actual overload,Upcoming overload,Next limit name,Limit (A or kV),PATL (A),Calculated value (A or kV),Side
+l3,Current,,l3_name,110,,,,,10,,11,Side 1
+l6,Current,,l6_name,110,,1200,,,10,,11,Side 1
+vl1,High voltage,"vl1 (VLGEN_0, VLLOAD_0)",IST,,,0,,,400,,410,

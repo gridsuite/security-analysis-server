@@ -1,27 +1,27 @@
-﻿Contingency ID,Status,Constraint,Bus,Violation type,Limit name,Limit value (A or kV),Calculated value (A or kV),Load (%),Overload,Side
-l1,Converged,l3,,Current,l3_name,10,11,110,,Side 1
-l1,Converged,vl1,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400,410,,0,
-l2,Converged,l3,,Current,l3_name,10,11,110,,Side 1
-l2,Converged,vl1,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400,410,,0,
-l3,Converged,l3,,Current,l3_name,10,11,110,,Side 1
-l3,Converged,vl1,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400,410,,0,
-l4,Converged,l3,,Current,l3_name,10,11,110,,Side 1
-l4,Converged,vl1,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400,410,,0,
-l6,Converged,l3,,Current,l3_name,10,11,110,,Side 1
-l6,Converged,vl1,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400,410,,0,
-l7,Converged,l3,,Current,l3_name,10,11,110,,Side 1
-l7,Converged,vl1,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400,410,,0,
-l8,Converged,l3,,Current,l3_name,10,11,110,,Side 1
-l8,Converged,vl1,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400,410,,0,
-l9,Converged,l3,,Current,l3_name,10,11,110,,Side 1
-l9,Converged,vl1,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400,410,,0,
-la,Converged,l3,,Current,l3_name,10,11,110,,Side 1
-la,Converged,vl1,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400,410,,0,
-lb,Converged,l3,,Current,l3_name,10,11,110,,Side 1
-lb,Converged,vl1,"vl1 (VLGEN_0, VLLOAD_0)",High voltage,IST,400,410,,0,
-f1,Failed,l6,,Current,l6_name,10,11,110,1200,Side 1
-f1,Failed,vl7,vl7,High voltage,vl7_name,400,410,,0,
-f2,Failed,l6,,Current,l6_name,10,11,110,1200,Side 1
-f2,Failed,vl7,vl7,High voltage,vl7_name,400,410,,0,
-f3,Failed,l6,,Current,l6_name,10,11,110,1200,Side 1
-f3,Failed,vl7,vl7,High voltage,vl7_name,400,410,,0,
+﻿Contingency,Status,Equipment,Violation type,Bus,Limit name,Load (% limit),Load (% PATL),Actual overload,Upcoming overload,Next limit name,Limit (A or kV),PATL (A),Calculated value (A or kV),Side
+l1,Converged,l3,Current,,l3_name,110,,,,,10,,11,Side 1
+l1,Converged,vl1,High voltage,"vl1 (VLGEN_0, VLLOAD_0)",IST,,,0,,,400,,410,
+l2,Converged,l3,Current,,l3_name,110,,,,,10,,11,Side 1
+l2,Converged,vl1,High voltage,"vl1 (VLGEN_0, VLLOAD_0)",IST,,,0,,,400,,410,
+l3,Converged,l3,Current,,l3_name,110,,,,,10,,11,Side 1
+l3,Converged,vl1,High voltage,"vl1 (VLGEN_0, VLLOAD_0)",IST,,,0,,,400,,410,
+l4,Converged,l3,Current,,l3_name,110,,,,,10,,11,Side 1
+l4,Converged,vl1,High voltage,"vl1 (VLGEN_0, VLLOAD_0)",IST,,,0,,,400,,410,
+l6,Converged,l3,Current,,l3_name,110,,,,,10,,11,Side 1
+l6,Converged,vl1,High voltage,"vl1 (VLGEN_0, VLLOAD_0)",IST,,,0,,,400,,410,
+l7,Converged,l3,Current,,l3_name,110,,,,,10,,11,Side 1
+l7,Converged,vl1,High voltage,"vl1 (VLGEN_0, VLLOAD_0)",IST,,,0,,,400,,410,
+l8,Converged,l3,Current,,l3_name,110,,,,,10,,11,Side 1
+l8,Converged,vl1,High voltage,"vl1 (VLGEN_0, VLLOAD_0)",IST,,,0,,,400,,410,
+l9,Converged,l3,Current,,l3_name,110,,,,,10,,11,Side 1
+l9,Converged,vl1,High voltage,"vl1 (VLGEN_0, VLLOAD_0)",IST,,,0,,,400,,410,
+la,Converged,l3,Current,,l3_name,110,,,,,10,,11,Side 1
+la,Converged,vl1,High voltage,"vl1 (VLGEN_0, VLLOAD_0)",IST,,,0,,,400,,410,
+lb,Converged,l3,Current,,l3_name,110,,,,,10,,11,Side 1
+lb,Converged,vl1,High voltage,"vl1 (VLGEN_0, VLLOAD_0)",IST,,,0,,,400,,410,
+f1,Failed,l6,Current,,l6_name,110,,1200,,,10,,11,Side 1
+f1,Failed,vl7,High voltage,vl7,vl7_name,,,0,,,400,,410,
+f2,Failed,l6,Current,,l6_name,110,,1200,,,10,,11,Side 1
+f2,Failed,vl7,High voltage,vl7,vl7_name,,,0,,,400,,410,
+f3,Failed,l6,Current,,l6_name,110,,1200,,,10,,11,Side 1
+f3,Failed,vl7,High voltage,vl7,vl7_name,,,0,,,400,,410,
