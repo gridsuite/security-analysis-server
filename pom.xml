@@ -173,7 +173,6 @@
             <artifactId>gridsuite-computation</artifactId>
             <!-- FIXME Temporary boost until gridsuite-dependency upgrade -->
             <version>1.6.0-SNAPSHOT</version>
-
         </dependency>
 
         <!-- Runtime dependencies -->
