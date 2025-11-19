@@ -1,6 +1,5 @@
 package org.gridsuite.securityanalysis.server.util;
 
-import org.gridsuite.computation.ComputationException;
 import com.univocity.parsers.csv.CsvFormat;
 import com.univocity.parsers.csv.CsvWriter;
 import com.univocity.parsers.csv.CsvWriterSettings;
@@ -8,13 +7,12 @@ import com.univocity.parsers.csv.CsvWriterSettings;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
-import static org.gridsuite.computation.ComputationBusinessErrorCode.FILE_EXPORT_ERROR;
 
 public final class CsvExportUtils {
     public static final char CSV_DELIMITER_FR = ';';
@@ -44,7 +42,7 @@ public final class CsvExportUtils {
             csvWriter.close();
             return outputStream.toByteArray();
         } catch (IOException e) {
-            throw new ComputationException(FILE_EXPORT_ERROR, "Error occured during data csv export");
+            throw new UncheckedIOException("Error occured during data csv export", e);
         }
     }
 

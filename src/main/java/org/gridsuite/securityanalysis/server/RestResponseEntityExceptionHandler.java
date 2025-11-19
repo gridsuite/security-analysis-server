@@ -34,7 +34,7 @@ public class RestResponseEntityExceptionHandler extends AbstractBaseRestExceptio
     protected HttpStatus mapStatus(ComputationBusinessErrorCode errorCode) {
         return switch (errorCode) {
             case RESULT_NOT_FOUND, PARAMETERS_NOT_FOUND -> HttpStatus.NOT_FOUND;
-            case INVALID_FILTER_FORMAT, INVALID_FILTER, INVALID_SORT_FORMAT -> HttpStatus.BAD_REQUEST;
+            case INVALID_SORT_FORMAT -> HttpStatus.BAD_REQUEST;
             default -> HttpStatus.INTERNAL_SERVER_ERROR;
         };
     }
