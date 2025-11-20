@@ -5,7 +5,16 @@ import org.gridsuite.computation.service.ReportService;
 import org.apache.commons.text.StringSubstitutor;
 import org.mockito.ArgumentCaptor;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -58,5 +67,26 @@ public final class TestUtils {
 
     private static String formatReportMessage(ReportNode report, ReportNode reporterModel) {
         return new StringSubstitutor(reporterModel.getValues()).replace(new StringSubstitutor(report.getValues()).replace(report.getMessageTemplate()));
+    }
+
+    public static List<String> readLinesFromFilePath(String resourceFileName, int nbLines) {
+        final String utf8Bom = "\uFEFF";
+        List<String> lines = new ArrayList<>();
+        try {
+            Path resourceFilePath = Paths.get("src", "test", "resources", resourceFileName);
+            InputStream inputStream = Files.newInputStream(resourceFilePath);
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream))) {
+                String line;
+                while ((line = br.readLine()) != null && (nbLines == -1 || lines.size() < nbLines)) {
+                    if (lines.isEmpty() && line.startsWith(utf8Bom)) {
+                        line = line.substring(utf8Bom.length()); // skip BOM
+                    }
+                    lines.add(line);
+                }
+            }
+        } catch (IOException ex) {
+            return List.of();
+        }
+        return lines;
     }
 }
