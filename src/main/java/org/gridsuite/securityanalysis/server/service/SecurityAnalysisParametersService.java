@@ -7,7 +7,7 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.security.SecurityAnalysisParameters;
-import org.gridsuite.computation.ComputationException;
+import org.gridsuite.computation.error.ComputationException;
 import org.gridsuite.computation.dto.ReportInfos;
 import lombok.NonNull;
 import org.gridsuite.securityanalysis.server.dto.*;
@@ -19,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
-import static org.gridsuite.computation.ComputationBusinessErrorCode.PARAMETERS_NOT_FOUND;
+import static org.gridsuite.computation.error.ComputationBusinessErrorCode.PARAMETERS_NOT_FOUND;
 
 
 /**

@@ -6,7 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
-import org.gridsuite.computation.ComputationException;
+import org.gridsuite.computation.error.ComputationException;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.Range;
@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.gridsuite.computation.ComputationBusinessErrorCode.LIMIT_REDUCTION_CONFIG_ERROR;
+import static org.gridsuite.computation.error.ComputationBusinessErrorCode.LIMIT_REDUCTION_CONFIG_ERROR;
 
 @Setter
 @Getter
