@@ -6,7 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
-import org.gridsuite.computation.ComputationException;
+import org.gridsuite.computation.error.ComputationException;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.Range;
@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.gridsuite.computation.error.ComputationBusinessErrorCode.LIMIT_REDUCTION_CONFIG_ERROR;
 
 @Setter
 @Getter
@@ -64,41 +66,41 @@ public class LimitReductionService {
 
     private void assertValidConfig(List<List<Double>> values) {
         if (voltageLevels.isEmpty()) {
-            throw new ComputationException(ComputationException.Type.LIMIT_REDUCTION_CONFIG_ERROR, "No configuration for voltage levels");
+            throw new ComputationException(LIMIT_REDUCTION_CONFIG_ERROR, "No configuration for voltage levels");
         }
 
         if (limitDurations.isEmpty()) {
-            throw new ComputationException(ComputationException.Type.LIMIT_REDUCTION_CONFIG_ERROR, "No configuration for limit durations");
+            throw new ComputationException(LIMIT_REDUCTION_CONFIG_ERROR, "No configuration for limit durations");
         }
 
         if (values.isEmpty() || values.get(0).isEmpty()) {
-            throw new ComputationException(ComputationException.Type.LIMIT_REDUCTION_CONFIG_ERROR, "No values provided");
+            throw new ComputationException(LIMIT_REDUCTION_CONFIG_ERROR, "No values provided");
         }
 
         int nbValuesByVl = values.get(0).size();
         if (values.stream().anyMatch(valuesByVl -> valuesByVl.size() != nbValuesByVl)) {
-            throw new ComputationException(ComputationException.Type.LIMIT_REDUCTION_CONFIG_ERROR, "Number of values for a voltage level is incorrect");
+            throw new ComputationException(LIMIT_REDUCTION_CONFIG_ERROR, "Number of values for a voltage level is incorrect");
         }
 
         if (voltageLevels.size() < values.size()) {
-            throw new ComputationException(ComputationException.Type.LIMIT_REDUCTION_CONFIG_ERROR, "Too many values provided for voltage levels");
+            throw new ComputationException(LIMIT_REDUCTION_CONFIG_ERROR, "Too many values provided for voltage levels");
         }
 
         if (voltageLevels.size() > values.size()) {
-            throw new ComputationException(ComputationException.Type.LIMIT_REDUCTION_CONFIG_ERROR, "Not enough values provided for voltage levels");
+            throw new ComputationException(LIMIT_REDUCTION_CONFIG_ERROR, "Not enough values provided for voltage levels");
         }
 
         if (limitDurations.size() < nbValuesByVl - 1) {
-            throw new ComputationException(ComputationException.Type.LIMIT_REDUCTION_CONFIG_ERROR, "Too many values provided for limit durations");
+            throw new ComputationException(LIMIT_REDUCTION_CONFIG_ERROR, "Too many values provided for limit durations");
         }
 
         if (limitDurations.size() > nbValuesByVl - 1) {
-            throw new ComputationException(ComputationException.Type.LIMIT_REDUCTION_CONFIG_ERROR, "Not enough values provided for limit durations");
+            throw new ComputationException(LIMIT_REDUCTION_CONFIG_ERROR, "Not enough values provided for limit durations");
         }
 
         values.forEach(valuesByVl -> {
             if (valuesByVl.stream().anyMatch(v -> !Range.of(0.0, 1.0).contains(v))) {
-                throw new ComputationException(ComputationException.Type.LIMIT_REDUCTION_CONFIG_ERROR, "Value not between 0 and 1");
+                throw new ComputationException(LIMIT_REDUCTION_CONFIG_ERROR, "Value not between 0 and 1");
             }
         });
     }
