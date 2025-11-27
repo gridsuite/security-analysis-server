@@ -7,6 +7,7 @@
 package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.network.store.client.NetworkStoreService;
+import com.powsybl.ws.commons.error.BaseExceptionHandler;
 import org.gridsuite.computation.error.ComputationRestResponseEntityExceptionHandler;
 import org.gridsuite.computation.service.NotificationService;
 import org.springframework.boot.SpringApplication;
@@ -16,7 +17,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 @SuppressWarnings("checkstyle:HideUtilityClassConstructor")
-@SpringBootApplication(scanBasePackageClasses = { SecurityAnalysisApplication.class, NetworkStoreService.class, NotificationService.class, ComputationRestResponseEntityExceptionHandler.class })
+@SpringBootApplication(scanBasePackageClasses = {SecurityAnalysisApplication.class, NetworkStoreService.class, NotificationService.class, ComputationRestResponseEntityExceptionHandler.class, BaseExceptionHandler.class})
 public class SecurityAnalysisApplication {
     public static void main(String[] args) {
         SpringApplication.run(SecurityAnalysisApplication.class, args);
