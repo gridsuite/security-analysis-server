@@ -8,6 +8,7 @@ package org.gridsuite.securityanalysis.server;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.gridsuite.computation.ComputationException;
 import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
@@ -16,7 +17,6 @@ import org.gridsuite.securityanalysis.server.service.LimitReductionService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisParametersService;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
-import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
-import static org.gridsuite.securityanalysis.server.util.SecurityAnalysisException.Type.PARAMETERS_NOT_FOUND;
+import static org.gridsuite.computation.ComputationException.Type.PARAMETERS_NOT_FOUND;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -71,37 +71,37 @@ class SecurityAnalysisParametersControllerTest {
 
         List<LimitReductionsByVoltageLevel.VoltageLevel> vls = limitReductionService.getVoltageLevels();
         limitReductionService.setVoltageLevels(List.of());
-        assertEquals("No configuration for voltage levels", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
+        assertEquals("No configuration for voltage levels", assertThrows(ComputationException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
         limitReductionService.setVoltageLevels(vls);
 
         List<LimitReductionsByVoltageLevel.LimitDuration> lrs = limitReductionService.getLimitDurations();
         limitReductionService.setLimitDurations(List.of());
-        assertEquals("No configuration for limit durations", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
+        assertEquals("No configuration for limit durations", assertThrows(ComputationException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
         limitReductionService.setLimitDurations(lrs);
 
         limitReductionService.setDefaultValues(List.of());
-        assertEquals("No values provided", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
+        assertEquals("No values provided", assertThrows(ComputationException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
 
         limitReductionService.setDefaultValues(List.of(List.of()));
-        assertEquals("No values provided", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
+        assertEquals("No values provided", assertThrows(ComputationException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
 
         limitReductionService.setDefaultValues(List.of(List.of(1.0)));
-        assertEquals("Not enough values provided for voltage levels", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
+        assertEquals("Not enough values provided for voltage levels", assertThrows(ComputationException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
 
         limitReductionService.setDefaultValues(List.of(List.of(1.0), List.of(1.0), List.of(1.0)));
-        assertEquals("Too many values provided for voltage levels", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
+        assertEquals("Too many values provided for voltage levels", assertThrows(ComputationException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
 
         limitReductionService.setDefaultValues(List.of(List.of(1.0), List.of(1.0)));
-        assertEquals("Not enough values provided for limit durations", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
+        assertEquals("Not enough values provided for limit durations", assertThrows(ComputationException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
 
         limitReductionService.setDefaultValues(List.of(List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0)));
-        assertEquals("Number of values for a voltage level is incorrect", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
+        assertEquals("Number of values for a voltage level is incorrect", assertThrows(ComputationException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
 
         limitReductionService.setDefaultValues(List.of(List.of(1.0, 1.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0, 1.0)));
-        assertEquals("Too many values provided for limit durations", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
+        assertEquals("Too many values provided for limit durations", assertThrows(ComputationException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
 
         limitReductionService.setDefaultValues(List.of(List.of(2.0, 1.0, 1.0, 1.0), List.of(1.0, 1.0, 1.0, 1.0)));
-        assertEquals("Value not between 0 and 1", assertThrows(SecurityAnalysisException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
+        assertEquals("Value not between 0 and 1", assertThrows(ComputationException.class, () -> limitReductionService.createDefaultLimitReductions()).getMessage());
     }
 
     @Test
@@ -244,14 +244,14 @@ class SecurityAnalysisParametersControllerTest {
 
         // update provider
         String newProvider = "newProvider";
-        mockMvc.perform(patch("/" + VERSION + "/parameters/" + updatedParametersUuid + "/provider")
+        mockMvc.perform(put("/" + VERSION + "/parameters/" + updatedParametersUuid + "/provider")
                 .content(newProvider))
                 .andExpect(status().isOk()).andReturn();
         SecurityAnalysisParametersEntity securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(updatedParametersUuid).orElseThrow();
         assertEquals(newProvider, securityAnalysisParametersEntity.getProvider());
 
         // reset provider
-        mockMvc.perform(patch("/" + VERSION + "/parameters/" + updatedParametersUuid + "/provider"))
+        mockMvc.perform(put("/" + VERSION + "/parameters/" + updatedParametersUuid + "/provider"))
                 .andExpect(status().isOk()).andReturn();
         securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(updatedParametersUuid).orElseThrow();
         assertEquals(defaultProvider, securityAnalysisParametersEntity.getProvider());

@@ -6,7 +6,8 @@
  */
 package org.gridsuite.securityanalysis.server.repositories.specifications;
 
-import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
+import org.gridsuite.computation.dto.ResourceFilterDTO;
+import org.gridsuite.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;

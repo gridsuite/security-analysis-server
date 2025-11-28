@@ -7,19 +7,19 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.security.SecurityAnalysisParameters;
-import com.powsybl.ws.commons.computation.dto.ReportInfos;
+import org.gridsuite.computation.ComputationException;
+import org.gridsuite.computation.dto.ReportInfos;
 import lombok.NonNull;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisParametersRepository;
-import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
-import static org.gridsuite.securityanalysis.server.util.SecurityAnalysisException.Type.PARAMETERS_NOT_FOUND;
+import static org.gridsuite.computation.ComputationException.Type.PARAMETERS_NOT_FOUND;
 
 /**
  * @author Abdelsalem HEDHILI <abdelsalem.hedhili@rte-france.com>
@@ -159,7 +159,7 @@ public class SecurityAnalysisParametersService {
 
     @Transactional
     public UUID updateParameters(UUID parametersUuid, SecurityAnalysisParametersValues parametersInfos) {
-        SecurityAnalysisParametersEntity securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(parametersUuid).orElseThrow(() -> new SecurityAnalysisException(PARAMETERS_NOT_FOUND));
+        SecurityAnalysisParametersEntity securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(parametersUuid).orElseThrow(() -> new ComputationException(PARAMETERS_NOT_FOUND));
         //if the parameters is null it means it's a reset to defaultValues, but we need to keep the provider because it's updated separately
         if (parametersInfos == null) {
             securityAnalysisParametersEntity.update(getDefaultSecurityAnalysisParametersValues(securityAnalysisParametersEntity.getProvider()));

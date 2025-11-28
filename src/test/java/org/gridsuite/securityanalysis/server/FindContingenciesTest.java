@@ -11,8 +11,10 @@ import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.LimitViolationType;
+import org.gridsuite.computation.dto.ResourceFilterDTO;
+import org.gridsuite.computation.ComputationException;
+import org.gridsuite.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.dto.ContingencyResultDTO;
-import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationDTO;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
@@ -20,9 +22,7 @@ import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
-import org.gridsuite.securityanalysis.server.repositories.specifications.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
-import org.gridsuite.securityanalysis.server.util.SecurityAnalysisException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
@@ -87,7 +87,7 @@ class FindContingenciesTest {
     })
     void findFilteredContingencyResultsTest(List<ResourceFilterDTO> filters, Pageable pageable, List<ContingencyResultDTO> expectedResult, Integer expectedSelectCount) {
         reset();
-        Page<ContingencyEntity> contingenciesPage = securityAnalysisResultService.findContingenciesPage(resultEntity.getId(), filters, pageable);
+        Page<ContingencyEntity> contingenciesPage = securityAnalysisResultService.findContingenciesPage(resultEntity.getId(), null, null, filters, null, pageable);
 
         // assert contingency ids to check parent filters
         assertThat(contingenciesPage.getContent()).extracting(ContingencyEntity.Fields.contingencyId).containsExactlyElementsOf(expectedResult.stream().map(c -> c.getContingency().getContingencyId()).toList());
@@ -110,7 +110,7 @@ class FindContingenciesTest {
         "provideForbiddenFilter"
     })
     void testSortAndFilterErrors(List<ResourceFilterDTO> filters, Pageable pageable, Exception expectedException) {
-        Exception exception = assertThrows(expectedException.getClass(), () -> securityAnalysisResultService.findContingenciesPage(resultEntity.getId(), filters, pageable));
+        Exception exception = assertThrows(expectedException.getClass(), () -> securityAnalysisResultService.findContingenciesPage(resultEntity.getId(), null, null, filters, null, pageable));
         assertEquals(expectedException.getMessage(), exception.getMessage());
     }
 
@@ -253,14 +253,13 @@ class FindContingenciesTest {
 
     private static Stream<Arguments> provideForbiddenSort() {
         return Stream.of(
-            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "limitType")), new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_SORT_FORMAT)),
-            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "side")), new SecurityAnalysisException(SecurityAnalysisException.Type.INVALID_SORT_FORMAT))
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "limitType")), new ComputationException(ComputationException.Type.INVALID_SORT_FORMAT)),
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "side")), new ComputationException(ComputationException.Type.INVALID_SORT_FORMAT))
         );
     }
 
     private static Stream<Arguments> provideForbiddenFilter() {
         return Stream.of(
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.EQUALS, 300, ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limit)), PageRequest.of(0, 30), new IllegalArgumentException("The filter type EQUALS is not supported with the data type NUMBER")),
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.CONTAINS, 300, ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.value)), PageRequest.of(0, 30), new IllegalArgumentException("The filter type CONTAINS is not supported with the data type NUMBER")),
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.GREATER_THAN_OR_EQUAL, 300, ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitType)), PageRequest.of(0, 30), new IllegalArgumentException("The filter type GREATER_THAN_OR_EQUAL is not supported with the data type TEXT")),
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, 300, ContingencyEntity.Fields.contingencyId)), PageRequest.of(0, 30), new IllegalArgumentException("The filter type LESS_THAN_OR_EQUAL is not supported with the data type TEXT"))

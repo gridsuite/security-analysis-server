@@ -8,8 +8,8 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.powsybl.ws.commons.computation.dto.ReportInfos;
-import com.powsybl.ws.commons.computation.service.AbstractResultContext;
+import org.gridsuite.computation.dto.ReportInfos;
+import org.gridsuite.computation.service.AbstractResultContext;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersDTO;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageHeaders;
@@ -17,8 +17,8 @@ import org.springframework.messaging.MessageHeaders;
 import java.io.UncheckedIOException;
 import java.util.*;
 
-import static com.powsybl.ws.commons.computation.service.NotificationService.*;
-import static com.powsybl.ws.commons.computation.utils.MessageUtils.getNonNullHeader;
+import static org.gridsuite.computation.service.NotificationService.*;
+import static org.gridsuite.computation.utils.MessageUtils.getNonNullHeader;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>

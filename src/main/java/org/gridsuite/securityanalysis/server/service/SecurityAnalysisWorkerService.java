@@ -27,7 +27,7 @@ import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.security.*;
 import com.powsybl.security.limitreduction.LimitReduction;
 import com.powsybl.ws.commons.LogUtils;
-import com.powsybl.ws.commons.computation.service.*;
+import org.gridsuite.computation.service.*;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersDTO;
@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
-import static com.powsybl.ws.commons.computation.service.NotificationService.getFailedMessage;
+import static org.gridsuite.computation.service.NotificationService.getFailedMessage;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
 
 /**

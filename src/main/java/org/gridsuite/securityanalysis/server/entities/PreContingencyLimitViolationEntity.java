@@ -9,12 +9,9 @@ package org.gridsuite.securityanalysis.server.entities;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.security.LimitViolation;
 import com.powsybl.security.results.PreContingencyResult;
-import com.powsybl.ws.commons.computation.utils.ComputationResultUtils;
+import lombok.*;
+import org.gridsuite.computation.utils.ComputationResultUtils;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 
@@ -26,12 +23,12 @@ import java.util.stream.Collectors;
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
 
-@Data
 @NoArgsConstructor
 @SuperBuilder
 @Getter
 @Entity
 @FieldNameConstants
+@EqualsAndHashCode(callSuper = true)
 @Table(name = "pre_contingency_limit_violation")
 public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEntity {
     @ManyToOne(fetch = FetchType.LAZY)
@@ -43,17 +40,22 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
     }
 
     public static PreContingencyLimitViolationEntity toEntity(Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
+        Double patlLimit = getPatlLimit(limitViolation, network);
         return PreContingencyLimitViolationEntity.builder()
             .subjectLimitViolation(subjectLimitViolation)
             .limit(limitViolation.getLimit())
             .limitName(limitViolation.getLimitName())
             .limitType(limitViolation.getLimitType())
-            .acceptableDuration(limitViolation.getAcceptableDuration())
+            .acceptableDuration(calculateActualOverloadDuration(limitViolation, network))
+            .upcomingAcceptableDuration(calculateUpcomingOverloadDuration(limitViolation))
             .limitReduction(limitViolation.getLimitReduction())
             .value(limitViolation.getValue())
             .side(limitViolation.getSide())
-            .loading(computeLoading(limitViolation))
+            .patlLimit(patlLimit)
+            .loading(computeLoading(limitViolation, limitViolation.getLimit()))
+            .patlLoading(computeLoading(limitViolation, patlLimit))
             .locationId(ComputationResultUtils.getViolationLocationId(limitViolation, network))
+            .nextLimitName(getNextLimitName(limitViolation, network))
             .build();
     }
 }

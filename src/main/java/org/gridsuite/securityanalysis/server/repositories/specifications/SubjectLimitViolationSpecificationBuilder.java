@@ -6,9 +6,11 @@
  */
 package org.gridsuite.securityanalysis.server.repositories.specifications;
 
+import org.gridsuite.computation.dto.ResourceFilterDTO;
+import org.gridsuite.computation.specification.AbstractCommonSpecificationBuilder;
+import org.gridsuite.computation.utils.SpecificationUtils;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Root;
-import org.gridsuite.securityanalysis.server.dto.ResourceFilterDTO;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.springframework.data.jpa.domain.Specification;
@@ -37,12 +39,12 @@ public class SubjectLimitViolationSpecificationBuilder extends AbstractCommonSpe
     }
 
     @Override
-    public Specification<SubjectLimitViolationEntity> childrenNotEmpty() {
+    public Specification<SubjectLimitViolationEntity> addSpecificFilterWhenChildrenFilters() {
         return SpecificationUtils.isNotEmpty(SubjectLimitViolationEntity.Fields.contingencyLimitViolations);
     }
 
     @Override
     public Specification<SubjectLimitViolationEntity> addSpecificFilterWhenNoChildrenFilter() {
-        return this.childrenNotEmpty();
+        return this.addSpecificFilterWhenChildrenFilters();
     }
 }

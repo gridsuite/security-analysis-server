@@ -8,5 +8,6 @@ import java.util.Map;
 @Builder
 public record CsvTranslationDTO(
     List<String> headers,
-    Map<String, String> enumValueTranslations
+    Map<String, String> enumValueTranslations,
+    String language
 ) { }

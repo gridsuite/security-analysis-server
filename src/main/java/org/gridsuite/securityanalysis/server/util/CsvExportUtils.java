@@ -1,5 +1,6 @@
 package org.gridsuite.securityanalysis.server.util;
 
+import org.gridsuite.computation.ComputationException;
 import com.univocity.parsers.csv.CsvFormat;
 import com.univocity.parsers.csv.CsvWriter;
 import com.univocity.parsers.csv.CsvWriterSettings;
@@ -14,7 +15,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public final class CsvExportUtils {
-    public static final char CSV_DELIMITER = ',';
+    public static final char CSV_DELIMITER_FR = ';';
+    public static final char CSV_DELIMITER_EN = ',';
     public static final char CSV_QUOTE_ESCAPE = '"';
 
     public static final String CSV_RESULT_FILE_NAME = "result.csv";
@@ -23,7 +25,7 @@ public final class CsvExportUtils {
         throw new UnsupportedOperationException("CsvExportUtils Utility class and cannot be instantiated");
     }
 
-    public static byte[] csvRowsToZippedCsv(List<String> headers, List<List<String>> csvRows) {
+    public static byte[] csvRowsToZippedCsv(List<String> headers, String language, List<List<String>> csvRows) {
         try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream)) {
             zipOutputStream.putNextEntry(new ZipEntry(CSV_RESULT_FILE_NAME));
@@ -32,7 +34,7 @@ public final class CsvExportUtils {
             writeUTF8Bom(zipOutputStream);
 
             CsvWriterSettings settings = new CsvWriterSettings();
-            setFormat(settings.getFormat());
+            setFormat(settings.getFormat(), language);
             CsvWriter csvWriter = new CsvWriter(zipOutputStream, StandardCharsets.UTF_8, settings);
             csvWriter.writeRow(headers);
             csvWriter.writeRows(csvRows);
@@ -40,7 +42,7 @@ public final class CsvExportUtils {
             csvWriter.close();
             return outputStream.toByteArray();
         } catch (IOException e) {
-            throw new SecurityAnalysisException(SecurityAnalysisException.Type.FILE_EXPORT_ERROR);
+            throw new ComputationException(ComputationException.Type.FILE_EXPORT_ERROR);
         }
     }
 
@@ -50,9 +52,9 @@ public final class CsvExportUtils {
         outputStream.write(0xbf);
     }
 
-    private static void setFormat(CsvFormat format) {
+    private static void setFormat(CsvFormat format, String language) {
         format.setLineSeparator(System.lineSeparator());
-        format.setDelimiter(CSV_DELIMITER);
+        format.setDelimiter(language != null && language.equals("fr") ? CSV_DELIMITER_FR : CSV_DELIMITER_EN);
         format.setQuoteEscape(CSV_QUOTE_ESCAPE);
     }
 

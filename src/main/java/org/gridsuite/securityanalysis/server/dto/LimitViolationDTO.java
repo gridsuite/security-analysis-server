@@ -9,8 +9,10 @@ import lombok.NoArgsConstructor;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @AllArgsConstructor
@@ -20,37 +22,55 @@ import java.util.Map;
 public class LimitViolationDTO {
     private LimitViolationType limitType;
     private String limitName;
+    private String nextLimitName;
     private ThreeSides side;
-    private int acceptableDuration;
+    private Integer acceptableDuration;
+    private Integer upcomingAcceptableDuration;
     private double limit;
+    private Double patlLimit;
     private double limitReduction;
     private double value;
     private Double loading;
+    private Double patlLoading;
     private String locationId;
 
     public static LimitViolationDTO toDto(AbstractLimitViolationEntity limitViolation) {
         return LimitViolationDTO.builder()
             .limitType(limitViolation.getLimitType())
             .limitName(limitViolation.getLimitName())
+            .nextLimitName(limitViolation.getNextLimitName())
             .side(limitViolation.getSide())
-            .acceptableDuration((int) limitViolation.getAcceptableDuration())
+            .acceptableDuration(limitViolation.getAcceptableDuration())
+            .upcomingAcceptableDuration(limitViolation.getUpcomingAcceptableDuration())
             .limit(limitViolation.getLimit())
+            .patlLimit(limitViolation.getPatlLimit())
             .limitReduction(limitViolation.getLimitReduction())
             .value(limitViolation.getValue())
             .loading(limitViolation.getLoading())
+            .patlLoading(limitViolation.getPatlLoading())
             .locationId(limitViolation.getLocationId())
             .build();
     }
 
-    public List<String> toCsvRow(Map<String, String> translations) {
+    private static String convertDoubleToLocale(Double value, String language) {
+        NumberFormat nf = NumberFormat.getInstance(language != null && language.equals("fr") ? Locale.FRENCH : Locale.US);
+        nf.setGroupingUsed(false);
+        return nf.format(value);
+    }
+
+    public List<String> toCsvRow(Map<String, String> translations, String language) {
         List<String> csvRow = new ArrayList<>();
-        csvRow.add(this.getLocationId());
         csvRow.add(this.getLimitType() != null ? CsvExportUtils.translate(this.getLimitType().name(), translations) : "");
+        csvRow.add(this.getLocationId());  // busId
         csvRow.add(CsvExportUtils.replaceNullWithEmptyString(CsvExportUtils.translate(this.getLimitName(), translations)));
-        csvRow.add(Double.toString(this.getLimit()));
-        csvRow.add(Double.toString(this.getValue()));
-        csvRow.add(CsvExportUtils.replaceNullWithEmptyString(this.getLoading()));
+        csvRow.add(this.getLoading() == null ? "" : convertDoubleToLocale(this.getLoading(), language));
+        csvRow.add(this.getPatlLoading() == null ? "" : convertDoubleToLocale(this.getPatlLoading(), language));
         csvRow.add(this.getAcceptableDuration() == Integer.MAX_VALUE ? null : Integer.toString(this.getAcceptableDuration()));
+        csvRow.add(this.getUpcomingAcceptableDuration() == null || this.getUpcomingAcceptableDuration() == Integer.MAX_VALUE ? null : Integer.toString(this.getUpcomingAcceptableDuration()));
+        csvRow.add(CsvExportUtils.replaceNullWithEmptyString(CsvExportUtils.translate(this.getNextLimitName(), translations)));
+        csvRow.add(convertDoubleToLocale(this.getLimit(), language));
+        csvRow.add(this.getPatlLimit() == null ? "" : convertDoubleToLocale(this.getPatlLimit(), language));
+        csvRow.add(convertDoubleToLocale(this.getValue(), language));
         csvRow.add(this.getSide() != null ? CsvExportUtils.translate(this.getSide().name(), translations) : "");
         return csvRow;
     }
