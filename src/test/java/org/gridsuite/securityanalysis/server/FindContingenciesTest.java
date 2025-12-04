@@ -12,7 +12,7 @@ import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.LimitViolationType;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
-import org.gridsuite.computation.ComputationException;
+import org.gridsuite.computation.error.ComputationException;
 import org.gridsuite.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.dto.ContingencyResultDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
@@ -44,6 +44,7 @@ import java.util.stream.Stream;
 import static com.vladmihalcea.sql.SQLStatementCountValidator.assertSelectCount;
 import static com.vladmihalcea.sql.SQLStatementCountValidator.reset;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.gridsuite.computation.error.ComputationBusinessErrorCode.INVALID_SORT_FORMAT;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -253,8 +254,8 @@ class FindContingenciesTest {
 
     private static Stream<Arguments> provideForbiddenSort() {
         return Stream.of(
-            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "limitType")), new ComputationException(ComputationException.Type.INVALID_SORT_FORMAT)),
-            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "side")), new ComputationException(ComputationException.Type.INVALID_SORT_FORMAT))
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "limitType")), new ComputationException(INVALID_SORT_FORMAT, "Invalid sort format")),
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "side")), new ComputationException(INVALID_SORT_FORMAT, "Invalid sort format"))
         );
     }
 
