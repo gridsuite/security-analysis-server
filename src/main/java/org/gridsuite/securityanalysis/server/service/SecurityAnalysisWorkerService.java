@@ -28,6 +28,7 @@ import com.powsybl.security.*;
 import com.powsybl.security.limitreduction.LimitReduction;
 import com.powsybl.ws.commons.LogUtils;
 import org.gridsuite.computation.service.*;
+import org.gridsuite.securityanalysis.server.PropertyServerNameProvider;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersDTO;
@@ -69,8 +70,9 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     public SecurityAnalysisWorkerService(NetworkStoreService networkStoreService, ActionsService actionsService, ReportService reportService,
                                          SecurityAnalysisResultService resultService, ObjectMapper objectMapper,
                                          SecurityAnalysisRunnerSupplier securityAnalysisRunnerSupplier, NotificationService notificationService, ExecutionService executionService,
-                                         SecurityAnalysisObserver observer, LimitReductionService limitReductionService) {
-        super(networkStoreService, notificationService, reportService, resultService, executionService, observer, objectMapper);
+                                         SecurityAnalysisObserver observer, LimitReductionService limitReductionService,
+                                         PropertyServerNameProvider propertyServerNameProvider) {
+        super(networkStoreService, notificationService, reportService, resultService, executionService, observer, objectMapper, propertyServerNameProvider);
         this.actionsService = Objects.requireNonNull(actionsService);
         this.securityAnalysisFactorySupplier = securityAnalysisRunnerSupplier::getRunner;
         this.limitReductionService = limitReductionService;
