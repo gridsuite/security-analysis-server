@@ -147,8 +147,8 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional(readOnly = true)
-    public byte[] findNResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
-        List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, null, null, List.of(), null, Sort.by(Sort.Direction.ASC, AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId));
+    public byte[] findNResultZippedCsv(UUID resultUuid, UUID networkUuid, String variantId, List<ResourceFilterDTO> resourceFilters, GlobalFilter globalFilter, Sort sort, CsvTranslationDTO csvTranslations) {
+        List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, networkUuid, variantId, resourceFilters, globalFilter, Sort.by(Sort.Direction.ASC, AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId));
 
         return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRow(csvTranslations.enumValueTranslations(), csvTranslations.language())).toList());
     }
@@ -162,22 +162,26 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional(readOnly = true)
-    public List<ContingencyResultDTO> findNmKContingenciesResult(UUID resultUuid) {
+    public List<ContingencyResultDTO> findNmKContingenciesResult(UUID resultUuid, UUID networkUuid, String variantId, List<ResourceFilterDTO> resourceFilters, GlobalFilter globalFilter, Sort sort) {
         assertResultExists(resultUuid);
+        assertNmKContingenciesSortAllowed(sort);
+        List<ResourceFilterDTO> allResourceFilters = new ArrayList<>();
+        if (resourceFilters != null) {
+            allResourceFilters.addAll(resourceFilters);
+        }
+        if (globalFilter != null) {
+            Optional<ResourceFilterDTO> resourceGlobalFilters = filterService.getResourceFilterContingencies(networkUuid, variantId, globalFilter);
+            resourceGlobalFilters.ifPresent(allResourceFilters::add);
+        }
+        Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildSpecification(resultUuid, allResourceFilters);
 
-        List<ContingencyEntity> contingencies = contingencyRepository.findAllByResultId(resultUuid);
-        List<UUID> uuids = contingencies.stream().map(ContingencyEntity::getUuid).toList();
-        // fetching contingency elements to prevent n+1 requests
-        contingencyRepository.findAllWithContingencyElementsByUuidIn(uuids);
-        // fetching contingency limitViolations to prevent n+1 requests
-        contingencyRepository.findAllWithContingencyLimitViolationsByUuidIn(uuids);
-
-        return contingencies.stream().map(ContingencyResultDTO::toDto).toList();
+        List<ContingencyEntity> contingencyEntities = contingencyRepository.findAll(specification, sort);
+        return contingencyEntities.stream().map(ContingencyResultDTO::toDto).toList();
     }
 
     @Transactional(readOnly = true)
-    public byte[] findNmKContingenciesResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
-        List<ContingencyResultDTO> result = self.findNmKContingenciesResult(resultUuid);
+    public byte[] findNmKContingenciesResultZippedCsv(UUID resultUuid, UUID networkUuid, String variantId, List<ResourceFilterDTO> resourceFilters, GlobalFilter globalFilter, Sort sort, CsvTranslationDTO csvTranslations) {
+        List<ContingencyResultDTO> result = self.findNmKContingenciesResult(resultUuid, networkUuid, variantId, resourceFilters, globalFilter, sort);
 
         return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations(), csvTranslations.language())).flatMap(List::stream).toList());
     }
@@ -191,24 +195,26 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional(readOnly = true)
-    public List<SubjectLimitViolationResultDTO> findNmKConstraintsResult(UUID resultUuid) {
+    public List<SubjectLimitViolationResultDTO> findNmKConstraintsResult(UUID resultUuid, UUID networkUuid, String variantId, List<ResourceFilterDTO> resourceFilters, GlobalFilter globalFilter, Sort sort) {
         assertResultExists(resultUuid);
+        assertNmKSubjectLimitViolationsSortAllowed(sort);
+        List<ResourceFilterDTO> allResourceFilters = new ArrayList<>();
+        if (resourceFilters != null) {
+            allResourceFilters.addAll(resourceFilters);
+        }
+        if (globalFilter != null) {
+            Optional<ResourceFilterDTO> resourceGlobalFilters = filterService.getResourceFilterSubjectLimitViolations(networkUuid, variantId, globalFilter);
+            resourceGlobalFilters.ifPresent(allResourceFilters::add);
+        }
+        Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationSpecificationBuilder.buildSpecification(resultUuid, allResourceFilters);
 
-        List<SubjectLimitViolationEntity> subjectLimitViolations = subjectLimitViolationRepository.findAllByResultId(resultUuid);
-        List<UUID> uuids = subjectLimitViolations.stream().map(SubjectLimitViolationEntity::getId).toList();
-        subjectLimitViolationRepository.findAllWithContingencyContingencyLimitViolationsByIdIn(uuids);
-        List<UUID> contingencyUuids = subjectLimitViolations.stream().map(SubjectLimitViolationEntity::getContingencyLimitViolations).flatMap(List::stream)
-            .map(lm -> lm.getContingency().getUuid())
-            .toList();
-        // we fetch contingencyElements for each contingency here to prevent N+1 query
-        contingencyRepository.findAllWithContingencyElementsByUuidIn(contingencyUuids);
-
-        return subjectLimitViolations.stream().map(SubjectLimitViolationResultDTO::toDto).toList();
+        List<SubjectLimitViolationEntity> subjectLimitViolationEntities = subjectLimitViolationRepository.findAll(specification, sort);
+        return subjectLimitViolationEntities.stream().map(SubjectLimitViolationResultDTO::toDto).toList();
     }
 
     @Transactional(readOnly = true)
-    public byte[] findNmKConstraintsResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
-        List<SubjectLimitViolationResultDTO> result = self.findNmKConstraintsResult(resultUuid);
+    public byte[] findNmKConstraintsResultZippedCsv(UUID resultUuid, UUID networkUuid, String variantId, List<ResourceFilterDTO> resourceFilters, GlobalFilter globalFilter, Sort sort, CsvTranslationDTO csvTranslations) {
+        List<SubjectLimitViolationResultDTO> result = self.findNmKConstraintsResult(resultUuid, networkUuid, variantId, resourceFilters, globalFilter, sort);
 
         return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations(), csvTranslations.language())).flatMap(List::stream).toList());
     }
