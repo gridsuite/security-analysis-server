@@ -431,7 +431,7 @@ class SecurityAnalysisControllerTest {
         );
         GlobalFilter globalFilter = GlobalFilter.builder()
                 .genericFilter(List.of(LIST_FILTER_ID))
-                .nominalV(List.of("400.0"))
+                .voltageRanges(List.of(List.of(380, 420)))
                 .countryCode(List.of(Country.FR))
                 .build();
         String jsonFilters = new ObjectMapper().writeValueAsString(filters);
@@ -444,7 +444,7 @@ class SecurityAnalysisControllerTest {
         List<ResourceFilterDTO> filters = List.of();
         GlobalFilter globalFilter = GlobalFilter.builder()
                 .genericFilter(List.of(LIST_FILTER_ID))
-                .nominalV(List.of("400.0"))
+                .voltageRanges(List.of(List.of(380, 420)))
                 .countryCode(List.of(Country.FR))
                 .build();
         String jsonFilters = new ObjectMapper().writeValueAsString(filters);
