@@ -161,9 +161,9 @@ public class SecurityAnalysisParametersService {
     @Transactional
     public UUID updateParameters(UUID parametersUuid, SecurityAnalysisParametersValues parametersInfos) {
         SecurityAnalysisParametersEntity securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(parametersUuid).orElseThrow(() -> new ComputationException(PARAMETERS_NOT_FOUND, "Could not find provided parameters"));
-        //if the parameters is null it means it's a reset to defaultValues, but we need to keep the provider because it's updated separately
+        //if the parameters is null it means it's a reset to defaultValues
         if (parametersInfos == null) {
-            securityAnalysisParametersEntity.update(getDefaultSecurityAnalysisParametersValues(securityAnalysisParametersEntity.getProvider()));
+            securityAnalysisParametersEntity.update(getDefaultSecurityAnalysisParametersValues(defaultProvider));
         } else {
             securityAnalysisParametersEntity.update(parametersInfos);
         }
