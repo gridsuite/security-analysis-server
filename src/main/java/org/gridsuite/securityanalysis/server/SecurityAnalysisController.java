@@ -252,7 +252,7 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis results have been saved to database")})
     public ResponseEntity<Void> saveResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                            @RequestBody SecurityAnalysisResult result) {
-        securityAnalysisResultService.insert(resultUuid, result, SecurityAnalysisStatus.CONVERGED);
+        securityAnalysisResultService.insert(null, resultUuid, result, SecurityAnalysisStatus.CONVERGED);
         return ResponseEntity.ok().build();
     }
 

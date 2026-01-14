@@ -90,10 +90,6 @@ public class SecurityAnalysisResultEntity {
         return securityAnalysisResultEntity;
     }
 
-    public static SecurityAnalysisResultEntity toEntity(UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
-        return toEntity(null, resultUuid, securityAnalysisResult, securityAnalysisStatus);
-    }
-
     private static List<SubjectLimitViolationEntity> getUniqueSubjectLimitViolationsFromResult(SecurityAnalysisResult securityAnalysisResult) {
         return Stream.concat(
                 securityAnalysisResult.getPostContingencyResults().stream().flatMap(pcr -> pcr.getLimitViolationsResult().getLimitViolations().stream()),
