@@ -60,6 +60,7 @@ class SecurityAnalysisResultServiceTest {
         contingencyResults.forEach(this::checkFieldBasedOnNetworkAreNullish);
     }
 
+    @SuppressWarnings("java:S5841") // some limitViolation could be empty, which will make allSatisfy pass automatically - this behaviour is intended
     private void checkFieldBasedOnNetworkAreNullish(ContingencyResultDTO contingencyResult) {
         assertThat(contingencyResult.getSubjectLimitViolations())
             .extracting(SubjectLimitViolationDTO::getLimitViolation)
