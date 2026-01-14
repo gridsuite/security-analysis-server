@@ -73,8 +73,8 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
     }
 
     private static void enrichBuilderWithoutNetworkData(PreContingencyLimitViolationEntity.PreContingencyLimitViolationEntityBuilder<?, ?> preContingencyLimitViolationEntityBuilder) {
-        // acceptable duration in not nullable
+        // acceptable duration in not nullable - in other cases, when null, it is set to Integer.MAX_VALUE
         preContingencyLimitViolationEntityBuilder
-            .acceptableDuration(0);
+            .acceptableDuration(Integer.MAX_VALUE);
     }
 }

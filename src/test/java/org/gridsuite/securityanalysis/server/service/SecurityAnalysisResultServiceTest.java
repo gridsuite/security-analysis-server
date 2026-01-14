@@ -71,7 +71,7 @@ class SecurityAnalysisResultServiceTest {
                     .satisfies(v -> assertThat(v.getPatlLoading()).isNull())
                     .satisfies(v -> assertThat(v.getNextLimitName()).isNull())
                     .satisfies(v -> assertThat(v.getLocationId()).isNull())
-                    .satisfies(v -> assertThat(v.getAcceptableDuration()).isZero())
+                    .satisfies(v -> assertThat(v.getAcceptableDuration()).isEqualTo(Integer.MAX_VALUE))
             );
     }
 
