@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
+import org.springframework.lang.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -64,7 +65,7 @@ public class ContingencyEntity {
         }
     }
 
-    public static ContingencyEntity toEntity(Network network, PostContingencyResult postContingencyResult, Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId) {
+    public static ContingencyEntity toEntity(@Nullable Network network, PostContingencyResult postContingencyResult, Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId) {
         List<ContingencyElementEmbeddable> contingencyElements = postContingencyResult.getContingency().getElements().stream().map(contingencyElement -> ContingencyElementEmbeddable.toEntity(contingencyElement)).collect(Collectors.toList());
 
         List<ContingencyLimitViolationEntity> contingencyLimitViolations = postContingencyResult.getLimitViolationsResult().getLimitViolations().stream()

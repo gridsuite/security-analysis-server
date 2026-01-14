@@ -13,6 +13,7 @@ import lombok.*;
 import lombok.experimental.FieldNameConstants;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.jgrapht.alg.util.Pair;
+import org.springframework.lang.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,7 @@ public class SecurityAnalysisResultEntity {
         this.id = id;
     }
 
-    public static SecurityAnalysisResultEntity toEntity(Network network, UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
+    public static SecurityAnalysisResultEntity toEntity(@Nullable Network network, UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
         Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId = getUniqueSubjectLimitViolationsFromResult(securityAnalysisResult)
             .stream().collect(Collectors.toMap(
                 SubjectLimitViolationEntity::getSubjectId,
@@ -87,6 +88,10 @@ public class SecurityAnalysisResultEntity {
         preContingencyLimitViolations.forEach(lm -> lm.setResult(securityAnalysisResultEntity));
         subjectLimitViolations.forEach(subjectLimitViolation -> subjectLimitViolation.setResult(securityAnalysisResultEntity));
         return securityAnalysisResultEntity;
+    }
+
+    public static SecurityAnalysisResultEntity toEntity(UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
+        return toEntity(null, resultUuid, securityAnalysisResult, securityAnalysisStatus);
     }
 
     private static List<SubjectLimitViolationEntity> getUniqueSubjectLimitViolationsFromResult(SecurityAnalysisResult securityAnalysisResult) {

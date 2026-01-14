@@ -246,6 +246,15 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         securityAnalysisResultRepository.save(securityAnalysisResult);
     }
 
+    @Transactional
+    public void insert(UUID resultUuid, SecurityAnalysisResult result, SecurityAnalysisStatus status) {
+        Objects.requireNonNull(resultUuid);
+        Objects.requireNonNull(result);
+
+        SecurityAnalysisResultEntity securityAnalysisResult = SecurityAnalysisResultEntity.toEntity(resultUuid, result, status);
+        securityAnalysisResultRepository.save(securityAnalysisResult);
+    }
+
     @Override
     @Transactional
     public void insertStatus(List<UUID> resultUuids, SecurityAnalysisStatus status) {

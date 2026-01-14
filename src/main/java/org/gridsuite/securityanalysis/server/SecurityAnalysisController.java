@@ -247,6 +247,15 @@ public class SecurityAnalysisController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping(value = "/results/{resultUuid}", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Save security analysis results")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis results have been saved to database")})
+    public ResponseEntity<Void> saveResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                           @RequestBody SecurityAnalysisResult result) {
+        securityAnalysisResultService.insert(resultUuid, result, SecurityAnalysisStatus.CONVERGED);
+        return ResponseEntity.ok().build();
+    }
+
     @GetMapping(value = "/providers", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get all security analysis providers")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Security analysis providers have been found")})
