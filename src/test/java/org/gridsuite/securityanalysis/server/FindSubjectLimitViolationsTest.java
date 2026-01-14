@@ -83,7 +83,7 @@ class FindSubjectLimitViolationsTest {
     })
     void findFilteredSubjectLimitViolationResultsTest(List<ResourceFilterDTO> filters, Pageable pageable, List<SubjectLimitViolationResultDTO> expectedResult, Integer expectedSelectCount) {
         reset();
-        Page<SubjectLimitViolationEntity> subjectLimitViolationPage = securityAnalysisResultService.findSubjectLimitViolationsPage(resultEntity.getId(), null, null, filters, null, pageable);
+        Page<SubjectLimitViolationEntity> subjectLimitViolationPage = securityAnalysisResultService.findSubjectLimitViolationsPage(resultEntity.getId(), filters, pageable);
 
         // assert subject ids to check parent filters
         assertThat(subjectLimitViolationPage.getContent()).extracting("subjectId").containsExactlyElementsOf(expectedResult.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList());
@@ -109,7 +109,7 @@ class FindSubjectLimitViolationsTest {
         "provideForbiddenFilter"
     })
     void testSortAndFilterErrors(List<ResourceFilterDTO> filters, Pageable pageable, Exception expectedException) {
-        Exception exception = assertThrows(expectedException.getClass(), () -> securityAnalysisResultService.findSubjectLimitViolationsPage(resultEntity.getId(), null, null, filters, null, pageable));
+        Exception exception = assertThrows(expectedException.getClass(), () -> securityAnalysisResultService.findSubjectLimitViolationsPage(resultEntity.getId(), filters, pageable));
         assertEquals(expectedException.getMessage(), exception.getMessage());
     }
 

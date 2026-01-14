@@ -35,8 +35,6 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.gridsuite.computation.service.NotificationService.HEADER_USER_ID;
-import static org.gridsuite.computation.utils.FilterUtils.fromStringFiltersToDTO;
-import static org.gridsuite.computation.utils.FilterUtils.fromStringGlobalFiltersToDTO;
 import static org.springframework.http.MediaType.*;
 
 /**
@@ -134,8 +132,8 @@ public class SecurityAnalysisController {
                 resultUuid,
                 networkUuid,
                 variantId,
-                fromStringFiltersToDTO(decodedStringFilters, securityAnalysisResultService.getObjectMapper()),
-                fromStringGlobalFiltersToDTO(decodedStringGlobalFilters, securityAnalysisResultService.getObjectMapper()),
+                decodedStringFilters,
+                decodedStringGlobalFilters,
                 sort);
 
         return result != null
@@ -162,8 +160,8 @@ public class SecurityAnalysisController {
                     resultUuid,
                     networkUuid,
                     variantId,
-                    fromStringFiltersToDTO(decodedStringFilters, securityAnalysisResultService.getObjectMapper()),
-                    fromStringGlobalFiltersToDTO(decodedStringGlobalFilters, securityAnalysisResultService.getObjectMapper()),
+                    decodedStringFilters,
+                    decodedStringGlobalFilters,
                     sort,
                     csvTranslations
             ));
@@ -207,8 +205,8 @@ public class SecurityAnalysisController {
                     resultUuid,
                     networkUuid,
                     variantId,
-                    fromStringFiltersToDTO(decodedStringFilters, securityAnalysisResultService.getObjectMapper()),
-                    fromStringGlobalFiltersToDTO(decodedStringGlobalFilters, securityAnalysisResultService.getObjectMapper()),
+                    decodedStringFilters,
+                    decodedStringGlobalFilters,
                     sort,
                     csvTranslations
             ));
@@ -251,8 +249,8 @@ public class SecurityAnalysisController {
                         resultUuid,
                         networkUuid,
                         variantId,
-                        fromStringFiltersToDTO(decodedStringFilters, securityAnalysisResultService.getObjectMapper()),
-                        fromStringGlobalFiltersToDTO(decodedStringGlobalFilters, securityAnalysisResultService.getObjectMapper()),
+                        decodedStringFilters,
+                        decodedStringGlobalFilters,
                         sort,
                         csvTranslations
                 ));
