@@ -26,6 +26,7 @@ import com.vladmihalcea.sql.SQLStatementCountValidator;
 import org.assertj.core.api.Assertions;
 import org.gridsuite.computation.dto.GlobalFilter;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
+import org.gridsuite.computation.error.ComputationException;
 import org.gridsuite.computation.service.AbstractFilterService;
 import org.gridsuite.computation.service.ReportService;
 import org.gridsuite.computation.service.UuidGeneratorService;
@@ -75,6 +76,7 @@ import java.util.zip.ZipInputStream;
 
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
+import static org.gridsuite.computation.error.ComputationBusinessErrorCode.RESULT_NOT_FOUND;
 import static org.gridsuite.computation.service.NotificationService.*;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
@@ -862,6 +864,38 @@ class SecurityAnalysisControllerTest {
             // this field is not well serialized/deserialized - since it's deprecated / not used, we ignore it here
             .ignoringFieldsMatchingRegexes(".*\\.limitViolationsResult\\.computationOk")
             .isEqualTo(securityAnalysisResult);
+    }
+
+    @Test
+    void getNmKContingenciesResult() throws Exception {
+        UUID resultUuid = UUID.randomUUID();
+
+        List<ContingencyResultDTO> serviceResult = SecurityAnalysisProviderMock.RESULT_CONTINGENCIES;
+
+        doReturn(serviceResult).when(securityAnalysisResultService).findNmKContingenciesResult(resultUuid);
+
+        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-contingencies-result")
+                .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(content().json(mapper.writeValueAsString(serviceResult)));
+
+        verify(securityAnalysisResultService, times(1))
+            .findNmKContingenciesResult(resultUuid);
+    }
+
+    @Test
+    void getNmKContingenciesResultNotFound() throws Exception {
+        UUID resultUuid = UUID.randomUUID();
+
+        doReturn(null).when(securityAnalysisResultService).findNmKContingenciesResult(resultUuid);
+
+        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-contingencies-result")
+                .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isNotFound());
+
+        verify(securityAnalysisResultService, times(1))
+            .findNmKContingenciesResult(resultUuid);
     }
 
     @Test
