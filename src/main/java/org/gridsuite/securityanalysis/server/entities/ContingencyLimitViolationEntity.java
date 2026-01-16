@@ -45,8 +45,6 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
 
         if (network != null) {
             enrichBuilderWithNetworkData(contingencyLimitViolationEntityBuilder, network, limitViolation);
-        } else {
-            enrichBuilderWithoutNetworkData(contingencyLimitViolationEntityBuilder);
         }
 
         ContingencyLimitViolationEntity contingencyLimitViolationEntity = contingencyLimitViolationEntityBuilder.build();
@@ -64,11 +62,5 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
             .nextLimitName(getNextLimitName(limitViolation, network))
             .locationId(ComputationResultUtils.getViolationLocationId(limitViolation, network))
             .acceptableDuration(calculateActualOverloadDuration(limitViolation, network));
-    }
-
-    private static void enrichBuilderWithoutNetworkData(ContingencyLimitViolationEntityBuilder<?, ?> contingencyLimitViolationEntityBuilder) {
-        // acceptable duration in not nullable - in other cases, when null, it is set to Integer.MAX_VALUE
-        contingencyLimitViolationEntityBuilder
-            .acceptableDuration(Integer.MAX_VALUE);
     }
 }
