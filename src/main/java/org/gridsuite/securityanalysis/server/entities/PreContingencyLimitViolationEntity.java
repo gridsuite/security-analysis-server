@@ -14,6 +14,7 @@ import org.gridsuite.computation.utils.ComputationResultUtils;
 import jakarta.persistence.*;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
+import org.springframework.lang.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -35,27 +36,37 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
     @Setter
     SecurityAnalysisResultEntity result;
 
-    public static List<PreContingencyLimitViolationEntity> toEntityList(Network network, PreContingencyResult preContingencyResult, Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId) {
+    public static List<PreContingencyLimitViolationEntity> toEntityList(@Nullable Network network, PreContingencyResult preContingencyResult, Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId) {
         return preContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation -> toEntity(network, limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()))).collect(Collectors.toList());
     }
 
-    public static PreContingencyLimitViolationEntity toEntity(Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
-        Double patlLimit = getPatlLimit(limitViolation, network);
-        return PreContingencyLimitViolationEntity.builder()
+    public static PreContingencyLimitViolationEntity toEntity(@Nullable Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
+        PreContingencyLimitViolationEntityBuilder<?, ?> preContingencyLimitViolationEntityBuilder = PreContingencyLimitViolationEntity.builder()
             .subjectLimitViolation(subjectLimitViolation)
             .limit(limitViolation.getLimit())
             .limitName(limitViolation.getLimitName())
             .limitType(limitViolation.getLimitType())
-            .acceptableDuration(calculateActualOverloadDuration(limitViolation, network))
             .upcomingAcceptableDuration(calculateUpcomingOverloadDuration(limitViolation))
             .limitReduction(limitViolation.getLimitReduction())
             .value(limitViolation.getValue())
             .side(limitViolation.getSide())
+            .loading(computeLoading(limitViolation, limitViolation.getLimit()));
+
+        if (network != null) {
+            enrichBuilderWithNetworkData(preContingencyLimitViolationEntityBuilder, network, limitViolation);
+        }
+
+        return preContingencyLimitViolationEntityBuilder.build();
+    }
+
+    private static void enrichBuilderWithNetworkData(PreContingencyLimitViolationEntity.PreContingencyLimitViolationEntityBuilder<?, ?> preContingencyLimitViolationEntityBuilder, Network network, LimitViolation limitViolation) {
+        Double patlLimit = getPatlLimit(limitViolation, network);
+
+        preContingencyLimitViolationEntityBuilder
+            .acceptableDuration(calculateActualOverloadDuration(limitViolation, network))
             .patlLimit(patlLimit)
-            .loading(computeLoading(limitViolation, limitViolation.getLimit()))
             .patlLoading(computeLoading(limitViolation, patlLimit))
             .locationId(ComputationResultUtils.getViolationLocationId(limitViolation, network))
-            .nextLimitName(getNextLimitName(limitViolation, network))
-            .build();
+            .nextLimitName(getNextLimitName(limitViolation, network));
     }
 }

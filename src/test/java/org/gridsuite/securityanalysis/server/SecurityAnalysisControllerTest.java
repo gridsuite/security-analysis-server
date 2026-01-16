@@ -36,6 +36,7 @@ import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntit
 import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationRepository;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
 import org.gridsuite.securityanalysis.server.service.LoadFlowService;
+import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerService;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
@@ -43,6 +44,7 @@ import org.gridsuite.securityanalysis.server.util.MatcherJson;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +56,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.messaging.Message;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -142,6 +145,9 @@ class SecurityAnalysisControllerTest {
 
     @Autowired
     private SubjectLimitViolationRepository subjectLimitViolationRepository;
+
+    @MockitoSpyBean
+    private SecurityAnalysisResultService securityAnalysisResultService;
 
     private static final Map<String, String> ENUM_TRANSLATIONS_EN = Map.of(
         "ONE", "Side 1",
@@ -836,6 +842,26 @@ class SecurityAnalysisControllerTest {
                 content().contentType(new MediaType(MediaType.TEXT_PLAIN, StandardCharsets.UTF_8)),
                 content().string("OpenLoadFlow")
             );
+    }
+
+    @Test
+    void saveResultTest() throws Exception {
+        UUID resultUuid = UUID.randomUUID();
+        SecurityAnalysisResult securityAnalysisResult = SecurityAnalysisProviderMock.RESULT;
+        doNothing().when(securityAnalysisResultService).insert(null, resultUuid, securityAnalysisResult, SecurityAnalysisStatus.CONVERGED);
+
+        mockMvc.perform(post("/" + VERSION + "/results/" + resultUuid)
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(mapper.writeValueAsString(securityAnalysisResult)))
+            .andExpect(status().isOk());
+
+        ArgumentCaptor<SecurityAnalysisResult> captor = ArgumentCaptor.forClass(SecurityAnalysisResult.class);
+        verify(securityAnalysisResultService, times(1)).insert(eq(null), eq(resultUuid), captor.capture(), eq(SecurityAnalysisStatus.CONVERGED));
+        Assertions.assertThat(captor.getValue())
+            .usingRecursiveComparison()
+            // this field is not well serialized/deserialized - since it's deprecated / not used, we ignore it here
+            .ignoringFieldsMatchingRegexes(".*\\.limitViolationsResult\\.computationOk")
+            .isEqualTo(securityAnalysisResult);
     }
 
     @Test

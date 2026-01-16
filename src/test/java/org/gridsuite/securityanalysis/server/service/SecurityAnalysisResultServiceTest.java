@@ -10,15 +10,21 @@ import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.vladmihalcea.sql.SQLStatementCountValidator;
+import org.gridsuite.securityanalysis.server.dto.ContingencyResultDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
+import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationDTO;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.List;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author Florent MILLOT <florent.millot@rte-france.com>
@@ -40,5 +46,36 @@ class SecurityAnalysisResultServiceTest {
         // 6 manual delete
         // 1 manual select to get the contingencyUuids, and 4 select at the end for the last delete when applying the cascade
         assertRequestsCount(5, 0, 0, 6);
+    }
+
+    @Test
+    void insertResultWithoutNetworkTest() {
+        UUID resultUuid = UUID.randomUUID();
+        securityAnalysisResultService.insert(null, resultUuid, RESULT, SecurityAnalysisStatus.CONVERGED);
+        securityAnalysisResultService.assertResultExists(resultUuid);
+
+        List<ContingencyResultDTO> contingencyResults = securityAnalysisResultService.findNmKContingenciesResult(resultUuid);
+        assertEquals(RESULT.getPostContingencyResults().size(), contingencyResults.size());
+        // check fields based on network are actually nullish
+        contingencyResults.forEach(this::checkFieldBasedOnNetworkAreNullish);
+    }
+
+    @SuppressWarnings("java:S5841") // some limitViolation could be empty, which will make allSatisfy pass automatically - this behaviour is intended
+    private void checkFieldBasedOnNetworkAreNullish(ContingencyResultDTO contingencyResult) {
+        assertThat(contingencyResult.getSubjectLimitViolations())
+            .extracting(SubjectLimitViolationDTO::getLimitViolation)
+            .allSatisfy(lv ->
+                assertThat(lv)
+                    .satisfies(v -> assertThat(v.getPatlLimit()).isNull())
+                    .satisfies(v -> assertThat(v.getPatlLoading()).isNull())
+                    .satisfies(v -> assertThat(v.getNextLimitName()).isNull())
+                    .satisfies(v -> assertThat(v.getLocationId()).isNull())
+                    .satisfies(v -> assertThat(v.getAcceptableDuration()).isNull())
+            );
+    }
+
+    @AfterEach
+    void tearDown() {
+        securityAnalysisResultService.deleteAll();
     }
 }
