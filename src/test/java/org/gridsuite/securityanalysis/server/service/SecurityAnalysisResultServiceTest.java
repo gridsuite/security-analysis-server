@@ -66,12 +66,11 @@ class SecurityAnalysisResultServiceTest {
             .extracting(SubjectLimitViolationDTO::getLimitViolation)
             .allSatisfy(lv ->
                 assertThat(lv)
-                    .as("limitViolation")
                     .satisfies(v -> assertThat(v.getPatlLimit()).isNull())
                     .satisfies(v -> assertThat(v.getPatlLoading()).isNull())
                     .satisfies(v -> assertThat(v.getNextLimitName()).isNull())
                     .satisfies(v -> assertThat(v.getLocationId()).isNull())
-                    .satisfies(v -> assertThat(v.getAcceptableDuration()).isEqualTo(Integer.MAX_VALUE))
+                    .satisfies(v -> assertThat(v.getAcceptableDuration()).isNull())
             );
     }
 

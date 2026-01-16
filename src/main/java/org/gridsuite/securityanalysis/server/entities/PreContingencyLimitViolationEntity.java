@@ -54,8 +54,6 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
 
         if (network != null) {
             enrichBuilderWithNetworkData(preContingencyLimitViolationEntityBuilder, network, limitViolation);
-        } else {
-            enrichBuilderWithoutNetworkData(preContingencyLimitViolationEntityBuilder);
         }
 
         return preContingencyLimitViolationEntityBuilder.build();
@@ -70,11 +68,5 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
             .patlLoading(computeLoading(limitViolation, patlLimit))
             .locationId(ComputationResultUtils.getViolationLocationId(limitViolation, network))
             .nextLimitName(getNextLimitName(limitViolation, network));
-    }
-
-    private static void enrichBuilderWithoutNetworkData(PreContingencyLimitViolationEntity.PreContingencyLimitViolationEntityBuilder<?, ?> preContingencyLimitViolationEntityBuilder) {
-        // acceptable duration in not nullable - in other cases, when null, it is set to Integer.MAX_VALUE
-        preContingencyLimitViolationEntityBuilder
-            .acceptableDuration(Integer.MAX_VALUE);
     }
 }
