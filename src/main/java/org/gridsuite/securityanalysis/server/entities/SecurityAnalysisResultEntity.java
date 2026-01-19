@@ -13,6 +13,7 @@ import lombok.*;
 import lombok.experimental.FieldNameConstants;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.jgrapht.alg.util.Pair;
+import org.springframework.lang.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -53,7 +54,7 @@ public class SecurityAnalysisResultEntity {
         this.id = id;
     }
 
-    public static SecurityAnalysisResultEntity toEntity(Network network, UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
+    public static SecurityAnalysisResultEntity toEntity(@Nullable Network network, UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
         Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId = getUniqueSubjectLimitViolationsFromResult(securityAnalysisResult)
             .stream().collect(Collectors.toMap(
                 SubjectLimitViolationEntity::getSubjectId,
