@@ -7,6 +7,7 @@
 package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.iidm.network.ThreeSides;
+import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
 import io.swagger.v3.oas.annotations.Operation;
@@ -244,6 +245,22 @@ public class SecurityAnalysisController {
                                      @Parameter(description = "Result receiver") @RequestParam(name = "receiver", required = false) String receiver,
                                      @RequestHeader(HEADER_USER_ID) String userId) {
         securityAnalysisService.stop(resultUuid, receiver, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping(value = "/results/{resultUuid}", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Save security analysis results")
+    @ApiResponses(value = {@ApiResponse(responseCode = "201", description = "The security analysis results have been saved to database")})
+    public ResponseEntity<Void> saveResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                           @RequestBody SecurityAnalysisResult result) {
+        securityAnalysisResultService.insert(
+            null,
+            resultUuid,
+            result,
+            result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED
+                ? SecurityAnalysisStatus.CONVERGED
+                : SecurityAnalysisStatus.DIVERGED
+        );
         return ResponseEntity.ok().build();
     }
 

@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -238,7 +239,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional
-    public void insert(Network network, UUID resultUuid, SecurityAnalysisResult result, SecurityAnalysisStatus status) {
+    public void insert(@Nullable Network network, UUID resultUuid, SecurityAnalysisResult result, SecurityAnalysisStatus status) {
         Objects.requireNonNull(resultUuid);
         Objects.requireNonNull(result);
 
