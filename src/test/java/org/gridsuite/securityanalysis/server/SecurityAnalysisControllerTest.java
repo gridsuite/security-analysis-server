@@ -865,6 +865,38 @@ class SecurityAnalysisControllerTest {
     }
 
     @Test
+    void getNmKContingenciesResult() throws Exception {
+        UUID resultUuid = UUID.randomUUID();
+
+        List<ContingencyResultDTO> serviceResult = SecurityAnalysisProviderMock.RESULT_CONTINGENCIES;
+
+        doReturn(serviceResult).when(securityAnalysisResultService).findNmKContingenciesResult(resultUuid);
+
+        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-contingencies-result")
+                .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+            .andExpect(content().json(mapper.writeValueAsString(serviceResult)));
+
+        verify(securityAnalysisResultService, times(1))
+            .findNmKContingenciesResult(resultUuid);
+    }
+
+    @Test
+    void getNmKContingenciesResultNotFound() throws Exception {
+        UUID resultUuid = UUID.randomUUID();
+
+        doReturn(null).when(securityAnalysisResultService).findNmKContingenciesResult(resultUuid);
+
+        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-contingencies-result")
+                .accept(MediaType.APPLICATION_JSON))
+            .andExpect(status().isNotFound());
+
+        verify(securityAnalysisResultService, times(1))
+            .findNmKContingenciesResult(resultUuid);
+    }
+
+    @Test
     void getZippedCsvResults() throws Exception {
         // running computation to create some results
         MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&contingencyListName=" + CONTINGENCY_LIST_NAME

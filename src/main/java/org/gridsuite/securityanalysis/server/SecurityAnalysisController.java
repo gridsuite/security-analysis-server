@@ -156,18 +156,30 @@ public class SecurityAnalysisController {
     }
 
     @GetMapping(value = "/results/{resultUuid}/nmk-contingencies-result/paged", produces = APPLICATION_JSON_VALUE)
-    @Operation(summary = "Get a security analysis result from the database - NMK contingencies result")
+    @Operation(summary = "Get a paged security analysis result from the database - NMK contingencies result")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
-    public ResponseEntity<Page<ContingencyResultDTO>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
-                                                                                @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
-                                                                                @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
-                                                                                @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
-                                                                                @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
-                                                                                @Parameter(description = "Pagination parameters") Pageable pageable) {
+    public ResponseEntity<Page<ContingencyResultDTO>> getPagedNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                                                                     @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
+                                                                                     @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
+                                                                                     @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
+                                                                                     @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
+                                                                                     @Parameter(description = "Pagination parameters") Pageable pageable) {
         String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
         String decodedStringGlobalFilters = globalFilters != null ? URLDecoder.decode(globalFilters, StandardCharsets.UTF_8) : null;
         Page<ContingencyResultDTO> result = securityAnalysisResultService.findNmKContingenciesPaged(resultUuid, networkUuid, variantId, decodedStringFilters, decodedStringGlobalFilters, pageable);
+
+        return result != null
+            ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
+            : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping(value = "/results/{resultUuid}/nmk-contingencies-result", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get a full security analysis result from the database - NMK contingencies result")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
+        @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
+    public ResponseEntity<List<ContingencyResultDTO>> getNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+        List<ContingencyResultDTO> result = securityAnalysisResultService.findNmKContingenciesResult(resultUuid);
 
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
