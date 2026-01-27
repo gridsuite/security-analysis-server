@@ -1,0 +1,3 @@
+Equipment,Violation type,Bus,Limit name,Load (% limit),Load (% PATL),Actual overload,Upcoming overload,Next limit name,Limit (A or kV),PATL (A),Calculated value (A or kV),Side
+l3,Current,,l3_name,110,,,,,10,,11,Side 1
+l6,Current,,l6_name,110,,1200,,,10,,11,Side 1

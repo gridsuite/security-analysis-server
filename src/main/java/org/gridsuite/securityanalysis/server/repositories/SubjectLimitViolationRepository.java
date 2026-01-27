@@ -7,7 +7,6 @@
 package org.gridsuite.securityanalysis.server.repositories;
 
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
@@ -23,9 +22,6 @@ import java.util.UUID;
 public interface SubjectLimitViolationRepository extends JpaRepository<SubjectLimitViolationEntity, UUID>, JpaSpecificationExecutor<SubjectLimitViolationEntity> {
     @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.contingency"}, type = EntityGraph.EntityGraphType.LOAD)
     List<SubjectLimitViolationEntity> findAll(Specification<SubjectLimitViolationEntity> spec);
-
-    @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.contingency"}, type = EntityGraph.EntityGraphType.LOAD)
-    List<SubjectLimitViolationEntity> findAll(Specification<SubjectLimitViolationEntity> spec, Sort sort);
 
     @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.subjectLimitViolation"}, type = EntityGraph.EntityGraphType.LOAD)
     List<SubjectLimitViolationEntity> findAllWithContingencyContingencyLimitViolationsByIdIn(List<UUID> uuids);

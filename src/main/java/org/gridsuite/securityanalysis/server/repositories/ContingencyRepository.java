@@ -9,7 +9,6 @@ package org.gridsuite.securityanalysis.server.repositories;
 
 import com.powsybl.loadflow.LoadFlowResult;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
@@ -26,9 +25,6 @@ import java.util.UUID;
 public interface ContingencyRepository extends JpaRepository<ContingencyEntity, UUID>, JpaSpecificationExecutor<ContingencyEntity> {
     @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.subjectLimitViolation"}, type = EntityGraph.EntityGraphType.LOAD)
     List<ContingencyEntity> findAll(Specification<ContingencyEntity> spec);
-
-    @EntityGraph(attributePaths = {"contingencyLimitViolations", "contingencyLimitViolations.subjectLimitViolation"}, type = EntityGraph.EntityGraphType.LOAD)
-    List<ContingencyEntity> findAll(Specification<ContingencyEntity> spec, Sort sort);
 
     @EntityGraph(attributePaths = {"contingencyElements"}, type = EntityGraph.EntityGraphType.LOAD)
     List<ContingencyEntity> findAllWithContingencyElementsByUuidIn(List<UUID> uuids);

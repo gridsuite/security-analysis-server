@@ -32,6 +32,7 @@ import org.gridsuite.computation.service.UuidGeneratorService;
 import org.gridsuite.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationRepository;
 import org.gridsuite.securityanalysis.server.service.ActionsService;
@@ -917,6 +918,7 @@ class SecurityAnalysisControllerTest {
         assertEquals("me", resultMessage.getHeaders().get("receiver"));
 
         checkAllZippedCsvResults();
+        checkFiltersOnZippedCsvResults();
     }
 
     @Test
@@ -962,7 +964,7 @@ class SecurityAnalysisControllerTest {
 
     private void checkAllZippedCsvResults() throws Exception {
         SQLStatementCountValidator.reset();
-        checkZippedCsvResult("n-result", "/results/n-result-en.csv", "en");
+        checkZippedCsvResult("n-result", "/results/n-result-en.csv", "en", AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId, null);
         /*
          * SELECT
          * assert result exists
@@ -971,10 +973,10 @@ class SecurityAnalysisControllerTest {
         assertRequestsCount(2, 0, 0, 0);
 
         SQLStatementCountValidator.reset();
-        checkZippedCsvResult("n-result", "/results/n-result-fr.csv", "fr");
+        checkZippedCsvResult("n-result", "/results/n-result-fr.csv", "fr", AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId, null);
 
         SQLStatementCountValidator.reset();
-        checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-en.csv", "en");
+        checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-en.csv", "en", ContingencyEntity.Fields.contingencyId, null);
 
         /*
          * SELECT
@@ -983,14 +985,14 @@ class SecurityAnalysisControllerTest {
          * join contingency_entity_contingency_elements
          * join contingency_limit_violation and subject_limit_violation
          */
-        assertRequestsCount(4, 0, 0, 0);
+        assertRequestsCount(5, 0, 0, 0);
 
         SQLStatementCountValidator.reset();
-        checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-fr.csv", "fr");
-        assertRequestsCount(4, 0, 0, 0);
+        checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-fr.csv", "fr", ContingencyEntity.Fields.contingencyId, null);
+        assertRequestsCount(5, 0, 0, 0);
 
         SQLStatementCountValidator.reset();
-        checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-en.csv", "en");
+        checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-en.csv", "en", SubjectLimitViolationEntity.Fields.subjectId, null);
         /*
          * SELECT
          * assert result exists
@@ -998,11 +1000,20 @@ class SecurityAnalysisControllerTest {
          * join contingency_limit_violation
          * join contingency_entity_contingency_elements
          */
-        assertRequestsCount(4, 0, 0, 0);
+        assertRequestsCount(5, 0, 0, 0);
 
         SQLStatementCountValidator.reset();
-        checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-fr.csv", "fr");
-        assertRequestsCount(4, 0, 0, 0);
+        checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-fr.csv", "fr", SubjectLimitViolationEntity.Fields.subjectId, null);
+        assertRequestsCount(5, 0, 0, 0);
+    }
+
+    private void checkFiltersOnZippedCsvResults() throws Exception {
+        List<ResourceFilterDTO> filterN = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, new String[]{"CURRENT"}, AbstractLimitViolationEntity.Fields.limitType));
+        List<ResourceFilterDTO> filterNmK = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, new String[]{"CURRENT"}, SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitType));
+
+        checkZippedCsvResult("n-result", "/results/n-result-with-filter-en.csv", "en", AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId, filterN);
+        checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-with-filter-en.csv", "en", ContingencyEntity.Fields.contingencyId, filterNmK);
+        checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-with-filter-en.csv", "en", SubjectLimitViolationEntity.Fields.subjectId, filterNmK);
     }
 
     private void checkCsvResultFromBytes(String expectedCsvResource, byte[] resultAsByteArray) throws Exception {
@@ -1031,15 +1042,20 @@ class SecurityAnalysisControllerTest {
         }
     }
 
-    private void checkZippedCsvResult(String resultType, String expectedCsvResource, String lang) throws Exception {
+    private void checkZippedCsvResult(String resultType, String expectedCsvResource, String lang, String sortField, List<ResourceFilterDTO> filter) throws Exception {
         CsvTranslationDTO csvTranslationDTO = CsvTranslationDTO.builder()
                 .headers(getCsvHeaderFromResource(expectedCsvResource, lang))
                 .enumValueTranslations("en".equalsIgnoreCase(lang) ? ENUM_TRANSLATIONS_EN : ENUM_TRANSLATIONS_FR)
                 .language(lang)
                 .build();
 
+        String jsonFilter = new ObjectMapper().writeValueAsString(filter);
+        String encodedFilter = URLEncoder.encode(jsonFilter, StandardCharsets.UTF_8);
+
         // get csv file as binary (zip)
         byte[] resultAsByteArray = mockMvc.perform(post("/" + VERSION + "/results/" + RESULT_UUID + "/" + resultType + "/csv")
+                        .param("sort", sortField)
+                        .param("filters", encodedFilter)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(csvTranslationDTO)))
             .andExpectAll(

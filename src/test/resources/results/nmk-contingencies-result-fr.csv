@@ -1,4 +1,10 @@
 ﻿Aléa;Statut;Ouvrage;Type de contrainte;Noeud électrique;Nom de la limite;Charge (% limite);Charge (% IST);Tempo effective;Tempo imminente;Nom de la limite suivante;Limite (A ou kV);IST (A);Valeur calculée (A ou kV);Côté
+f1;Echec;l6;Intensité;;l6_name;110;;1200;;;10;;11;Côté 1
+f1;Echec;vl7;Tension haute;vl7;vl7_name;;;0;;;400;;410;
+f2;Echec;l6;Intensité;;l6_name;110;;1200;;;10;;11;Côté 1
+f2;Echec;vl7;Tension haute;vl7;vl7_name;;;0;;;400;;410;
+f3;Echec;l6;Intensité;;l6_name;110;;1200;;;10;;11;Côté 1
+f3;Echec;vl7;Tension haute;vl7;vl7_name;;;0;;;400;;410;
 l1;Convergence;l3;Intensité;;l3_name;110;;;;;10;;11;Côté 1
 l1;Convergence;vl1;Tension haute;vl1 (VLGEN_0, VLLOAD_0);IST;;;0;;;400;;410;
 l2;Convergence;l3;Intensité;;l3_name;110;;;;;10;;11;Côté 1
@@ -19,9 +25,3 @@ la;Convergence;l3;Intensité;;l3_name;110;;;;;10;;11;Côté 1
 la;Convergence;vl1;Tension haute;vl1 (VLGEN_0, VLLOAD_0);IST;;;0;;;400;;410;
 lb;Convergence;l3;Intensité;;l3_name;110;;;;;10;;11;Côté 1
 lb;Convergence;vl1;Tension haute;vl1 (VLGEN_0, VLLOAD_0);IST;;;0;;;400;;410;
-f1;Echec;l6;Intensité;;l6_name;110;;1200;;;10;;11;Côté 1
-f1;Echec;vl7;Tension haute;vl7;vl7_name;;;0;;;400;;410;
-f2;Echec;l6;Intensité;;l6_name;110;;1200;;;10;;11;Côté 1
-f2;Echec;vl7;Tension haute;vl7;vl7_name;;;0;;;400;;410;
-f3;Echec;l6;Intensité;;l6_name;110;;1200;;;10;;11;Côté 1
-f3;Echec;vl7;Tension haute;vl7;vl7_name;;;0;;;400;;410;

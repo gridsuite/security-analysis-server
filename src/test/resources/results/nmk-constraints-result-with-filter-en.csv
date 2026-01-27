@@ -1,0 +1,14 @@
+Equipment,Contingency,Status,Violation type,Bus,Limit name,Load (% limit),Load (% PATL),Actual overload,Upcoming overload,Next limit name,Limit (A or kV),PATL (A),Calculated value (A or kV),Side
+l3,l1,Converged,Current,,l3_name,110,,,,,10,,11,Side 1
+l3,l2,Converged,Current,,l3_name,110,,,,,10,,11,Side 1
+l3,l3,Converged,Current,,l3_name,110,,,,,10,,11,Side 1
+l3,l4,Converged,Current,,l3_name,110,,,,,10,,11,Side 1
+l3,l6,Converged,Current,,l3_name,110,,,,,10,,11,Side 1
+l3,l7,Converged,Current,,l3_name,110,,,,,10,,11,Side 1
+l3,l8,Converged,Current,,l3_name,110,,,,,10,,11,Side 1
+l3,l9,Converged,Current,,l3_name,110,,,,,10,,11,Side 1
+l3,la,Converged,Current,,l3_name,110,,,,,10,,11,Side 1
+l3,lb,Converged,Current,,l3_name,110,,,,,10,,11,Side 1
+l6,f1,Failed,Current,,l6_name,110,,1200,,,10,,11,Side 1
+l6,f2,Failed,Current,,l6_name,110,,1200,,,10,,11,Side 1
+l6,f3,Failed,Current,,l6_name,110,,1200,,,10,,11,Side 1
