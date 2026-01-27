@@ -6,6 +6,8 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
@@ -49,6 +51,9 @@ class FindPreContingencyLimitViolationTest {
     @Autowired
     private SecurityAnalysisResultService securityAnalysisResultService;
 
+    @Autowired
+    private ObjectMapper mapper;
+
     @BeforeAll
     void setUp() {
         // network store service mocking
@@ -70,9 +75,9 @@ class FindPreContingencyLimitViolationTest {
         "provideEachColumnFilter",
         "provideChildFilterWithTolerance"
     })
-    void findFilteredPrecontingencyLimitViolationResultsTest(List<ResourceFilterDTO> filters, Sort sort, List<PreContingencyLimitViolationResultDTO> expectedResult, Integer expectedSelectCount) {
+    void findFilteredPrecontingencyLimitViolationResultsTest(List<ResourceFilterDTO> filters, Sort sort, List<PreContingencyLimitViolationResultDTO> expectedResult, Integer expectedSelectCount) throws JsonProcessingException {
         reset();
-        List<PreContingencyLimitViolationResultDTO> preContingencyLimitViolation = securityAnalysisResultService.findNResult(resultEntity.getId(), filters, sort);
+        List<PreContingencyLimitViolationResultDTO> preContingencyLimitViolation = securityAnalysisResultService.findNResult(resultEntity.getId(), null, null, mapper.writeValueAsString(filters), null, sort);
 
         // assert subject ids to check parent filters
         assertThat(preContingencyLimitViolation).extracting(SubjectLimitViolationEntity.Fields.subjectId)

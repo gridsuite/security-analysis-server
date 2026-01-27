@@ -130,8 +130,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         this.self = self;
     }
 
-    @Transactional(readOnly = true)
-    public List<PreContingencyLimitViolationResultDTO> findNResult(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Sort sort) {
+    private List<PreContingencyLimitViolationResultDTO> findNResult(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Sort sort) {
         assertResultExists(resultUuid);
         assertPreContingenciesSortAllowed(sort);
 
@@ -145,7 +144,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     @Transactional(readOnly = true)
     public List<PreContingencyLimitViolationResultDTO> findNResult(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Sort sort) {
         List<ResourceFilterDTO> resourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters, globalFilter -> filterService.getResourceFilterN(networkUuid, variantId, globalFilter));
-        return self.findNResult(resultUuid, resourceFilters, sort);
+        return findNResult(resultUuid, resourceFilters, sort);
     }
 
     @Transactional(readOnly = true)
@@ -188,7 +187,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         assertResultExists(resultUuid);
 
         List<ResourceFilterDTO> allResourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters, globalFilter -> filterService.getResourceFilterSubjectLimitViolations(networkUuid, variantId, globalFilter));
-        Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = self.findSubjectLimitViolationsPage(resultUuid, allResourceFilters, pageable);
+        Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = findSubjectLimitViolationsPage(resultUuid, allResourceFilters, pageable);
         return subjectLimitViolationsPage.map(SubjectLimitViolationResultDTO::toDto);
     }
 
@@ -340,8 +339,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         }
     }
 
-    @Transactional(readOnly = true)
-    public Page<SubjectLimitViolationEntity> findSubjectLimitViolationsPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
+    private Page<SubjectLimitViolationEntity> findSubjectLimitViolationsPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
         assertNmKSubjectLimitViolationsSortAllowed(pageable.getSort());
         Pageable modifiedPageable = addDefaultSortAndRemoveChildrenSorting(pageable, SubjectLimitViolationEntity.Fields.id);
