@@ -1,4 +1,10 @@
 ﻿Contingency,Status,Equipment,Violation type,Bus,Limit name,Load (% limit),Load (% PATL),Actual overload,Upcoming overload,Next limit name,Limit (A or kV),PATL (A),Calculated value (A or kV),Side
+f1,Failed,l6,Current,,l6_name,110,,1200,,,10,,11,Side 1
+f1,Failed,vl7,High voltage,vl7,vl7_name,,,0,,,400,,410,
+f2,Failed,l6,Current,,l6_name,110,,1200,,,10,,11,Side 1
+f2,Failed,vl7,High voltage,vl7,vl7_name,,,0,,,400,,410,
+f3,Failed,l6,Current,,l6_name,110,,1200,,,10,,11,Side 1
+f3,Failed,vl7,High voltage,vl7,vl7_name,,,0,,,400,,410,
 l1,Converged,l3,Current,,l3_name,110,,,,,10,,11,Side 1
 l1,Converged,vl1,High voltage,"vl1 (VLGEN_0, VLLOAD_0)",IST,,,0,,,400,,410,
 l2,Converged,l3,Current,,l3_name,110,,,,,10,,11,Side 1
@@ -19,9 +25,3 @@ la,Converged,l3,Current,,l3_name,110,,,,,10,,11,Side 1
 la,Converged,vl1,High voltage,"vl1 (VLGEN_0, VLLOAD_0)",IST,,,0,,,400,,410,
 lb,Converged,l3,Current,,l3_name,110,,,,,10,,11,Side 1
 lb,Converged,vl1,High voltage,"vl1 (VLGEN_0, VLLOAD_0)",IST,,,0,,,400,,410,
-f1,Failed,l6,Current,,l6_name,110,,1200,,,10,,11,Side 1
-f1,Failed,vl7,High voltage,vl7,vl7_name,,,0,,,400,,410,
-f2,Failed,l6,Current,,l6_name,110,,1200,,,10,,11,Side 1
-f2,Failed,vl7,High voltage,vl7,vl7_name,,,0,,,400,,410,
-f3,Failed,l6,Current,,l6_name,110,,1200,,,10,,11,Side 1
-f3,Failed,vl7,High voltage,vl7,vl7_name,,,0,,,400,,410,

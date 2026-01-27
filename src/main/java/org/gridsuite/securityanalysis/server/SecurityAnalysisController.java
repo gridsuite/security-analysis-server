@@ -30,14 +30,10 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
 import static org.gridsuite.computation.service.NotificationService.HEADER_USER_ID;
-import static org.gridsuite.computation.utils.FilterUtils.fromStringFiltersToDTO;
-import static org.gridsuite.computation.utils.FilterUtils.fromStringGlobalFiltersToDTO;
 import static org.springframework.http.MediaType.*;
 
 /**
@@ -126,17 +122,15 @@ public class SecurityAnalysisController {
     public ResponseEntity<List<PreContingencyLimitViolationResultDTO>> getNResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                                                   @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
                                                                                   @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
-                                                                                  @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
+                                                                                  @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
                                                                                   @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
                                                                                   @Parameter(description = "Pageable parameters for pagination and sorting") Sort sort) {
-        String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
-        String decodedStringGlobalFilters = globalFilters != null ? URLDecoder.decode(globalFilters, StandardCharsets.UTF_8) : null;
         List<PreContingencyLimitViolationResultDTO> result = securityAnalysisResultService.findNResult(
                 resultUuid,
                 networkUuid,
                 variantId,
-                fromStringFiltersToDTO(decodedStringFilters, securityAnalysisResultService.getObjectMapper()),
-                fromStringGlobalFiltersToDTO(decodedStringGlobalFilters, securityAnalysisResultService.getObjectMapper()),
+                filters,
+                globalFilters,
                 sort);
 
         return result != null
@@ -149,10 +143,23 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result csv export"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<byte[]> getNResultZippedCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
-                                                      @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations) {
+                                                      @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
+                                                      @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
+                                                      @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
+                                                      @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
+                                                      @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations,
+                                                      @Parameter(description = "Sort parameters") Sort sort) {
         return ResponseEntity.ok()
             .contentType(APPLICATION_OCTET_STREAM)
-            .body(securityAnalysisResultService.findNResultZippedCsv(resultUuid, csvTranslations));
+            .body(securityAnalysisResultService.findNResultZippedCsv(
+                    resultUuid,
+                    networkUuid,
+                    variantId,
+                    filters,
+                    globalFilters,
+                    sort,
+                    csvTranslations
+            ));
     }
 
     @GetMapping(value = "/results/{resultUuid}/nmk-contingencies-result/paged", produces = APPLICATION_JSON_VALUE)
@@ -162,12 +169,10 @@ public class SecurityAnalysisController {
     public ResponseEntity<Page<ContingencyResultDTO>> getPagedNmKContingenciesResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                                                      @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
                                                                                      @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
-                                                                                     @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
+                                                                                     @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
                                                                                      @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
                                                                                      @Parameter(description = "Pagination parameters") Pageable pageable) {
-        String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
-        String decodedStringGlobalFilters = globalFilters != null ? URLDecoder.decode(globalFilters, StandardCharsets.UTF_8) : null;
-        Page<ContingencyResultDTO> result = securityAnalysisResultService.findNmKContingenciesPaged(resultUuid, networkUuid, variantId, decodedStringFilters, decodedStringGlobalFilters, pageable);
+        Page<ContingencyResultDTO> result = securityAnalysisResultService.findNmKContingenciesPaged(resultUuid, networkUuid, variantId, filters, globalFilters, pageable);
 
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
@@ -191,10 +196,23 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result csv export"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<byte[]> getNmKContingenciesResultZippedCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
-                                                                     @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations) {
+                                                                     @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
+                                                                     @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
+                                                                     @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
+                                                                     @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
+                                                                     @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations,
+                                                                     @Parameter(description = "Sort parameters") Sort sort) {
         return ResponseEntity.ok()
             .contentType(MediaType.APPLICATION_OCTET_STREAM)
-            .body(securityAnalysisResultService.findNmKContingenciesResultZippedCsv(resultUuid, csvTranslations));
+            .body(securityAnalysisResultService.findNmKContingenciesResultZippedCsv(
+                    resultUuid,
+                    networkUuid,
+                    variantId,
+                    filters,
+                    globalFilters,
+                    sort,
+                    csvTranslations
+            ));
     }
 
     @GetMapping(value = "/results/{resultUuid}/nmk-constraints-result/paged", produces = APPLICATION_JSON_VALUE)
@@ -204,12 +222,10 @@ public class SecurityAnalysisController {
     public ResponseEntity<Page<SubjectLimitViolationResultDTO>> getNmKConstraintsResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                                                                         @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
                                                                                         @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
-                                                                                        @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String stringFilters,
+                                                                                        @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
                                                                                         @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
                                                                                         @Parameter(description = "Pagination parameters") Pageable pageable) {
-        String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
-        String decodedStringGlobalFilters = globalFilters != null ? URLDecoder.decode(globalFilters, StandardCharsets.UTF_8) : null;
-        Page<SubjectLimitViolationResultDTO> result = securityAnalysisResultService.findNmKConstraintsResultPaged(resultUuid, networkUuid, variantId, decodedStringFilters, decodedStringGlobalFilters, pageable);
+        Page<SubjectLimitViolationResultDTO> result = securityAnalysisResultService.findNmKConstraintsResultPaged(resultUuid, networkUuid, variantId, filters, globalFilters, pageable);
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
             : ResponseEntity.notFound().build();
@@ -220,10 +236,24 @@ public class SecurityAnalysisController {
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result csv export"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<byte[]> getNmKContraintsResultZippedCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
-                                                                  @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations) {
+                                                                  @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
+                                                                  @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
+                                                                  @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
+                                                                  @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
+                                                                  @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations,
+                                                                  @Parameter(description = "Sort parameters") Sort sort) {
+
         return ResponseEntity.ok()
-            .contentType(MediaType.APPLICATION_OCTET_STREAM)
-            .body(securityAnalysisResultService.findNmKConstraintsResultZippedCsv(resultUuid, csvTranslations));
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(securityAnalysisResultService.findNmKConstraintsResultZippedCsv(
+                        resultUuid,
+                        networkUuid,
+                        variantId,
+                        filters,
+                        globalFilters,
+                        sort,
+                        csvTranslations
+                ));
     }
 
     @DeleteMapping(value = "/results", produces = APPLICATION_JSON_VALUE)
