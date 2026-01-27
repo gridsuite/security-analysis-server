@@ -1,4 +1,4 @@
-Contingency,Status,Equipment,Violation type,Bus,Limit name,Load (% limit),Load (% PATL),Actual overload,Upcoming overload,Next limit name,Limit (A or kV),PATL (A),Calculated value (A or kV),Side
+﻿Contingency,Status,Equipment,Violation type,Bus,Limit name,Load (% limit),Load (% PATL),Actual overload,Upcoming overload,Next limit name,Limit (A or kV),PATL (A),Calculated value (A or kV),Side
 f1,Failed,l6,Current,,l6_name,110,,1200,,,10,,11,Side 1
 f2,Failed,l6,Current,,l6_name,110,,1200,,,10,,11,Side 1
 f3,Failed,l6,Current,,l6_name,110,,1200,,,10,,11,Side 1
