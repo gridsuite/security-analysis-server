@@ -33,9 +33,12 @@ import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
 
 import static org.gridsuite.computation.error.ComputationBusinessErrorCode.INVALID_SORT_FORMAT;
 import static org.gridsuite.computation.error.ComputationBusinessErrorCode.RESULT_NOT_FOUND;
@@ -127,20 +130,11 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         this.self = self;
     }
 
-    @Transactional(readOnly = true)
-    public List<PreContingencyLimitViolationResultDTO> findNResult(UUID resultUuid, UUID networkUuid, String variantId, List<ResourceFilterDTO> resourceFilters, GlobalFilter globalFilter, Sort sort) {
+    private List<PreContingencyLimitViolationResultDTO> findNResult(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Sort sort) {
         assertResultExists(resultUuid);
         assertPreContingenciesSortAllowed(sort);
-        List<ResourceFilterDTO> allResourceFilters = new ArrayList<>();
-        if (resourceFilters != null) {
-            allResourceFilters.addAll(resourceFilters);
-        }
-        if (globalFilter != null) {
-            Optional<ResourceFilterDTO> resourceGlobalFilters = filterService.getResourceFilterN(networkUuid, variantId, globalFilter);
-            resourceGlobalFilters.ifPresent(allResourceFilters::add);
-        }
-        Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationSpecificationBuilder.buildSpecification(resultUuid, allResourceFilters);
 
+        Specification<PreContingencyLimitViolationEntity> specification = preContingencyLimitViolationSpecificationBuilder.buildSpecification(resultUuid, resourceFilters);
         List<PreContingencyLimitViolationEntity> preContingencyLimitViolation = preContingencyLimitViolationRepository.findAll(specification, sort);
         return preContingencyLimitViolation.stream()
                 .map(PreContingencyLimitViolationResultDTO::toDto)
@@ -148,9 +142,14 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional(readOnly = true)
-    public byte[] findNResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
-        List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, null, null, List.of(), null, Sort.by(Sort.Direction.ASC, AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId));
+    public List<PreContingencyLimitViolationResultDTO> findNResult(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Sort sort) {
+        List<ResourceFilterDTO> resourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters, globalFilter -> filterService.getResourceFilterN(networkUuid, variantId, globalFilter));
+        return findNResult(resultUuid, resourceFilters, sort);
+    }
 
+    @Transactional(readOnly = true)
+    public byte[] findNResultZippedCsv(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Sort sort, CsvTranslationDTO csvTranslations) {
+        List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, networkUuid, variantId, stringFilters, stringGlobalFilters, sort);
         return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRow(csvTranslations.enumValueTranslations(), csvTranslations.language())).toList());
     }
 
@@ -158,7 +157,8 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     public Page<ContingencyResultDTO> findNmKContingenciesPaged(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Pageable pageable) {
         assertResultExists(resultUuid);
 
-        Page<ContingencyEntity> contingencyPageBis = self.findContingenciesPage(resultUuid, networkUuid, variantId, fromStringFiltersToDTO(stringFilters, objectMapper), fromStringGlobalFiltersToDTO(stringGlobalFilters, objectMapper), pageable);
+        List<ResourceFilterDTO> allResourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters, globalFilter -> filterService.getResourceFilterContingencies(networkUuid, variantId, globalFilter));
+        Page<ContingencyEntity> contingencyPageBis = self.findContingenciesPage(resultUuid, allResourceFilters, pageable);
         return contingencyPageBis.map(ContingencyResultDTO::toDto);
     }
 
@@ -177,9 +177,8 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional(readOnly = true)
-    public byte[] findNmKContingenciesResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
-        List<ContingencyResultDTO> result = self.findNmKContingenciesResult(resultUuid);
-
+    public byte[] findNmKContingenciesResultZippedCsv(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Sort sort, CsvTranslationDTO csvTranslations) {
+        List<ContingencyResultDTO> result = self.findNmKContingenciesPaged(resultUuid, networkUuid, variantId, stringFilters, stringGlobalFilters, Pageable.unpaged(sort)).getContent();
         return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations(), csvTranslations.language())).flatMap(List::stream).toList());
     }
 
@@ -187,7 +186,8 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     public Page<SubjectLimitViolationResultDTO> findNmKConstraintsResultPaged(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Pageable pageable) {
         assertResultExists(resultUuid);
 
-        Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = self.findSubjectLimitViolationsPage(resultUuid, networkUuid, variantId, fromStringFiltersToDTO(stringFilters, objectMapper), fromStringGlobalFiltersToDTO(stringGlobalFilters, objectMapper), pageable);
+        List<ResourceFilterDTO> allResourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters, globalFilter -> filterService.getResourceFilterSubjectLimitViolations(networkUuid, variantId, globalFilter));
+        Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = findSubjectLimitViolationsPage(resultUuid, allResourceFilters, pageable);
         return subjectLimitViolationsPage.map(SubjectLimitViolationResultDTO::toDto);
     }
 
@@ -208,9 +208,8 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional(readOnly = true)
-    public byte[] findNmKConstraintsResultZippedCsv(UUID resultUuid, CsvTranslationDTO csvTranslations) {
-        List<SubjectLimitViolationResultDTO> result = self.findNmKConstraintsResult(resultUuid);
-
+    public byte[] findNmKConstraintsResultZippedCsv(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Sort sort, CsvTranslationDTO csvTranslations) {
+        List<SubjectLimitViolationResultDTO> result = self.findNmKConstraintsResultPaged(resultUuid, networkUuid, variantId, stringFilters, stringGlobalFilters, Pageable.unpaged(sort)).getContent();
         return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations(), csvTranslations.language())).flatMap(List::stream).toList());
     }
 
@@ -305,19 +304,11 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional(readOnly = true)
-    public Page<ContingencyEntity> findContingenciesPage(UUID resultUuid, UUID networkUuid, String variantId, List<ResourceFilterDTO> resourceFilters, GlobalFilter globalFilter, Pageable pageable) {
+    public Page<ContingencyEntity> findContingenciesPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
         assertNmKContingenciesSortAllowed(pageable.getSort());
         Pageable modifiedPageable = addDefaultSortAndRemoveChildrenSorting(pageable, ContingencyEntity.Fields.uuid);
-        List<ResourceFilterDTO> allResourceFilters = new ArrayList<>();
-        if (resourceFilters != null) {
-            allResourceFilters.addAll(resourceFilters);
-        }
-        if (globalFilter != null) {
-            Optional<ResourceFilterDTO> resourceGlobalFilters = filterService.getResourceFilterContingencies(networkUuid, variantId, globalFilter);
-            resourceGlobalFilters.ifPresent(allResourceFilters::add);
-        }
-        Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildSpecification(resultUuid, allResourceFilters);
+        Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildSpecification(resultUuid, resourceFilters);
         // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
         // cf. https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/
@@ -342,26 +333,17 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
             Page<ContingencyEntity> contingenciesPage = new PageImpl<>(contingencies, pageable, uuidPage.getTotalElements());
 
             // then we append the missing data, and filter some of the Lazy Loaded collections
-            appendLimitViolationsAndElementsToContingenciesResult(contingenciesPage, allResourceFilters);
+            appendLimitViolationsAndElementsToContingenciesResult(contingenciesPage, resourceFilters);
 
             return contingenciesPage;
         }
     }
 
-    @Transactional(readOnly = true)
-    public Page<SubjectLimitViolationEntity> findSubjectLimitViolationsPage(UUID resultUuid, UUID networkUuid, String variantId, List<ResourceFilterDTO> resourceFilters, GlobalFilter globalFilter, Pageable pageable) {
+    private Page<SubjectLimitViolationEntity> findSubjectLimitViolationsPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
         assertNmKSubjectLimitViolationsSortAllowed(pageable.getSort());
         Pageable modifiedPageable = addDefaultSortAndRemoveChildrenSorting(pageable, SubjectLimitViolationEntity.Fields.id);
-        List<ResourceFilterDTO> allResourceFilters = new ArrayList<>();
-        if (resourceFilters != null) {
-            allResourceFilters.addAll(resourceFilters);
-        }
-        if (globalFilter != null) {
-            Optional<ResourceFilterDTO> resourceGlobalFilters = filterService.getResourceFilterSubjectLimitViolations(networkUuid, variantId, globalFilter);
-            resourceGlobalFilters.ifPresent(allResourceFilters::add);
-        }
-        Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationSpecificationBuilder.buildSpecification(resultUuid, allResourceFilters);
+        Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationSpecificationBuilder.buildSpecification(resultUuid, resourceFilters);
         // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
         // cf. https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/
@@ -377,14 +359,14 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
             // Since springboot 3.2, the return value of Page.empty() is not serializable. See https://github.com/spring-projects/spring-data-commons/issues/2987
             return (Page<SubjectLimitViolationEntity>) emptyPage(pageable);
         } else {
-            List<UUID> uuids = uuidPage.map(u -> u.getId()).toList();
+            List<UUID> uuids = uuidPage.map(SubjectLimitViolationRepository.EntityId::getId).toList();
             // Then we fetch the main entities data for each UUID
             List<SubjectLimitViolationEntity> subjectLimitViolations = subjectLimitViolationRepository.findAllByIdIn(uuids);
             subjectLimitViolations.sort(Comparator.comparing(lm -> uuids.indexOf(lm.getId())));
             Page<SubjectLimitViolationEntity> subjectLimitViolationPage = new PageImpl<>(subjectLimitViolations, pageable, uuidPage.getTotalElements());
 
             // then we append the missing data, and filter some of the Lazy Loaded collections
-            appendLimitViolationsAndContingencyElementsToSubjectLimitViolationsResult(subjectLimitViolationPage, allResourceFilters);
+            appendLimitViolationsAndContingencyElementsToSubjectLimitViolationsResult(subjectLimitViolationPage, resourceFilters);
 
             return subjectLimitViolationPage;
         }
@@ -420,6 +402,24 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         return contingencyRepository.findComputingStatus(resultUuid);
     }
 
+    private List<ResourceFilterDTO> getAllResourceFilters(String stringFilters, String stringGlobalFilter, Function<GlobalFilter, Optional<ResourceFilterDTO>> getResourceGlobalFilter) {
+        String decodedStringFilters = stringFilters != null ? URLDecoder.decode(stringFilters, StandardCharsets.UTF_8) : null;
+        String decodedStringGlobalFilters = stringGlobalFilter != null ? URLDecoder.decode(stringGlobalFilter, StandardCharsets.UTF_8) : null;
+
+        List<ResourceFilterDTO> resourceFilters = fromStringFiltersToDTO(decodedStringFilters, objectMapper);
+        GlobalFilter globalFilter = fromStringGlobalFiltersToDTO(decodedStringGlobalFilters, objectMapper);
+        List<ResourceFilterDTO> allResourceFilters = new ArrayList<>();
+
+        if (resourceFilters != null) {
+            allResourceFilters.addAll(resourceFilters);
+        }
+        if (globalFilter != null) {
+            Optional<ResourceFilterDTO> resourceGlobalFilters = getResourceGlobalFilter.apply(globalFilter);
+            resourceGlobalFilters.ifPresent(allResourceFilters::add);
+        }
+        return allResourceFilters;
+    }
+
     private void appendLimitViolationsAndElementsToContingenciesResult(Page<ContingencyEntity> contingencies, List<ResourceFilterDTO> resourceFilters) {
 
         // using the the Hibernate First-Level Cache or Persistence Context
@@ -443,7 +443,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         // cf.https://vladmihalcea.com/spring-data-jpa-multiplebagfetchexception/
         if (!subjectLimitViolations.isEmpty()) {
             List<UUID> subjectLimitViolationsUuids = subjectLimitViolations.stream()
-                .map(c -> c.getId())
+                .map(SubjectLimitViolationEntity::getId)
                 .toList();
             Specification<SubjectLimitViolationEntity> specification = subjectLimitViolationSpecificationBuilder.buildLimitViolationsSpecification(subjectLimitViolationsUuids, resourceFilters);
             subjectLimitViolationRepository.findAll(specification);
@@ -555,17 +555,17 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     private Pageable addDefaultSortAndRemoveChildrenSorting(Pageable pageable, String defaultSortColumn) {
-        if (pageable.isPaged()) {
-            // Can't use both distinct and sort on nested field here, so we have to remove "children" sorting. Maybe there is a way to do it ?
-            // https://github.com/querydsl/querydsl/issues/2443
-            Sort finalSort = Sort.by(pageable.getSort().filter(sortOrder -> !sortOrder.getProperty().startsWith("contingencyLimitViolations")).toList());
-            //if it's already sorted by our defaultColumn we don't add another sort by the same column
-            if (finalSort.getOrderFor(defaultSortColumn) == null) {
-                finalSort = finalSort.and(Sort.by(DEFAULT_SORT_DIRECTION, defaultSortColumn));
-            }
-            return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), finalSort);
+        // Can't use both distinct and sort on nested field here, so we have to remove "children" sorting. Maybe there is a way to do it ?
+        // https://github.com/querydsl/querydsl/issues/2443
+        Sort finalSort = Sort.by(pageable.getSort().filter(sortOrder -> !sortOrder.getProperty().startsWith("contingencyLimitViolations")).toList());
+        //if it's already sorted by our defaultColumn we don't add another sort by the same column
+        if (finalSort.getOrderFor(defaultSortColumn) == null) {
+            finalSort = finalSort.and(Sort.by(DEFAULT_SORT_DIRECTION, defaultSortColumn));
         }
-        //nothing to do if the request is not paged
-        return pageable;
+        if (pageable.isPaged()) {
+            return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), finalSort);
+        } else {
+            return Pageable.unpaged(finalSort);
+        }
     }
 }
