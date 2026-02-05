@@ -67,7 +67,6 @@ public class SecurityAnalysisController {
                                                             schema = @Schema(implementation = SecurityAnalysisResult.class))})})
     public ResponseEntity<SecurityAnalysisResult> run(@Parameter(description = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
                                                       @Parameter(description = "Variant Id") @RequestParam(name = "variantId", required = false) String variantId,
-                                                      @Parameter(description = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
                                                       @Parameter(description = "Provider") @RequestParam(name = "provider", required = false) String provider,
                                                       @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
                                                       @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
@@ -79,14 +78,14 @@ public class SecurityAnalysisController {
                 securityAnalysisParametersService.createRunContext(
                         networkUuid,
                         variantId,
-                        new RunContextParametersInfos(contigencyListNames, parametersUuid, loadFlowParametersUuid),
+                        new RunContextParametersInfos(parametersUuid, loadFlowParametersUuid),
                         null,
                         new ReportInfos(reportUuid, reporterId, reportType),
                         userId));
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result);
     }
 
-    @PostMapping(value = "/networks/{networkUuid}/run-and-save", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/networks/{networkUuid}/run-and-save", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Run a security analysis on a network and save results in the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200",
                                         description = "The security analysis has been performed and results have been saved to database",
@@ -94,7 +93,6 @@ public class SecurityAnalysisController {
                                                             schema = @Schema(implementation = SecurityAnalysisResult.class))})})
     public ResponseEntity<UUID> runAndSave(@Parameter(description = "Network UUID") @PathVariable("networkUuid") UUID networkUuid,
                                            @Parameter(description = "Variant Id") @RequestParam(name = "variantId", required = false) String variantId,
-                                           @Parameter(description = "Contingency list name") @RequestParam(name = "contingencyListName", required = false) List<String> contigencyListNames,
                                            @Parameter(description = "Result receiver") @RequestParam(name = "receiver", required = false) String receiver,
                                            @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
                                            @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
@@ -106,7 +104,7 @@ public class SecurityAnalysisController {
                 securityAnalysisParametersService.createRunContext(
                         networkUuid,
                         variantId,
-                        new RunContextParametersInfos(contigencyListNames, parametersUuid, loadFlowParametersUuid),
+                        new RunContextParametersInfos(parametersUuid, loadFlowParametersUuid),
                         receiver,
                         new ReportInfos(reportUuid, reporterId, reportType),
                         userId

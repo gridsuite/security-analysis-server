@@ -45,7 +45,7 @@ public class ActionsService {
         this.restTemplate = restTemplate;
     }
 
-    public List<ContingencyInfos> getContingencyList(List<String> ids, UUID networkUuid, String variantId) {
+    public List<ContingencyInfos> getContingencyList(List<UUID> ids, UUID networkUuid, String variantId) {
         Objects.requireNonNull(ids);
         Objects.requireNonNull(networkUuid);
         if (ids.isEmpty()) {

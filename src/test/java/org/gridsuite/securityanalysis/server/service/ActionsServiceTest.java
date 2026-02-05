@@ -55,10 +55,10 @@ class ActionsServiceTest {
 
     private static final String VARIANT_ID = "variant_id";
 
-    private static final String LIST_NAME = "myList";
-    private static final String LIST_NAME_VARIANT = "myListVariant";
+    private static final UUID LIST_NAME = UUID.fromString("6afd3d28-3f99-48d7-be9e-e97ffd0b791j"); //"myList";
+    private static final UUID LIST_NAME_VARIANT = UUID.fromString("6afd3d28-3f99-48d7-be9e-e97ffd0b791k"); //"myListVariant";
 
-    private static final String VERY_LARGE_LIST_NAME = "veryLargelist";
+    private static final UUID VERY_LARGE_LIST_NAME = UUID.fromString("6afd3d28-3f99-48d7-be9e-e97ffd0b791l"); //"veryLargelist";
 
     public static final String WRONG_ID = "wrongID";
     private static final ContingencyInfos CONTINGENCY = new ContingencyInfos(new Contingency("c1", new BranchContingency("b1")), Set.of(WRONG_ID), Set.of());

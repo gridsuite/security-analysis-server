@@ -41,6 +41,7 @@ public class SecurityAnalysisParametersService {
     private static final double DEFAULT_HIGH_VOLTAGE_PROPORTIONAL_THRESHOLD = 0.01; // meaning 1.0 %
     private static final double DEFAULT_LOW_VOLTAGE_ABSOLUTE_THRESHOLD = 1.0; // 1.0 kV
     private static final double DEFAULT_HIGH_VOLTAGE_ABSOLUTE_THRESHOLD = 1.0; // 1.0 kV
+    private static final List<ContingencyListsDTO> DEFAULT_CONTINGENCY_LISTS = new ArrayList<>();
 
     public SecurityAnalysisParametersService(@NonNull SecurityAnalysisParametersRepository securityAnalysisParametersRepository, @NonNull LoadFlowService loadFlowService,
                                              @Value("${security-analysis.default-provider}") String defaultProvider, @NonNull LimitReductionService limitReductionService) {
@@ -69,7 +70,6 @@ public class SecurityAnalysisParametersService {
         return new SecurityAnalysisRunContext(
                 networkUuid,
                 variantId,
-                runContextParametersInfos.getContingencyListNames(),
                 receiver,
                 providerToUse,
                 parameters,
@@ -81,18 +81,24 @@ public class SecurityAnalysisParametersService {
     public SecurityAnalysisParametersDTO toSecurityAnalysisParameters(SecurityAnalysisParametersEntity entity) {
         SecurityAnalysisParameters securityAnalysisParameters = SecurityAnalysisParameters.load();
         List<List<Double>> limitReductions = new ArrayList<>();
+        List<UUID> activatedContingencyListUuids = new ArrayList<>();
         if (entity == null) {
             // the default values are overloaded
             securityAnalysisParameters.setIncreasedViolationsParameters(getIncreasedViolationsParameters(DEFAULT_FLOW_PROPORTIONAL_THRESHOLD, DEFAULT_LOW_VOLTAGE_PROPORTIONAL_THRESHOLD, DEFAULT_LOW_VOLTAGE_ABSOLUTE_THRESHOLD, DEFAULT_HIGH_VOLTAGE_PROPORTIONAL_THRESHOLD, DEFAULT_HIGH_VOLTAGE_ABSOLUTE_THRESHOLD));
         } else {
             securityAnalysisParameters.setIncreasedViolationsParameters(getIncreasedViolationsParameters(entity.getFlowProportionalThreshold(), entity.getLowVoltageProportionalThreshold(), entity.getLowVoltageAbsoluteThreshold(), entity.getHighVoltageProportionalThreshold(), entity.getHighVoltageAbsoluteThreshold()));
             limitReductions = entity.toLimitReductionsValues();
+            activatedContingencyListUuids = entity.getActivatedContingencyListUuids();
         }
 
         if (limitReductions.isEmpty()) {
             limitReductions = limitReductionService.getDefaultValues();
         }
-        return SecurityAnalysisParametersDTO.builder().securityAnalysisParameters(securityAnalysisParameters).limitReductions(limitReductions).build();
+        return SecurityAnalysisParametersDTO.builder()
+                .securityAnalysisParameters(securityAnalysisParameters)
+                .contingencyListsUuids(activatedContingencyListUuids)
+                .limitReductions(limitReductions)
+                .build();
     }
 
     public SecurityAnalysisParametersValues toSecurityAnalysisParametersValues(SecurityAnalysisParametersEntity entity) {
@@ -103,6 +109,7 @@ public class SecurityAnalysisParametersService {
                 .highVoltageProportionalThreshold(entity.getHighVoltageProportionalThreshold())
                 .lowVoltageAbsoluteThreshold(entity.getLowVoltageAbsoluteThreshold())
                 .lowVoltageProportionalThreshold(entity.getLowVoltageProportionalThreshold())
+                .contingencyLists(entity.getContingencyLists().stream().map(ContingencyListsDTO::new).toList())
                 .limitReductions(getLimitReductionsForProvider(entity).orElse(null))
                 .build();
     }
@@ -134,6 +141,7 @@ public class SecurityAnalysisParametersService {
                 .highVoltageAbsoluteThreshold(DEFAULT_HIGH_VOLTAGE_ABSOLUTE_THRESHOLD)
                 .highVoltageProportionalThreshold(DEFAULT_HIGH_VOLTAGE_PROPORTIONAL_THRESHOLD)
                 .flowProportionalThreshold(DEFAULT_FLOW_PROPORTIONAL_THRESHOLD)
+                .contingencyLists(DEFAULT_CONTINGENCY_LISTS)
                 .limitReductions(limitReductionService.createDefaultLimitReductions())
                 .build();
     }

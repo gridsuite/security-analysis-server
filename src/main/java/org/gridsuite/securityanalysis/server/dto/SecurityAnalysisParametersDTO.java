@@ -10,9 +10,11 @@ import com.powsybl.security.SecurityAnalysisParameters;
 import lombok.Builder;
 
 import java.util.List;
+import java.util.UUID;
 
 @Builder
 public record SecurityAnalysisParametersDTO(
         SecurityAnalysisParameters securityAnalysisParameters,
+        List<UUID> contingencyListsUuids,
         List<List<Double>> limitReductions
 ) { }

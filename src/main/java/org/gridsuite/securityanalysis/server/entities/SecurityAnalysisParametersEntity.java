@@ -55,10 +55,27 @@ public class SecurityAnalysisParametersEntity {
     @Column(name = "flowProportionalThreshold")
     private double flowProportionalThreshold;
 
+    @ElementCollection
+    @CollectionTable(
+            name = "contingency_lists",
+            joinColumns = @JoinColumn(name = "security_analysis_parameters_id")
+    )
+    private List<ContingencyListsEmbeddable> contingencyLists;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "security_analysis_parameters_id", foreignKey = @ForeignKey(name = "securityAnalysisParametersEntity_limitReductions_fk"))
     @OrderColumn(name = "index")
     private List<LimitReductionEntity> limitReductions;
+
+    public List<UUID> getActivatedContingencyListUuids() {
+        if (contingencyLists == null) {
+            return List.of();
+        }
+        return this.contingencyLists.stream()
+                .filter(ContingencyListsEmbeddable::isActivated)
+                .map(ContingencyListsEmbeddable::getId)
+                .toList();
+    }
 
     public List<List<Double>> toLimitReductionsValues() {
         return this.limitReductions.stream().map(LimitReductionEntity::getReductions).map(ArrayList::new).collect(Collectors.toList());
@@ -75,6 +92,7 @@ public class SecurityAnalysisParametersEntity {
         this.highVoltageProportionalThreshold = securityAnalysisParametersValues.getHighVoltageProportionalThreshold();
         this.lowVoltageAbsoluteThreshold = securityAnalysisParametersValues.getLowVoltageAbsoluteThreshold();
         this.lowVoltageProportionalThreshold = securityAnalysisParametersValues.getLowVoltageProportionalThreshold();
+        this.contingencyLists = securityAnalysisParametersValues.getContingencyLists().stream().map(ContingencyListsEmbeddable::new).toList();
         assignLimitReductions(securityAnalysisParametersValues.getLimitReductionsValues());
     }
 

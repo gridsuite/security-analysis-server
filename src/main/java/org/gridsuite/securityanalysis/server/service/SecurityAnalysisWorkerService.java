@@ -26,7 +26,6 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.security.*;
 import com.powsybl.security.limitreduction.LimitReduction;
-import com.powsybl.ws.commons.LogUtils;
 import org.gridsuite.computation.service.*;
 import org.gridsuite.securityanalysis.server.PropertyServerNameProvider;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
@@ -178,11 +177,13 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     @Override
     protected void preRun(SecurityAnalysisRunContext runContext) {
-        LOGGER.info("Run security analysis on contingency lists: {}", runContext.getContingencyListNames().stream().map(LogUtils::sanitizeParam).toList());
+        if (runContext.getParameters().contingencyListsUuids() != null) {
+            LOGGER.info("Run security analysis on contingency lists: {}", runContext.getParameters().contingencyListsUuids()); //.stream().map(LogUtils::sanitizeParam).toList());
+        }
 
         List<ContingencyInfos> contingencies = observer.observe("contingencies.fetch", runContext,
                 () ->
-                    actionsService.getContingencyList(runContext.getContingencyListNames(), runContext.getNetworkUuid(), runContext.getVariantId())
+                    actionsService.getContingencyList(runContext.getParameters().contingencyListsUuids(), runContext.getNetworkUuid(), runContext.getVariantId())
                 );
 
         runContext.setContingencies(contingencies);

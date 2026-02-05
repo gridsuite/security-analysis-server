@@ -43,6 +43,7 @@ public class ContingencyEntity {
     private UUID uuid;
 
     private String contingencyId;
+
     @Setter
     @ManyToOne(fetch = FetchType.LAZY)
     private SecurityAnalysisResultEntity result;
