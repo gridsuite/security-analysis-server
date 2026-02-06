@@ -32,6 +32,8 @@ public class SecurityAnalysisParametersService {
 
     private final LoadFlowService loadFlowService;
 
+    private final ParametersContingenciesService parametersContingenciesService;
+
     private final String defaultProvider;
 
     private final LimitReductionService limitReductionService;
@@ -41,12 +43,13 @@ public class SecurityAnalysisParametersService {
     private static final double DEFAULT_HIGH_VOLTAGE_PROPORTIONAL_THRESHOLD = 0.01; // meaning 1.0 %
     private static final double DEFAULT_LOW_VOLTAGE_ABSOLUTE_THRESHOLD = 1.0; // 1.0 kV
     private static final double DEFAULT_HIGH_VOLTAGE_ABSOLUTE_THRESHOLD = 1.0; // 1.0 kV
-    private static final List<ContingencyListsDTO> DEFAULT_CONTINGENCY_LISTS = new ArrayList<>();
+    private static final List<ParametersContingencyListDTO> DEFAULT_CONTINGENCY_LISTS = new ArrayList<>();
 
-    public SecurityAnalysisParametersService(@NonNull SecurityAnalysisParametersRepository securityAnalysisParametersRepository, @NonNull LoadFlowService loadFlowService,
+    public SecurityAnalysisParametersService(@NonNull SecurityAnalysisParametersRepository securityAnalysisParametersRepository, @NonNull LoadFlowService loadFlowService, @NonNull ParametersContingenciesService parametersContingenciesService,
                                              @Value("${security-analysis.default-provider}") String defaultProvider, @NonNull LimitReductionService limitReductionService) {
         this.securityAnalysisParametersRepository = Objects.requireNonNull(securityAnalysisParametersRepository);
         this.loadFlowService = loadFlowService;
+        this.parametersContingenciesService = parametersContingenciesService;
         this.defaultProvider = defaultProvider;
         this.limitReductionService = limitReductionService;
     }
@@ -96,7 +99,7 @@ public class SecurityAnalysisParametersService {
         }
         return SecurityAnalysisParametersDTO.builder()
                 .securityAnalysisParameters(securityAnalysisParameters)
-                .contingencyListsUuids(activatedContingencyListUuids)
+                .contingencyListUuids(activatedContingencyListUuids)
                 .limitReductions(limitReductions)
                 .build();
     }
@@ -109,7 +112,12 @@ public class SecurityAnalysisParametersService {
                 .highVoltageProportionalThreshold(entity.getHighVoltageProportionalThreshold())
                 .lowVoltageAbsoluteThreshold(entity.getLowVoltageAbsoluteThreshold())
                 .lowVoltageProportionalThreshold(entity.getLowVoltageProportionalThreshold())
-                .contingencyLists(entity.getContingencyLists().stream().map(ContingencyListsDTO::new).toList())
+                .contingencyLists(entity.getContingencyLists().stream()
+                        .map(c -> new ParametersContingencyListDTO(
+                                parametersContingenciesService.toDTO(c.getContingenciesIds()),
+                                c.getDescription(),
+                                c.isActivated()))
+                        .toList())
                 .limitReductions(getLimitReductionsForProvider(entity).orElse(null))
                 .build();
     }

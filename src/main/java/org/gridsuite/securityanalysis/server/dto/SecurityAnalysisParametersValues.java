@@ -36,7 +36,7 @@ public class SecurityAnalysisParametersValues {
 
     private double flowProportionalThreshold;
 
-    private List<ContingencyListsDTO> contingencyLists;
+    private List<ParametersContingencyListDTO> contingencyLists;
 
     private List<LimitReductionsByVoltageLevel> limitReductions;
 

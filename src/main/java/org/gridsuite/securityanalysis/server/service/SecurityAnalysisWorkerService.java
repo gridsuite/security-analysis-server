@@ -177,13 +177,13 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     @Override
     protected void preRun(SecurityAnalysisRunContext runContext) {
-        if (runContext.getParameters().contingencyListsUuids() != null) {
-            LOGGER.info("Run security analysis on contingency lists: {}", runContext.getParameters().contingencyListsUuids()); //.stream().map(LogUtils::sanitizeParam).toList());
+        if (runContext.getParameters().contingencyListUuids() != null) {
+            LOGGER.info("Run security analysis on contingency lists: {}", runContext.getParameters().contingencyListUuids()); //.stream().map(LogUtils::sanitizeParam).toList());
         }
 
         List<ContingencyInfos> contingencies = observer.observe("contingencies.fetch", runContext,
                 () ->
-                    actionsService.getContingencyList(runContext.getParameters().contingencyListsUuids(), runContext.getNetworkUuid(), runContext.getVariantId())
+                    actionsService.getContingencyList(runContext.getParameters().contingencyListUuids(), runContext.getNetworkUuid(), runContext.getVariantId())
                 );
 
         runContext.setContingencies(contingencies);

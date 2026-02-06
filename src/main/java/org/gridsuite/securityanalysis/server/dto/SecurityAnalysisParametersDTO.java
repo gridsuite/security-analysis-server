@@ -15,6 +15,6 @@ import java.util.UUID;
 @Builder
 public record SecurityAnalysisParametersDTO(
         SecurityAnalysisParameters securityAnalysisParameters,
-        List<UUID> contingencyListsUuids,
+        List<UUID> contingencyListUuids,
         List<List<Double>> limitReductions
 ) { }
