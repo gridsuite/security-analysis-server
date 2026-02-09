@@ -20,7 +20,7 @@
         </createTable>
     </changeSet>
     <changeSet author="jeandatcar (generated)" id="1770623069780-3">
-        <createIndex indexName="idx_security_analysis_parameters_id" tableName="parameters_contingency_list">
+        <createIndex indexName="idx_security_analysis_parameters_id_contingency_lists" tableName="parameters_contingency_list">
             <column name="security_analysis_parameters_id"/>
         </createIndex>
     </changeSet>

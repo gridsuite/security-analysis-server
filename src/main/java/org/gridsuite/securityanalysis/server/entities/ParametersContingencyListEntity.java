@@ -15,7 +15,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @Entity
-@Table(name = "parameters_contingency_list", indexes = {@Index(name = "idx_security_analysis_parameters_id", columnList = "security_analysis_parameters_id")})
+@Table(name = "parameters_contingency_list", indexes = {@Index(name = "idx_security_analysis_parameters_id_contingency_lists", columnList = "security_analysis_parameters_id")})
 public class ParametersContingencyListEntity {
 
     @Id
