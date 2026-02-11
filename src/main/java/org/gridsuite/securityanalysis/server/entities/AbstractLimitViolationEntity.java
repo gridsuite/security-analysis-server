@@ -141,7 +141,7 @@ public abstract class AbstractLimitViolationEntity {
             if (branch != null) {
                 tempLimit = getBranchLimitViolationAboveCurrentValue(branch, limitViolation);
             }
-            return (tempLimit != null) ? tempLimit.getAcceptableDuration() : Integer.MAX_VALUE;
+            return (tempLimit != null) ? tempLimit.getAcceptableDuration() : null;
         }
     }
 
