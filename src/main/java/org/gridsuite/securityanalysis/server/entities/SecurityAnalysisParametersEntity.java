@@ -59,8 +59,7 @@ public class SecurityAnalysisParametersEntity {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "securityAnalysisParameters")
     @OrderColumn(name = "index")
-    @Builder.Default
-    private List<ParametersContingencyListEntity> contingencyLists = new ArrayList<>();
+    private List<ParametersContingencyListEntity> contingencyLists; // = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "security_analysis_parameters_id", foreignKey = @ForeignKey(name = "securityAnalysisParametersEntity_limitReductions_fk"))
@@ -112,8 +111,12 @@ public class SecurityAnalysisParametersEntity {
                     return entity;
                 })
                 .toList();
-        contingencyLists.clear();
-        contingencyLists.addAll(entities);
+        if (contingencyLists == null) {
+            contingencyLists = entities;
+        } else {
+            contingencyLists.clear();
+            contingencyLists.addAll(entities);
+        }
     }
 
     private void assignLimitReductions(@Nullable List<List<Double>> values) {

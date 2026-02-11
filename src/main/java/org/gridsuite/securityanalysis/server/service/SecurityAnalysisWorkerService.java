@@ -40,6 +40,7 @@ import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -178,15 +179,18 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     @Override
     protected void preRun(SecurityAnalysisRunContext runContext) {
         if (runContext.getParameters().contingencyListUuids() != null) {
-            LOGGER.info("Run security analysis on contingency lists: {}", runContext.getParameters().contingencyListUuids()); //.stream().map(LogUtils::sanitizeParam).toList());
+            LOGGER.info("Run security analysis on contingency lists: {}", runContext.getParameters().contingencyListUuids());
         }
 
-        List<ContingencyInfos> contingencies = observer.observe("contingencies.fetch", runContext,
-                () ->
-                    actionsService.getContingencyList(runContext.getParameters().contingencyListUuids(), runContext.getNetworkUuid(), runContext.getVariantId())
-                );
-
-        runContext.setContingencies(contingencies);
+        try {
+            List<ContingencyInfos> contingencies = observer.observe("contingencies.fetch", runContext,
+                    () ->
+                            actionsService.getContingencyList(runContext.getParameters().contingencyListUuids(), runContext.getNetworkUuid(), runContext.getVariantId())
+            );
+            runContext.setContingencies(contingencies);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidParameterException("No contingency list found in parameters to run the analysis");
+        }
     }
 
     @Override
