@@ -1,9 +1,14 @@
+/**
+ * Copyright (c) 2026, RTE (http://www.rte-france.com)
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
 package org.gridsuite.securityanalysis.server.service;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
@@ -11,6 +16,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.*;
+import java.util.stream.Collectors;
+
+import static org.gridsuite.computation.service.NotificationService.HEADER_USER_ID;
 
 /**
  * @author Caroline Jeandat {@literal <caroline.jeandat at rte-france.com>}
@@ -18,16 +26,9 @@ import java.util.*;
 @Service
 public class DirectoryService {
     static final String DIRECTORY_API_VERSION = "v1";
-
     private static final String DELIMITER = "/";
-
-    private String baseUri;
-
-    private RestTemplate restTemplate;
-
-    public void setDirectoryServiceBaseUri(String baseUri) {
-        this.baseUri = baseUri;
-    }
+    private final String baseUri;
+    private final RestTemplate restTemplate;
 
     public DirectoryService(
             @Value("${gridsuite.services.directory-server.base-uri:http://directory-server}") String baseUri,
@@ -36,28 +37,40 @@ public class DirectoryService {
         this.restTemplate = restTemplate;
     }
 
-    public String getContingenciesName(UUID contingenciesId) {
-        Objects.requireNonNull(contingenciesId);
+    public Map<UUID, String> getElementNames(List<UUID> elementUuids, String userId) {
+        Objects.requireNonNull(elementUuids);
+
+        if (elementUuids.isEmpty()) {
+            return Map.of();
+        }
 
         URI path = UriComponentsBuilder
-                .fromPath(DELIMITER + DIRECTORY_API_VERSION + "/elements/{elementUuid}")
-                .buildAndExpand(contingenciesId)
+                .fromPath(DELIMITER + DIRECTORY_API_VERSION + "/elements")
+                .queryParam("ids", elementUuids)
+                .build()
                 .toUri();
 
+        HttpHeaders headers = new HttpHeaders();
+        headers.set(HEADER_USER_ID, userId);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
         try {
-            ResponseEntity<Map<String, Object>> response =
+            ResponseEntity<List<Map<String, Object>>> response =
                     restTemplate.exchange(
                             baseUri + path,
                             HttpMethod.GET,
-                            null,
+                            new HttpEntity<>(headers),
                             new ParameterizedTypeReference<>() { }
                     );
 
-            Map<String, Object> responseBody = response.getBody();
-            return responseBody != null ? (String) responseBody.get("elementName") : null;
+            List<Map<String, Object>> responseBody = response.getBody();
+            return responseBody != null ? responseBody.stream().collect(Collectors.toMap(
+                    e -> UUID.fromString((String) e.get("elementUuid")),
+                    e -> (String) e.get("elementName")
+            )) : Map.of();
 
         } catch (HttpClientErrorException.NotFound e) {
-            return null;
+            return Map.of();
         }
     }
 }

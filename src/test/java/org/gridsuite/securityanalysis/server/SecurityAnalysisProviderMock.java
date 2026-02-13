@@ -37,10 +37,10 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisProviderMock.class);
 
-    static final UUID CONTINGENCY_LIST_NAME = UUID.fromString("6afd3d28-3f99-48d7-be9e-e97ffd0b791f"); //"list1";
-    static final UUID CONTINGENCY_LIST2_NAME = UUID.fromString("6afd3d28-3f99-48d7-be9e-e97ffd0b791g"); //"list2";
-    static final UUID CONTINGENCY_LIST_ERROR_NAME = UUID.fromString("6afd3d28-3f99-48d7-be9e-e97ffd0b791h"); //"listError";
-    static final UUID CONTINGENCY_LIST_NAME_VARIANT = UUID.fromString("6afd3d28-3f99-48d7-be9e-e97ffd0b791i"); //"listVariant";
+    static final UUID CONTINGENCY_LIST_UUID = UUID.fromString("f7e8f79b-7626-4f46-939d-3bfdc895b0dd");
+    static final UUID CONTINGENCY_LIST2_UUID = UUID.fromString("99fdbba0-0f30-4f24-b206-5481b00ad910");
+    static final UUID CONTINGENCY_LIST_ERROR_UUID = UUID.fromString("d6e582ca-5084-4ad6-bf56-2ed3effdf9eb");
+    static final UUID CONTINGENCY_LIST_UUID_VARIANT = UUID.fromString("98b6dcfc-0186-4aa6-a4e0-e4d04c4faab2");
 
     static final List<ContingencyInfos> CONTINGENCIES = List.of(
         new ContingencyInfos(new Contingency("l1", new BranchContingency("l1")), Set.of("wrongId1, wrongId2"), Set.of()),

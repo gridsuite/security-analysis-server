@@ -8,7 +8,7 @@ package org.gridsuite.securityanalysis.server.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.gridsuite.securityanalysis.server.dto.ParametersContingenciesDTO;
+import org.gridsuite.securityanalysis.server.dto.IdNameInfos;
 import org.gridsuite.securityanalysis.server.dto.ParametersContingencyListDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
 import org.springframework.lang.Nullable;
@@ -59,7 +59,7 @@ public class SecurityAnalysisParametersEntity {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "securityAnalysisParameters")
     @OrderColumn(name = "index")
-    private List<ParametersContingencyListEntity> contingencyLists; // = new ArrayList<>();
+    private List<ParametersContingencyListEntity> contingencyLists;
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "security_analysis_parameters_id", foreignKey = @ForeignKey(name = "securityAnalysisParametersEntity_limitReductions_fk"))
@@ -72,7 +72,7 @@ public class SecurityAnalysisParametersEntity {
         }
         return this.contingencyLists.stream()
                 .filter(ParametersContingencyListEntity::isActivated)
-                .flatMap(contingencyList -> contingencyList.getContingenciesIds().stream())
+                .flatMap(contingencyList -> contingencyList.getContingencyListIds().stream())
                 .toList();
     }
 
@@ -102,8 +102,11 @@ public class SecurityAnalysisParametersEntity {
 
         List<ParametersContingencyListEntity> entities = contingencyListsDTO.stream()
                 .map(dto -> {
+                    List<UUID> contingencyListIds = dto.getContingencies().stream()
+                            .map(IdNameInfos::getId)
+                            .toList();
                     ParametersContingencyListEntity entity = new ParametersContingencyListEntity(
-                            dto.getContingencies().stream().map(ParametersContingenciesDTO::getId).toList(),
+                            contingencyListIds,
                             dto.getDescription(),
                             dto.isActivated()
                     );

@@ -55,10 +55,10 @@ class ActionsServiceTest {
 
     private static final String VARIANT_ID = "variant_id";
 
-    private static final UUID LIST_NAME = UUID.fromString("6afd3d28-3f99-48d7-be9e-e97ffd0b791j"); //"myList";
-    private static final UUID LIST_NAME_VARIANT = UUID.fromString("6afd3d28-3f99-48d7-be9e-e97ffd0b791k"); //"myListVariant";
+    private static final UUID LIST_UUID = UUID.fromString("e6bc6e4b-bbf1-4342-a8ae-49b213f0c85a");
+    private static final UUID LIST_UUID_VARIANT = UUID.fromString("81bb191f-b899-4999-91e3-2d158d208764");
 
-    private static final UUID VERY_LARGE_LIST_NAME = UUID.fromString("6afd3d28-3f99-48d7-be9e-e97ffd0b791l"); //"veryLargelist";
+    private static final UUID VERY_LARGE_LIST_UUID = UUID.fromString("4856bff4-9ebe-4ba2-b66d-0242f27fce7b");
 
     public static final String WRONG_ID = "wrongID";
     private static final ContingencyInfos CONTINGENCY = new ContingencyInfos(new Contingency("c1", new BranchContingency("b1")), Set.of(WRONG_ID), Set.of());
@@ -88,14 +88,14 @@ class ActionsServiceTest {
             @Override
             public MockResponse dispatch(RecordedRequest request) {
                 String requestPath = Objects.requireNonNull(request.getPath());
-                if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&variantId=%s&ids=%s", NETWORK_UUID, VARIANT_ID, LIST_NAME))) {
+                if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&variantId=%s&ids=%s", NETWORK_UUID, VARIANT_ID, LIST_UUID))) {
                     return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE), jsonVariantExpected);
-                } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s", NETWORK_UUID, LIST_NAME))) {
+                } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s", NETWORK_UUID, LIST_UUID))) {
                     return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE), jsonExpected);
-                } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&variantId=%s&ids=%s", NETWORK_UUID, VARIANT_ID, VERY_LARGE_LIST_NAME))
-                           || requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s", NETWORK_UUID, VERY_LARGE_LIST_NAME))) {
+                } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&variantId=%s&ids=%s", NETWORK_UUID, VARIANT_ID, VERY_LARGE_LIST_UUID))
+                           || requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s", NETWORK_UUID, VERY_LARGE_LIST_UUID))) {
                     return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE), veryLargeJsonExpected);
-                } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s&ids=%s", NETWORK_UUID, LIST_NAME, LIST_NAME_VARIANT))) {
+                } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s&ids=%s", NETWORK_UUID, LIST_UUID, LIST_UUID_VARIANT))) {
                     return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE), jsonExpectedForList);
                 } else {
                     return new MockResponse.Builder().code(HttpStatus.NOT_FOUND.value()).body("Path not supported: " + request.getPath()).build();
@@ -117,26 +117,26 @@ class ActionsServiceTest {
 
     @Test
     void test() {
-        List<ContingencyInfos> list = actionsService.getContingencyList(List.of(LIST_NAME), UUID.fromString(NETWORK_UUID), null);
+        List<ContingencyInfos> list = actionsService.getContingencyList(List.of(LIST_UUID), UUID.fromString(NETWORK_UUID), null);
         list.forEach(contingencyInfos -> assertArrayEquals(List.of(WRONG_ID).toArray(new Object[0]), contingencyInfos.getNotFoundElements().toArray(new String[0])));
         assertEquals(Stream.of(CONTINGENCY).map(ContingencyInfos::getContingency).toList(), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
-        list = actionsService.getContingencyList(List.of(LIST_NAME), UUID.fromString(NETWORK_UUID), VARIANT_ID);
+        list = actionsService.getContingencyList(List.of(LIST_UUID), UUID.fromString(NETWORK_UUID), VARIANT_ID);
         assertEquals(Stream.of(CONTINGENCY_VARIANT).map(ContingencyInfos::getContingency).toList(), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
     }
 
     @Test
     void testVeryLargeList() {
         // DataBufferLimitException should not be thrown with this message : "Exceeded limit on max bytes to buffer : DATA_BUFFER_LIMIT"
-        List<ContingencyInfos> list = actionsService.getContingencyList(List.of(VERY_LARGE_LIST_NAME), UUID.fromString(NETWORK_UUID), null);
+        List<ContingencyInfos> list = actionsService.getContingencyList(List.of(VERY_LARGE_LIST_UUID), UUID.fromString(NETWORK_UUID), null);
         list.forEach(contingencyInfos -> assertArrayEquals(List.of().toArray(new Object[0]), contingencyInfos.getNotFoundElements().toArray(new String[0])));
         assertEquals(createVeryLargeList().stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
-        list = actionsService.getContingencyList(List.of(VERY_LARGE_LIST_NAME), UUID.fromString(NETWORK_UUID), VARIANT_ID);
+        list = actionsService.getContingencyList(List.of(VERY_LARGE_LIST_UUID), UUID.fromString(NETWORK_UUID), VARIANT_ID);
         assertEquals(createVeryLargeList().stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
     }
 
     @Test
     void testGetContingenciesByListOfIds() {
-        List<ContingencyInfos> list = actionsService.getContingencyList(List.of(LIST_NAME, LIST_NAME_VARIANT), UUID.fromString(NETWORK_UUID), null);
+        List<ContingencyInfos> list = actionsService.getContingencyList(List.of(LIST_UUID, LIST_UUID_VARIANT), UUID.fromString(NETWORK_UUID), null);
         assertEquals(Stream.of(CONTINGENCY, CONTINGENCY_VARIANT).map(ContingencyInfos::getContingency).toList(), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
     }
 }
