@@ -1,0 +1,33 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="jeandatcar (generated)" id="1771247651736-1">
+        <createTable tableName="parameters_contingency_lists">
+            <column name="id" type="UUID">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="parameters_contingency_listsPK"/>
+            </column>
+            <column name="activated" type="BOOLEAN"/>
+            <column name="description" type="VARCHAR(255)"/>
+            <column name="security_analysis_parameters_id" type="UUID"/>
+            <column name="index" type="INT"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="jeandatcar (generated)" id="1771247651736-2">
+        <createTable tableName="parameters_contingency_lists_contingency_list">
+            <column name="parameters_contingency_lists_id" type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column name="contingency_list_id" type="UUID"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="jeandatcar (generated)" id="1771247651736-3">
+        <createIndex indexName="idx_parameters_contingency_lists_security_analysis_parameters_id" tableName="parameters_contingency_lists">
+            <column name="security_analysis_parameters_id"/>
+        </createIndex>
+    </changeSet>
+    <changeSet author="jeandatcar (generated)" id="1771247651736-4">
+        <addForeignKeyConstraint baseColumnNames="security_analysis_parameters_id" baseTableName="parameters_contingency_lists" constraintName="FK1npbfmuiloksicaj47apwe2fb" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="security_analysis_parameters" validate="true"/>
+    </changeSet>
+    <changeSet author="jeandatcar (generated)" id="1771247651736-5">
+        <addForeignKeyConstraint baseColumnNames="parameters_contingency_lists_id" baseTableName="parameters_contingency_lists_contingency_list" constraintName="parameters_contingency_lists_id_fk" deferrable="false" initiallyDeferred="false" referencedColumnNames="id" referencedTableName="parameters_contingency_lists" validate="true"/>
+    </changeSet>
+</databaseChangeLog>
