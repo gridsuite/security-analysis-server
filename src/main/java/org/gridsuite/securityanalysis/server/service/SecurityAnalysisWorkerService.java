@@ -29,7 +29,7 @@ import com.powsybl.security.limitreduction.LimitReduction;
 import org.gridsuite.computation.service.*;
 import org.gridsuite.securityanalysis.server.PropertyServerNameProvider;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
-import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
+import org.gridsuite.securityanalysis.server.dto.parameters.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;

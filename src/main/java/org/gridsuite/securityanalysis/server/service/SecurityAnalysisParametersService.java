@@ -11,6 +11,10 @@ import org.gridsuite.computation.error.ComputationException;
 import org.gridsuite.computation.dto.ReportInfos;
 import lombok.NonNull;
 import org.gridsuite.securityanalysis.server.dto.*;
+import org.gridsuite.securityanalysis.server.dto.parameters.ContingencyListsInfos;
+import org.gridsuite.securityanalysis.server.dto.parameters.IdNameInfos;
+import org.gridsuite.securityanalysis.server.dto.parameters.LimitReductionsByVoltageLevel;
+import org.gridsuite.securityanalysis.server.dto.parameters.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisParametersRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,7 +47,7 @@ public class SecurityAnalysisParametersService {
     private static final double DEFAULT_HIGH_VOLTAGE_PROPORTIONAL_THRESHOLD = 0.01; // meaning 1.0 %
     private static final double DEFAULT_LOW_VOLTAGE_ABSOLUTE_THRESHOLD = 1.0; // 1.0 kV
     private static final double DEFAULT_HIGH_VOLTAGE_ABSOLUTE_THRESHOLD = 1.0; // 1.0 kV
-    private static final List<ParametersContingencyListDTO> DEFAULT_CONTINGENCY_LISTS = new ArrayList<>();
+    private static final List<ContingencyListsInfos> DEFAULT_CONTINGENCY_LISTS_INFOS = new ArrayList<>();
 
     public SecurityAnalysisParametersService(@NonNull SecurityAnalysisParametersRepository securityAnalysisParametersRepository, @NonNull LoadFlowService loadFlowService,
                                              @Value("${security-analysis.default-provider}") String defaultProvider, @NonNull LimitReductionService limitReductionService, @NonNull DirectoryService directoryService) {
@@ -112,9 +116,9 @@ public class SecurityAnalysisParametersService {
                 .highVoltageProportionalThreshold(entity.getHighVoltageProportionalThreshold())
                 .lowVoltageAbsoluteThreshold(entity.getLowVoltageAbsoluteThreshold())
                 .lowVoltageProportionalThreshold(entity.getLowVoltageProportionalThreshold())
-                .contingencyLists(Optional.of(
+                .contingencyListsInfos(Optional.of(
                         entity.getContingencyLists().stream()
-                            .map(c -> new ParametersContingencyListDTO(
+                            .map(c -> new ContingencyListsInfos(
                                     contingenciesIdsToDTOs(c.getContingencyListIds(), userId),
                                     c.getDescription(),
                                     c.isActivated()))
@@ -162,7 +166,7 @@ public class SecurityAnalysisParametersService {
                 .highVoltageAbsoluteThreshold(DEFAULT_HIGH_VOLTAGE_ABSOLUTE_THRESHOLD)
                 .highVoltageProportionalThreshold(DEFAULT_HIGH_VOLTAGE_PROPORTIONAL_THRESHOLD)
                 .flowProportionalThreshold(DEFAULT_FLOW_PROPORTIONAL_THRESHOLD)
-                .contingencyLists(DEFAULT_CONTINGENCY_LISTS)
+                .contingencyListsInfos(DEFAULT_CONTINGENCY_LISTS_INFOS)
                 .limitReductions(limitReductionService.createDefaultLimitReductions())
                 .build();
     }

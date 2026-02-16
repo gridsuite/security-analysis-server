@@ -8,9 +8,9 @@ package org.gridsuite.securityanalysis.server.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.gridsuite.securityanalysis.server.dto.IdNameInfos;
-import org.gridsuite.securityanalysis.server.dto.ParametersContingencyListDTO;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
+import org.gridsuite.securityanalysis.server.dto.parameters.IdNameInfos;
+import org.gridsuite.securityanalysis.server.dto.parameters.ContingencyListsInfos;
+import org.gridsuite.securityanalysis.server.dto.parameters.SecurityAnalysisParametersValues;
 import org.springframework.lang.Nullable;
 
 import java.util.ArrayList;
@@ -91,24 +91,24 @@ public class SecurityAnalysisParametersEntity {
         this.highVoltageProportionalThreshold = securityAnalysisParametersValues.getHighVoltageProportionalThreshold();
         this.lowVoltageAbsoluteThreshold = securityAnalysisParametersValues.getLowVoltageAbsoluteThreshold();
         this.lowVoltageProportionalThreshold = securityAnalysisParametersValues.getLowVoltageProportionalThreshold();
-        assignContingencyLists(securityAnalysisParametersValues.getContingencyLists());
+        assignContingencyLists(securityAnalysisParametersValues.getContingencyListsInfos());
         assignLimitReductions(securityAnalysisParametersValues.getLimitReductionsValues());
     }
 
-    private void assignContingencyLists(List<ParametersContingencyListDTO> contingencyListsDTO) {
-        if (contingencyListsDTO == null) {
+    private void assignContingencyLists(List<ContingencyListsInfos> contingencyListsInfos) {
+        if (contingencyListsInfos == null) {
             return;
         }
 
-        List<ParametersContingencyListEntity> entities = contingencyListsDTO.stream()
-                .map(dto -> {
-                    List<UUID> contingencyListIds = dto.getContingencies().stream()
+        List<ParametersContingencyListEntity> entities = contingencyListsInfos.stream()
+                .map(listsInfos -> {
+                    List<UUID> contingencyListIds = listsInfos.getContingencyLists().stream()
                             .map(IdNameInfos::getId)
                             .toList();
                     ParametersContingencyListEntity entity = new ParametersContingencyListEntity(
                             contingencyListIds,
-                            dto.getDescription(),
-                            dto.isActivated()
+                            listsInfos.getDescription(),
+                            listsInfos.isActivated()
                     );
                     entity.setSecurityAnalysisParameters(this);
                     return entity;
