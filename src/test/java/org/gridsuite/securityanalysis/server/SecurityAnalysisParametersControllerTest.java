@@ -8,31 +8,42 @@ package org.gridsuite.securityanalysis.server;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vladmihalcea.sql.SQLStatementCountValidator;
 import org.gridsuite.computation.error.ComputationException;
+import org.gridsuite.securityanalysis.server.dto.parameters.ContingencyListsInfos;
+import org.gridsuite.securityanalysis.server.dto.parameters.IdNameInfos;
 import org.gridsuite.securityanalysis.server.dto.parameters.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.parameters.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisParametersRepository;
+import org.gridsuite.securityanalysis.server.service.DirectoryService;
 import org.gridsuite.securityanalysis.server.service.LimitReductionService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisParametersService;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.gridsuite.securityanalysis.server.util.MatcherJson;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.powsybl.network.store.model.NetworkStoreApi.VERSION;
 import static org.gridsuite.computation.error.ComputationBusinessErrorCode.PARAMETERS_NOT_FOUND;
+import static org.gridsuite.computation.service.NotificationService.HEADER_USER_ID;
+import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -40,6 +51,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * @author Abdelsalem Hedhili <abdelsalem.hedhili at rte-france.com>
  */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @AutoConfigureMockMvc
 @SpringBootTest
 @ContextConfigurationWithTestChannel
@@ -62,6 +74,35 @@ class SecurityAnalysisParametersControllerTest {
 
     @Autowired
     private LimitReductionService limitReductionService;
+
+    @MockitoBean
+    private DirectoryService directoryService;
+
+    private static final String USER_ID = "userId";
+    private static final UUID CONTINGENCY_LIST_ID = UUID.fromString("3f7c9e2a-8b41-4d6a-a1f3-9c5b72e8d4af");
+    private static final String CONTINGENCY_LIST_NAME = "contingencyList";
+    private static final UUID DEACTIVATED_CONTINGENCY_LIST_ID = UUID.fromString("b8a4f2c1-6d3e-4a9b-92f7-1e5c8d7a3b60");
+    private static final String DEACTIVATED_CONTINGENCY_LIST_NAME = "deactivatedContingencyList";
+
+    private List<ContingencyListsInfos> deactivatedContingencyListsInfos;
+    private List<ContingencyListsInfos> contingencyListsInfos;
+
+    @BeforeEach
+    void setUp() {
+        contingencyListsInfos = List.of(new ContingencyListsInfos(
+                List.of(new IdNameInfos(CONTINGENCY_LIST_ID, CONTINGENCY_LIST_NAME)),
+                "activated contingency lists",
+                true));
+        when(directoryService.getElementNames(List.of(CONTINGENCY_LIST_ID), USER_ID))
+                .thenReturn(Map.of(CONTINGENCY_LIST_ID, CONTINGENCY_LIST_NAME));
+
+        deactivatedContingencyListsInfos = List.of(new ContingencyListsInfos(
+                List.of(new IdNameInfos(DEACTIVATED_CONTINGENCY_LIST_ID, DEACTIVATED_CONTINGENCY_LIST_NAME)),
+                "deactivated contingency lists",
+                false));
+        when(directoryService.getElementNames(List.of(DEACTIVATED_CONTINGENCY_LIST_ID), USER_ID))
+                .thenReturn(Map.of(DEACTIVATED_CONTINGENCY_LIST_ID, DEACTIVATED_CONTINGENCY_LIST_NAME));
+    }
 
     @Test
     void limitReductionConfigTest() {
@@ -138,8 +179,41 @@ class SecurityAnalysisParametersControllerTest {
                 .limitReductions(limitReductionService.createLimitReductions(limitReductions))
                 .build());
 
+        // Get with deactivated contingency lists
+        SQLStatementCountValidator.reset();
+        testParametersCreateAndGetTest(builder.contingencyListsInfos(deactivatedContingencyListsInfos).build());
+        /*
+        insert
+            security_analysis_parameters
+            parameters_contingency_lists
+            limit_reduction_entity
+            limit_reduction_entity_reductions
+            parameters_contingency_lists_contingency_list
+        update
+            parameters_contingency_lists
+            limit_reduction_entity
+         */
+        assertRequestsCount(5, 5, 2, 0);
+
+        // Get with contingency lists
+        SQLStatementCountValidator.reset();
+        testParametersCreateAndGetTest(builder.contingencyListsInfos(contingencyListsInfos).build());
+        /*
+        insert
+            security_analysis_parameters
+            parameters_contingency_lists
+            limit_reduction_entity
+            limit_reduction_entity_reductions
+            parameters_contingency_lists_contingency_list
+        update
+            parameters_contingency_lists
+            limit_reduction_entity
+         */
+        assertRequestsCount(5, 5, 2, 0);
+
         // Get not existing parameters and expect 404
-        mockMvc.perform(get("/" + VERSION + "/parameters/" + UUID.randomUUID()))
+        mockMvc.perform(get("/" + VERSION + "/parameters/" + UUID.randomUUID())
+                        .header(HEADER_USER_ID, USER_ID))
                 .andExpect(status().isNotFound());
     }
 
@@ -149,6 +223,7 @@ class SecurityAnalysisParametersControllerTest {
 
     private void testParametersCreateAndGetTest(SecurityAnalysisParametersValues parametersToCreate, SecurityAnalysisParametersValues parametersExpected) throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/parameters")
+                        .header(HEADER_USER_ID, USER_ID)
                         .content(objectMapper.writeValueAsString(parametersToCreate))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpectAll(
@@ -162,7 +237,8 @@ class SecurityAnalysisParametersControllerTest {
         assertSecurityAnalysisParametersEntityAreEquals(createdParametersUuid, 10, 11, 12, 13, 14);
 
         // Get the created parameters
-        mvcResult = mockMvc.perform(get("/" + VERSION + "/parameters/" + createdParametersUuid))
+        mvcResult = mockMvc.perform(get("/" + VERSION + "/parameters/" + createdParametersUuid)
+                        .header(HEADER_USER_ID, USER_ID))
                 .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON)
@@ -211,6 +287,7 @@ class SecurityAnalysisParametersControllerTest {
                 .highVoltageAbsoluteThreshold(12)
                 .highVoltageProportionalThreshold(13)
                 .flowProportionalThreshold(14)
+                .contingencyListsInfos(contingencyListsInfos)
                 .limitReductions(limitReductionService.createLimitReductions(limitReductions))
                 .build();
 
@@ -270,6 +347,7 @@ class SecurityAnalysisParametersControllerTest {
                 .highVoltageAbsoluteThreshold(12)
                 .highVoltageProportionalThreshold(13)
                 .flowProportionalThreshold(14)
+                .contingencyListsInfos(contingencyListsInfos)
                 .limitReductions(limitReductionService.createLimitReductions(limitReductions))
                 .build();
 
@@ -288,7 +366,8 @@ class SecurityAnalysisParametersControllerTest {
         assertSecurityAnalysisParametersEntityAreEquals(createdParametersUuid, 10, 11, 12, 13, 14);
 
         //duplicate
-        mvcResult = mockMvc.perform(post("/" + VERSION + "/parameters").queryParam("duplicateFrom", createdParametersUuid.toString()))
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/parameters").queryParam("duplicateFrom", createdParametersUuid.toString())
+                        .header(HEADER_USER_ID, USER_ID))
                 .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON)
@@ -300,7 +379,9 @@ class SecurityAnalysisParametersControllerTest {
         assertSecurityAnalysisParametersEntityAreEquals(duplicatedParametersUuid, 10, 11, 12, 13, 14);
 
         //duplicate not existing parameters and expect a 404
-        mockMvc.perform(post("/" + VERSION + "/parameters").queryParam("duplicateFrom", UUID.randomUUID().toString()))
+        mockMvc.perform(post("/" + VERSION + "/parameters")
+                        .header(HEADER_USER_ID, USER_ID)
+                        .queryParam("duplicateFrom", UUID.randomUUID().toString()))
                 .andExpectAll(
                         status().isNotFound()
                 ).andReturn();
@@ -319,6 +400,7 @@ class SecurityAnalysisParametersControllerTest {
                 .highVoltageAbsoluteThreshold(12)
                 .highVoltageProportionalThreshold(13)
                 .flowProportionalThreshold(14)
+                .contingencyListsInfos(contingencyListsInfos)
                 .limitReductions(limitReductionService.createLimitReductions(limitReductions))
                 .build();
 

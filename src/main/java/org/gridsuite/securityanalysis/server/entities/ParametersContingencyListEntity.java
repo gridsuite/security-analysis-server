@@ -45,7 +45,7 @@ public class ParametersContingencyListEntity {
     private boolean activated;
 
     @ManyToOne
-    @JoinColumn(name = "security_analysis_parameters_id")
+    @JoinColumn(name = "security_analysis_parameters_id", foreignKey = @ForeignKey(name = "security_analysis_parameters_id_fk"))
     private SecurityAnalysisParametersEntity securityAnalysisParameters;
 
     public ParametersContingencyListEntity(List<UUID> contingencyListIds, String description, boolean activated) {

@@ -6,6 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
+import org.gridsuite.securityanalysis.server.dto.ElementAttributes;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
@@ -47,6 +48,7 @@ public class DirectoryService {
         URI path = UriComponentsBuilder
                 .fromPath(DELIMITER + DIRECTORY_API_VERSION + "/elements")
                 .queryParam("ids", elementUuids)
+                .queryParam("strictMode", "false") // to ignore non existing elements error
                 .build()
                 .toUri();
 
@@ -55,21 +57,18 @@ public class DirectoryService {
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         try {
-            ResponseEntity<List<Map<String, Object>>> response =
+            List<ElementAttributes> elementAttributes =
                     restTemplate.exchange(
                             baseUri + path,
                             HttpMethod.GET,
                             new HttpEntity<>(headers),
-                            new ParameterizedTypeReference<>() { }
-                    );
+                            new ParameterizedTypeReference<List<ElementAttributes>>() { }
+                    ).getBody();
 
-            List<Map<String, Object>> responseBody = response.getBody();
-            return responseBody != null ? responseBody.stream().collect(Collectors.toMap(
-                    e -> UUID.fromString((String) e.get("elementUuid")),
-                    e -> (String) e.get("elementName")
-            )) : Map.of();
+            return elementAttributes == null ? Map.of()
+                    : elementAttributes.stream().collect(Collectors.toMap(ElementAttributes::getElementUuid, ElementAttributes::getElementName));
 
-        } catch (HttpClientErrorException.NotFound e) {
+        } catch (HttpClientErrorException e) {
             return Map.of();
         }
     }
