@@ -27,18 +27,15 @@ import java.util.UUID;
  */
 @Getter
 public class SecurityAnalysisRunContext extends AbstractComputationRunContext<SecurityAnalysisParametersDTO> {
-
-    private final List<String> contingencyListNames;
     @Setter
     private List<ContingencyInfos> contingencies;
 
-    public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
+    public SecurityAnalysisRunContext(UUID networkUuid, String variantId,
                                       String receiver, String provider, SecurityAnalysisParametersDTO parameters, LoadFlowParametersValues loadFlowParametersValues,
                                       ReportInfos reportContext, String userId) {
         this(
                 networkUuid,
                 variantId,
-                contingencyListNames,
                 receiver,
                 provider,
                 buildParameters(parameters, loadFlowParametersValues, provider),
@@ -47,11 +44,10 @@ public class SecurityAnalysisRunContext extends AbstractComputationRunContext<Se
         );
     }
 
-    public SecurityAnalysisRunContext(UUID networkUuid, String variantId, List<String> contingencyListNames,
+    public SecurityAnalysisRunContext(UUID networkUuid, String variantId,
                                       String receiver, String provider, SecurityAnalysisParametersDTO parameters,
                                       ReportInfos reportContext, String userId) {
         super(networkUuid, variantId, receiver, reportContext, userId, provider, parameters);
-        this.contingencyListNames = Objects.requireNonNull(contingencyListNames);
     }
 
     private static SecurityAnalysisParametersDTO buildParameters(SecurityAnalysisParametersDTO parameters,

@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -36,10 +37,10 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisProviderMock.class);
 
-    static final String CONTINGENCY_LIST_NAME = "list1";
-    static final String CONTINGENCY_LIST2_NAME = "list2";
-    static final String CONTINGENCY_LIST_ERROR_NAME = "listError";
-    static final String CONTINGENCY_LIST_NAME_VARIANT = "listVariant";
+    static final UUID CONTINGENCY_LIST_UUID = UUID.fromString("f7e8f79b-7626-4f46-939d-3bfdc895b0dd");
+    static final UUID CONTINGENCY_LIST2_UUID = UUID.fromString("99fdbba0-0f30-4f24-b206-5481b00ad910");
+    static final UUID CONTINGENCY_LIST_ERROR_UUID = UUID.fromString("d6e582ca-5084-4ad6-bf56-2ed3effdf9eb");
+    static final UUID CONTINGENCY_LIST_UUID_VARIANT = UUID.fromString("98b6dcfc-0186-4aa6-a4e0-e4d04c4faab2");
 
     static final List<ContingencyInfos> CONTINGENCIES = List.of(
         new ContingencyInfos(new Contingency("l1", new BranchContingency("l1")), Set.of("wrongId1, wrongId2"), Set.of()),

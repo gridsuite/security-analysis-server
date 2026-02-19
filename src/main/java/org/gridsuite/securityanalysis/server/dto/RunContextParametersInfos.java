@@ -10,7 +10,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -20,8 +19,6 @@ import java.util.UUID;
 @Getter
 @Schema(description = "to help create a securityAnalysisRunContext")
 public class RunContextParametersInfos {
-    private List<String> contingencyListNames;
-
     private UUID securityAnalysisParametersUuid;
 
     private UUID loadFlowParametersUuid;

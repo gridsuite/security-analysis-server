@@ -8,7 +8,9 @@ package org.gridsuite.securityanalysis.server.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
+import org.gridsuite.securityanalysis.server.dto.parameters.IdNameInfos;
+import org.gridsuite.securityanalysis.server.dto.parameters.ContingencyListsInfos;
+import org.gridsuite.securityanalysis.server.dto.parameters.SecurityAnalysisParametersValues;
 import org.springframework.lang.Nullable;
 
 import java.util.ArrayList;
@@ -55,10 +57,24 @@ public class SecurityAnalysisParametersEntity {
     @Column(name = "flowProportionalThreshold")
     private double flowProportionalThreshold;
 
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "securityAnalysisParameters")
+    @OrderColumn(name = "index")
+    private List<ParametersContingencyListEntity> contingencyLists;
+
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "security_analysis_parameters_id", foreignKey = @ForeignKey(name = "securityAnalysisParametersEntity_limitReductions_fk"))
     @OrderColumn(name = "index")
     private List<LimitReductionEntity> limitReductions;
+
+    public List<UUID> getActivatedContingencyListUuids() {
+        if (contingencyLists == null) {
+            return List.of();
+        }
+        return this.contingencyLists.stream()
+                .filter(ParametersContingencyListEntity::isActivated)
+                .flatMap(contingencyList -> contingencyList.getContingencyListIds().stream())
+                .toList();
+    }
 
     public List<List<Double>> toLimitReductionsValues() {
         return this.limitReductions.stream().map(LimitReductionEntity::getReductions).map(ArrayList::new).collect(Collectors.toList());
@@ -75,7 +91,35 @@ public class SecurityAnalysisParametersEntity {
         this.highVoltageProportionalThreshold = securityAnalysisParametersValues.getHighVoltageProportionalThreshold();
         this.lowVoltageAbsoluteThreshold = securityAnalysisParametersValues.getLowVoltageAbsoluteThreshold();
         this.lowVoltageProportionalThreshold = securityAnalysisParametersValues.getLowVoltageProportionalThreshold();
+        assignContingencyLists(securityAnalysisParametersValues.getContingencyListsInfos());
         assignLimitReductions(securityAnalysisParametersValues.getLimitReductionsValues());
+    }
+
+    private void assignContingencyLists(List<ContingencyListsInfos> contingencyListsInfos) {
+        if (contingencyListsInfos == null) {
+            return;
+        }
+
+        List<ParametersContingencyListEntity> entities = contingencyListsInfos.stream()
+                .map(listsInfos -> {
+                    List<UUID> contingencyListIds = listsInfos.getContingencyLists().stream()
+                            .map(IdNameInfos::getId)
+                            .toList();
+                    ParametersContingencyListEntity entity = new ParametersContingencyListEntity(
+                            contingencyListIds,
+                            listsInfos.getDescription(),
+                            listsInfos.isActivated()
+                    );
+                    entity.setSecurityAnalysisParameters(this);
+                    return entity;
+                })
+                .toList();
+        if (contingencyLists == null) {
+            contingencyLists = entities;
+        } else {
+            contingencyLists.clear();
+            contingencyLists.addAll(entities);
+        }
     }
 
     private void assignLimitReductions(@Nullable List<List<Double>> values) {
@@ -95,4 +139,3 @@ public class SecurityAnalysisParametersEntity {
         this.provider = provider;
     }
 }
-
