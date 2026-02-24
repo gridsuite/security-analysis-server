@@ -10,7 +10,7 @@ import org.gridsuite.computation.error.ComputationException;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.Range;
-import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
+import org.gridsuite.securityanalysis.server.dto.parameters.LimitReductionsByVoltageLevel;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Service;
 

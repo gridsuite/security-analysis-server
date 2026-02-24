@@ -26,11 +26,10 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.security.*;
 import com.powsybl.security.limitreduction.LimitReduction;
-import com.powsybl.ws.commons.LogUtils;
 import org.gridsuite.computation.service.*;
 import org.gridsuite.securityanalysis.server.PropertyServerNameProvider;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
-import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
+import org.gridsuite.securityanalysis.server.dto.parameters.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
@@ -41,6 +40,7 @@ import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -178,14 +178,19 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     @Override
     protected void preRun(SecurityAnalysisRunContext runContext) {
-        LOGGER.info("Run security analysis on contingency lists: {}", runContext.getContingencyListNames().stream().map(LogUtils::sanitizeParam).toList());
+        if (runContext.getParameters().contingencyListUuids() != null) {
+            LOGGER.info("Run security analysis on contingency lists: {}", runContext.getParameters().contingencyListUuids());
+        }
 
-        List<ContingencyInfos> contingencies = observer.observe("contingencies.fetch", runContext,
-                () ->
-                    actionsService.getContingencyList(runContext.getContingencyListNames(), runContext.getNetworkUuid(), runContext.getVariantId())
-                );
-
-        runContext.setContingencies(contingencies);
+        try {
+            List<ContingencyInfos> contingencies = observer.observe("contingencies.fetch", runContext,
+                    () ->
+                            actionsService.getContingencyList(runContext.getParameters().contingencyListUuids(), runContext.getNetworkUuid(), runContext.getVariantId())
+            );
+            runContext.setContingencies(contingencies);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidParameterException("No contingency list found in parameters to run the analysis");
+        }
     }
 
     @Override

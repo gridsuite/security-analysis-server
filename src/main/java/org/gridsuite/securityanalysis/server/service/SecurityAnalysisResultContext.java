@@ -24,18 +24,8 @@ import static org.gridsuite.computation.utils.MessageUtils.getNonNullHeader;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  */
 public class SecurityAnalysisResultContext extends AbstractResultContext<SecurityAnalysisRunContext> {
-    public static final String CONTINGENCY_LIST_NAMES_HEADER = "contingencyListNames";
-
     public SecurityAnalysisResultContext(UUID resultUuid, SecurityAnalysisRunContext runContext) {
         super(resultUuid, runContext);
-    }
-
-    private static List<String> getHeaderList(MessageHeaders headers, String name) {
-        String header = (String) headers.get(name);
-        if (header == null || header.isEmpty()) {
-            return Collections.emptyList();
-        }
-        return Arrays.asList(header.split(","));
     }
 
     public static SecurityAnalysisResultContext fromMessage(Message<String> message, ObjectMapper objectMapper) {
@@ -44,7 +34,6 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
         UUID resultUuid = UUID.fromString(getNonNullHeader(headers, HEADER_RESULT_UUID));
         UUID networkUuid = UUID.fromString(getNonNullHeader(headers, NETWORK_UUID_HEADER));
         String variantId = (String) headers.get(VARIANT_ID_HEADER);
-        List<String> contingencyListNames = getHeaderList(headers, CONTINGENCY_LIST_NAMES_HEADER);
         String receiver = (String) headers.get(HEADER_RECEIVER);
         String provider = (String) headers.get(HEADER_PROVIDER);
         String userId = (String) headers.get(HEADER_USER_ID);
@@ -60,7 +49,6 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
         SecurityAnalysisRunContext runContext = new SecurityAnalysisRunContext(
                 networkUuid,
                 variantId,
-                contingencyListNames,
                 receiver,
                 provider,
                 parameters,
@@ -68,11 +56,5 @@ public class SecurityAnalysisResultContext extends AbstractResultContext<Securit
                 userId
         );
         return new SecurityAnalysisResultContext(resultUuid, runContext);
-    }
-
-    @Override
-    protected Map<String, String> getSpecificMsgHeaders(ObjectMapper ignoredObjectMapper) {
-        return Map.of(
-                CONTINGENCY_LIST_NAMES_HEADER, String.join(",", getRunContext().getContingencyListNames()));
     }
 }

@@ -11,8 +11,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.gridsuite.securityanalysis.server.dto.LimitReductionsByVoltageLevel;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersValues;
+import org.gridsuite.securityanalysis.server.dto.parameters.LimitReductionsByVoltageLevel;
+import org.gridsuite.securityanalysis.server.dto.parameters.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisParametersService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
+
+import static org.gridsuite.computation.service.NotificationService.HEADER_USER_ID;
 
 /**
  * @author Abdelsalem Hedhili <abdelsalem.hedhili at rte-france.com>
@@ -57,8 +59,9 @@ public class SecurityAnalysisParametersController {
         @ApiResponse(responseCode = "200", description = "parameters were duplicated"),
         @ApiResponse(responseCode = "404", description = "source parameters were not found")})
     public ResponseEntity<UUID> duplicateParameters(
-        @Parameter(description = "source parameters UUID") @RequestParam(name = "duplicateFrom") UUID sourceParametersUuid) {
-        return parametersService.duplicateParameters(sourceParametersUuid).map(duplicatedParametersUuid -> ResponseEntity.ok()
+            @Parameter(description = "source parameters UUID") @RequestParam(name = "duplicateFrom") UUID sourceParametersUuid,
+            @RequestHeader(HEADER_USER_ID) String userId) {
+        return parametersService.duplicateParameters(sourceParametersUuid, userId).map(duplicatedParametersUuid -> ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(duplicatedParametersUuid))
             .orElse(ResponseEntity.notFound().build());
@@ -70,8 +73,9 @@ public class SecurityAnalysisParametersController {
         @ApiResponse(responseCode = "200", description = "parameters were returned"),
         @ApiResponse(responseCode = "404", description = "parameters were not found")})
     public ResponseEntity<SecurityAnalysisParametersValues> getParameters(
-            @Parameter(description = "parameters UUID") @PathVariable(value = "uuid") UUID parametersUuid) {
-        return parametersService.getParameters(parametersUuid)
+            @Parameter(description = "parameters UUID") @PathVariable(value = "uuid") UUID parametersUuid,
+            @RequestHeader(HEADER_USER_ID) String userId) {
+        return parametersService.getParameters(parametersUuid, userId)
                 .map(parametersValues -> ResponseEntity.ok().body(parametersValues))
                 .orElse(ResponseEntity.notFound().build());
     }
