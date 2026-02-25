@@ -100,16 +100,6 @@ public class SecurityAnalysisParametersController {
         return ResponseEntity.ok().build();
     }
 
-    @PutMapping(value = "/{uuid}/provider")
-    @Operation(summary = "Update provider")
-    @ApiResponse(responseCode = "200", description = "provider was updated")
-    public ResponseEntity<Void> updateProvider(
-            @Parameter(description = "parameters UUID") @PathVariable("uuid") UUID parametersUuid,
-            @RequestBody(required = false) String provider) {
-        parametersService.updateProvider(parametersUuid, provider);
-        return ResponseEntity.ok().build();
-    }
-
     @GetMapping(value = "/default-limit-reductions", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Get default limit reductions")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The default limit reductions")})
