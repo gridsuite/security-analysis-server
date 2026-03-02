@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 /**
  * @author Caroline Jeandat {@literal <caroline.jeandat at rte-france.com>}
  */
-public class SecurityAnalysisExceptionHandlerTest {
+class SecurityAnalysisExceptionHandlerTest {
     private SecurityAnalysisExceptionHandler handler;
 
     @BeforeEach
