@@ -134,8 +134,4 @@ public class SecurityAnalysisParametersEntity {
             limitReductions.addAll(entities);
         }
     }
-
-    public void updateProvider(String provider) {
-        this.provider = provider;
-    }
 }

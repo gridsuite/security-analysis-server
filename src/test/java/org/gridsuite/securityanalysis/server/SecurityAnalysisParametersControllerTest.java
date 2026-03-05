@@ -270,7 +270,7 @@ class SecurityAnalysisParametersControllerTest {
 
         assertNotNull(createdParametersUuid);
 
-        SecurityAnalysisParametersValues defaultSecurityAnalysisParametersValues = securityAnalysisParametersService.getDefaultSecurityAnalysisParametersValues(defaultProvider);
+        SecurityAnalysisParametersValues defaultSecurityAnalysisParametersValues = securityAnalysisParametersService.getDefaultSecurityAnalysisParametersValues();
 
         assertSecurityAnalysisParametersEntityAreEquals(createdParametersUuid,
                 defaultSecurityAnalysisParametersValues.getLowVoltageAbsoluteThreshold(),
@@ -318,20 +318,6 @@ class SecurityAnalysisParametersControllerTest {
                 defaultSecurityAnalysisParametersValues.getHighVoltageAbsoluteThreshold(),
                 defaultSecurityAnalysisParametersValues.getHighVoltageProportionalThreshold(),
                 defaultSecurityAnalysisParametersValues.getFlowProportionalThreshold());
-
-        // update provider
-        String newProvider = "newProvider";
-        mockMvc.perform(put("/" + VERSION + "/parameters/" + updatedParametersUuid + "/provider")
-                .content(newProvider))
-                .andExpect(status().isOk()).andReturn();
-        SecurityAnalysisParametersEntity securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(updatedParametersUuid).orElseThrow();
-        assertEquals(newProvider, securityAnalysisParametersEntity.getProvider());
-
-        // reset provider
-        mockMvc.perform(put("/" + VERSION + "/parameters/" + updatedParametersUuid + "/provider"))
-                .andExpect(status().isOk()).andReturn();
-        securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(updatedParametersUuid).orElseThrow();
-        assertEquals(defaultProvider, securityAnalysisParametersEntity.getProvider());
     }
 
     @Test
