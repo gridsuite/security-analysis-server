@@ -224,6 +224,10 @@
             <artifactId>powsybl-iidm-impl</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <dependency>
+            <groupId>com.powsybl</groupId>
+            <artifactId>powsybl-case-datasource-client</artifactId>
+        </dependency>
 
         <!-- Test dependencies -->
         <dependency>
