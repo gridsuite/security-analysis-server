@@ -5,7 +5,10 @@ spring:
       dialect: org.hibernate.dialect.H2Dialect
       hibernate.format_sql: true
       hibernate.generate_statistics: true
-
+  cloud:
+    function:
+      # disable consumeRun2 during test - all of them receive the "loadflowGroup" messages otherwise
+      definition: consumeRun1;consumeCancel
 logging:
   level:
     org.springframework.orm.jpa: INFO
