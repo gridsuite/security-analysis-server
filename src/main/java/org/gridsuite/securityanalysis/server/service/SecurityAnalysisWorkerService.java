@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.report.ReportNode;
 import com.powsybl.commons.report.TypedValue;
 import com.powsybl.contingency.Contingency;
+import com.powsybl.contingency.violations.LimitViolationFilter;
 import com.powsybl.iidm.criteria.AtLeastOneNominalVoltageCriterion;
 import com.powsybl.iidm.criteria.IdentifiableCriterion;
 import com.powsybl.iidm.criteria.VoltageInterval;

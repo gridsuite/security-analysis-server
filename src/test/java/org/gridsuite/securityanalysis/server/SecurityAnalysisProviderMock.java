@@ -7,18 +7,24 @@
 package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.contingency.*;
+import com.powsybl.contingency.violations.BusBreakerViolationLocation;
+import com.powsybl.contingency.violations.LimitViolation;
+import com.powsybl.contingency.violations.LimitViolationType;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.TwoSides;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.*;
+import com.powsybl.security.results.ConnectivityResult;
+import com.powsybl.security.results.NetworkResult;
 import com.powsybl.security.results.PostContingencyResult;
 import org.gridsuite.computation.utils.ComputationResultUtils;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -49,7 +55,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         new ContingencyInfos(new Contingency("l4", new LineContingency("l4")), Set.of("wrongId1, wrongId2"), Set.of("notConnectedId1")),
         //new Contingency("l5", new LoadContingency("l5")), //ContingencyElementDeserializer does not handle LOAD
         new ContingencyInfos(new Contingency("l6", new HvdcLineContingency("l6")), Set.of("wrongId1, wrongId2"), Set.of()),
-        new ContingencyInfos(new Contingency("l7", new DanglingLineContingency("l7")), Set.of("wrongId1, wrongId2"), Set.of()),
+        new ContingencyInfos(new Contingency("l7", new BoundaryLineContingency("l7")), Set.of("wrongId1, wrongId2"), Set.of()),
         new ContingencyInfos(new Contingency("l8", new ShuntCompensatorContingency("l8")), Set.of("wrongId1, wrongId2"), Set.of()),
         new ContingencyInfos(new Contingency("l9", new TwoWindingsTransformerContingency("l9")), Set.of("wrongId1, wrongId2"), Set.of()),
         new ContingencyInfos(new Contingency("la", new ThreeWindingsTransformerContingency("l0")), Set.of("wrongId1, wrongId2"), Set.of()), // Contingencies are reordered by id

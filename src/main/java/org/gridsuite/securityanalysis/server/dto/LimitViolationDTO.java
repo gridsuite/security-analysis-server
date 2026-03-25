@@ -1,7 +1,7 @@
 package org.gridsuite.securityanalysis.server.dto;
 
+import com.powsybl.contingency.violations.LimitViolationType;
 import com.powsybl.iidm.network.ThreeSides;
-import com.powsybl.security.LimitViolationType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,6 +22,7 @@ import java.util.Map;
 public class LimitViolationDTO {
     private LimitViolationType limitType;
     private String limitName;
+    private String operationalLimitsGroupId;
     private String nextLimitName;
     private ThreeSides side;
     private Integer acceptableDuration;
@@ -38,6 +39,7 @@ public class LimitViolationDTO {
         return LimitViolationDTO.builder()
             .limitType(limitViolation.getLimitType())
             .limitName(limitViolation.getLimitName())
+            .operationalLimitsGroupId(limitViolation.getOperationalLimitsGroupId())
             .nextLimitName(limitViolation.getNextLimitName())
             .side(limitViolation.getSide())
             .acceptableDuration(limitViolation.getAcceptableDuration())
@@ -63,6 +65,7 @@ public class LimitViolationDTO {
         csvRow.add(this.getLimitType() != null ? CsvExportUtils.translate(this.getLimitType().name(), translations) : "");
         csvRow.add(this.getLocationId());  // busId
         csvRow.add(CsvExportUtils.replaceNullWithEmptyString(CsvExportUtils.translate(this.getLimitName(), translations)));
+        csvRow.add(CsvExportUtils.replaceNullWithEmptyString(CsvExportUtils.translate(this.getOperationalLimitsGroupId(), translations)));
         csvRow.add(this.getLoading() == null ? "" : convertDoubleToLocale(this.getLoading(), language));
         csvRow.add(this.getPatlLoading() == null ? "" : convertDoubleToLocale(this.getPatlLoading(), language));
         csvRow.add(this.getAcceptableDuration() == null || this.getAcceptableDuration() == Integer.MAX_VALUE ? null : Integer.toString(this.getAcceptableDuration()));

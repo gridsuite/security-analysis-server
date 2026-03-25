@@ -6,8 +6,8 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.powsybl.contingency.violations.LimitViolation;
 import com.powsybl.iidm.network.Network;
-import com.powsybl.security.LimitViolation;
 import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 
