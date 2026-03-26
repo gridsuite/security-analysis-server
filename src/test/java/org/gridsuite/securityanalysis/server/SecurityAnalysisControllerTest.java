@@ -786,6 +786,12 @@ class SecurityAnalysisControllerTest {
             // this field is set by default to empty string in LimitViolation class, it is treated as null when serializing/deserializing
             // so, we ignore it here
             .ignoringFieldsMatchingRegexes(".*operationalLimitsGroupId")
+            .withComparatorForType((d1, d2) -> {
+                if (Double.isNaN(d1) && Double.isNaN(d2)) {
+                    return 0; // Both NaN - consider them equal
+                }
+                return Double.compare(d1, d2);
+            }, Double.class)
             .isEqualTo(securityAnalysisResult);
     }
 
