@@ -227,7 +227,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
 
     private void assertSortAllowed(Sort sort, List<String> allowedSortProperties) {
         if (!sort.stream().allMatch(order -> allowedSortProperties.contains(order.getProperty()))) {
-            throw new ComputationException(INVALID_SORT_FORMAT, "Invalid sort format");
+            throw new ComputationException(INVALID_SORT_FORMAT, "Sorting is not accepted on at least one of the columns for this result type");
         }
     }
 
