@@ -254,8 +254,8 @@ class FindContingenciesTest {
 
     private static Stream<Arguments> provideForbiddenSort() {
         return Stream.of(
-            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "limitType")), new ComputationException(INVALID_SORT_FORMAT, "Invalid sort format")),
-            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "side")), new ComputationException(INVALID_SORT_FORMAT, "Invalid sort format"))
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "limitType")), new ComputationException(INVALID_SORT_FORMAT, "Sorting is not accepted on at least one of the columns for this result type")),
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "side")), new ComputationException(INVALID_SORT_FORMAT, "Sorting is not accepted on at least one of the columns for this result type"))
         );
     }
 
