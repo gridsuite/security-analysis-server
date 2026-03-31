@@ -55,6 +55,11 @@ powsybl-ws:
     customQuery: ${powsybl-ws.database.customQueryBegin}reWriteBatchedInserts=true
     name: sa
 
+computation:
+  rabbit:
+    loadbalanced-group:
+      - saGroup
+
 security-analysis:
   # default values for security-analysis providers "DynaFlow" or "OpenLoadFlow"
   default-provider: OpenLoadFlow
