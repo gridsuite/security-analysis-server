@@ -29,9 +29,9 @@ import com.powsybl.security.limitreduction.LimitReduction;
 import org.gridsuite.computation.service.*;
 import org.gridsuite.securityanalysis.server.PropertyServerNameProvider;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
-import org.gridsuite.securityanalysis.server.dto.parameters.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
+import org.gridsuite.securityanalysis.server.dto.parameters.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.error.SecurityAnalysisBusinessErrorCode;
 import org.gridsuite.securityanalysis.server.error.SecurityAnalysisException;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
@@ -41,6 +41,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -191,6 +192,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
             runContext.setContingencies(contingencies);
         } catch (IllegalArgumentException e) {
             throw new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.CONTINGENCY_LIST_CONFIG_EMPTY, "The configuration does not contain any contingency.");
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.MISSING_CONTINGENCY_LIST, "The configuration contains one or more contingency lists that have been deleted.");
         }
     }
 
