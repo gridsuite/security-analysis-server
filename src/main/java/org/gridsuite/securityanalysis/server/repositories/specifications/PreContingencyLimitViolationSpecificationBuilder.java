@@ -25,7 +25,7 @@ public class PreContingencyLimitViolationSpecificationBuilder {
     }
 
     public Specification<PreContingencyLimitViolationEntity> buildSpecification(UUID resultUuid, List<ResourceFilterDTO> resourceFilters) {
-        Specification<PreContingencyLimitViolationEntity> specification = Specification.where(resultUuidEquals(resultUuid));
+        Specification<PreContingencyLimitViolationEntity> specification = resultUuidEquals(resultUuid);
 
         return SpecificationUtils.appendFiltersToSpecification(specification, resourceFilters);
     }
