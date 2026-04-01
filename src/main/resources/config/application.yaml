@@ -12,7 +12,7 @@ spring:
 
   cloud:
     function:
-      definition: consumeRun;consumeCancel
+      definition: consumeRun;consumeCancel;consumeCaseRun
     stream:
       bindings:
         consumeRun-in-0:
@@ -33,7 +33,13 @@ spring:
           destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.stopped
         publishCancelFailed-out-0:
           destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.cancelfailed
-      output-bindings: publishRun-out-0;publishResult-out-0;publishCancel-out-0;publishStopped-out-0;publishCancelFailed-out-0
+        publishCaseRun-out-0:
+          destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.case.run
+        consumeCaseRun-in-0:
+          destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.case.run
+        publishCaseResult-out-0:
+          destination: ${powsybl-ws.rabbitmq.destination.prefix:}sa.case.result
+      output-bindings: publishRun-out-0;publishResult-out-0;publishCancel-out-0;publishStopped-out-0;publishCancelFailed-out-0;publishCaseRun-out-0;publishCaseResult-out-0
       rabbit:
         bindings:
           consumeRun-in-0:
@@ -45,7 +51,6 @@ spring:
               quorum:
                 enabled: true
                 delivery-limit: 2
-
 
 powsybl-ws:
   database:
