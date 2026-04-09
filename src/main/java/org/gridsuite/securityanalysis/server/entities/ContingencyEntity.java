@@ -31,10 +31,11 @@ import java.util.stream.Collectors;
 @Table(name = "contingency")
 public class ContingencyEntity {
 
-    public ContingencyEntity(String contingencyId, String status, List<ContingencyElementEmbeddable> contingencyElements, List<ContingencyLimitViolationEntity> contingencyLimitViolations) {
+    public ContingencyEntity(String contingencyId, String status, List<ContingencyElementEmbeddable> contingencyElements, ConnectivityResultEntity connectivityResult, List<ContingencyLimitViolationEntity> contingencyLimitViolations) {
         this.contingencyId = contingencyId;
         this.status = status;
         this.contingencyElements = contingencyElements;
+        this.connectivityResult = connectivityResult;
         setContingencyLimitViolations(contingencyLimitViolations);
     }
 
@@ -54,6 +55,10 @@ public class ContingencyEntity {
     @OneToMany(mappedBy = "contingency", cascade = CascadeType.ALL, orphanRemoval = true)
     List<ContingencyLimitViolationEntity> contingencyLimitViolations;
 
+    @OneToOne(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "connectivity_result_id", foreignKey = @ForeignKey(name = "contingency_connectivity_result_id_fk"))
+    private ConnectivityResultEntity connectivityResult;
+
     /**
      * We keep a String as it could model LoadFlowResult.ComponentResult.Status or PostContingencyComputationStatus.
      */
@@ -72,6 +77,9 @@ public class ContingencyEntity {
         List<ContingencyLimitViolationEntity> contingencyLimitViolations = postContingencyResult.getLimitViolationsResult().getLimitViolations().stream()
             .map(limitViolation -> ContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId())))
             .collect(Collectors.toList());
-        return new ContingencyEntity(postContingencyResult.getContingency().getId(), postContingencyResult.getStatus().name(), contingencyElements, contingencyLimitViolations);
+        ConnectivityResultEntity connectivityResult = postContingencyResult.getConnectivityResult() != null
+            ? ConnectivityResultEntity.toEntity(postContingencyResult.getConnectivityResult())
+            : null;
+        return new ContingencyEntity(postContingencyResult.getContingency().getId(), postContingencyResult.getStatus().name(), contingencyElements, connectivityResult, contingencyLimitViolations);
     }
 }
