@@ -1,27 +1,13 @@
 <?xml version="1.1" encoding="UTF-8" standalone="no"?>
 <databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
-    <changeSet author="rehiligha (generated)" id="1775737271318-1">
-        <createTable tableName="connectivity_result">
-            <column name="uuid" type="UUID">
-                <constraints nullable="false" primaryKey="true" primaryKeyName="connectivity_resultPK"/>
-            </column>
-            <column name="disconnected_generation_active_power" type="FLOAT(53)">
-                <constraints nullable="false"/>
-            </column>
-            <column name="disconnected_load_active_power" type="FLOAT(53)">
-                <constraints nullable="false"/>
-            </column>
-        </createTable>
-    </changeSet>
-    <changeSet author="rehiligha (generated)" id="1775737271318-2">
+    <changeSet author="rehiligha (generated)" id="1775814367025-1">
         <addColumn tableName="contingency">
-            <column name="connectivity_result_id" type="uuid"/>
+            <column name="disconnected_generation_active_power" type="float(53)"/>
         </addColumn>
     </changeSet>
-    <changeSet author="rehiligha (generated)" id="1775737271318-3">
-        <addUniqueConstraint columnNames="connectivity_result_id" constraintName="UC_CONTINGENCYCONNECTIVITY_RESULT_ID_COL" tableName="contingency"/>
-    </changeSet>
-    <changeSet author="rehiligha (generated)" id="1775737271318-4">
-        <addForeignKeyConstraint baseColumnNames="connectivity_result_id" baseTableName="contingency" constraintName="contingency_connectivity_result_id_fk" deferrable="false" initiallyDeferred="false" referencedColumnNames="uuid" referencedTableName="connectivity_result" validate="true"/>
+    <changeSet author="rehiligha (generated)" id="1775814367025-2">
+        <addColumn tableName="contingency">
+            <column name="disconnected_load_active_power" type="float(53)"/>
+        </addColumn>
     </changeSet>
 </databaseChangeLog>

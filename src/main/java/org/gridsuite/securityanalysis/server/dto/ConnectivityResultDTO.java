@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.gridsuite.securityanalysis.server.entities.ConnectivityResultEntity;
+import org.gridsuite.securityanalysis.server.entities.ConnectivityResultEmbeddable;
 
 @Getter
 @Builder
@@ -14,7 +14,7 @@ public class ConnectivityResultDTO {
     private double disconnectedLoadActivePower;
     private double disconnectedGenerationActivePower;
 
-    public static ConnectivityResultDTO toDto(ConnectivityResultEntity connectivityResult) {
+    public static ConnectivityResultDTO toDto(ConnectivityResultEmbeddable connectivityResult) {
         return ConnectivityResultDTO.builder()
             .disconnectedLoadActivePower(connectivityResult.getDisconnectedLoadActivePower())
             .disconnectedGenerationActivePower(connectivityResult.getDisconnectedGenerationActivePower())
