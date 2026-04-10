@@ -52,7 +52,7 @@ public class LimitViolationDTO {
             .build();
     }
 
-    private static String convertDoubleToLocale(Double value, String language) {
+    static String convertDoubleToLocale(Double value, String language) {
         NumberFormat nf = NumberFormat.getInstance(language != null && language.equals("fr") ? Locale.FRENCH : Locale.US);
         nf.setGroupingUsed(false);
         return nf.format(value);
