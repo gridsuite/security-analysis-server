@@ -77,10 +77,10 @@ public class ContingencyEntity {
         List<ContingencyLimitViolationEntity> contingencyLimitViolations = postContingencyResult.getLimitViolationsResult().getLimitViolations().stream()
             .map(limitViolation -> ContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId())))
             .collect(Collectors.toList());
+
         ConnectivityResult cr = postContingencyResult.getConnectivityResult();
-        ConnectivityResultEmbeddable connectivityResult = cr != null
-                ? ConnectivityResultEmbeddable.toEntity(cr)
-                : null;
+        ConnectivityResultEmbeddable connectivityResult = cr != null ? ConnectivityResultEmbeddable.toEntity(cr) : null;
+
         return new ContingencyEntity(postContingencyResult.getContingency().getId(), postContingencyResult.getStatus().name(), contingencyElements, connectivityResult, contingencyLimitViolations);
     }
 }
