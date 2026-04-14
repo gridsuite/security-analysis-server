@@ -118,22 +118,6 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 .toList();
         List<LimitReduction> limitReductions = createLimitReductions(runContext);
 
-        Network network = runContext.getNetwork();
-        // FIXME: Remove this part when multithread variant access is implemented in the network-store
-        if (runContext.getProvider().equals("OpenLoadFlow")) {
-            long startTime = System.nanoTime();
-            Network originalNetwork = runContext.getNetwork();
-            String originalVariant = originalNetwork.getVariantManager().getWorkingVariantId();
-            originalNetwork.getVariantManager().setWorkingVariant(variantId);
-
-            network = NetworkSerDe.copy(originalNetwork, NetworkFactory.find("Default"));
-            if (!variantId.equals(VariantManagerConstants.INITIAL_VARIANT_ID)) {
-                network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, variantId);
-            }
-            LOGGER.info("Network copied to iidm-impl in {} ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
-            originalNetwork.getVariantManager().setWorkingVariant(originalVariant);
-        }
-
         SecurityAnalysisRunParameters runParameters = new SecurityAnalysisRunParameters()
                 .setSecurityAnalysisParameters(runContext.getParameters().securityAnalysisParameters())
                 .setComputationManager(executionService.getComputationManager())
@@ -142,7 +126,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 .setReportNode(runContext.getReportNode());
 
         return securityAnalysisRunner.runAsync(
-                        network,
+                        runContext.getNetwork(),
                         variantId,
                         n -> contingencies,
                         runParameters)
@@ -195,6 +179,27 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         } catch (HttpClientErrorException.NotFound e) {
             throw new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.MISSING_CONTINGENCY_LIST, "The configuration contains one or more contingency lists that have been deleted.");
         }
+
+        // FIXME: Remove this part when multithread variant access is implemented in the network-store
+        if (runContext.getProvider().equals("OpenLoadFlow")) {
+            copyNetwork(runContext);
+        }
+    }
+
+    public void copyNetwork(SecurityAnalysisRunContext runContext) {
+        String variantId = runContext.getVariantId() != null ? runContext.getVariantId() : VariantManagerConstants.INITIAL_VARIANT_ID;
+        long startTime = System.nanoTime();
+        Network originalNetwork = runContext.getNetwork();
+        String originalVariant = originalNetwork.getVariantManager().getWorkingVariantId();
+        originalNetwork.getVariantManager().setWorkingVariant(variantId);
+
+        Network network = NetworkSerDe.copy(originalNetwork, NetworkFactory.find("Default"));
+        if (!variantId.equals(VariantManagerConstants.INITIAL_VARIANT_ID)) {
+            network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, variantId);
+        }
+        LOGGER.info("Network copied to iidm-impl in {} ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+        originalNetwork.getVariantManager().setWorkingVariant(originalVariant);
+        runContext.setNetwork(network);
     }
 
     @Override
