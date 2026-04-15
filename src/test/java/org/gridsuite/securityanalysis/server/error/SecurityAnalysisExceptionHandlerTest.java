@@ -29,7 +29,7 @@ class SecurityAnalysisExceptionHandlerTest {
     }
 
     @Test
-    void mapsInteralErrorBusinessErrorToStatus() {
+    void mapsInternalErrorBusinessErrorToStatus() {
         MockHttpServletRequest request = new MockHttpServletRequest("GET", "/results-endpoint/uuid");
         SecurityAnalysisException exception = new SecurityAnalysisException(CONTINGENCY_LIST_CONFIG_EMPTY, "The configuration does not contain any contingency.");
         ResponseEntity<PowsyblWsProblemDetail> response = handler.handleSecurityAnalysisException(exception, request);
@@ -37,5 +37,14 @@ class SecurityAnalysisExceptionHandlerTest {
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
         assertThat(response.getBody()).isNotNull();
         assertEquals("securityAnalysis.contingencyListConfigEmpty", response.getBody().getBusinessErrorCode());
+
+        SecurityAnalysisException missingContingencyException = new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.MISSING_CONTINGENCY_LIST, "The configuration contains one or more contingency lists that have been deleted.");
+
+        response = handler.handleSecurityAnalysisException(missingContingencyException, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(response.getBody()).isNotNull();
+        assertEquals("securityAnalysis.missingContingencyList", response.getBody().getBusinessErrorCode());
+
     }
 }
