@@ -74,13 +74,15 @@ class SecurityAnalysisWorkerServiceTest {
         Network original = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
         SecurityAnalysisRunContext ctx = buildRunContext("OpenLoadFlow", null, original);
 
+        String workingVariant = original.getVariantManager().getWorkingVariantId();
+
         workerService.copyNetwork(ctx);
 
         Network result = ctx.getInMemoryNetwork();
 
         assertThat(result).isNotSameAs(original);
         assertThat(result.getId()).isEqualTo(original.getId());
-        assertThat(original.getVariantManager().getWorkingVariantId()).isEqualTo(VariantManagerConstants.INITIAL_VARIANT_ID);
+        assertThat(result.getVariantManager().getWorkingVariantId()).isEqualTo(workingVariant);
     }
 
     @Test
@@ -90,6 +92,8 @@ class SecurityAnalysisWorkerServiceTest {
         original.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, WORKING_VARIANT_2);
         original.getVariantManager().setWorkingVariant(WORKING_VARIANT_1);
 
+        String workingVariant = original.getVariantManager().getWorkingVariantId();
+
         SecurityAnalysisRunContext ctx = buildRunContext("OpenLoadFlow", WORKING_VARIANT_2, original);
 
         workerService.copyNetwork(ctx);
@@ -97,6 +101,6 @@ class SecurityAnalysisWorkerServiceTest {
         Network result = ctx.getInMemoryNetwork();
 
         assertThat(result.getVariantManager().getVariantIds()).contains(WORKING_VARIANT_2);
-        assertThat(original.getVariantManager().getWorkingVariantId()).isEqualTo(WORKING_VARIANT_1);
+        assertThat(original.getVariantManager().getWorkingVariantId()).isEqualTo(workingVariant);
     }
 }

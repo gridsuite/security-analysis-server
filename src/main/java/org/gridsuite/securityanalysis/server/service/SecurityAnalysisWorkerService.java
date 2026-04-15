@@ -125,8 +125,10 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 .setLimitReductions(limitReductions)
                 .setReportNode(runContext.getReportNode());
 
+        Network network = "OpenLoadFlow".equals(runContext.getProvider()) ? runContext.getInMemoryNetwork() : runContext.getNetwork();
+
         return securityAnalysisRunner.runAsync(
-                        runContext.getInMemoryNetwork() != null ? runContext.getInMemoryNetwork() : runContext.getNetwork(),
+                        network,
                         variantId,
                         n -> contingencies,
                         runParameters)
@@ -181,7 +183,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         }
 
         // FIXME: Remove this part when multithread variant access is implemented in the network-store
-        if (runContext.getProvider().equals("OpenLoadFlow")) {
+        if ("OpenLoadFlow".equals(runContext.getProvider())) {
             copyNetwork(runContext);
         }
     }
