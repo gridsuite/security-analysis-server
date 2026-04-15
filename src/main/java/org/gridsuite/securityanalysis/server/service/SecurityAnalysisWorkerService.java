@@ -126,7 +126,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 .setReportNode(runContext.getReportNode());
 
         return securityAnalysisRunner.runAsync(
-                        runContext.getNetwork(),
+                        runContext.getInMemoryNetwork() != null ? runContext.getInMemoryNetwork() : runContext.getNetwork(),
                         variantId,
                         n -> contingencies,
                         runParameters)
@@ -191,15 +191,19 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         long startTime = System.nanoTime();
         Network originalNetwork = runContext.getNetwork();
         String originalVariant = originalNetwork.getVariantManager().getWorkingVariantId();
-        originalNetwork.getVariantManager().setWorkingVariant(variantId);
 
-        Network network = NetworkSerDe.copy(originalNetwork, NetworkFactory.find("Default"));
-        if (!variantId.equals(VariantManagerConstants.INITIAL_VARIANT_ID)) {
-            network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, variantId);
+        try {
+            originalNetwork.getVariantManager().setWorkingVariant(variantId);
+
+            Network network = NetworkSerDe.copy(originalNetwork, NetworkFactory.find("Default"));
+            if (!variantId.equals(VariantManagerConstants.INITIAL_VARIANT_ID)) {
+                network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, variantId);
+            }
+            LOGGER.info("Network copied to iidm-impl in {} ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+            runContext.setInMemoryNetwork(network);
+        } finally {
+            originalNetwork.getVariantManager().setWorkingVariant(originalVariant);
         }
-        LOGGER.info("Network copied to iidm-impl in {} ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
-        originalNetwork.getVariantManager().setWorkingVariant(originalVariant);
-        runContext.setNetwork(network);
     }
 
     @Override

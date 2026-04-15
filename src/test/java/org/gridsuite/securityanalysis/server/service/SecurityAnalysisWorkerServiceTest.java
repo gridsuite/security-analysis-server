@@ -76,7 +76,7 @@ class SecurityAnalysisWorkerServiceTest {
 
         workerService.copyNetwork(ctx);
 
-        Network result = ctx.getNetwork();
+        Network result = ctx.getInMemoryNetwork();
 
         assertThat(result).isNotSameAs(original);
         assertThat(result.getId()).isEqualTo(original.getId());
@@ -94,7 +94,7 @@ class SecurityAnalysisWorkerServiceTest {
 
         workerService.copyNetwork(ctx);
 
-        Network result = ctx.getNetwork();
+        Network result = ctx.getInMemoryNetwork();
 
         assertThat(result.getVariantManager().getVariantIds()).contains(WORKING_VARIANT_2);
         assertThat(original.getVariantManager().getWorkingVariantId()).isEqualTo(WORKING_VARIANT_1);
