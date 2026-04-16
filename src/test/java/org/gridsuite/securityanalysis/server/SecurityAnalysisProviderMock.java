@@ -145,9 +145,9 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
 
     static final List<SubjectLimitViolationResultDTO> RESULT_CONSTRAINTS = Stream.concat(
         RESULT_LIMIT_VIOLATIONS.stream()
-            .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, CONTINGENCIES.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), LoadFlowResult.ComponentResult.Status.CONVERGED, ConnectivityResultDTO.builder().disconnectedLoadActivePower(0.0).disconnectedGenerationActivePower(0.0).build())),
+            .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, CONTINGENCIES.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), LoadFlowResult.ComponentResult.Status.CONVERGED, ConnectivityResultDTO.builder().disconnectedLoadActivePower(0.0).disconnectedGenerationActivePower(-852.36).build())),
         FAILED_LIMIT_VIOLATIONS.stream()
-            .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, FAILED_CONTINGENCIES, LoadFlowResult.ComponentResult.Status.FAILED, ConnectivityResultDTO.builder().disconnectedLoadActivePower(0.0).disconnectedGenerationActivePower(0.0).build()))
+            .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, FAILED_CONTINGENCIES, LoadFlowResult.ComponentResult.Status.FAILED, ConnectivityResultDTO.builder().disconnectedLoadActivePower(885.16).disconnectedGenerationActivePower(0.0).build()))
     ).toList();
 
     static List<SubjectLimitViolationResultDTO> getResultConstraintsWithNestedFilter(Function<ContingencyLimitViolationDTO, Boolean> filterMethod) {
