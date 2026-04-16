@@ -9,7 +9,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -69,5 +71,11 @@ public final class CsvExportUtils {
         }
         // if translated value is null, we keep original value (untranslated value)
         return translations.getOrDefault(valueToTranslate, valueToTranslate);
+    }
+
+    public static String convertDoubleToLocale(Double value, String language) {
+        NumberFormat nf = NumberFormat.getInstance(language != null && language.equals("fr") ? Locale.FRENCH : Locale.US);
+        nf.setGroupingUsed(false);
+        return nf.format(value);
     }
 }

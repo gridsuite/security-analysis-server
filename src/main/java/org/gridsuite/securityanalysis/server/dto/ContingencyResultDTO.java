@@ -17,8 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.gridsuite.securityanalysis.server.dto.LimitViolationDTO.convertDoubleToLocale;
-
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
@@ -50,9 +48,8 @@ public class ContingencyResultDTO {
             csvRow.add(CsvExportUtils.translate(this.getContingency().getStatus(), translations));
             csvRow.add(lm.getSubjectId());
             csvRow.addAll(lm.getLimitViolation().toCsvRow(translations, language));
-            ConnectivityResultDTO connectivity = this.getContingency().getConnectivityResult();
-            csvRow.add(connectivity == null ? "" : convertDoubleToLocale(connectivity.getDisconnectedLoadActivePower(), language));
-            csvRow.add(connectivity == null ? "" : convertDoubleToLocale(connectivity.getDisconnectedGenerationActivePower(), language));
+            csvRow.add(CsvExportUtils.convertDoubleToLocale(this.getContingency().getConnectivityResult().getDisconnectedLoadActivePower(), language));
+            csvRow.add(CsvExportUtils.convertDoubleToLocale(this.getContingency().getConnectivityResult().getDisconnectedGenerationActivePower(), language));
             return csvRow;
         }).toList();
 
