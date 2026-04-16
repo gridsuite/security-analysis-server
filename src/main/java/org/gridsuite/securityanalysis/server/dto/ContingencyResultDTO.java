@@ -47,9 +47,9 @@ public class ContingencyResultDTO {
             csvRow.add(this.getContingency().getContingencyId());
             csvRow.add(CsvExportUtils.translate(this.getContingency().getStatus(), translations));
             csvRow.add(lm.getSubjectId());
-
             csvRow.addAll(lm.getLimitViolation().toCsvRow(translations, language));
-
+            csvRow.add(CsvExportUtils.convertDoubleToLocale(this.getContingency().getConnectivityResult().getDisconnectedLoadActivePower(), language));
+            csvRow.add(CsvExportUtils.convertDoubleToLocale(this.getContingency().getConnectivityResult().getDisconnectedGenerationActivePower(), language));
             return csvRow;
         }).toList();
 
