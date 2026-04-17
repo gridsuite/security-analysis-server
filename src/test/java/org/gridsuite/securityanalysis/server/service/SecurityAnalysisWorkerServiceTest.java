@@ -31,6 +31,7 @@ class SecurityAnalysisWorkerServiceTest {
     public static final String WORKING_VARIANT_2 = "myVariant2";
     @Mock private ActionsService actionsService;
     @Mock private SecurityAnalysisRunnerSupplier runnerSupplier;
+    @Mock private SecurityAnalysisObserver observer;
 
     private SecurityAnalysisWorkerService workerService;
 
@@ -63,10 +64,19 @@ class SecurityAnalysisWorkerServiceTest {
                 runnerSupplier,
                 null,
                 null,
-                null,
+                observer,
                 null,
                 null
         );
+    }
+
+    @Test
+    void testCopyNetworkOnAnotherProvider() {
+        Network original = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
+        SecurityAnalysisRunContext ctx = buildRunContext("Provider", null, original);
+        workerService.preRun(ctx);
+
+        assertThat(ctx.getInMemoryNetwork()).isNull();
     }
 
     @Test
@@ -76,7 +86,7 @@ class SecurityAnalysisWorkerServiceTest {
 
         String workingVariant = original.getVariantManager().getWorkingVariantId();
 
-        workerService.copyNetwork(ctx);
+        workerService.preRun(ctx);
 
         Network result = ctx.getInMemoryNetwork();
 
@@ -96,7 +106,7 @@ class SecurityAnalysisWorkerServiceTest {
 
         SecurityAnalysisRunContext ctx = buildRunContext("OpenLoadFlow", WORKING_VARIANT_2, original);
 
-        workerService.copyNetwork(ctx);
+        workerService.preRun(ctx);
 
         Network result = ctx.getInMemoryNetwork();
 

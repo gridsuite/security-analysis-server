@@ -188,7 +188,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         }
     }
 
-    public void copyNetwork(SecurityAnalysisRunContext runContext) {
+    private void copyNetwork(SecurityAnalysisRunContext runContext) {
         String variantId = runContext.getVariantId() != null ? runContext.getVariantId() : VariantManagerConstants.INITIAL_VARIANT_ID;
         long startTime = System.nanoTime();
         Network originalNetwork = runContext.getNetwork();
