@@ -192,20 +192,15 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         String variantId = runContext.getVariantId() != null ? runContext.getVariantId() : VariantManagerConstants.INITIAL_VARIANT_ID;
         long startTime = System.nanoTime();
         Network originalNetwork = runContext.getNetwork();
-        String originalVariant = originalNetwork.getVariantManager().getWorkingVariantId();
 
-        try {
-            originalNetwork.getVariantManager().setWorkingVariant(variantId);
-
-            Network network = NetworkSerDe.copy(originalNetwork, NetworkFactory.find("Default"));
-            if (!variantId.equals(VariantManagerConstants.INITIAL_VARIANT_ID)) {
-                network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, variantId);
-            }
-            LOGGER.info("Network copied to iidm-impl in {} ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
-            runContext.setInMemoryNetwork(network);
-        } finally {
-            originalNetwork.getVariantManager().setWorkingVariant(originalVariant);
+        Network network = NetworkSerDe.copy(originalNetwork, NetworkFactory.find("Default"));
+        // NetworkSerDe.copy stores the copied network in memory with the working variant mapped to INITIAL_VARIANT_ID.
+        // If the expected variant is not the initial one, clone it explicitly so the variant remains consistent between in-memory and persisted networks.
+        if (!variantId.equals(VariantManagerConstants.INITIAL_VARIANT_ID)) {
+            network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, variantId);
         }
+        LOGGER.info("Network copied to iidm-impl in {} ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+        runContext.setInMemoryNetwork(network);
     }
 
     @Override
