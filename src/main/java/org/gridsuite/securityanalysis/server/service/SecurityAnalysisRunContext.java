@@ -8,6 +8,7 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.commons.PowsyblException;
 import com.powsybl.commons.extensions.Extension;
+import com.powsybl.iidm.network.Network;
 import com.powsybl.loadflow.LoadFlowParameters;
 import com.powsybl.loadflow.LoadFlowProvider;
 import lombok.Getter;
@@ -29,6 +30,9 @@ import java.util.UUID;
 public class SecurityAnalysisRunContext extends AbstractComputationRunContext<SecurityAnalysisParametersDTO> {
     @Setter
     private List<ContingencyInfos> contingencies;
+
+    @Setter
+    private Network inMemoryNetwork;
 
     public SecurityAnalysisRunContext(UUID networkUuid, String variantId,
                                       String receiver, String provider, SecurityAnalysisParametersDTO parameters, LoadFlowParametersValues loadFlowParametersValues,
