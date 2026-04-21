@@ -113,8 +113,8 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     // CONTINGENCIES_WITHOUT_LIMIT_VIOLATION should not be contained here since it does not contain any LIMIT_VIOLATION
     // CONTINGENCIES_NOT_CONVERGED_WITHOUT_LIMIT_VIOLATION is here because status is not "CONVERGED"
     static final List<ContingencyResultDTO> RESULT_CONTINGENCIES = Stream.of(
-        CONTINGENCIES.stream().map(c -> toContingencyResultDTO(c.getContingency(), LoadFlowResult.ComponentResult.Status.CONVERGED.name(), RESULT_LIMIT_VIOLATIONS, ConnectivityResultDTO.builder().disconnectedLoadActivePower(0.0).disconnectedGenerationActivePower(0.0).build())),
-        FAILED_CONTINGENCIES.stream().map(c -> toContingencyResultDTO(c, LoadFlowResult.ComponentResult.Status.FAILED.name(), FAILED_LIMIT_VIOLATIONS, ConnectivityResultDTO.builder().disconnectedLoadActivePower(0.0).disconnectedGenerationActivePower(0.0).build())),
+        CONTINGENCIES.stream().map(c -> toContingencyResultDTO(c.getContingency(), LoadFlowResult.ComponentResult.Status.CONVERGED.name(), RESULT_LIMIT_VIOLATIONS, ConnectivityResultDTO.builder().disconnectedLoadActivePower(885.16).disconnectedGenerationActivePower(0.0).build())),
+        FAILED_CONTINGENCIES.stream().map(c -> toContingencyResultDTO(c, LoadFlowResult.ComponentResult.Status.FAILED.name(), FAILED_LIMIT_VIOLATIONS, ConnectivityResultDTO.builder().disconnectedLoadActivePower(0.0).disconnectedGenerationActivePower(-885.16).build())),
         CONTINGENCIES_NOT_CONVERGED_WITHOUT_LIMIT_VIOLATION.stream().map(c -> toContingencyResultDTO(c, LoadFlowResult.ComponentResult.Status.FAILED.name(), List.of(), ConnectivityResultDTO.builder().disconnectedLoadActivePower(0.0).disconnectedGenerationActivePower(0.0).build())))
             .flatMap(Function.identity()).toList();
 

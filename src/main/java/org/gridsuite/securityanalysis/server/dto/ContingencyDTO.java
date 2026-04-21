@@ -30,7 +30,6 @@ public class ContingencyDTO {
             .contingencyId(contingency.getContingencyId())
             .status(contingency.getStatus())
             .elements(contingency.getContingencyElements().stream().map(ContingencyElementDTO::toDto).collect(Collectors.toList()))
-            .connectivityResult(ConnectivityResultDTO.toDto(contingency.getConnectivityResult()))
             .build();
     }
 }

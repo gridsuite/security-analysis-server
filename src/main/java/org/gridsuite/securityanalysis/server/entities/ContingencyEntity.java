@@ -7,7 +7,6 @@
 package org.gridsuite.securityanalysis.server.entities;
 
 import com.powsybl.iidm.network.Network;
-import com.powsybl.security.results.ConnectivityResult;
 import com.powsybl.security.results.PostContingencyResult;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -78,8 +77,7 @@ public class ContingencyEntity {
             .map(limitViolation -> ContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId())))
             .collect(Collectors.toList());
 
-        ConnectivityResult cr = postContingencyResult.getConnectivityResult();
-        ConnectivityResultEmbeddable connectivityResult = cr != null ? ConnectivityResultEmbeddable.toEntity(cr) : null;
+        ConnectivityResultEmbeddable connectivityResult = ConnectivityResultEmbeddable.toEntity(postContingencyResult.getConnectivityResult());
 
         return new ContingencyEntity(postContingencyResult.getContingency().getId(), postContingencyResult.getStatus().name(), contingencyElements, connectivityResult, contingencyLimitViolations);
     }

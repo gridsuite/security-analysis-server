@@ -12,11 +12,12 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldNameConstants;
 
 /**
  * @author Ghazwa Rehili <ghazwa.rehili at rte-france.com>
  */
-
+@FieldNameConstants
 @Getter
 @Builder
 @NoArgsConstructor
@@ -24,12 +25,15 @@ import lombok.NoArgsConstructor;
 @Embeddable
 public class ConnectivityResultEmbeddable {
     @Column
-    private double disconnectedLoadActivePower;
+    private Double disconnectedLoadActivePower;
 
     @Column
-    private double disconnectedGenerationActivePower;
+    private Double disconnectedGenerationActivePower;
 
     public static ConnectivityResultEmbeddable toEntity(ConnectivityResult connectivityResult) {
+        if (connectivityResult.getDisconnectedLoadActivePower() == 0.0 && connectivityResult.getDisconnectedGenerationActivePower() == 0.0) {
+            return null;
+        }
         return ConnectivityResultEmbeddable.builder()
                 .disconnectedGenerationActivePower(connectivityResult.getDisconnectedGenerationActivePower())
                 .disconnectedLoadActivePower(connectivityResult.getDisconnectedLoadActivePower())
