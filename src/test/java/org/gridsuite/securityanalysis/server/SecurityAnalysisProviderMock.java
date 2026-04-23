@@ -113,9 +113,9 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
     // CONTINGENCIES_WITHOUT_LIMIT_VIOLATION should not be contained here since it does not contain any LIMIT_VIOLATION
     // CONTINGENCIES_NOT_CONVERGED_WITHOUT_LIMIT_VIOLATION is here because status is not "CONVERGED"
     static final List<ContingencyResultDTO> RESULT_CONTINGENCIES = Stream.of(
-        CONTINGENCIES.stream().map(c -> toContingencyResultDTO(c.getContingency(), LoadFlowResult.ComponentResult.Status.CONVERGED.name(), RESULT_LIMIT_VIOLATIONS, ConnectivityResultDTO.builder().disconnectedLoadActivePower(0.0).disconnectedGenerationActivePower(0.0).build())),
-        FAILED_CONTINGENCIES.stream().map(c -> toContingencyResultDTO(c, LoadFlowResult.ComponentResult.Status.FAILED.name(), FAILED_LIMIT_VIOLATIONS, ConnectivityResultDTO.builder().disconnectedLoadActivePower(0.0).disconnectedGenerationActivePower(0.0).build())),
-        CONTINGENCIES_NOT_CONVERGED_WITHOUT_LIMIT_VIOLATION.stream().map(c -> toContingencyResultDTO(c, LoadFlowResult.ComponentResult.Status.FAILED.name(), List.of(), ConnectivityResultDTO.builder().disconnectedLoadActivePower(0.0).disconnectedGenerationActivePower(0.0).build())))
+        CONTINGENCIES.stream().map(c -> toContingencyResultDTO(c.getContingency(), LoadFlowResult.ComponentResult.Status.CONVERGED.name(), RESULT_LIMIT_VIOLATIONS)),
+        FAILED_CONTINGENCIES.stream().map(c -> toContingencyResultDTO(c, LoadFlowResult.ComponentResult.Status.FAILED.name(), FAILED_LIMIT_VIOLATIONS)),
+        CONTINGENCIES_NOT_CONVERGED_WITHOUT_LIMIT_VIOLATION.stream().map(c -> toContingencyResultDTO(c, LoadFlowResult.ComponentResult.Status.FAILED.name(), List.of())))
             .flatMap(Function.identity()).toList();
 
     static List<ContingencyResultDTO> getResultContingenciesWithNestedFilter(Function<SubjectLimitViolationDTO, Boolean> filterMethod) {
@@ -145,9 +145,9 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
 
     static final List<SubjectLimitViolationResultDTO> RESULT_CONSTRAINTS = Stream.concat(
         RESULT_LIMIT_VIOLATIONS.stream()
-            .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, CONTINGENCIES.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), LoadFlowResult.ComponentResult.Status.CONVERGED, ConnectivityResultDTO.builder().disconnectedLoadActivePower(0.0).disconnectedGenerationActivePower(-852.36).build())),
+            .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, CONTINGENCIES.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), LoadFlowResult.ComponentResult.Status.CONVERGED)),
         FAILED_LIMIT_VIOLATIONS.stream()
-            .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, FAILED_CONTINGENCIES, LoadFlowResult.ComponentResult.Status.FAILED, ConnectivityResultDTO.builder().disconnectedLoadActivePower(885.16).disconnectedGenerationActivePower(0.0).build()))
+            .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, FAILED_CONTINGENCIES, LoadFlowResult.ComponentResult.Status.FAILED))
     ).toList();
 
     static List<SubjectLimitViolationResultDTO> getResultConstraintsWithNestedFilter(Function<ContingencyLimitViolationDTO, Boolean> filterMethod) {
@@ -246,10 +246,10 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         );
     }
 
-    private static SubjectLimitViolationResultDTO toSubjectLimitViolationResultDTO(LimitViolation limitViolation, List<Contingency> convergedContingencies, LoadFlowResult.ComponentResult.Status status, ConnectivityResultDTO connectivityResult) {
+    private static SubjectLimitViolationResultDTO toSubjectLimitViolationResultDTO(LimitViolation limitViolation, List<Contingency> convergedContingencies, LoadFlowResult.ComponentResult.Status status) {
         return new SubjectLimitViolationResultDTO(
             limitViolation.getSubjectId(),
-            convergedContingencies.stream().map(c -> toContingencyLimitViolationDTO(c, limitViolation, status.name(), connectivityResult)).toList());
+            convergedContingencies.stream().map(c -> toContingencyLimitViolationDTO(c, limitViolation, status.name())).toList());
     }
 
     private static PreContingencyLimitViolationResultDTO toPreContingencyResultDTO(LimitViolation limitViolation, LoadFlowResult.ComponentResult.Status status) {
@@ -272,13 +272,12 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
                     .build());
     }
 
-    private static ContingencyResultDTO toContingencyResultDTO(Contingency contingency, String status, List<LimitViolation> limitViolations, ConnectivityResultDTO connectivityResult) {
+    private static ContingencyResultDTO toContingencyResultDTO(Contingency contingency, String status, List<LimitViolation> limitViolations) {
         return new ContingencyResultDTO(
             new ContingencyDTO(
                 contingency.getId(),
                 status,
-                contingency.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).toList(),
-                connectivityResult
+                contingency.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).toList()
             ),
             limitViolations.stream()
                 .map(SecurityAnalysisProviderMock::toSubjectLimitViolationDTO)
@@ -286,7 +285,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         );
     }
 
-    private static ContingencyLimitViolationDTO toContingencyLimitViolationDTO(Contingency contingency, LimitViolation limitViolation, String status, ConnectivityResultDTO connectivityResult) {
+    private static ContingencyLimitViolationDTO toContingencyLimitViolationDTO(Contingency contingency, LimitViolation limitViolation, String status) {
         Double computedLoading = limitViolation.getLimitType().equals(LimitViolationType.CURRENT)
             ? (100 * limitViolation.getValue()) / (limitViolation.getLimit() * limitViolation.getLimitReduction())
             : null;
@@ -295,8 +294,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
             new ContingencyDTO(
                 contingency.getId(),
                 status,
-                contingency.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).toList(),
-                connectivityResult
+                contingency.getElements().stream().map(e -> new ContingencyElementDTO(e.getId(), e.getType())).toList()
             ),
             LimitViolationDTO.builder()
                 .limitType(limitViolation.getLimitType())
