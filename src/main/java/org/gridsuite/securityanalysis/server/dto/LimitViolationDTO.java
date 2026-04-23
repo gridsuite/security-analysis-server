@@ -9,11 +9,11 @@ import lombok.NoArgsConstructor;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-
-import static org.gridsuite.securityanalysis.server.util.CsvExportUtils.convertDoubleToLocale;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -50,6 +50,12 @@ public class LimitViolationDTO {
             .patlLoading(limitViolation.getPatlLoading())
             .locationId(limitViolation.getLocationId())
             .build();
+    }
+
+    private static String convertDoubleToLocale(Double value, String language) {
+        NumberFormat nf = NumberFormat.getInstance(language != null && language.equals("fr") ? Locale.FRENCH : Locale.US);
+        nf.setGroupingUsed(false);
+        return nf.format(value);
     }
 
     public List<String> toCsvRow(Map<String, String> translations, String language) {
