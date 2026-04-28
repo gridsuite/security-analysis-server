@@ -7,7 +7,6 @@
 package org.gridsuite.securityanalysis.server.entities;
 
 import com.powsybl.iidm.network.Network;
-import com.powsybl.security.results.ConnectivityResult;
 import com.powsybl.security.results.PostContingencyResult;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -32,11 +31,10 @@ import java.util.stream.Collectors;
 @Table(name = "contingency")
 public class ContingencyEntity {
 
-    public ContingencyEntity(String contingencyId, String status, List<ContingencyElementEmbeddable> contingencyElements, ConnectivityResultEmbeddable connectivityResult, List<ContingencyLimitViolationEntity> contingencyLimitViolations) {
+    public ContingencyEntity(String contingencyId, String status, List<ContingencyElementEmbeddable> contingencyElements, List<ContingencyLimitViolationEntity> contingencyLimitViolations) {
         this.contingencyId = contingencyId;
         this.status = status;
         this.contingencyElements = contingencyElements;
-        this.connectivityResult = connectivityResult;
         setContingencyLimitViolations(contingencyLimitViolations);
     }
 
@@ -56,9 +54,6 @@ public class ContingencyEntity {
     @OneToMany(mappedBy = "contingency", cascade = CascadeType.ALL, orphanRemoval = true)
     List<ContingencyLimitViolationEntity> contingencyLimitViolations;
 
-    @Embedded
-    private ConnectivityResultEmbeddable connectivityResult;
-
     /**
      * We keep a String as it could model LoadFlowResult.ComponentResult.Status or PostContingencyComputationStatus.
      */
@@ -77,10 +72,6 @@ public class ContingencyEntity {
         List<ContingencyLimitViolationEntity> contingencyLimitViolations = postContingencyResult.getLimitViolationsResult().getLimitViolations().stream()
             .map(limitViolation -> ContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId())))
             .collect(Collectors.toList());
-
-        ConnectivityResult cr = postContingencyResult.getConnectivityResult();
-        ConnectivityResultEmbeddable connectivityResult = cr != null ? ConnectivityResultEmbeddable.toEntity(cr) : null;
-
-        return new ContingencyEntity(postContingencyResult.getContingency().getId(), postContingencyResult.getStatus().name(), contingencyElements, connectivityResult, contingencyLimitViolations);
+        return new ContingencyEntity(postContingencyResult.getContingency().getId(), postContingencyResult.getStatus().name(), contingencyElements, contingencyLimitViolations);
     }
 }
