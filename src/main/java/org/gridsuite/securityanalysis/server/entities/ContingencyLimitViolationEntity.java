@@ -6,8 +6,8 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
+import com.powsybl.contingency.violations.LimitViolation;
 import com.powsybl.iidm.network.*;
-import com.powsybl.security.LimitViolation;
 import org.gridsuite.computation.utils.ComputationResultUtils;
 import jakarta.persistence.*;
 import lombok.*;
@@ -35,6 +35,7 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
         ContingencyLimitViolationEntityBuilder<?, ?> contingencyLimitViolationEntityBuilder = ContingencyLimitViolationEntity.builder()
             .limit(limitViolation.getLimit())
             .limitName(limitViolation.getLimitName())
+            .operationalLimitsGroupId(limitViolation.getOperationalLimitsGroupId())
             .limitType(limitViolation.getLimitType())
             .limitReduction(limitViolation.getLimitReduction())
             .value(limitViolation.getValue())

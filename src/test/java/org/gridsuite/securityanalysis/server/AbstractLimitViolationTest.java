@@ -6,12 +6,12 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.powsybl.contingency.violations.LimitViolation;
+import com.powsybl.contingency.violations.LimitViolationType;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.TwoSides;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.iidm.network.util.LimitViolationUtils;
-import com.powsybl.security.LimitViolation;
-import com.powsybl.security.LimitViolationType;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.junit.jupiter.api.Test;

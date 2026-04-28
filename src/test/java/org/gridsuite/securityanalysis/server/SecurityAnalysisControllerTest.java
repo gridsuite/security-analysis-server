@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.powsybl.commons.report.ReportNode;
+import com.powsybl.contingency.violations.LimitViolationType;
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.loadflow.LoadFlowParameters;
@@ -782,6 +783,11 @@ class SecurityAnalysisControllerTest {
             .usingRecursiveComparison()
             // this field is not well serialized/deserialized - since it's deprecated / not used, we ignore it here
             .ignoringFieldsMatchingRegexes(".*\\.limitViolationsResult\\.computationOk")
+            // this field is set by default to empty string in LimitViolation class, it is treated as null when serializing/deserializing
+            // so, we ignore it here
+            .ignoringFieldsMatchingRegexes(".*operationalLimitsGroupId")
+            // NaN values don't serialize/deserialize consistently, so we ignore this field
+            .ignoringFieldsMatchingRegexes(".*\\.distributedActivePower")
             .isEqualTo(securityAnalysisResult);
     }
 
