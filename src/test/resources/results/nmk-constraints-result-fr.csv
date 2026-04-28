@@ -1,4 +1,4 @@
-﻿Ouvrage;Aléa;Statut;Type de contrainte;Noeud électrique;Nom de la limite;Id du jeu de limites;Charge (% limite);Charge (% IST);Tempo effective;Tempo imminente;Nom de la limite suivante;Limite (A ou kV);IST (A);Valeur calculée (A ou kV);Côté;Consommation coupée (MW);Puissance coupée (MW)
+﻿﻿Ouvrage;Aléa;Statut;Type de contrainte;Noeud électrique;Nom de la limite;Id du jeu de limites;Charge (% limite);Charge (% IST);Tempo effective;Tempo imminente;Nom de la limite suivante;Limite (A ou kV);IST (A);Valeur calculée (A ou kV);Côté;Consommation coupée (MW);Puissance coupée (MW)
 l3;l1;Convergence;Intensité;;l3_name;;110;;;;;10;;11;Côté 1
 l3;l2;Convergence;Intensité;;l3_name;;110;;;;;10;;11;Côté 1
 l3;l3;Convergence;Intensité;;l3_name;;110;;;;;10;;11;Côté 1
