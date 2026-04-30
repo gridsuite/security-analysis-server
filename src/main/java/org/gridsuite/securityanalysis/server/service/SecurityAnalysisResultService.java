@@ -7,9 +7,9 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.powsybl.contingency.violations.LimitViolationType;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
-import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
 import lombok.Getter;
 import org.gridsuite.computation.error.ComputationException;
@@ -227,7 +227,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
 
     private void assertSortAllowed(Sort sort, List<String> allowedSortProperties) {
         if (!sort.stream().allMatch(order -> allowedSortProperties.contains(order.getProperty()))) {
-            throw new ComputationException(INVALID_SORT_FORMAT, "Invalid sort format");
+            throw new ComputationException(INVALID_SORT_FORMAT, "Sorting is not accepted on at least one of the columns for this result type");
         }
     }
 
@@ -314,13 +314,29 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         // cf. https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/
         // We must separate in two requests, one with pagination the other one with Join Fetch
 
-        // First, we fetch contingencies UUIDs, with all the filters and pagination
-        Page<ContingencyRepository.EntityUuid> uuidPage = contingencyRepository.findBy(specification, q ->
-            q.project("uuid")
-                .as(ContingencyRepository.EntityUuid.class)
-                .sortBy(modifiedPageable.getSort())
-                .page(modifiedPageable)
-        );
+        // Determine which properties to project based on sort fields
+        // When using DISTINCT, all ORDER BY columns must be in the SELECT list
+        List<String> projectionProperties = new ArrayList<>();
+        projectionProperties.add("uuid");
+
+        // Add sort properties to projection to satisfy DISTINCT + ORDER BY requirement
+        for (Sort.Order order : modifiedPageable.getSort()) {
+            String property = order.getProperty();
+            if (!property.equals("uuid") && !projectionProperties.contains(property)) {
+                projectionProperties.add(property);
+            }
+        }
+
+        Page<ContingencyRepository.EntityUuid> uuidPage = contingencyRepository.findBy(specification, q -> {
+            var query = q.as(ContingencyRepository.EntityUuid.class)
+                    .sortBy(modifiedPageable.getSort());
+            if (projectionProperties.size() == 1) {
+                query = query.project("uuid");
+            } else {
+                query = query.project(projectionProperties.toArray(new String[0]));
+            }
+            return query.page(modifiedPageable);
+        });
 
         if (!uuidPage.hasContent()) {
             // Since springboot 3.2, the return value of Page.empty() is not serializable. See https://github.com/spring-projects/spring-data-commons/issues/2987
@@ -348,12 +364,30 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
         // cf. https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/
         // We must separate in two requests, one with pagination the other one with Join Fetch
-        Page<SubjectLimitViolationRepository.EntityId> uuidPage = subjectLimitViolationRepository.findBy(specification, q ->
-            q.project("id")
-                .as(SubjectLimitViolationRepository.EntityId.class)
-                .sortBy(modifiedPageable.getSort())
-                .page(modifiedPageable)
-        );
+
+        // Determine which properties to project based on sort fields
+        // When using DISTINCT, all ORDER BY columns must be in the SELECT list
+        List<String> projectionProperties = new ArrayList<>();
+        projectionProperties.add("id");
+
+        // Add sort properties to projection to satisfy DISTINCT + ORDER BY requirement
+        for (Sort.Order order : modifiedPageable.getSort()) {
+            String property = order.getProperty();
+            if (!property.equals("id") && !projectionProperties.contains(property)) {
+                projectionProperties.add(property);
+            }
+        }
+
+        Page<SubjectLimitViolationRepository.EntityId> uuidPage = subjectLimitViolationRepository.findBy(specification, q -> {
+            var query = q.as(SubjectLimitViolationRepository.EntityId.class)
+                    .sortBy(modifiedPageable.getSort());
+            if (projectionProperties.size() == 1) {
+                query = query.project("id");
+            } else {
+                query = query.project(projectionProperties.toArray(new String[0]));
+            }
+            return query.page(modifiedPageable);
+        });
 
         if (!uuidPage.hasContent()) {
             // Since springboot 3.2, the return value of Page.empty() is not serializable. See https://github.com/spring-projects/spring-data-commons/issues/2987

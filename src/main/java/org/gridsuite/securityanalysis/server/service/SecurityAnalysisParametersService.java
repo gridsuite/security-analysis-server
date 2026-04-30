@@ -158,9 +158,9 @@ public class SecurityAnalysisParametersService {
         return increasedViolationsParameters;
     }
 
-    public SecurityAnalysisParametersValues getDefaultSecurityAnalysisParametersValues(String provider) {
+    public SecurityAnalysisParametersValues getDefaultSecurityAnalysisParametersValues() {
         return SecurityAnalysisParametersValues.builder()
-                .provider(provider)
+                .provider(defaultProvider)
                 .lowVoltageAbsoluteThreshold(DEFAULT_LOW_VOLTAGE_ABSOLUTE_THRESHOLD)
                 .lowVoltageProportionalThreshold(DEFAULT_LOW_VOLTAGE_PROPORTIONAL_THRESHOLD)
                 .highVoltageAbsoluteThreshold(DEFAULT_HIGH_VOLTAGE_ABSOLUTE_THRESHOLD)
@@ -182,7 +182,7 @@ public class SecurityAnalysisParametersService {
     }
 
     public UUID createDefaultParameters() {
-        return securityAnalysisParametersRepository.save(getDefaultSecurityAnalysisParametersValues(defaultProvider).toEntity()).getId();
+        return securityAnalysisParametersRepository.save(getDefaultSecurityAnalysisParametersValues().toEntity()).getId();
     }
 
     @Transactional
@@ -194,9 +194,9 @@ public class SecurityAnalysisParametersService {
     @Transactional
     public UUID updateParameters(UUID parametersUuid, SecurityAnalysisParametersValues parametersInfos) {
         SecurityAnalysisParametersEntity securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(parametersUuid).orElseThrow(() -> new ComputationException(PARAMETERS_NOT_FOUND, "Could not find provided parameters"));
-        //if the parameters is null it means it's a reset to defaultValues, but we need to keep the provider because it's updated separately
+        //if the parameters is null it means it's a reset to defaultValues
         if (parametersInfos == null) {
-            securityAnalysisParametersEntity.update(getDefaultSecurityAnalysisParametersValues(securityAnalysisParametersEntity.getProvider()));
+            securityAnalysisParametersEntity.update(getDefaultSecurityAnalysisParametersValues());
         } else {
             securityAnalysisParametersEntity.update(parametersInfos);
         }
@@ -205,13 +205,6 @@ public class SecurityAnalysisParametersService {
 
     public void deleteParameters(UUID parametersUuid) {
         securityAnalysisParametersRepository.deleteById(parametersUuid);
-    }
-
-    @Transactional
-    public void updateProvider(UUID parametersUuid, String provider) {
-        securityAnalysisParametersRepository.findById(parametersUuid)
-            .orElseThrow()
-            .updateProvider(provider != null ? provider : defaultProvider);
     }
 
     public List<LimitReductionsByVoltageLevel> getDefaultLimitReductions() {
