@@ -6,8 +6,8 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
+import com.powsybl.contingency.violations.LimitViolation;
 import com.powsybl.iidm.network.Network;
-import com.powsybl.security.LimitViolation;
 import com.powsybl.security.results.PreContingencyResult;
 import lombok.*;
 import org.gridsuite.computation.utils.ComputationResultUtils;
@@ -45,6 +45,7 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
             .subjectLimitViolation(subjectLimitViolation)
             .limit(limitViolation.getLimit())
             .limitName(limitViolation.getLimitName())
+            .operationalLimitsGroupId(limitViolation.getOperationalLimitsGroupId())
             .limitType(limitViolation.getLimitType())
             .upcomingAcceptableDuration(calculateUpcomingOverloadDuration(limitViolation))
             .limitReduction(limitViolation.getLimitReduction())
