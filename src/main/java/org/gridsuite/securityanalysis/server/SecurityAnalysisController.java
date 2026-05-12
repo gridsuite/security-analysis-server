@@ -31,6 +31,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.gridsuite.computation.service.NotificationService.HEADER_USER_ID;
@@ -268,6 +269,13 @@ public class SecurityAnalysisController {
     public ResponseEntity<SecurityAnalysisStatus> getStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
         SecurityAnalysisStatus result = securityAnalysisService.getStatus(resultUuid);
         return ResponseEntity.ok().body(result);
+    }
+
+    @PostMapping(value = "/results/statuses", consumes = APPLICATION_JSON_VALUE, produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get the security analysis statuses from the database")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis statuses")})
+    public ResponseEntity<Map<UUID, SecurityAnalysisStatus>> getStatuses(@Parameter(description = "Result uuids") @RequestBody List<UUID> resultUuids) {
+        return ResponseEntity.ok().body(securityAnalysisService.getStatuses(resultUuids));
     }
 
     @PutMapping(value = "/results/invalidate-status", produces = APPLICATION_JSON_VALUE)

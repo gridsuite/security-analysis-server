@@ -39,6 +39,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static org.gridsuite.computation.error.ComputationBusinessErrorCode.INVALID_SORT_FORMAT;
 import static org.gridsuite.computation.error.ComputationBusinessErrorCode.RESULT_NOT_FOUND;
@@ -297,6 +298,14 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         }
 
         return securityAnalysisResult.get().getStatus();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Map<UUID, SecurityAnalysisStatus> findStatuses(List<UUID> resultUuids) {
+        Objects.requireNonNull(resultUuids);
+        List<SecurityAnalysisResultEntity> globalEntities = securityAnalysisResultRepository.findByResultUuidIn(resultUuids);
+        return globalEntities.stream().collect(Collectors.toMap(SecurityAnalysisResultEntity::getId, e -> e.getStatus()));
     }
 
     private static Page<?> emptyPage(Pageable pageable) {
