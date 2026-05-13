@@ -304,8 +304,8 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     @Transactional(readOnly = true)
     public Map<UUID, SecurityAnalysisStatus> findStatuses(List<UUID> resultUuids) {
         Objects.requireNonNull(resultUuids);
-        List<SecurityAnalysisResultEntity> globalEntities = securityAnalysisResultRepository.findByResultUuidIn(resultUuids);
-        return globalEntities.stream().collect(Collectors.toMap(SecurityAnalysisResultEntity::getId, e -> e.getStatus()));
+        List<SecurityAnalysisResultEntity> saResultEntities = securityAnalysisResultRepository.findAllById(resultUuids);
+        return saResultEntities.stream().collect(Collectors.toMap(SecurityAnalysisResultEntity::getId, SecurityAnalysisResultEntity::getStatus));
     }
 
     private static Page<?> emptyPage(Pageable pageable) {
