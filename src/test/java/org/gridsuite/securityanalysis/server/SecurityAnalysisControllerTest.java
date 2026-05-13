@@ -672,6 +672,40 @@ class SecurityAnalysisControllerTest {
     }
 
     @Test
+    void testStatuses() throws Exception {
+        MvcResult mvcResult;
+        String resultAsString;
+
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&loadFlowParametersUuid=" + UUID.randomUUID())
+                .header(HEADER_USER_ID, USER_ID)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON)
+                ).andReturn();
+
+        resultAsString = mvcResult.getResponse().getContentAsString();
+        UUID resultUuid = mapper.readValue(resultAsString, UUID.class);
+        assertEquals(RESULT_UUID, resultUuid);
+
+        output.receive(TIMEOUT, "sa.result");
+
+        UUID unknownResultUuid = UUID.randomUUID();
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/results/statuses")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(mapper.writeValueAsString(List.of(resultUuid, unknownResultUuid))))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON)
+                ).andReturn();
+
+        Map<UUID, SecurityAnalysisStatus> statuses = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
+        assertEquals(1, statuses.size());
+        assertEquals(SecurityAnalysisStatus.CONVERGED, statuses.get(resultUuid));
+        assertFalse(statuses.containsKey(unknownResultUuid));
+    }
+
+    @Test
     void stopTest() throws Exception {
         countDownLatch = new CountDownLatch(1);
 
