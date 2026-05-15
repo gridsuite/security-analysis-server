@@ -44,16 +44,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.client.HttpClientErrorException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status.NO_CALCULATION;
 import static org.gridsuite.computation.service.NotificationService.getFailedMessage;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
 
@@ -65,7 +63,6 @@ import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisServ
 public class SecurityAnalysisWorkerService extends AbstractWorkerService<SecurityAnalysisResult, SecurityAnalysisRunContext, SecurityAnalysisParametersDTO, SecurityAnalysisResultService> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisWorkerService.class);
     private final ActionsService actionsService;
-
     private final LimitReductionService limitReductionService;
 
     private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier;
@@ -110,6 +107,10 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     @Override
     protected CompletableFuture<SecurityAnalysisResult> getCompletableFuture(SecurityAnalysisRunContext runContext, String provider, UUID resultUuid) {
+        if (runContext.getContingencies().stream().allMatch(contingencyInfos -> contingencyInfos.getContingency() == null)) {
+            return CompletableFuture.completedFuture(
+                    new SecurityAnalysisResult(new LimitViolationsResult(Collections.emptyList()), NO_CALCULATION, Collections.emptyList()));
+        }
         SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(provider);
         String variantId = runContext.getVariantId() != null ? runContext.getVariantId() : VariantManagerConstants.INITIAL_VARIANT_ID;
 
@@ -177,8 +178,14 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                             actionsService.getContingencyList(runContext.getParameters().contingencyListUuids(), runContext.getNetworkUuid(), runContext.getVariantId())
             );
             runContext.setContingencies(contingencies);
+            if (contingencies.stream().allMatch(contingencyInfos -> contingencyInfos.getContingency() == null)) {
+                logNoContingencies(runContext);
+                return;
+            }
         } catch (IllegalArgumentException e) {
-            throw new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.CONTINGENCY_LIST_CONFIG_EMPTY, "The configuration does not contain any contingency.");
+            // Illegal argument exception seems to be linked to no contingency
+            logNoContingencies(runContext);
+            return;
         } catch (HttpClientErrorException.NotFound e) {
             throw new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.MISSING_CONTINGENCY_LIST, "The configuration contains one or more contingency lists that have been deleted.");
         }
@@ -288,6 +295,13 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                     .withSeverity(TypedValue.WARN_SEVERITY)
                     .add();
         });
+    }
+
+    private void logNoContingencies(SecurityAnalysisRunContext runContext) {
+        runContext.getReportNode().newReportNode()
+                .withMessageTemplate("security.analysis.server.noContingency")
+                .withSeverity(TypedValue.WARN_SEVERITY)
+                .add();
     }
 
 }
