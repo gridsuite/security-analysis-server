@@ -140,9 +140,10 @@ class ActionsServiceTest {
     @Test
     void testErrors() {
         String expectedMessage = "There is no contingency list selected";
-        String message = assertThrows(AllContingencyListMissingException.class, () -> actionsService.getContingencyList(null, UUID.fromString(NETWORK_UUID), null)).getMessage();
+        UUID networkUuid = UUID.fromString(NETWORK_UUID);
+        String message = assertThrows(AllContingencyListMissingException.class, () -> actionsService.getContingencyList(null, networkUuid, null)).getMessage();
         assertEquals(expectedMessage, message);
-        message = assertThrows(AllContingencyListMissingException.class, () -> actionsService.getContingencyList(Collections.emptyList(), UUID.fromString(NETWORK_UUID), null)).getMessage();
+        message = assertThrows(AllContingencyListMissingException.class, () -> actionsService.getContingencyList(Collections.emptyList(), networkUuid, null)).getMessage();
         assertEquals(expectedMessage, message);
     }
 }
