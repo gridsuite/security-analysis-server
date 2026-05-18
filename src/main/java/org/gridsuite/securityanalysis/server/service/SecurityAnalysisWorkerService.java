@@ -183,9 +183,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 return;
             }
         } catch (IllegalArgumentException e) {
-            // Illegal argument exception seems to be linked to no contingency
-            logNoContingencies(runContext);
-            return;
+            throw new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.CONTINGENCY_LIST_CONFIG_EMPTY, "The configuration does not contain any contingency.");
         } catch (HttpClientErrorException.NotFound e) {
             throw new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.MISSING_CONTINGENCY_LIST, "The configuration contains one or more contingency lists that have been deleted.");
         }
