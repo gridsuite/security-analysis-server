@@ -47,9 +47,8 @@ public class ActionsService {
     }
 
     public List<ContingencyInfos> getContingencyList(List<UUID> ids, UUID networkUuid, String variantId) {
-        Objects.requireNonNull(ids);
         Objects.requireNonNull(networkUuid);
-        if (ids.isEmpty()) {
+        if (ids == null || ids.isEmpty()) {
             throw new AllContingencyListMissingException("There is no contingency list selected");
         }
 

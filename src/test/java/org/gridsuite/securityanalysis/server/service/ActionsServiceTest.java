@@ -17,6 +17,7 @@ import mockwebserver3.junit5.internal.MockWebServerExtension;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
+import org.gridsuite.securityanalysis.server.error.AllContingencyListMissingException;
 import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestChannel;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,16 +30,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
@@ -93,7 +90,7 @@ class ActionsServiceTest {
                 } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s", NETWORK_UUID, LIST_UUID))) {
                     return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE), jsonExpected);
                 } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&variantId=%s&ids=%s", NETWORK_UUID, VARIANT_ID, VERY_LARGE_LIST_UUID))
-                           || requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s", NETWORK_UUID, VERY_LARGE_LIST_UUID))) {
+                        || requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s", NETWORK_UUID, VERY_LARGE_LIST_UUID))) {
                     return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE), veryLargeJsonExpected);
                 } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s&ids=%s", NETWORK_UUID, LIST_UUID, LIST_UUID_VARIANT))) {
                     return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE), jsonExpectedForList);
@@ -138,5 +135,14 @@ class ActionsServiceTest {
     void testGetContingenciesByListOfIds() {
         List<ContingencyInfos> list = actionsService.getContingencyList(List.of(LIST_UUID, LIST_UUID_VARIANT), UUID.fromString(NETWORK_UUID), null);
         assertEquals(Stream.of(CONTINGENCY, CONTINGENCY_VARIANT).map(ContingencyInfos::getContingency).toList(), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
+    }
+
+    @Test
+    void testErrors() {
+        String expectedMessage = "There is no contingency list selected";
+        String message = assertThrows(AllContingencyListMissingException.class, () -> actionsService.getContingencyList(null, UUID.fromString(NETWORK_UUID), null)).getMessage();
+        assertEquals(expectedMessage, message);
+        message = assertThrows(AllContingencyListMissingException.class, () -> actionsService.getContingencyList(Collections.emptyList(), UUID.fromString(NETWORK_UUID), null)).getMessage();
+        assertEquals(expectedMessage, message);
     }
 }
