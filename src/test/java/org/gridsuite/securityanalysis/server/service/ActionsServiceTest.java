@@ -143,7 +143,8 @@ class ActionsServiceTest {
         UUID networkUuid = UUID.fromString(NETWORK_UUID);
         String message = assertThrows(AllContingencyListMissingException.class, () -> actionsService.getContingencyList(null, networkUuid, null)).getMessage();
         assertEquals(expectedMessage, message);
-        message = assertThrows(AllContingencyListMissingException.class, () -> actionsService.getContingencyList(Collections.emptyList(), networkUuid, null)).getMessage();
+        List<UUID> emptyList = Collections.emptyList();
+        message = assertThrows(AllContingencyListMissingException.class, () -> actionsService.getContingencyList(emptyList, networkUuid, null)).getMessage();
         assertEquals(expectedMessage, message);
     }
 }
