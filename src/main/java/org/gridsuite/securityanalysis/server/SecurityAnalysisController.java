@@ -198,6 +198,7 @@ public class SecurityAnalysisController {
                                                                      @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
                                                                      @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
                                                                      @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
+                                                                     @Parameter(description = "Power cut-off") @RequestParam(name = "isPowerCutOffView", required = false) boolean isPowerCutOffView,
                                                                      @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations,
                                                                      @Parameter(description = "Sort parameters") Sort sort) {
         return ResponseEntity.ok()
@@ -208,6 +209,7 @@ public class SecurityAnalysisController {
                     variantId,
                     filters,
                     globalFilters,
+                    isPowerCutOffView,
                     sort,
                     csvTranslations
             ));

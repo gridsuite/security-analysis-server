@@ -23,12 +23,14 @@ public class ContingencyDTO {
     private String contingencyId;
     private String status;
     private List<ContingencyElementDTO> elements;
+    private ConnectivityResultDTO connectivityResult;
 
     public static ContingencyDTO toDto(ContingencyEntity contingency) {
         return ContingencyDTO.builder()
             .contingencyId(contingency.getContingencyId())
             .status(contingency.getStatus())
             .elements(contingency.getContingencyElements().stream().map(ContingencyElementDTO::toDto).collect(Collectors.toList()))
+            .connectivityResult(ConnectivityResultDTO.toDto(contingency.getConnectivityResult()))
             .build();
     }
 }

@@ -177,9 +177,9 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional(readOnly = true)
-    public byte[] findNmKContingenciesResultZippedCsv(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Sort sort, CsvTranslationDTO csvTranslations) {
+    public byte[] findNmKContingenciesResultZippedCsv(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, boolean isPowerCutOffView, Sort sort, CsvTranslationDTO csvTranslations) {
         List<ContingencyResultDTO> result = self.findNmKContingenciesPaged(resultUuid, networkUuid, variantId, stringFilters, stringGlobalFilters, Pageable.unpaged(sort)).getContent();
-        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations(), csvTranslations.language())).flatMap(List::stream).toList());
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations(), csvTranslations.language(), isPowerCutOffView)).flatMap(List::stream).toList());
     }
 
     @Transactional(readOnly = true)

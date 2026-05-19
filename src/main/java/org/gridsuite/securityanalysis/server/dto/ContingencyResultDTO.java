@@ -41,15 +41,19 @@ public class ContingencyResultDTO {
     }
 
     // each contingencyResultDto will return multiple line (one for each limitViolation)
-    public List<List<String>> toCsvRows(Map<String, String> translations, String language) {
+    public List<List<String>> toCsvRows(Map<String, String> translations, String language, boolean isPowerCutOffView) {
         return this.getSubjectLimitViolations().stream().map(lm -> {
             List<String> csvRow = new ArrayList<>();
             csvRow.add(this.getContingency().getContingencyId());
             csvRow.add(CsvExportUtils.translate(this.getContingency().getStatus(), translations));
+            if (isPowerCutOffView && this.getContingency().getConnectivityResult().getDisconnectedLoadActivePower() != null
+                    && this.getContingency().getConnectivityResult().getDisconnectedGenerationActivePower() != null) {
+                csvRow.add(CsvExportUtils.convertDoubleToLocale(this.getContingency().getConnectivityResult().getDisconnectedLoadActivePower(), language));
+                csvRow.add(CsvExportUtils.convertDoubleToLocale(this.getContingency().getConnectivityResult().getDisconnectedGenerationActivePower(), language));
+                return csvRow;
+            }
             csvRow.add(lm.getSubjectId());
-
             csvRow.addAll(lm.getLimitViolation().toCsvRow(translations, language));
-
             return csvRow;
         }).toList();
 
