@@ -16,13 +16,13 @@ import java.util.Map;
 /**
  * @author Ghazwa Rehili <ghazwa.rehili at rte-france.com>
  */
-public record ContingencyPowerCutOffDTO(
+public record ContingencyCutOffPowerDTO(
         String contingencyId,
         String status,
         ConnectivityResultDTO connectivityResult
 ) {
-    public static ContingencyPowerCutOffDTO toDto(ContingencyEntity entity) {
-        return new ContingencyPowerCutOffDTO(
+    public static ContingencyCutOffPowerDTO toDto(ContingencyEntity entity) {
+        return new ContingencyCutOffPowerDTO(
                 entity.getContingencyId(),
                 entity.getStatus(),
                 ConnectivityResultDTO.toDto(entity.getConnectivityResult())

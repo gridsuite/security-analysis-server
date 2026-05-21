@@ -186,7 +186,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional(readOnly = true)
-    public Page<ContingencyPowerCutOffDTO> findNmKConnectivityResult(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Pageable pageable) {
+    public Page<ContingencyCutOffPowerDTO> findNmKConnectivityResult(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Pageable pageable) {
         assertResultExists(resultUuid);
         List<ResourceFilterDTO> allResourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters, globalFilter -> filterService.getResourceFilterContingencies(networkUuid, variantId, globalFilter));
         Specification<ContingencyEntity> hasConnectivityResult = (root, query, cb) -> {
@@ -196,13 +196,13 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
                     cb.isNotNull(cr.get(ConnectivityResultEmbeddable.Fields.disconnectedGenerationActivePower))
             );
         };
-        Page<ContingencyEntity> contingencyPage = self.findPowerCutOffContingenciesPage(resultUuid, allResourceFilters, hasConnectivityResult, pageable);
-        return contingencyPage.map(ContingencyPowerCutOffDTO::toDto);
+        Page<ContingencyEntity> contingencyPage = self.findCutOffPowerContingenciesPage(resultUuid, allResourceFilters, hasConnectivityResult, pageable);
+        return contingencyPage.map(ContingencyCutOffPowerDTO::toDto);
     }
 
     @Transactional(readOnly = true)
     public byte[] findNmKConnectivityResultResultZippedCsv(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Sort sort, CsvTranslationDTO csvTranslations) {
-        List<ContingencyPowerCutOffDTO> result = self.findNmKConnectivityResult(resultUuid, networkUuid, variantId, stringFilters, stringGlobalFilters, Pageable.unpaged(sort)).getContent();
+        List<ContingencyCutOffPowerDTO> result = self.findNmKConnectivityResult(resultUuid, networkUuid, variantId, stringFilters, stringGlobalFilters, Pageable.unpaged(sort)).getContent();
         return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations(), csvTranslations.language())).flatMap(List::stream).toList());
     }
 
@@ -261,7 +261,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         }
     }
 
-    private void assertNmKPowerCutOffSortAllowed(Sort sort) {
+    private void assertNmKCutOffPowerSortAllowed(Sort sort) {
         assertSortAllowed(sort, ALLOWED_NMK_POWER_CUT_OFF_RESULT_SORT_PROPERTIES);
     }
 
@@ -441,9 +441,9 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional(readOnly = true)
-    public Page<ContingencyEntity> findPowerCutOffContingenciesPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Specification<ContingencyEntity> extraSpecification, Pageable pageable) {
+    public Page<ContingencyEntity> findCutOffPowerContingenciesPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Specification<ContingencyEntity> extraSpecification, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
-        assertNmKPowerCutOffSortAllowed(pageable.getSort());
+        assertNmKCutOffPowerSortAllowed(pageable.getSort());
         Pageable modifiedPageable = withDefaultSort(pageable);
         Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildSpecification(resultUuid, resourceFilters).and(extraSpecification);
 
