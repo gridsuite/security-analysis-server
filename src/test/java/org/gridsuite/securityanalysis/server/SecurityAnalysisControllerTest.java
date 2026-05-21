@@ -853,6 +853,22 @@ class SecurityAnalysisControllerTest {
     }
 
     @Test
+    void testNoContingency() throws Exception {
+        given(actionsService.getContingencyList(any(), any(), any())).willReturn(List.of());
+        MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&variantId=" + VARIANT_3_ID + "&loadFlowParametersUuid=" + UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(HEADER_USER_ID, USER_ID)
+                        .content(mapper.writeValueAsString(SecurityAnalysisParametersInfos.builder().build())))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON)).andReturn();
+        String resultAsString = mvcResult.getResponse().getContentAsString();
+        SecurityAnalysisResult securityAnalysisResult = mapper.readValue(resultAsString, SecurityAnalysisResult.class);
+
+        assertThat(RESULT_NO_CONTINGENCY_VARIANT, new MatcherJson<>(mapper, securityAnalysisResult));
+    }
+
+    @Test
     void getZippedCsvResultsFromCustomData() throws Exception {
         final String expectedCsvFile = "/results/n-result-fr-custom.csv";
         final String lang = "fr";
