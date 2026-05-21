@@ -115,6 +115,8 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         CONTINGENCIES_VARIANT.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, new LimitViolationsResult(List.of(LIMIT_VIOLATION_4)), NetworkResult.empty(), ConnectivityResult.empty(), 1.0))
             .toList());
 
+    static final SecurityAnalysisResult RESULT_NO_CONTINGENCY_VARIANT = new SecurityAnalysisResult(new LimitViolationsResult(List.of()), LoadFlowResult.ComponentResult.Status.NO_CALCULATION, List.of());
+
     // CONTINGENCIES_WITHOUT_LIMIT_VIOLATION should not be contained here since it does not contain any LIMIT_VIOLATION
     // CONTINGENCIES_NOT_CONVERGED_WITHOUT_LIMIT_VIOLATION is here because status is not "CONVERGED"
     static final List<ContingencyResultDTO> RESULT_CONTINGENCIES = Stream.of(
