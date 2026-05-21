@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.powsybl.commons.report.ReportNode;
+import com.powsybl.contingency.Contingency;
 import com.powsybl.contingency.violations.LimitViolationType;
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
@@ -22,7 +23,10 @@ import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
-import com.powsybl.security.*;
+import com.powsybl.security.SecurityAnalysis;
+import com.powsybl.security.SecurityAnalysisParameters;
+import com.powsybl.security.SecurityAnalysisProvider;
+import com.powsybl.security.SecurityAnalysisResult;
 import com.vladmihalcea.sql.SQLStatementCountValidator;
 import org.assertj.core.api.Assertions;
 import org.gridsuite.computation.dto.GlobalFilter;
@@ -84,7 +88,8 @@ import static org.gridsuite.securityanalysis.server.util.CsvExportUtils.csvRowsT
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.gridsuite.securityanalysis.server.util.TestUtils.readLinesFromFilePath;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -183,6 +188,7 @@ class SecurityAnalysisControllerTest {
         network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_3_ID);
 
         given(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.ALL_COLLECTIONS_NEEDED_FOR_BUS_VIEW)).willReturn(network);
+        given(actionsService.getContingencyList(any(), any(), any())).willReturn(List.of(new ContingencyInfos(new Contingency("contingency"))));
 
         when(networkStoreService.getNetwork(NETWORK_STOP_UUID, PreloadingStrategy.ALL_COLLECTIONS_NEEDED_FOR_BUS_VIEW)).thenAnswer(invocation -> {
             //Needed so the stop call doesn't arrive too late
@@ -878,6 +884,22 @@ class SecurityAnalysisControllerTest {
 
         checkAllZippedCsvResults();
         checkFiltersOnZippedCsvResults();
+    }
+
+    @Test
+    void testNoContingency() throws Exception {
+        given(actionsService.getContingencyList(any(), any(), any())).willReturn(List.of());
+        MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&variantId=" + VARIANT_3_ID + "&loadFlowParametersUuid=" + UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(HEADER_USER_ID, USER_ID)
+                        .content(mapper.writeValueAsString(SecurityAnalysisParametersInfos.builder().build())))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON)).andReturn();
+        String resultAsString = mvcResult.getResponse().getContentAsString();
+        SecurityAnalysisResult securityAnalysisResult = mapper.readValue(resultAsString, SecurityAnalysisResult.class);
+
+        assertThat(RESULT_NO_CONTINGENCY_VARIANT, new MatcherJson<>(mapper, securityAnalysisResult));
     }
 
     @Test

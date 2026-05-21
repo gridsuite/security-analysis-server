@@ -7,6 +7,7 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
+import org.gridsuite.securityanalysis.server.error.AllContingencyListMissingException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
@@ -46,10 +47,9 @@ public class ActionsService {
     }
 
     public List<ContingencyInfos> getContingencyList(List<UUID> ids, UUID networkUuid, String variantId) {
-        Objects.requireNonNull(ids);
         Objects.requireNonNull(networkUuid);
-        if (ids.isEmpty()) {
-            throw new IllegalArgumentException("List 'ids' must not be null or empty");
+        if (ids == null || ids.isEmpty()) {
+            throw new AllContingencyListMissingException("There is no contingency list selected");
         }
 
         URI path = UriComponentsBuilder
