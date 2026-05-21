@@ -179,7 +179,7 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                             actionsService.getContingencyList(runContext.getParameters().contingencyListUuids(), runContext.getNetworkUuid(), runContext.getVariantId())
             );
             runContext.setContingencies(contingencies);
-            if (contingencies.stream().allMatch(contingencyInfos -> contingencyInfos.getContingency() == null)) {
+            if (contingencies != null && contingencies.stream().allMatch(contingencyInfos -> contingencyInfos.getContingency() == null)) {
                 logNoContingencies(runContext);
                 return;
             }
