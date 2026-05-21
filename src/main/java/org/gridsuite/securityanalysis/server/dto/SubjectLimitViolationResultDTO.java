@@ -47,6 +47,7 @@ public class SubjectLimitViolationResultDTO {
             csvRow.add(this.getSubjectId());
             csvRow.add(contingency.getContingency().getContingencyId());
             csvRow.add(CsvExportUtils.translate(contingency.getContingency().getStatus(), translations));
+
             csvRow.addAll(contingency.getLimitViolation().toCsvRow(translations, language));
             return csvRow;
         }).toList();

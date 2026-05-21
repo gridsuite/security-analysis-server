@@ -47,7 +47,9 @@ public class ContingencyResultDTO {
             csvRow.add(this.getContingency().getContingencyId());
             csvRow.add(CsvExportUtils.translate(this.getContingency().getStatus(), translations));
             csvRow.add(lm.getSubjectId());
+
             csvRow.addAll(lm.getLimitViolation().toCsvRow(translations, language));
+
             return csvRow;
         }).toList();
 

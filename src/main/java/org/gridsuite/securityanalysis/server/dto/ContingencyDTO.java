@@ -23,7 +23,6 @@ public class ContingencyDTO {
     private String contingencyId;
     private String status;
     private List<ContingencyElementDTO> elements;
-    private ConnectivityResultDTO connectivityResult;
 
     public static ContingencyDTO toDto(ContingencyEntity contingency) {
         return ContingencyDTO.builder()

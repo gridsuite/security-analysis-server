@@ -94,9 +94,14 @@ public class SecurityAnalysisResultEntity {
         return Stream.concat(
                 securityAnalysisResult.getPostContingencyResults().stream().flatMap(pcr -> pcr.getLimitViolationsResult().getLimitViolations().stream()),
                 securityAnalysisResult.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().stream())
-            .map(lm -> new Pair<>(lm.getSubjectId(), lm.getSubjectName()))
+            .map(lm -> new Pair<>(lm.getSubjectId(), normalizeSubjectName(lm.getSubjectName())))
             .distinct()
             .map(pair -> new SubjectLimitViolationEntity(pair.getFirst(), pair.getSecond()))
             .toList();
+    }
+
+    // FIXME: powsybl limit violation detection may expose missing names as "null" instead of null. Method to remove when https://github.com/powsybl/powsybl-core/pull/3922 is merged
+    private static String normalizeSubjectName(String subjectName) {
+        return "null".equals(subjectName) ? null : subjectName;
     }
 }

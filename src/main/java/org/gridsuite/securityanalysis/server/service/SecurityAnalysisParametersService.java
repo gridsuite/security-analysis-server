@@ -12,7 +12,6 @@ import org.gridsuite.computation.dto.ReportInfos;
 import lombok.NonNull;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.dto.parameters.ContingencyListsInfos;
-import org.gridsuite.securityanalysis.server.dto.parameters.IdNameInfos;
 import org.gridsuite.securityanalysis.server.dto.parameters.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.parameters.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
@@ -40,8 +39,6 @@ public class SecurityAnalysisParametersService {
 
     private final LimitReductionService limitReductionService;
 
-    private final DirectoryService directoryService;
-
     private static final double DEFAULT_FLOW_PROPORTIONAL_THRESHOLD = 0.1; // meaning 10.0 %
     private static final double DEFAULT_LOW_VOLTAGE_PROPORTIONAL_THRESHOLD = 0.01; // meaning 1.0 %
     private static final double DEFAULT_HIGH_VOLTAGE_PROPORTIONAL_THRESHOLD = 0.01; // meaning 1.0 %
@@ -50,12 +47,11 @@ public class SecurityAnalysisParametersService {
     private static final List<ContingencyListsInfos> DEFAULT_CONTINGENCY_LISTS_INFOS = new ArrayList<>();
 
     public SecurityAnalysisParametersService(@NonNull SecurityAnalysisParametersRepository securityAnalysisParametersRepository, @NonNull LoadFlowService loadFlowService,
-                                             @Value("${security-analysis.default-provider}") String defaultProvider, @NonNull LimitReductionService limitReductionService, @NonNull DirectoryService directoryService) {
+                                             @Value("${security-analysis.default-provider}") String defaultProvider, @NonNull LimitReductionService limitReductionService) {
         this.securityAnalysisParametersRepository = Objects.requireNonNull(securityAnalysisParametersRepository);
         this.loadFlowService = loadFlowService;
         this.defaultProvider = defaultProvider;
         this.limitReductionService = limitReductionService;
-        this.directoryService = directoryService;
     }
 
     @Transactional(readOnly = true)
@@ -108,7 +104,7 @@ public class SecurityAnalysisParametersService {
                 .build();
     }
 
-    public SecurityAnalysisParametersValues toSecurityAnalysisParametersValues(SecurityAnalysisParametersEntity entity, String userId) {
+    public SecurityAnalysisParametersValues toSecurityAnalysisParametersValues(SecurityAnalysisParametersEntity entity) {
         return SecurityAnalysisParametersValues.builder()
                 .provider(entity.getProvider())
                 .flowProportionalThreshold(entity.getFlowProportionalThreshold())
@@ -119,7 +115,7 @@ public class SecurityAnalysisParametersService {
                 .contingencyListsInfos(Optional.of(
                         entity.getContingencyLists().stream()
                             .map(c -> new ContingencyListsInfos(
-                                    contingenciesIdsToDTOs(c.getContingencyListIds(), userId),
+                                    new ArrayList<>(c.getContingencyListIds()),
                                     c.getDescription(),
                                     c.isActivated()))
                             .toList())
@@ -127,16 +123,6 @@ public class SecurityAnalysisParametersService {
                         .orElse(null))
                 .limitReductions(getLimitReductionsForProvider(entity).orElse(null))
                 .build();
-    }
-
-    private List<IdNameInfos> contingenciesIdsToDTOs(List<UUID> contingenciesIds, String userId) {
-        if (contingenciesIds == null) {
-            return null;
-        }
-        Map<UUID, String> contingenciesInfos = directoryService.getElementNames(contingenciesIds, userId);
-        return contingenciesIds.stream()
-                .map(id -> new IdNameInfos(id, contingenciesInfos.get(id)))
-                .toList();
     }
 
     private Optional<List<LimitReductionsByVoltageLevel>> getLimitReductionsForProvider(SecurityAnalysisParametersEntity entity) {
@@ -172,9 +158,9 @@ public class SecurityAnalysisParametersService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<SecurityAnalysisParametersValues> getParameters(UUID parametersUuid, String userId) {
+    public Optional<SecurityAnalysisParametersValues> getParameters(UUID parametersUuid) {
         return securityAnalysisParametersRepository.findById(parametersUuid)
-                .map(entity -> toSecurityAnalysisParametersValues(entity, userId));
+                .map(this::toSecurityAnalysisParametersValues);
     }
 
     public UUID createParameters(SecurityAnalysisParametersValues securityAnalysisParametersValues) {
@@ -186,8 +172,8 @@ public class SecurityAnalysisParametersService {
     }
 
     @Transactional
-    public Optional<UUID> duplicateParameters(UUID sourceParametersUuid, String userId) {
-        Optional<SecurityAnalysisParametersValues> securityAnalysisParametersValuesOptional = securityAnalysisParametersRepository.findById(sourceParametersUuid).map(entity -> toSecurityAnalysisParametersValues(entity, userId));
+    public Optional<UUID> duplicateParameters(UUID sourceParametersUuid) {
+        Optional<SecurityAnalysisParametersValues> securityAnalysisParametersValuesOptional = securityAnalysisParametersRepository.findById(sourceParametersUuid).map(this::toSecurityAnalysisParametersValues);
         return securityAnalysisParametersValuesOptional.map(parametersValues -> securityAnalysisParametersRepository.save(new SecurityAnalysisParametersEntity(parametersValues)).getId());
     }
 
