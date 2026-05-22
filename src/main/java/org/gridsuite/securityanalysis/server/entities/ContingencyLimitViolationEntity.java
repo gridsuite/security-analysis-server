@@ -15,6 +15,12 @@ import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import org.springframework.lang.Nullable;
 
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
@@ -30,6 +36,50 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
     @ManyToOne(fetch = FetchType.LAZY)
     @Setter
     private ContingencyEntity contingency;
+
+    /**
+     * Indicates whether this entity represents the worst side for its
+     * SubjectLimitViolationEntity.subjectId + ContingencyEntity.contingencyId pair.
+     * When multiple {@link ContingencyLimitViolationEntity} instances exist
+     * for the same pair, the worst side is determined using the following
+     * comparison rules, in order:
+     * <ul>
+     *   <li>Lowest acceptable duration (null is considered greater than any non-null value)</li>
+     *   <li>Lowest upcoming acceptable duration (null is considered greater than any non-null value)</li>
+     *   <li>Highest loading value (null is considered greater than any non-null value)</li>
+     * </ul>
+     *
+     * If entities still cannot be distinguished after applying all criteria,
+     * the entity with the lowest side value is considered the worst side.
+     */
+    private boolean isWorstSide;
+
+    private static final Comparator<ContingencyLimitViolationEntity> WORSE_SIDE_COMPARATOR = Comparator.comparing(
+            ContingencyLimitViolationEntity::getAcceptableDuration,
+            Comparator.nullsLast(Comparator.naturalOrder()))
+        .thenComparing(
+            ContingencyLimitViolationEntity::getUpcomingAcceptableDuration,
+            Comparator.nullsLast(Comparator.naturalOrder()))
+        .thenComparing(
+            ContingencyLimitViolationEntity::getLoading,
+            Comparator.nullsLast(Comparator.reverseOrder()))
+        .thenComparing(
+            clv -> clv.getSide().getNum(),
+            Comparator.nullsLast(Comparator.naturalOrder()));
+
+    /**
+     * Computes the worst side for each SubjectLimitViolationEntity.subjectId + ContingencyEntity.contingencyId pair, assuming all contingencyLimitViolations are from the same contingency
+     */
+    public static void computeWorstSideBySubjectId(List<ContingencyLimitViolationEntity> contingencyLimitViolations) {
+        Map<String, List<ContingencyLimitViolationEntity>> violationsBySubjectAndContingency = contingencyLimitViolations.stream()
+            .collect(Collectors.groupingBy(clv -> clv.getSubjectLimitViolation().getSubjectId()));
+
+        violationsBySubjectAndContingency.values().forEach(violations -> {
+            ContingencyLimitViolationEntity worstViolation = Collections.min(violations, WORSE_SIDE_COMPARATOR);
+
+            violations.forEach(violation -> violation.isWorstSide = violation == worstViolation);
+        });
+    }
 
     public static ContingencyLimitViolationEntity toEntity(@Nullable Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
         ContingencyLimitViolationEntityBuilder<?, ?> contingencyLimitViolationEntityBuilder = ContingencyLimitViolationEntity.builder()
