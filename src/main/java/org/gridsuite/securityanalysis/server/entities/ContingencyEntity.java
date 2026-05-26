@@ -72,11 +72,8 @@ public class ContingencyEntity {
         List<ContingencyLimitViolationEntity> contingencyLimitViolations = postContingencyResult.getLimitViolationsResult().getLimitViolations().stream()
             .map(limitViolation -> ContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId())))
             .toList();
-
-        String contingencyId = postContingencyResult.getContingency().getId();
-
         ContingencyLimitViolationWorstSideUtils.computeWorstSideBySubjectId(contingencyLimitViolations);
 
-        return new ContingencyEntity(contingencyId, postContingencyResult.getStatus().name(), contingencyElements, contingencyLimitViolations);
+        return new ContingencyEntity(postContingencyResult.getContingency().getId(), postContingencyResult.getStatus().name(), contingencyElements, contingencyLimitViolations);
     }
 }
