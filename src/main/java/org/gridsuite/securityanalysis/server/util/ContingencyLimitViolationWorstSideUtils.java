@@ -27,7 +27,7 @@ public final class ContingencyLimitViolationWorstSideUtils {
             ContingencyLimitViolationEntity::getLoading,
             Comparator.nullsLast(Comparator.reverseOrder()))
         .thenComparing(
-            clv -> clv.getSide().getNum(),
+            clv -> clv.getSide() != null ? clv.getSide().getNum() : null,
             Comparator.nullsLast(Comparator.naturalOrder()));
 
     /**
