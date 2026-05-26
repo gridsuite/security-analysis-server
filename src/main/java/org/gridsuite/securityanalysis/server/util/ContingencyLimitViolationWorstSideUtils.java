@@ -4,19 +4,14 @@ import org.gridsuite.computation.dto.ResourceFilterDTO;
 import org.gridsuite.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationEntity;
-import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class ContingencyLimitViolationWorstSideUtils {
-    private static final String SIDE_COLUMN = SubjectLimitViolationEntity.Fields.contingencyLimitViolations
-        + SpecificationUtils.FIELD_SEPARATOR
-        + AbstractLimitViolationEntity.Fields.side;
-    private static final String IS_WORST_SIDE_COLUMN = SubjectLimitViolationEntity.Fields.contingencyLimitViolations
-        + SpecificationUtils.FIELD_SEPARATOR
-        + ContingencyLimitViolationEntity.Fields.isWorstSide;
+public final class ContingencyLimitViolationWorstSideUtils {
     private static final String WORST_SIDE_VALUE = "worst";
+    private static final String SIDE_SUFFIX = SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side;
+    private static final String IS_WORST_SIDE_SUFFIX = SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.isWorstSide;
 
     private ContingencyLimitViolationWorstSideUtils() {
         throw new UnsupportedOperationException("ContingencyLimitViolationWorstSideUtils Utility class and cannot be instantiated");
@@ -52,11 +47,13 @@ public class ContingencyLimitViolationWorstSideUtils {
     public static List<ResourceFilterDTO> normalizeWorstSideFilter(List<ResourceFilterDTO> resourceFilters) {
         return resourceFilters.stream().map(resourceFilterDTO -> {
             if (isWorstSideFilter(resourceFilterDTO)) {
+                String column = resourceFilterDTO.column();
+                String newColumn = column.substring(0, column.length() - SIDE_SUFFIX.length()) + IS_WORST_SIDE_SUFFIX;
                 return new ResourceFilterDTO(
                     ResourceFilterDTO.DataType.BOOLEAN,
                     ResourceFilterDTO.Type.EQUALS,
                     true,
-                    IS_WORST_SIDE_COLUMN
+                    newColumn
                 );
             }
             return resourceFilterDTO;
@@ -64,7 +61,7 @@ public class ContingencyLimitViolationWorstSideUtils {
     }
 
     private static boolean isWorstSideFilter(ResourceFilterDTO resourceFilter) {
-        return resourceFilter.column().equals(SIDE_COLUMN)
+        return resourceFilter.column().endsWith(SIDE_SUFFIX)
             && resourceFilter.value() instanceof Collection<?> valuesAsCollection
             && valuesAsCollection.contains(WORST_SIDE_VALUE);
     }
