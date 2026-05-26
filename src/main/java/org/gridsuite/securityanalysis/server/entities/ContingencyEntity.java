@@ -13,6 +13,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
+import org.gridsuite.securityanalysis.server.util.ContingencyLimitViolationWorstSideUtils;
 import org.springframework.lang.Nullable;
 
 import java.util.List;
@@ -74,7 +75,7 @@ public class ContingencyEntity {
 
         String contingencyId = postContingencyResult.getContingency().getId();
 
-        ContingencyLimitViolationEntity.computeWorstSideBySubjectId(contingencyLimitViolations);
+        ContingencyLimitViolationWorstSideUtils.computeWorstSideBySubjectId(contingencyLimitViolations);
 
         return new ContingencyEntity(contingencyId, postContingencyResult.getStatus().name(), contingencyElements, contingencyLimitViolations);
     }
