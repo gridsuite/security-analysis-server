@@ -116,13 +116,13 @@ class ContingencyLimitViolationWorstSideUtilsTest {
 
     @Test
     void shouldNormalizeWorstSideFilterWithOtherColumn() {
-        String otherSideColumn = "otherColumn" + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side;
-        String otherIsWorstSideColumn = "otherColumn" + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.isWorstSide;
+        String otherSideColumn = "contingencyLimitViolations" + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side;
+        String otherIsWorstSideColumn = "contingencyLimitViolations" + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.isWorstSide;
 
         ResourceFilterDTO filterToNormalize = new ResourceFilterDTO(
             ResourceFilterDTO.DataType.TEXT,
             ResourceFilterDTO.Type.EQUALS,
-            List.of("worst"),
+            List.of("WoRsT"),
             otherSideColumn
         );
 
