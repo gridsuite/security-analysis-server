@@ -10,8 +10,8 @@ import java.util.stream.Collectors;
 
 public final class ContingencyLimitViolationWorstSideUtils {
     private static final String WORST_SIDE_VALUE = "worst";
-    private static final String SIDE_SUFFIX = SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side;
-    private static final String IS_WORST_SIDE_SUFFIX = SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.isWorstSide;
+    private static final String SIDE_FIELD = "contingencyLimitViolations" + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side;
+    private static final String IS_WORST_SIDE_FIELD = "contingencyLimitViolations" + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.isWorstSide;
 
     private ContingencyLimitViolationWorstSideUtils() {
         throw new UnsupportedOperationException("ContingencyLimitViolationWorstSideUtils Utility class and cannot be instantiated");
@@ -47,13 +47,11 @@ public final class ContingencyLimitViolationWorstSideUtils {
     public static List<ResourceFilterDTO> normalizeWorstSideFilter(List<ResourceFilterDTO> resourceFilters) {
         return resourceFilters.stream().map(resourceFilterDTO -> {
             if (isWorstSideFilter(resourceFilterDTO)) {
-                String column = resourceFilterDTO.column();
-                String newColumn = column.substring(0, column.length() - SIDE_SUFFIX.length()) + IS_WORST_SIDE_SUFFIX;
                 return new ResourceFilterDTO(
                     ResourceFilterDTO.DataType.BOOLEAN,
                     ResourceFilterDTO.Type.EQUALS,
                     true,
-                    newColumn
+                    IS_WORST_SIDE_FIELD
                 );
             }
             return resourceFilterDTO;
@@ -61,8 +59,11 @@ public final class ContingencyLimitViolationWorstSideUtils {
     }
 
     private static boolean isWorstSideFilter(ResourceFilterDTO resourceFilter) {
-        return resourceFilter.column().endsWith(SIDE_SUFFIX)
+        return resourceFilter.column().equals(SIDE_FIELD)
             && resourceFilter.value() instanceof Collection<?> valuesAsCollection
-            && valuesAsCollection.contains(WORST_SIDE_VALUE);
+            && valuesAsCollection.stream()
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .anyMatch(WORST_SIDE_VALUE::equalsIgnoreCase);
     }
 }
