@@ -7,4 +7,12 @@
             </column>
         </addColumn>
     </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1779439156192-2">
+        <sqlFile
+                encoding="UTF-8"
+                path="migrationWorstSideContingencyLimitViolations.sql"
+                relativeToChangelogFile="true"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
 </databaseChangeLog>
