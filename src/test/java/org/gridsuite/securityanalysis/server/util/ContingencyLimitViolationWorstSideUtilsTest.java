@@ -4,6 +4,7 @@ import com.powsybl.iidm.network.ThreeSides;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
 import org.gridsuite.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.junit.jupiter.api.Test;
@@ -114,16 +115,29 @@ class ContingencyLimitViolationWorstSideUtilsTest {
         );
     }
 
+    // below tests are currently the same, but they cover potential changes in contingencyLimitViolations on any of the entities structure that could break "normalizeWorstSideFilter"
     @Test
-    void shouldNormalizeWorstSideFilterWithOtherColumn() {
-        String otherSideColumn = "contingencyLimitViolations" + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side;
-        String otherIsWorstSideColumn = "contingencyLimitViolations" + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.isWorstSide;
+    void shouldNormalizeContingencyWorstSideFilterWithOtherColumn() {
+        shouldNormalizeWorstSideFilterWithOtherColumn(
+            ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side,
+            ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.isWorstSide
+        );
+    }
 
+    @Test
+    void shouldNormalizeSubjectLimitViolationsWorstSideFilterWithOtherColumn() {
+        shouldNormalizeWorstSideFilterWithOtherColumn(
+            SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side,
+            SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.isWorstSide
+        );
+    }
+
+    void shouldNormalizeWorstSideFilterWithOtherColumn(String sideColumn, String issWorstSideColumn) {
         ResourceFilterDTO filterToNormalize = new ResourceFilterDTO(
             ResourceFilterDTO.DataType.TEXT,
             ResourceFilterDTO.Type.EQUALS,
             List.of("WoRsT"),
-            otherSideColumn
+            sideColumn
         );
 
         List<ResourceFilterDTO> normalizedFilters = ContingencyLimitViolationWorstSideUtils.normalizeWorstSideFilter(
@@ -135,7 +149,7 @@ class ContingencyLimitViolationWorstSideUtilsTest {
                 ResourceFilterDTO.DataType.BOOLEAN,
                 ResourceFilterDTO.Type.EQUALS,
                 true,
-                otherIsWorstSideColumn
+                issWorstSideColumn
             )
         );
     }
