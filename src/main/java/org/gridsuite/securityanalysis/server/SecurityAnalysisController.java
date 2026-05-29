@@ -52,7 +52,8 @@ public class SecurityAnalysisController {
 
     private final SecurityAnalysisWorkerService workerService;
 
-    public SecurityAnalysisController(SecurityAnalysisService securityAnalysisService, SecurityAnalysisWorkerService workerService, SecurityAnalysisResultService securityAnalysisResultService, SecurityAnalysisParametersService securityAnalysisParametersService) {
+    public SecurityAnalysisController(SecurityAnalysisService securityAnalysisService, SecurityAnalysisWorkerService workerService, SecurityAnalysisResultService securityAnalysisResultService,
+            SecurityAnalysisParametersService securityAnalysisParametersService) {
         this.securityAnalysisService = securityAnalysisService;
         this.workerService = workerService;
         this.securityAnalysisResultService = securityAnalysisResultService;
@@ -70,7 +71,8 @@ public class SecurityAnalysisController {
                                                       @Parameter(description = "Provider") @RequestParam(name = "provider", required = false) String provider,
                                                       @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
                                                       @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
-                                                      @Parameter(description = "The type name for the report") @RequestParam(name = "reportType", required = false, defaultValue = "SecurityAnalysis") String reportType,
+                                                      @Parameter(description = "The type name for the report") @RequestParam(name = "reportType", required = false,
+                                                              defaultValue = "SecurityAnalysis") String reportType,
                                                       @Parameter(description = "parametersUuid") @RequestParam(name = "parametersUuid", required = false) UUID parametersUuid,
                                                       @Parameter(description = "loadFlow parameters uuid") @RequestParam(name = "loadFlowParametersUuid") UUID loadFlowParametersUuid,
                                                       @RequestHeader(HEADER_USER_ID) String userId) {
@@ -96,7 +98,8 @@ public class SecurityAnalysisController {
                                            @Parameter(description = "Result receiver") @RequestParam(name = "receiver", required = false) String receiver,
                                            @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
                                            @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
-                                           @Parameter(description = "The type name for the report") @RequestParam(name = "reportType", required = false, defaultValue = "SecurityAnalysis") String reportType,
+                                           @Parameter(description = "The type name for the report") @RequestParam(name = "reportType", required = false,
+                                                   defaultValue = "SecurityAnalysis") String reportType,
                                            @Parameter(description = "parametersUuid") @RequestParam(name = "parametersUuid", required = false) UUID parametersUuid,
                                            @Parameter(description = "loadFlow parameters uuid") @RequestParam(name = "loadFlowParametersUuid") UUID loadFlowParametersUuid,
                                            @RequestHeader(HEADER_USER_ID) String userId) {
@@ -121,7 +124,8 @@ public class SecurityAnalysisController {
                                                                                   @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
                                                                                   @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
                                                                                   @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
-                                                                                  @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
+                                                                                  @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters",
+                                                                                          required = false) String globalFilters,
                                                                                   @Parameter(description = "Pageable parameters for pagination and sorting") Sort sort) {
         List<PreContingencyLimitViolationResultDTO> result = securityAnalysisResultService.findNResult(
                 resultUuid,
@@ -168,7 +172,8 @@ public class SecurityAnalysisController {
                                                                                      @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
                                                                                      @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
                                                                                      @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
-                                                                                     @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
+                                                                                     @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters",
+                                                                                             required = false) String globalFilters,
                                                                                      @Parameter(description = "Pagination parameters") Pageable pageable) {
         Page<ContingencyResultDTO> result = securityAnalysisResultService.findNmKContingenciesPaged(resultUuid, networkUuid, variantId, filters, globalFilters, pageable);
 
@@ -221,7 +226,8 @@ public class SecurityAnalysisController {
                                                                                         @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
                                                                                         @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
                                                                                         @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
-                                                                                        @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
+                                                                                        @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters",
+                                                                                                required = false) String globalFilters,
                                                                                         @Parameter(description = "Pagination parameters") Pageable pageable) {
         Page<SubjectLimitViolationResultDTO> result = securityAnalysisResultService.findNmKConstraintsResultPaged(resultUuid, networkUuid, variantId, filters, globalFilters, pageable);
         return result != null
@@ -350,7 +356,8 @@ public class SecurityAnalysisController {
     @GetMapping(value = "/results/{resultUuid}/nmk-computation-status", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get the list of computation status values - NmK results")
     @ApiResponses(@ApiResponse(responseCode = "200", description = "List of computation status values by result - NmK results"))
-    public ResponseEntity<List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status>> getNmKResultComputationStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+    public ResponseEntity<List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status>> getNmKResultComputationStatus(
+            @Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(securityAnalysisService.getNmKComputationStatus(resultUuid));
     }
 }

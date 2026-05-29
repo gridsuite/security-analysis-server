@@ -6,20 +6,19 @@
  */
 package org.gridsuite.securityanalysis.server.repositories.specifications;
 
+import jakarta.persistence.criteria.Path;
+import jakarta.persistence.criteria.Root;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
 import org.gridsuite.computation.specification.AbstractCommonSpecificationBuilder;
 import org.gridsuite.computation.utils.SpecificationUtils;
-import jakarta.persistence.criteria.Path;
-import jakarta.persistence.criteria.Root;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-
 import java.util.UUID;
 
 /**
- * @author Kevin LE SAULNIER <kevin.lesaulnier@rte-france.com>
+ * @author Kevin LE SAULNIER <kevin.lesaulnier at rte-france.com>
  */
 @Service
 public class SubjectLimitViolationSpecificationBuilder extends AbstractCommonSpecificationBuilder<SubjectLimitViolationEntity> {

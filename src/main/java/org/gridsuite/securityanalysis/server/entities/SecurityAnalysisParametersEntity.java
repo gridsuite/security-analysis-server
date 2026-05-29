@@ -18,7 +18,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * @author Abdelsalem HEDHILI <abdelsalem.hedhili@rte-france.com>
+ * @author Abdelsalem HEDHILI <abdelsalem.hedhili at rte-france.com>
  */
 @NoArgsConstructor
 @AllArgsConstructor

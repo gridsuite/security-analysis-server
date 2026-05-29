@@ -9,13 +9,12 @@ package org.gridsuite.securityanalysis.server.entities;
 import com.powsybl.contingency.violations.LimitViolation;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.security.results.PreContingencyResult;
-import lombok.*;
-import org.gridsuite.computation.utils.ComputationResultUtils;
 import jakarta.persistence.*;
+import lombok.*;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
+import org.gridsuite.computation.utils.ComputationResultUtils;
 import org.springframework.lang.Nullable;
-
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -36,8 +35,10 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
     @Setter
     SecurityAnalysisResultEntity result;
 
-    public static List<PreContingencyLimitViolationEntity> toEntityList(@Nullable Network network, PreContingencyResult preContingencyResult, Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId) {
-        return preContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation -> toEntity(network, limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()))).collect(Collectors.toList());
+    public static List<PreContingencyLimitViolationEntity> toEntityList(@Nullable Network network, PreContingencyResult preContingencyResult, Map<String, SubjectLimitViolationEntity>
+            subjectLimitViolationsBySubjectId) {
+        return preContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation -> toEntity(network, limitViolation,
+                subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()))).collect(Collectors.toList());
     }
 
     public static PreContingencyLimitViolationEntity toEntity(@Nullable Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
@@ -60,7 +61,8 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
         return preContingencyLimitViolationEntityBuilder.build();
     }
 
-    private static void enrichBuilderWithNetworkData(PreContingencyLimitViolationEntity.PreContingencyLimitViolationEntityBuilder<?, ?> preContingencyLimitViolationEntityBuilder, Network network, LimitViolation limitViolation) {
+    private static void enrichBuilderWithNetworkData(PreContingencyLimitViolationEntity.PreContingencyLimitViolationEntityBuilder<?, ?> preContingencyLimitViolationEntityBuilder, Network network,
+            LimitViolation limitViolation) {
         Double patlLimit = getPatlLimit(limitViolation, network);
 
         preContingencyLimitViolationEntityBuilder

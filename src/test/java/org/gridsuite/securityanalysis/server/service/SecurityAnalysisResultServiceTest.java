@@ -27,7 +27,7 @@ import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.asse
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * @author Florent MILLOT <florent.millot@rte-france.com>
+ * @author Florent MILLOT <florent.millot at rte-france.com>
  */
 @SpringBootTest
 class SecurityAnalysisResultServiceTest {
