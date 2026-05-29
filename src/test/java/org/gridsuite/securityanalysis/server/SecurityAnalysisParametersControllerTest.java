@@ -403,7 +403,8 @@ class SecurityAnalysisParametersControllerTest {
         assertFalse(limitReductions.isEmpty());
     }
 
-    private void assertSecurityAnalysisParametersEntityAreEquals(UUID parametersUuid, double lowVoltageAbsoluteThreshold, double lowVoltageProportionalThreshold, double highVoltageAbsoluteThreshold, double highVoltageProportionalThreshold, double flowProportionalThreshold) {
+    private void assertSecurityAnalysisParametersEntityAreEquals(UUID parametersUuid, double lowVoltageAbsoluteThreshold, double lowVoltageProportionalThreshold, double highVoltageAbsoluteThreshold,
+            double highVoltageProportionalThreshold, double flowProportionalThreshold) {
         SecurityAnalysisParametersEntity securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(parametersUuid).orElseThrow();
         assertEquals(lowVoltageAbsoluteThreshold, securityAnalysisParametersEntity.getLowVoltageAbsoluteThreshold(), 0.001);
         assertEquals(lowVoltageProportionalThreshold, securityAnalysisParametersEntity.getLowVoltageProportionalThreshold(), 0.001);

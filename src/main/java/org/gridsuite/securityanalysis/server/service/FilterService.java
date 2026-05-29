@@ -39,10 +39,12 @@ public class FilterService extends AbstractFilterService {
     }
 
     public Optional<ResourceFilterDTO> getResourceFilterContingencies(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {
-        return super.getResourceFilter(networkUuid, variantId, globalFilter, List.of(EquipmentType.LINE, EquipmentType.TWO_WINDINGS_TRANSFORMER, EquipmentType.VOLTAGE_LEVEL), ContingencyEntity.Fields.contingencyId);
+        return super.getResourceFilter(networkUuid, variantId, globalFilter, List.of(EquipmentType.LINE, EquipmentType.TWO_WINDINGS_TRANSFORMER, EquipmentType.VOLTAGE_LEVEL),
+                ContingencyEntity.Fields.contingencyId);
     }
 
     public Optional<ResourceFilterDTO> getResourceFilterSubjectLimitViolations(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {
-        return super.getResourceFilter(networkUuid, variantId, globalFilter, List.of(EquipmentType.LINE, EquipmentType.TWO_WINDINGS_TRANSFORMER, EquipmentType.VOLTAGE_LEVEL), SubjectLimitViolationEntity.Fields.subjectId);
+        return super.getResourceFilter(networkUuid, variantId, globalFilter, List.of(EquipmentType.LINE, EquipmentType.TWO_WINDINGS_TRANSFORMER, EquipmentType.VOLTAGE_LEVEL),
+                SubjectLimitViolationEntity.Fields.subjectId);
     }
 }

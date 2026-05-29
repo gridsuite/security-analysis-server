@@ -143,13 +143,15 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
         limitReductionService.createLimitReductions(runContext.getParameters().limitReductions()).forEach(limitReduction -> {
             LimitReductionsByVoltageLevel.VoltageLevel voltageLevel = limitReduction.getVoltageLevel();
-            IdentifiableCriterion voltageLevelCriterion = new IdentifiableCriterion(new AtLeastOneNominalVoltageCriterion(VoltageInterval.between(voltageLevel.getLowBound(), voltageLevel.getHighBound(), false, true)));
+            IdentifiableCriterion voltageLevelCriterion = new IdentifiableCriterion(new AtLeastOneNominalVoltageCriterion(VoltageInterval.between(voltageLevel.getLowBound(),
+                    voltageLevel.getHighBound(), false, true)));
             limitReductions.add(createLimitReduction(voltageLevelCriterion, new PermanentDurationCriterion(), limitReduction.getPermanentLimitReduction()));
             limitReduction.getTemporaryLimitReductions().forEach(temporaryLimitReduction -> {
                 LimitDurationCriterion limitDurationCriterion;
                 LimitReductionsByVoltageLevel.LimitDuration limitDuration = temporaryLimitReduction.getLimitDuration();
                 if (limitDuration.getHighBound() != null) {
-                    limitDurationCriterion = IntervalTemporaryDurationCriterion.between(limitDuration.getLowBound(), limitDuration.getHighBound(), limitDuration.isLowClosed(), limitDuration.isHighClosed());
+                    limitDurationCriterion = IntervalTemporaryDurationCriterion.between(limitDuration.getLowBound(), limitDuration.getHighBound(), limitDuration.isLowClosed(),
+                            limitDuration.isHighClosed());
                 } else {
                     limitDurationCriterion = IntervalTemporaryDurationCriterion.greaterThan(limitDuration.getLowBound(), limitDuration.isLowClosed());
                 }
