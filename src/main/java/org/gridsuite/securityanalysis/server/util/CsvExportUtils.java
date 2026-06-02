@@ -76,6 +76,8 @@ public final class CsvExportUtils {
     public static String convertDoubleToLocale(Double value, String language) {
         NumberFormat nf = NumberFormat.getInstance(language != null && language.equals("fr") ? Locale.FRENCH : Locale.US);
         nf.setGroupingUsed(false);
+        nf.setMinimumFractionDigits(2);
+        nf.setMaximumFractionDigits(2);
         return nf.format(value);
     }
 }
