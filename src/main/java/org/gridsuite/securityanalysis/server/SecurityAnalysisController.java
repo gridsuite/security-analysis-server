@@ -247,7 +247,7 @@ public class SecurityAnalysisController {
     }
 
     @PostMapping(value = "/results/{resultUuid}/nmk-cut-off-power-result/csv", produces = APPLICATION_OCTET_STREAM_VALUE, consumes = APPLICATION_JSON_VALUE)
-    @Operation(summary = "Get a security analysis result from the database - NMK contingencies result - CSV export")
+    @Operation(summary = "Get a security analysis result from the database - NMK cut off power result - CSV export")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result csv export"),
         @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
     public ResponseEntity<byte[]> getNmKCutOffPowerResultZippedCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
