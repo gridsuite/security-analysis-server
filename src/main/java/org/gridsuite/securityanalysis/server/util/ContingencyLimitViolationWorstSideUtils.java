@@ -31,7 +31,8 @@ public final class ContingencyLimitViolationWorstSideUtils {
             Comparator.nullsLast(Comparator.naturalOrder()));
 
     /**
-     * Computes the worst side for each SubjectLimitViolationEntity.subjectId + ContingencyEntity.contingencyId pair, assuming all contingencyLimitViolations are from the same contingency
+     * Computes the worst side for each SubjectLimitViolationEntity.subjectId + ContingencyEntity.contingencyId pair
+     * IMPORTANT : All contingencyLimitViolations must be from the same contingency
      */
     public static void computeWorstSideBySubjectId(List<ContingencyLimitViolationEntity> contingencyLimitViolations) {
         Map<String, List<ContingencyLimitViolationEntity>> violationsBySubjectAndContingency = contingencyLimitViolations.stream()

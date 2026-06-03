@@ -132,7 +132,7 @@ class ContingencyLimitViolationWorstSideUtilsTest {
         );
     }
 
-    void shouldNormalizeWorstSideFilterWithOtherColumn(String sideColumn, String issWorstSideColumn) {
+    private void shouldNormalizeWorstSideFilterWithOtherColumn(String sideColumn, String isWorstSideColumn) {
         ResourceFilterDTO filterToNormalize = new ResourceFilterDTO(
             ResourceFilterDTO.DataType.TEXT,
             ResourceFilterDTO.Type.EQUALS,
@@ -149,7 +149,7 @@ class ContingencyLimitViolationWorstSideUtilsTest {
                 ResourceFilterDTO.DataType.BOOLEAN,
                 ResourceFilterDTO.Type.EQUALS,
                 true,
-                issWorstSideColumn
+                isWorstSideColumn
             )
         );
     }
