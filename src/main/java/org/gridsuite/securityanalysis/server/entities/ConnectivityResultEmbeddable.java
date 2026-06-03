@@ -24,16 +24,13 @@ import lombok.experimental.FieldNameConstants;
 @AllArgsConstructor
 @Embeddable
 public class ConnectivityResultEmbeddable {
-    @Column
-    private Double disconnectedLoadActivePower;
+    @Column(nullable = false)
+    private double disconnectedLoadActivePower = 0.0;
 
-    @Column
-    private Double disconnectedGenerationActivePower;
+    @Column(nullable = false)
+    private double disconnectedGenerationActivePower = 0.0;
 
     public static ConnectivityResultEmbeddable toEntity(ConnectivityResult connectivityResult) {
-        if (connectivityResult.getDisconnectedLoadActivePower() == 0.0 && connectivityResult.getDisconnectedGenerationActivePower() == 0.0) {
-            return null;
-        }
         return ConnectivityResultEmbeddable.builder()
                 .disconnectedGenerationActivePower(connectivityResult.getDisconnectedGenerationActivePower())
                 .disconnectedLoadActivePower(connectivityResult.getDisconnectedLoadActivePower())

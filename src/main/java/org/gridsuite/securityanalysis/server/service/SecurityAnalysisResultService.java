@@ -440,10 +440,10 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         Pageable modifiedPageable = withDefaultSort(pageable);
         Specification<ContingencyEntity> specification = contingencySpecificationBuilder.resultUuidEquals(resultUuid)
                 .and((root, cq, cb) -> cb.or(
-                        cb.isNotNull(root.get(ContingencyEntity.Fields.connectivityResult)
-                                .get(ConnectivityResultEmbeddable.Fields.disconnectedLoadActivePower)),
-                        cb.isNotNull(root.get(ContingencyEntity.Fields.connectivityResult)
-                                .get(ConnectivityResultEmbeddable.Fields.disconnectedGenerationActivePower))
+                        cb.notEqual(root.get(ContingencyEntity.Fields.connectivityResult)
+                                .get(ConnectivityResultEmbeddable.Fields.disconnectedLoadActivePower), 0.0),
+                        cb.notEqual(root.get(ContingencyEntity.Fields.connectivityResult)
+                                .get(ConnectivityResultEmbeddable.Fields.disconnectedGenerationActivePower), 0.0)
                 ));
         specification = SpecificationUtils.appendFiltersToSpecification(specification, resourceFilters);
         // Determine which properties to project based on sort fields

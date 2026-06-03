@@ -21,16 +21,10 @@ import org.gridsuite.securityanalysis.server.entities.ConnectivityResultEmbeddab
 @AllArgsConstructor
 @NoArgsConstructor
 public class ConnectivityResultDTO {
-    private Double disconnectedLoadActivePower;
-    private Double disconnectedGenerationActivePower;
+    private double disconnectedLoadActivePower;
+    private double disconnectedGenerationActivePower;
 
     public static ConnectivityResultDTO toDto(ConnectivityResultEmbeddable connectivityResult) {
-        if (connectivityResult == null) {
-            return ConnectivityResultDTO.builder()
-                    .disconnectedLoadActivePower(null)
-                    .disconnectedGenerationActivePower(null)
-                    .build();
-        }
         return ConnectivityResultDTO.builder()
             .disconnectedLoadActivePower(connectivityResult.getDisconnectedLoadActivePower())
             .disconnectedGenerationActivePower(connectivityResult.getDisconnectedGenerationActivePower())

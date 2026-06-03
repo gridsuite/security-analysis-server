@@ -33,11 +33,8 @@ public record ContingencyCutOffPowerDTO(
         List<String> csvRow = new ArrayList<>();
         csvRow.add(contingencyId);
         csvRow.add(CsvExportUtils.translate(status, translations));
-        if (connectivityResult != null && connectivityResult.getDisconnectedLoadActivePower() != null
-                && connectivityResult.getDisconnectedGenerationActivePower() != null) {
-            csvRow.add(CsvExportUtils.convertDoubleToLocale(connectivityResult.getDisconnectedLoadActivePower(), language));
-            csvRow.add(CsvExportUtils.convertDoubleToLocale(connectivityResult.getDisconnectedGenerationActivePower(), language));
-        }
+        csvRow.add(CsvExportUtils.convertDoubleToLocale(connectivityResult.getDisconnectedLoadActivePower(), language));
+        csvRow.add(CsvExportUtils.convertDoubleToLocale(connectivityResult.getDisconnectedGenerationActivePower(), language));
         return List.of(csvRow);
     }
 }
