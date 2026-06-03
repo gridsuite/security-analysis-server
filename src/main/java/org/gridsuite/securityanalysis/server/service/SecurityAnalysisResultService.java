@@ -189,14 +189,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     public Page<ContingencyCutOffPowerDTO> findNmKConnectivityResult(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Pageable pageable) {
         assertResultExists(resultUuid);
         List<ResourceFilterDTO> allResourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters, globalFilter -> filterService.getResourceFilterContingencies(networkUuid, variantId, globalFilter));
-        Specification<ContingencyEntity> hasConnectivityResult = (root, query, cb) -> {
-            var cr = root.get(ContingencyEntity.Fields.connectivityResult);
-            return cb.or(
-                    cb.isNotNull(cr.get(ConnectivityResultEmbeddable.Fields.disconnectedLoadActivePower)),
-                    cb.isNotNull(cr.get(ConnectivityResultEmbeddable.Fields.disconnectedGenerationActivePower))
-            );
-        };
-        Page<ContingencyEntity> contingencyPage = self.findCutOffPowerContingenciesPage(resultUuid, allResourceFilters, hasConnectivityResult, pageable);
+        Page<ContingencyEntity> contingencyPage = self.findCutOffPowerContingenciesPage(resultUuid, allResourceFilters, pageable);
         return contingencyPage.map(ContingencyCutOffPowerDTO::toDto);
     }
 
@@ -441,12 +434,18 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional(readOnly = true)
-    public Page<ContingencyEntity> findCutOffPowerContingenciesPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Specification<ContingencyEntity> extraSpecification, Pageable pageable) {
+    public Page<ContingencyEntity> findCutOffPowerContingenciesPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
         assertNmKCutOffPowerSortAllowed(pageable.getSort());
         Pageable modifiedPageable = withDefaultSort(pageable);
-        Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildSpecification(resultUuid, resourceFilters).and(extraSpecification);
-
+        Specification<ContingencyEntity> specification = contingencySpecificationBuilder.resultUuidEquals(resultUuid)
+                .and((root, cq, cb) -> cb.or(
+                        cb.isNotNull(root.get(ContingencyEntity.Fields.connectivityResult)
+                                .get(ConnectivityResultEmbeddable.Fields.disconnectedLoadActivePower)),
+                        cb.isNotNull(root.get(ContingencyEntity.Fields.connectivityResult)
+                                .get(ConnectivityResultEmbeddable.Fields.disconnectedGenerationActivePower))
+                ));
+        specification = SpecificationUtils.appendFiltersToSpecification(specification, resourceFilters);
         // Determine which properties to project based on sort fields
         // When using DISTINCT, all ORDER BY columns must be in the SELECT list
         Set<String> projectionProperties = new LinkedHashSet<>();
