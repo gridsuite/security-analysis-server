@@ -169,7 +169,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         List<ResourceFilterDTO> allResourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters, globalFilter -> filterService.getResourceFilterContingencies(networkUuid, variantId, globalFilter));
         if (stringGlobalFilters != null && allResourceFilters.isEmpty()) {
             // something is checked in the global filter but no resource filters are returned
-            return Page.empty(pageable);
+            return (Page<ContingencyResultDTO>) emptyPage(pageable);
         } else {
             Page<ContingencyEntity> contingencyPageBis = self.findContingenciesPage(resultUuid, allResourceFilters, pageable);
             return contingencyPageBis.map(ContingencyResultDTO::toDto);
