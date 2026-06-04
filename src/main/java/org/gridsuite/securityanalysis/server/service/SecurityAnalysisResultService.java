@@ -167,8 +167,13 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         assertResultExists(resultUuid);
 
         List<ResourceFilterDTO> allResourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters, globalFilter -> filterService.getResourceFilterContingencies(networkUuid, variantId, globalFilter));
-        Page<ContingencyEntity> contingencyPageBis = self.findContingenciesPage(resultUuid, allResourceFilters, pageable);
-        return contingencyPageBis.map(ContingencyResultDTO::toDto);
+        if (stringGlobalFilters != null && allResourceFilters.isEmpty()) {
+            // something is checked in the global filter but no resource filters are returned
+            return (Page<ContingencyResultDTO>) emptyPage(pageable);
+        } else {
+            Page<ContingencyEntity> contingencyPageBis = self.findContingenciesPage(resultUuid, allResourceFilters, pageable);
+            return contingencyPageBis.map(ContingencyResultDTO::toDto);
+        }
     }
 
     @Transactional(readOnly = true)
