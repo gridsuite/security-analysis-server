@@ -193,7 +193,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     @Transactional(readOnly = true)
     public Page<ContingencyCutOffPowerDTO> findNmKConnectivityResult(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Pageable pageable) {
         assertResultExists(resultUuid);
-        List<ResourceFilterDTO> allResourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters, globalFilter -> filterService.getResourceFilterContingencies(networkUuid, variantId, globalFilter));
+        List<ResourceFilterDTO> allResourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters, globalFilter -> filterService.getResourceFilterCutOffPower(networkUuid, variantId, globalFilter));
         Page<ContingencyEntity> contingencyPage = self.findCutOffPowerContingenciesPage(resultUuid, allResourceFilters, pageable);
         return contingencyPage.map(ContingencyCutOffPowerDTO::toDto);
     }
