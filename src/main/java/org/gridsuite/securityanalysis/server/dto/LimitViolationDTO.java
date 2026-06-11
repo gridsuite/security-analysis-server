@@ -65,7 +65,6 @@ public class LimitViolationDTO {
         csvRow.add(this.getLimitType() != null ? CsvExportUtils.translate(this.getLimitType().name(), translations) : "");
         csvRow.add(this.getLocationId());  // busId
         csvRow.add(CsvExportUtils.replaceNullWithEmptyString(CsvExportUtils.translate(this.getLimitName(), translations)));
-        csvRow.add(CsvExportUtils.replaceNullWithEmptyString(CsvExportUtils.translate(this.getOperationalLimitsGroupId(), translations)));
         csvRow.add(this.getLoading() == null ? "" : convertDoubleToLocale(this.getLoading(), language));
         csvRow.add(this.getPatlLoading() == null ? "" : convertDoubleToLocale(this.getPatlLoading(), language));
         csvRow.add(this.getAcceptableDuration() == null || this.getAcceptableDuration() == Integer.MAX_VALUE ? null : Integer.toString(this.getAcceptableDuration()));
