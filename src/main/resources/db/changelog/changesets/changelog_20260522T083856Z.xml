@@ -9,8 +9,16 @@
     </changeSet>
     <changeSet author="lesaulnierkev (generated)" id="1779439156192-2">
         <sqlFile
+                dbms="postgresql"
                 encoding="UTF-8"
-                path="migrationWorstSideContingencyLimitViolations.sql"
+                path="migrationWorstSideContingencyLimitViolationsPostgres.sql"
+                relativeToChangelogFile="true"
+                splitStatements="true"
+                stripComments="true"/>
+        <sqlFile
+                dbms="h2"
+                encoding="UTF-8"
+                path="migrationWorstSideContingencyLimitViolationsH2.sql"
                 relativeToChangelogFile="true"
                 splitStatements="true"
                 stripComments="true"/>
