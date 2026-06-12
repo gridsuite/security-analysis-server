@@ -11,8 +11,7 @@ import org.gridsuite.computation.specification.AbstractCommonSpecificationBuilde
 import org.gridsuite.computation.utils.SpecificationUtils;
 import jakarta.persistence.criteria.Path;
 import jakarta.persistence.criteria.Root;
-import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
-import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.entities.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 

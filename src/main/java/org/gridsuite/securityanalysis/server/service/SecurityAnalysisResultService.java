@@ -23,6 +23,7 @@ import org.gridsuite.securityanalysis.server.repositories.*;
 import org.gridsuite.securityanalysis.server.repositories.specifications.ContingencySpecificationBuilder;
 import org.gridsuite.securityanalysis.server.repositories.specifications.PreContingencyLimitViolationSpecificationBuilder;
 import org.gridsuite.securityanalysis.server.repositories.specifications.SubjectLimitViolationSpecificationBuilder;
+import org.gridsuite.securityanalysis.server.util.ContingencyLimitViolationWorstSideUtils;
 import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -527,7 +528,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
             Optional<ResourceFilterDTO> resourceGlobalFilters = getResourceGlobalFilter.apply(globalFilter);
             resourceGlobalFilters.ifPresent(allResourceFilters::add);
         }
-        return allResourceFilters;
+        return ContingencyLimitViolationWorstSideUtils.normalizeWorstSideFilter(allResourceFilters);
     }
 
     private void appendLimitViolationsAndElementsToContingenciesResult(Page<ContingencyEntity> contingencies, List<ResourceFilterDTO> resourceFilters) {

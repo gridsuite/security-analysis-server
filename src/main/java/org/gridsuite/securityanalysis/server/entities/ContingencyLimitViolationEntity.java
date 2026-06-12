@@ -31,6 +31,24 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
     @Setter
     private ContingencyEntity contingency;
 
+    /**
+     * Indicates whether this entity represents the worst side for its
+     * SubjectLimitViolationEntity.subjectId + ContingencyEntity.contingencyId pair.
+     * When multiple {@link ContingencyLimitViolationEntity} instances exist
+     * for the same pair, the worst side is determined using the following
+     * comparison rules, in order:
+     * <ul>
+     *   <li>Lowest acceptable duration (null is considered greater than any non-null value)</li>
+     *   <li>Lowest upcoming acceptable duration (null is considered greater than any non-null value)</li>
+     *   <li>Highest loading value (null is considered lower than any non-null value)</li>
+     * </ul>
+     *
+     * If entities still cannot be distinguished after applying all criteria,
+     * the entity with the lowest side value is considered the worst side.
+     */
+    @Setter
+    private boolean isWorstSide;
+
     public static ContingencyLimitViolationEntity toEntity(@Nullable Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
         ContingencyLimitViolationEntityBuilder<?, ?> contingencyLimitViolationEntityBuilder = ContingencyLimitViolationEntity.builder()
             .limit(limitViolation.getLimit())
