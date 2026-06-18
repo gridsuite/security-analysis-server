@@ -48,8 +48,7 @@ public class FilterService extends AbstractFilterService {
                 EquipmentType.BATTERY, EquipmentType.GENERATOR, EquipmentType.LOAD, EquipmentType.SHUNT_COMPENSATOR,
                 EquipmentType.STATIC_VAR_COMPENSATOR,
                 EquipmentType.BOUNDARY_LINE,
-                // TODO : temporary removed, waiting for a fix in filter library on nominal voltage filtering for hvdc line
-                // EquipmentType.HVDC_LINE,
+                EquipmentType.HVDC_LINE,
                 EquipmentType.VSC_CONVERTER_STATION),
             ContingencyEntity.Fields.contingencyElements + FIELD_SEPARATOR + ContingencyElementEmbeddable.Fields.elementId);
     }
