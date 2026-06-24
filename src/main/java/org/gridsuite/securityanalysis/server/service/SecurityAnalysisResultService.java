@@ -40,8 +40,6 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static org.gridsuite.computation.error.ComputationBusinessErrorCode.INVALID_SORT_FORMAT;
 import static org.gridsuite.computation.error.ComputationBusinessErrorCode.RESULT_NOT_FOUND;
@@ -451,6 +449,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
                         cb.notEqual(root.get(ContingencyEntity.Fields.connectivityResult)
                                 .get(ConnectivityResultEmbeddable.Fields.disconnectedGenerationActivePower), 0.0)
                 ));
+        specification = specification.and(SpecificationUtils.distinct());
         specification = SpecificationUtils.appendFiltersToSpecification(specification, resourceFilters);
         // Determine which properties to project based on sort fields
         // When using DISTINCT, all ORDER BY columns must be in the SELECT list
@@ -465,13 +464,12 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
                         .page(modifiedPageable)
         );
         if (!uuidPage.hasContent()) {
-            return Page.empty(pageable);
+            return (Page<ContingencyEntity>) emptyPage(pageable);
         }
 
         List<UUID> orderedUuids = uuidPage.map(ContingencyRepository.EntityUuid::getUuid).toList();
         List<ContingencyEntity> contingencies = contingencyRepository.findAllByUuidIn(orderedUuids);
-        Map<UUID, Integer> positionByUuid = IntStream.range(0, orderedUuids.size()).boxed().collect(Collectors.toMap(orderedUuids::get, Function.identity()));
-        contingencies.sort(Comparator.comparingInt(c -> positionByUuid.get(c.getUuid())));
+        contingencies.sort(Comparator.comparing(c -> orderedUuids.indexOf(c.getUuid())));
         return new PageImpl<>(contingencies, pageable, uuidPage.getTotalElements());
     }
 
