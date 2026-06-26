@@ -31,7 +31,12 @@ import java.util.UUID;
 @Table(name = "contingency")
 public class ContingencyEntity {
 
-    public ContingencyEntity(String contingencyId, String status, List<ContingencyElementEmbeddable> contingencyElements, ConnectivityResultEmbeddable connectivityResult, List<ContingencyLimitViolationEntity> contingencyLimitViolations) {
+    public ContingencyEntity(
+            String contingencyId,
+            String status,
+            List<ContingencyElementEmbeddable> contingencyElements,
+            ConnectivityResultEmbeddable connectivityResult,
+            List<ContingencyLimitViolationEntity> contingencyLimitViolations) {
         this.contingencyId = contingencyId;
         this.status = status;
         this.contingencyElements = contingencyElements;

@@ -6,10 +6,9 @@
  */
 package org.gridsuite.securityanalysis.server.util;
 
+import com.powsybl.security.SecurityAnalysis;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import com.powsybl.security.SecurityAnalysis;
 
 /**
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>

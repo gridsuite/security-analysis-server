@@ -38,7 +38,8 @@ class SecurityAnalysisExceptionHandlerTest {
         assertThat(response.getBody()).isNotNull();
         assertEquals("securityAnalysis.contingencyListConfigEmpty", response.getBody().getBusinessErrorCode());
 
-        SecurityAnalysisException missingContingencyException = new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.MISSING_CONTINGENCY_LIST, "The configuration contains one or more contingency lists that have been deleted.");
+        SecurityAnalysisException missingContingencyException = new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.MISSING_CONTINGENCY_LIST,
+                "The configuration contains one or more contingency lists that have been deleted.");
 
         response = handler.handleSecurityAnalysisException(missingContingencyException, request);
 

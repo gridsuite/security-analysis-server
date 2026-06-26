@@ -52,7 +52,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
 /**
- * @author Florent MILLOT <florent.millot@rte-france.com>
+ * @author Florent MILLOT <florent.millot at rte-france.com>
  */
 @SpringBootTest
 class SecurityAnalysisResultServiceTest {

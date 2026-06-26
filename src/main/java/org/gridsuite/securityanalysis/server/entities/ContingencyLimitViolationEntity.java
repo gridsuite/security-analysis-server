@@ -8,11 +8,11 @@ package org.gridsuite.securityanalysis.server.entities;
 
 import com.powsybl.contingency.violations.LimitViolation;
 import com.powsybl.iidm.network.*;
-import org.gridsuite.computation.utils.ComputationResultUtils;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
+import org.gridsuite.computation.utils.ComputationResultUtils;
 import org.springframework.lang.Nullable;
 
 /**

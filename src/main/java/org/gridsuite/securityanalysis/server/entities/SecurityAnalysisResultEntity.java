@@ -64,7 +64,8 @@ public class SecurityAnalysisResultEntity {
         List<ContingencyEntity> contingencies = securityAnalysisResult.getPostContingencyResults().stream()
             .map(postContingencyResult -> ContingencyEntity.toEntity(network, postContingencyResult, subjectLimitViolationsBySubjectId)).collect(Collectors.toList());
 
-        List<PreContingencyLimitViolationEntity> preContingencyLimitViolations = PreContingencyLimitViolationEntity.toEntityList(network, securityAnalysisResult.getPreContingencyResult(), subjectLimitViolationsBySubjectId);
+        List<PreContingencyLimitViolationEntity> preContingencyLimitViolations = PreContingencyLimitViolationEntity.toEntityList(network, securityAnalysisResult.getPreContingencyResult(),
+                subjectLimitViolationsBySubjectId);
 
         List<SubjectLimitViolationEntity> subjectLimitViolations = Stream.concat(
                 contingencies.stream().flatMap(c -> c.getContingencyLimitViolations().stream()),

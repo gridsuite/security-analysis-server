@@ -126,9 +126,11 @@ class ActionsServiceTest {
         // DataBufferLimitException should not be thrown with this message : "Exceeded limit on max bytes to buffer : DATA_BUFFER_LIMIT"
         List<ContingencyInfos> list = actionsService.getContingencyList(List.of(VERY_LARGE_LIST_UUID), UUID.fromString(NETWORK_UUID), null);
         list.forEach(contingencyInfos -> assertArrayEquals(List.of().toArray(new Object[0]), contingencyInfos.getNotFoundElements().toArray(new String[0])));
-        assertEquals(createVeryLargeList().stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
+        assertEquals(createVeryLargeList().stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()),
+                list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
         list = actionsService.getContingencyList(List.of(VERY_LARGE_LIST_UUID), UUID.fromString(NETWORK_UUID), VARIANT_ID);
-        assertEquals(createVeryLargeList().stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
+        assertEquals(createVeryLargeList().stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()),
+                list.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()));
     }
 
     @Test
