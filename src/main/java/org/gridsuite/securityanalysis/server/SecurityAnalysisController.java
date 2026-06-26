@@ -235,6 +235,48 @@ public class SecurityAnalysisController {
             : ResponseEntity.notFound().build();
     }
 
+    @GetMapping(value = "/results/{resultUuid}/nmk-cut-off-power-result/paged", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get a paged security analysis result from the database - NMK contingencies cut off power result")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
+        @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
+    public ResponseEntity<Page<ContingencyCutOffPowerDTO>> getNmKCutOffPowerResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                                                                   @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
+                                                                                   @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
+                                                                                   @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
+                                                                                   @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false)
+                                                                                       String globalFilters,
+                                                                                   @Parameter(description = "Pagination parameters") Pageable pageable) {
+        Page<ContingencyCutOffPowerDTO> result = securityAnalysisResultService.findNmKConnectivityResult(resultUuid, networkUuid, variantId, filters, globalFilters, pageable);
+
+        return result != null
+                ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
+                : ResponseEntity.notFound().build();
+    }
+
+    @PostMapping(value = "/results/{resultUuid}/nmk-cut-off-power-result/csv", produces = APPLICATION_OCTET_STREAM_VALUE, consumes = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get a security analysis result from the database - NMK cut off power result - CSV export")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result csv export"),
+        @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
+    public ResponseEntity<byte[]> getNmKCutOffPowerResultZippedCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                                                   @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
+                                                                   @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
+                                                                   @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
+                                                                   @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
+                                                                   @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations,
+                                                                   @Parameter(description = "Sort parameters") Sort sort) {
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(securityAnalysisResultService.findNmKConnectivityResultResultZippedCsv(
+                        resultUuid,
+                        networkUuid,
+                        variantId,
+                        filters,
+                        globalFilters,
+                        sort,
+                        csvTranslations
+                ));
+    }
+
     @PostMapping(value = "/results/{resultUuid}/nmk-constraints-result/csv", produces = APPLICATION_OCTET_STREAM_VALUE, consumes = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get a security analysis result from the database - NMK constraints result - CSV export")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result csv export"),

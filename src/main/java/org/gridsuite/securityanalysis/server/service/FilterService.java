@@ -12,6 +12,7 @@ import org.gridsuite.computation.dto.GlobalFilter;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
 import org.gridsuite.computation.service.AbstractFilterService;
 import org.gridsuite.filter.utils.EquipmentType;
+import org.gridsuite.securityanalysis.server.entities.ContingencyElementEmbeddable;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +22,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import static org.gridsuite.computation.utils.SpecificationUtils.FIELD_SEPARATOR;
 
 /**
  * @author Rehili Ghazwa <ghazwa.rehili at rte-france.com>
@@ -39,12 +42,30 @@ public class FilterService extends AbstractFilterService {
     }
 
     public Optional<ResourceFilterDTO> getResourceFilterContingencies(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {
-        return super.getResourceFilter(networkUuid, variantId, globalFilter, List.of(EquipmentType.LINE, EquipmentType.TWO_WINDINGS_TRANSFORMER, EquipmentType.VOLTAGE_LEVEL),
+        return super.getResourceFilter(networkUuid,
+            variantId, globalFilter,
+            List.of(EquipmentType.LINE, EquipmentType.TWO_WINDINGS_TRANSFORMER, EquipmentType.THREE_WINDINGS_TRANSFORMER,
+                EquipmentType.BATTERY, EquipmentType.GENERATOR, EquipmentType.LOAD, EquipmentType.SHUNT_COMPENSATOR,
+                EquipmentType.STATIC_VAR_COMPENSATOR,
+                EquipmentType.BOUNDARY_LINE,
+                EquipmentType.HVDC_LINE,
+                EquipmentType.VSC_CONVERTER_STATION),
+            ContingencyEntity.Fields.contingencyElements + FIELD_SEPARATOR + ContingencyElementEmbeddable.Fields.elementId);
+    }
+
+    public Optional<ResourceFilterDTO> getResourceFilterCutOffPower(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {
+        return super.getResourceFilter(networkUuid,
+                variantId, globalFilter,
+                List.of(EquipmentType.LINE, EquipmentType.TWO_WINDINGS_TRANSFORMER, EquipmentType.THREE_WINDINGS_TRANSFORMER,
+                        EquipmentType.BATTERY, EquipmentType.GENERATOR, EquipmentType.LOAD, EquipmentType.SHUNT_COMPENSATOR,
+                        EquipmentType.STATIC_VAR_COMPENSATOR,
+                        EquipmentType.BOUNDARY_LINE,
+                        EquipmentType.VSC_CONVERTER_STATION),
                 ContingencyEntity.Fields.contingencyId);
     }
 
     public Optional<ResourceFilterDTO> getResourceFilterSubjectLimitViolations(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {
-        return super.getResourceFilter(networkUuid, variantId, globalFilter, List.of(EquipmentType.LINE, EquipmentType.TWO_WINDINGS_TRANSFORMER, EquipmentType.VOLTAGE_LEVEL),
-                SubjectLimitViolationEntity.Fields.subjectId);
+        return super.getResourceFilter(networkUuid, variantId, globalFilter,
+                List.of(EquipmentType.LINE, EquipmentType.TWO_WINDINGS_TRANSFORMER, EquipmentType.VOLTAGE_LEVEL), SubjectLimitViolationEntity.Fields.subjectId);
     }
 }
