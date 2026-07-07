@@ -42,6 +42,16 @@ public class ContingencyResultDTO {
 
     // each contingencyResultDto will return multiple line (one for each limitViolation)
     public List<List<String>> toCsvRows(Map<String, String> translations, String language) {
+        // if no limit violations return a csv row with the contingency status
+        if (this.getSubjectLimitViolations().isEmpty()) {
+            List<String> csvRow = new ArrayList<>();
+            csvRow.add(this.getContingency().getContingencyId());
+            csvRow.add(CsvExportUtils.translate(this.getContingency().getStatus(), translations));
+            csvRow.add(""); // empty subjectId
+            csvRow.addAll(List.of("", "", "", "", "", "", "", "", "", "", "", "")); // empty limitViolation
+
+            return List.of(csvRow);
+        }
         return this.getSubjectLimitViolations().stream().map(lm -> {
             List<String> csvRow = new ArrayList<>();
             csvRow.add(this.getContingency().getContingencyId());
