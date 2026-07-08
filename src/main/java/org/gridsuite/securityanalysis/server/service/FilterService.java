@@ -49,7 +49,8 @@ public class FilterService extends AbstractFilterService {
                 EquipmentType.STATIC_VAR_COMPENSATOR,
                 EquipmentType.BOUNDARY_LINE,
                 EquipmentType.HVDC_LINE,
-                EquipmentType.VSC_CONVERTER_STATION),
+                EquipmentType.VSC_CONVERTER_STATION,
+                EquipmentType.BUSBAR_SECTION),
             ContingencyEntity.Fields.contingencyElements + FIELD_SEPARATOR + ContingencyElementEmbeddable.Fields.elementId);
     }
 
