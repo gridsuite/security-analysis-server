@@ -8,10 +8,10 @@ package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.contingency.violations.LimitViolation;
 import com.powsybl.contingency.violations.LimitViolationType;
+import com.powsybl.iidm.network.LoadingLimits;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.TwoSides;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
-import com.powsybl.iidm.network.util.LimitViolationUtils;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.junit.jupiter.api.Test;
@@ -32,13 +32,13 @@ abstract class AbstractLimitViolationTest<T extends AbstractLimitViolationEntity
 
     @Test
     void testLimitViolationEntityNewFieldsWithPermanentLimitReached() {
-        testLimitViolationMapping(LimitViolationUtils.PERMANENT_LIMIT_NAME, Integer.MAX_VALUE, 1100, 1, 1150,
+        testLimitViolationMapping(LoadingLimits.DEFAULT_PERMANENT_LIMIT_NAME, Integer.MAX_VALUE, 1100, 1, 1150,
                 TwoSides.TWO, "10'", 1100, Integer.MAX_VALUE, null);
     }
 
     @Test
     void testLimitViolationEntityNewFieldsWithPermanentLimitReachedAndNoTemporaryLimit() {
-        testLimitViolationMapping(LimitViolationUtils.PERMANENT_LIMIT_NAME, Integer.MAX_VALUE, 500, 1, 1000,
+        testLimitViolationMapping(LoadingLimits.DEFAULT_PERMANENT_LIMIT_NAME, Integer.MAX_VALUE, 500, 1, 1000,
                 TwoSides.ONE, null, 500, Integer.MAX_VALUE, null);
     }
 
@@ -77,8 +77,17 @@ abstract class AbstractLimitViolationTest<T extends AbstractLimitViolationEntity
                 .endTemporaryLimit()
                 .add();
 
-        LimitViolation limitViolation = new LimitViolation(NGEN_NHV1, "NGEN_NHV1_name", LimitViolationType.CURRENT,
-                "10'", 60, 200, 0.8, 180, TwoSides.ONE);
+        LimitViolation limitViolation = LimitViolation.builder()
+            .subject(NGEN_NHV1)
+            .subjectName("NGEN_NHV1_name")
+            .type(LimitViolationType.CURRENT)
+            .limitName("10'")
+            .duration(60)
+            .limit(200)
+            .reduction(0.8)
+            .value(180)
+            .side(TwoSides.ONE)
+            .build();
 
         SubjectLimitViolationEntity subjectLimitViolationEntity = new SubjectLimitViolationEntity(NGEN_NHV1,
                 "NGEN_NHV1_name");
@@ -98,8 +107,18 @@ abstract class AbstractLimitViolationTest<T extends AbstractLimitViolationEntity
             double limitReduction, double value, TwoSides side, String expectedNextLimitName, long expectedPatlLimit,
             Integer expectedAcceptableDuration, Integer expectedUpcomingAcceptableDuration) {
         Network network = EurostagTutorialExample1Factory.createWithFixedCurrentLimits();
-        LimitViolation limitViolation = new LimitViolation(NHV1_NHV2_1, "NHV1_NHV2_1_name", LimitViolationType.CURRENT,
-                limitName, acceptableDuration, limit, limitReduction, value, side);
+
+        LimitViolation limitViolation = LimitViolation.builder()
+            .subject(NHV1_NHV2_1)
+            .subjectName("NHV1_NHV2_1_name")
+            .type(LimitViolationType.CURRENT)
+            .limitName(limitName)
+            .duration(acceptableDuration)
+            .limit(limit)
+            .reduction(limitReduction)
+            .value(value)
+            .side(side)
+            .build();
 
         SubjectLimitViolationEntity subjectLimitViolationEntity = new SubjectLimitViolationEntity(NHV1_NHV2_1,
                 "NHV1_NHV2_1_name");
