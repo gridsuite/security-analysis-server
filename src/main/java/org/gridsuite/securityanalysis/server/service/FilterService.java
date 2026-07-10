@@ -60,8 +60,9 @@ public class FilterService extends AbstractFilterService {
                         EquipmentType.BATTERY, EquipmentType.GENERATOR, EquipmentType.LOAD, EquipmentType.SHUNT_COMPENSATOR,
                         EquipmentType.STATIC_VAR_COMPENSATOR,
                         EquipmentType.BOUNDARY_LINE,
+                        EquipmentType.HVDC_LINE,
                         EquipmentType.VSC_CONVERTER_STATION),
-                ContingencyEntity.Fields.contingencyId);
+            ContingencyEntity.Fields.contingencyElements + FIELD_SEPARATOR + ContingencyElementEmbeddable.Fields.elementId);
     }
 
     public Optional<ResourceFilterDTO> getResourceFilterSubjectLimitViolations(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {
