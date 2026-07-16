@@ -36,6 +36,8 @@ public class FilterService extends AbstractFilterService {
         EquipmentType.SHUNT_COMPENSATOR, EquipmentType.STATIC_VAR_COMPENSATOR, EquipmentType.BOUNDARY_LINE,
         EquipmentType.HVDC_LINE, EquipmentType.VSC_CONVERTER_STATION, EquipmentType.BUSBAR_SECTION);
 
+    private static final String COLUMN = ContingencyEntity.Fields.contingencyElements + FIELD_SEPARATOR + ContingencyElementEmbeddable.Fields.elementId;
+
     public FilterService(RestTemplateBuilder restTemplateBuilder,
                          NetworkStoreService networkStoreService,
                          @Value("${gridsuite.services.filter-server.base-uri:http://filter-server/}") String filterServerBaseUri) {
@@ -47,13 +49,11 @@ public class FilterService extends AbstractFilterService {
     }
 
     public Optional<ResourceFilterDTO> getResourceFilterContingencies(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {
-        return super.getResourceFilter(networkUuid, variantId, globalFilter, EQUIPMENT_TYPES,
-            ContingencyEntity.Fields.contingencyElements + FIELD_SEPARATOR + ContingencyElementEmbeddable.Fields.elementId);
+        return super.getResourceFilter(networkUuid, variantId, globalFilter, EQUIPMENT_TYPES, COLUMN);
     }
 
     public Optional<ResourceFilterDTO> getResourceFilterCutOffPower(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {
-        return super.getResourceFilter(networkUuid, variantId, globalFilter, EQUIPMENT_TYPES,
-            ContingencyEntity.Fields.contingencyElements + FIELD_SEPARATOR + ContingencyElementEmbeddable.Fields.elementId);
+        return super.getResourceFilter(networkUuid, variantId, globalFilter, EQUIPMENT_TYPES, COLUMN);
     }
 
     public Optional<ResourceFilterDTO> getResourceFilterSubjectLimitViolations(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {
