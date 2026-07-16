@@ -51,7 +51,7 @@
         <sonar.projectKey>org.gridsuite:security-analysis-server</sonar.projectKey>
         <!-- FIXME: to be removed at next gridsuite-dependencies upgrade  -->
         <gridsuite-computation.version>2.3.0</gridsuite-computation.version>
-        <gridsuite-filter.version>1.26.0</gridsuite-filter.version>
+        <gridsuite-filter.version>1.27.0</gridsuite-filter.version>
     </properties>
 
     <build>
