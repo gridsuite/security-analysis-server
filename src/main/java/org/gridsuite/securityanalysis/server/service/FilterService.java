@@ -31,6 +31,11 @@ import static org.gridsuite.computation.utils.SpecificationUtils.FIELD_SEPARATOR
 @Service
 public class FilterService extends AbstractFilterService {
 
+    private static final List<EquipmentType> EQUIPMENT_TYPES = List.of(EquipmentType.LINE, EquipmentType.TWO_WINDINGS_TRANSFORMER,
+        EquipmentType.THREE_WINDINGS_TRANSFORMER, EquipmentType.BATTERY, EquipmentType.GENERATOR, EquipmentType.LOAD,
+        EquipmentType.SHUNT_COMPENSATOR, EquipmentType.STATIC_VAR_COMPENSATOR, EquipmentType.BOUNDARY_LINE,
+        EquipmentType.HVDC_LINE, EquipmentType.VSC_CONVERTER_STATION, EquipmentType.BUSBAR_SECTION);
+
     public FilterService(RestTemplateBuilder restTemplateBuilder,
                          NetworkStoreService networkStoreService,
                          @Value("${gridsuite.services.filter-server.base-uri:http://filter-server/}") String filterServerBaseUri) {
@@ -42,26 +47,12 @@ public class FilterService extends AbstractFilterService {
     }
 
     public Optional<ResourceFilterDTO> getResourceFilterContingencies(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {
-        return super.getResourceFilter(networkUuid,
-            variantId, globalFilter,
-            List.of(EquipmentType.LINE, EquipmentType.TWO_WINDINGS_TRANSFORMER, EquipmentType.THREE_WINDINGS_TRANSFORMER,
-                EquipmentType.BATTERY, EquipmentType.GENERATOR, EquipmentType.LOAD, EquipmentType.SHUNT_COMPENSATOR,
-                EquipmentType.STATIC_VAR_COMPENSATOR,
-                EquipmentType.BOUNDARY_LINE,
-                EquipmentType.HVDC_LINE,
-                EquipmentType.VSC_CONVERTER_STATION),
+        return super.getResourceFilter(networkUuid, variantId, globalFilter, EQUIPMENT_TYPES,
             ContingencyEntity.Fields.contingencyElements + FIELD_SEPARATOR + ContingencyElementEmbeddable.Fields.elementId);
     }
 
     public Optional<ResourceFilterDTO> getResourceFilterCutOffPower(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {
-        return super.getResourceFilter(networkUuid,
-                variantId, globalFilter,
-                List.of(EquipmentType.LINE, EquipmentType.TWO_WINDINGS_TRANSFORMER, EquipmentType.THREE_WINDINGS_TRANSFORMER,
-                        EquipmentType.BATTERY, EquipmentType.GENERATOR, EquipmentType.LOAD, EquipmentType.SHUNT_COMPENSATOR,
-                        EquipmentType.STATIC_VAR_COMPENSATOR,
-                        EquipmentType.BOUNDARY_LINE,
-                        EquipmentType.HVDC_LINE,
-                        EquipmentType.VSC_CONVERTER_STATION),
+        return super.getResourceFilter(networkUuid, variantId, globalFilter, EQUIPMENT_TYPES,
             ContingencyEntity.Fields.contingencyElements + FIELD_SEPARATOR + ContingencyElementEmbeddable.Fields.elementId);
     }
 
