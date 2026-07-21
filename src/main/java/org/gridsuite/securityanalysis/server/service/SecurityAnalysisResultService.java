@@ -23,6 +23,7 @@ import org.gridsuite.securityanalysis.server.repositories.*;
 import org.gridsuite.securityanalysis.server.repositories.specifications.ContingencySpecificationBuilder;
 import org.gridsuite.securityanalysis.server.repositories.specifications.PreContingencyLimitViolationSpecificationBuilder;
 import org.gridsuite.securityanalysis.server.repositories.specifications.SubjectLimitViolationSpecificationBuilder;
+import org.gridsuite.securityanalysis.server.util.ContingencyLimitViolationWorstSideUtils;
 import org.gridsuite.securityanalysis.server.util.CsvExportUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +33,6 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -77,7 +77,8 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.loading,
         ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.acceptableDuration,
         ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side,
-        ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId
+        ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR +
+                SubjectLimitViolationEntity.Fields.subjectId
     );
 
     private static final List<String> ALLOWED_NMK_SUBJECT_LIMIT_VIOLATIONS_RESULT_SORT_PROPERTIES = List.of(
@@ -90,8 +91,10 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.loading,
         SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.acceptableDuration,
         SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side,
-        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.contingency + SpecificationUtils.FIELD_SEPARATOR + ContingencyEntity.Fields.contingencyId,
-        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.contingency + SpecificationUtils.FIELD_SEPARATOR + ContingencyEntity.Fields.status
+        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.contingency + SpecificationUtils.FIELD_SEPARATOR +
+                ContingencyEntity.Fields.contingencyId,
+        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.contingency + SpecificationUtils.FIELD_SEPARATOR +
+                ContingencyEntity.Fields.status
     );
 
     private static final List<String> ALLOWED_PRECONTINGENCIES_RESULT_SORT_PROPERTIES = List.of(
@@ -157,14 +160,16 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     @Transactional(readOnly = true)
     public byte[] findNResultZippedCsv(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Sort sort, CsvTranslationDTO csvTranslations) {
         List<PreContingencyLimitViolationResultDTO> result = self.findNResult(resultUuid, networkUuid, variantId, stringFilters, stringGlobalFilters, sort);
-        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRow(csvTranslations.enumValueTranslations(), csvTranslations.language())).toList());
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRow(csvTranslations.enumValueTranslations(),
+                csvTranslations.language())).toList());
     }
 
     @Transactional(readOnly = true)
     public Page<ContingencyResultDTO> findNmKContingenciesPaged(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Pageable pageable) {
         assertResultExists(resultUuid);
 
-        List<ResourceFilterDTO> allResourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters, globalFilter -> filterService.getResourceFilterContingencies(networkUuid, variantId, globalFilter));
+        List<ResourceFilterDTO> allResourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters,
+                globalFilter -> filterService.getResourceFilterContingencies(networkUuid, variantId, globalFilter));
         if (stringGlobalFilters != null && allResourceFilters.isEmpty()) {
             // something is checked in the global filter but no resource filters are returned
             return (Page<ContingencyResultDTO>) emptyPage(pageable);
@@ -191,28 +196,36 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     @Transactional(readOnly = true)
     public Page<ContingencyCutOffPowerDTO> findNmKConnectivityResult(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Pageable pageable) {
         assertResultExists(resultUuid);
-        List<ResourceFilterDTO> allResourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters, globalFilter -> filterService.getResourceFilterCutOffPower(networkUuid, variantId, globalFilter));
+        List<ResourceFilterDTO> allResourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters,
+                globalFilter -> filterService.getResourceFilterCutOffPower(networkUuid, variantId, globalFilter));
         Page<ContingencyEntity> contingencyPage = self.findCutOffPowerContingenciesPage(resultUuid, allResourceFilters, pageable);
         return contingencyPage.map(ContingencyCutOffPowerDTO::toDto);
     }
 
     @Transactional(readOnly = true)
-    public byte[] findNmKConnectivityResultResultZippedCsv(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Sort sort, CsvTranslationDTO csvTranslations) {
+    public byte[] findNmKConnectivityResultResultZippedCsv(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters,
+                                                           String stringGlobalFilters, Sort sort, CsvTranslationDTO csvTranslations) {
         List<ContingencyCutOffPowerDTO> result = self.findNmKConnectivityResult(resultUuid, networkUuid, variantId, stringFilters, stringGlobalFilters, Pageable.unpaged(sort)).getContent();
-        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations(), csvTranslations.language())).flatMap(List::stream).toList());
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream()
+                .map(r -> r.toCsvRows(csvTranslations.enumValueTranslations(), csvTranslations.language()))
+                .flatMap(List::stream).toList());
     }
 
     @Transactional(readOnly = true)
-    public byte[] findNmKContingenciesResultZippedCsv(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Sort sort, CsvTranslationDTO csvTranslations) {
+    public byte[] findNmKContingenciesResultZippedCsv(
+            UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Sort sort, CsvTranslationDTO csvTranslations) {
         List<ContingencyResultDTO> result = self.findNmKContingenciesPaged(resultUuid, networkUuid, variantId, stringFilters, stringGlobalFilters, Pageable.unpaged(sort)).getContent();
-        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations(), csvTranslations.language())).flatMap(List::stream).toList());
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations(),
+                csvTranslations.language())).flatMap(List::stream).toList());
     }
 
     @Transactional(readOnly = true)
-    public Page<SubjectLimitViolationResultDTO> findNmKConstraintsResultPaged(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Pageable pageable) {
+    public Page<SubjectLimitViolationResultDTO> findNmKConstraintsResultPaged(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters,
+            Pageable pageable) {
         assertResultExists(resultUuid);
 
-        List<ResourceFilterDTO> allResourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters, globalFilter -> filterService.getResourceFilterSubjectLimitViolations(networkUuid, variantId, globalFilter));
+        List<ResourceFilterDTO> allResourceFilters = getAllResourceFilters(stringFilters, stringGlobalFilters, globalFilter -> filterService.getResourceFilterSubjectLimitViolations(networkUuid,
+                variantId, globalFilter));
         Page<SubjectLimitViolationEntity> subjectLimitViolationsPage = findSubjectLimitViolationsPage(resultUuid, allResourceFilters, pageable);
         return subjectLimitViolationsPage.map(SubjectLimitViolationResultDTO::toDto);
     }
@@ -234,9 +247,11 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional(readOnly = true)
-    public byte[] findNmKConstraintsResultZippedCsv(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Sort sort, CsvTranslationDTO csvTranslations) {
+    public byte[] findNmKConstraintsResultZippedCsv(UUID resultUuid, UUID networkUuid, String variantId, String stringFilters, String stringGlobalFilters, Sort sort, CsvTranslationDTO
+            csvTranslations) {
         List<SubjectLimitViolationResultDTO> result = self.findNmKConstraintsResultPaged(resultUuid, networkUuid, variantId, stringFilters, stringGlobalFilters, Pageable.unpaged(sort)).getContent();
-        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations(), csvTranslations.language())).flatMap(List::stream).toList());
+        return CsvExportUtils.csvRowsToZippedCsv(csvTranslations.headers(), csvTranslations.language(), result.stream().map(r -> r.toCsvRows(csvTranslations.enumValueTranslations(),
+                csvTranslations.language())).flatMap(List::stream).toList());
     }
 
     private void assertNmKContingenciesSortAllowed(Sort sort) {
@@ -352,7 +367,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         // Add sort properties to projection to satisfy DISTINCT + ORDER BY requirement
         for (Sort.Order order : modifiedPageable.getSort()) {
             String property = order.getProperty();
-            if (!property.equals("uuid") && !projectionProperties.contains(property)) {
+            if (!"uuid".equals(property) && !projectionProperties.contains(property)) {
                 projectionProperties.add(property);
             }
         }
@@ -403,7 +418,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         // Add sort properties to projection to satisfy DISTINCT + ORDER BY requirement
         for (Sort.Order order : modifiedPageable.getSort()) {
             String property = order.getProperty();
-            if (!property.equals("id") && !projectionProperties.contains(property)) {
+            if (!"id".equals(property) && !projectionProperties.contains(property)) {
                 projectionProperties.add(property);
             }
         }
@@ -525,7 +540,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
             Optional<ResourceFilterDTO> resourceGlobalFilters = getResourceGlobalFilter.apply(globalFilter);
             resourceGlobalFilters.ifPresent(allResourceFilters::add);
         }
-        return allResourceFilters;
+        return ContingencyLimitViolationWorstSideUtils.normalizeWorstSideFilter(allResourceFilters);
     }
 
     private void appendLimitViolationsAndElementsToContingenciesResult(Page<ContingencyEntity> contingencies, List<ResourceFilterDTO> resourceFilters) {

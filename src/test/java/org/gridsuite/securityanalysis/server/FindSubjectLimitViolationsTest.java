@@ -86,19 +86,23 @@ class FindSubjectLimitViolationsTest {
         "provideChildSorting",
         "provideEachColumnFilter"
     })
-    void findFilteredSubjectLimitViolationResultsTest(List<ResourceFilterDTO> filters, Pageable pageable, List<SubjectLimitViolationResultDTO> expectedResult, Integer expectedSelectCount) throws JsonProcessingException {
+    void findFilteredSubjectLimitViolationResultsTest(List<ResourceFilterDTO> filters, Pageable pageable, List<SubjectLimitViolationResultDTO> expectedResult,
+            Integer expectedSelectCount) throws JsonProcessingException {
         reset();
-        Page<SubjectLimitViolationResultDTO> subjectLimitViolationPage = securityAnalysisResultService.findNmKConstraintsResultPaged(resultEntity.getId(), null, null, mapper.writeValueAsString(filters), null, pageable);
+        Page<SubjectLimitViolationResultDTO> subjectLimitViolationPage = securityAnalysisResultService.findNmKConstraintsResultPaged(resultEntity.getId(), null, null,
+                mapper.writeValueAsString(filters), null, pageable);
 
         // assert subject ids to check parent filters
         assertThat(subjectLimitViolationPage.getContent()).extracting("subjectId").containsExactlyElementsOf(expectedResult.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList());
         assertThat(subjectLimitViolationPage.getContent().stream()
                 .map(lm -> lm.getContingencies().stream().map(c -> c.getLimitViolation().getLocationId()).toList()))
-                .containsExactlyElementsOf(expectedResult.stream().map(slm -> slm.getContingencies().stream().map(FindSubjectLimitViolationsTest::getContingencyLimitViolationDTOLocationId).toList()).toList());
+                .containsExactlyElementsOf(
+                        expectedResult.stream().map(slm -> slm.getContingencies().stream().map(FindSubjectLimitViolationsTest::getContingencyLimitViolationDTOLocationId).toList()).toList());
         // assert limit violation contingency ids to check nested filters
         assertThat(subjectLimitViolationPage.getContent().stream()
             .map(lm -> lm.getContingencies().stream().map(c -> c.getContingency().getContingencyId()).toList()))
-            .containsExactlyElementsOf(expectedResult.stream().map(c -> c.getContingencies().stream().map(FindSubjectLimitViolationsTest::getContingencyLimitViolationDTOContingencyId).toList()).toList());
+            .containsExactlyElementsOf(
+                    expectedResult.stream().map(c -> c.getContingencies().stream().map(FindSubjectLimitViolationsTest::getContingencyLimitViolationDTOContingencyId).toList()).toList());
 
         // select count check to prevent potential n+1 problems
         // 2 -> assertResultExists ; parent UUIDs ; empty parents, no count or children request
@@ -113,37 +117,49 @@ class FindSubjectLimitViolationsTest {
         "provideForbiddenFilter"
     })
     void testSortAndFilterErrors(List<ResourceFilterDTO> filters, Pageable pageable, Exception expectedException) {
-        Exception exception = assertThrows(expectedException.getClass(), () -> securityAnalysisResultService.findNmKConstraintsResultPaged(resultEntity.getId(), null, null, mapper.writeValueAsString(filters), null, pageable));
+        Exception exception = assertThrows(expectedException.getClass(), () -> securityAnalysisResultService.findNmKConstraintsResultPaged(resultEntity.getId(), null, null,
+                mapper.writeValueAsString(filters), null, pageable));
         assertEquals(expectedException.getMessage(), exception.getMessage());
     }
 
     private static Stream<Arguments> providePageableAndSortOnly() {
         return Stream.of(
-            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")), RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 5),
-            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "subjectId")), RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId).reversed()).toList(), 5),
-            Arguments.of(List.of(), PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "subjectId")), RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList().subList(0, 2), 6),
-            Arguments.of(List.of(), PageRequest.of(1, 2, Sort.by(Sort.Direction.ASC, "subjectId")), RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList().subList(2, Math.min(RESULT_CONSTRAINTS.size(), 4)), 6)
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
+                    RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 5),
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "subjectId")),
+                    RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId).reversed()).toList(), 5),
+            Arguments.of(List.of(), PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "subjectId")),
+                    RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList().subList(0, 2), 6),
+            Arguments.of(List.of(), PageRequest.of(1, 2, Sort.by(Sort.Direction.ASC, "subjectId")),
+                    RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList().subList(2, Math.min(RESULT_CONSTRAINTS.size(), 4)), 6)
         );
     }
 
     private static Stream<Arguments> provideParentFilter() {
         return Stream.of(
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", SubjectLimitViolationEntity.Fields.subjectId)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "3", SubjectLimitViolationEntity.Fields.subjectId)), PageRequest.of(0, 30,
+                    Sort.by(Sort.Direction.ASC, "subjectId")),
                 RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).filter(c -> c.getSubjectId().contains("3")).toList(), 5),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "l", SubjectLimitViolationEntity.Fields.subjectId)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "l", SubjectLimitViolationEntity.Fields.subjectId)), PageRequest.of(0, 30,
+                    Sort.by(Sort.Direction.ASC, "subjectId")),
                 RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).filter(c -> c.getSubjectId().startsWith("l")).toList(), 5),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", SubjectLimitViolationEntity.Fields.subjectId)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "3", SubjectLimitViolationEntity.Fields.subjectId)), PageRequest.of(0, 30,
+                    Sort.by(Sort.Direction.ASC, "subjectId")),
                 RESULT_CONSTRAINTS.stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).filter(c -> c.getSubjectId().startsWith("3")).toList(), 2)
         );
     }
 
     private static Stream<Arguments> provideChildFilter() {
         return Stream.of(
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "2", SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.contingency + SpecificationUtils.FIELD_SEPARATOR + ContingencyEntity.Fields.contingencyId)), PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "subjectId")),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "2",
+                    SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.contingency
+                            + SpecificationUtils.FIELD_SEPARATOR + ContingencyEntity.Fields.contingencyId)), PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "subjectId")),
                 getResultConstraintsWithNestedFilter(c -> c.getContingency().getContingencyId().contains("2"))
                     .stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList()
                     .subList(0, 2), 6), // find 1st page of size 2 of contingencies, filtered by SubjectId
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "CURRENT", SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitType)), PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC, "subjectId")),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "CURRENT",
+                    SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitType)), PageRequest.of(0, 2,
+                            Sort.by(Sort.Direction.ASC, "subjectId")),
                 getResultConstraintsWithNestedFilter(c -> c.getLimitViolation().getLimitType().equals(LimitViolationType.CURRENT))
                     .stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList()
                     .subList(0, 2), 6)
@@ -153,11 +169,15 @@ class FindSubjectLimitViolationsTest {
     private static Stream<Arguments> provideChildSorting() {
         return Stream.of(
             buildArgumentsForChildrenSorting(
-                Sort.by(Sort.Direction.ASC, SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.contingency + SpecificationUtils.FIELD_SEPARATOR + ContingencyEntity.Fields.contingencyId),
+                Sort.by(Sort.Direction.ASC,
+                        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.contingency
+                                + SpecificationUtils.FIELD_SEPARATOR + ContingencyEntity.Fields.contingencyId),
                 Comparator.comparing(c -> c.getContingency().getContingencyId(), Comparator.nullsLast(Comparator.naturalOrder()))
             ),
             buildArgumentsForChildrenSorting(
-                Sort.by(Sort.Direction.ASC, SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.contingency + SpecificationUtils.FIELD_SEPARATOR + ContingencyEntity.Fields.status),
+                Sort.by(Sort.Direction.ASC,
+                        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.contingency
+                                + SpecificationUtils.FIELD_SEPARATOR + ContingencyEntity.Fields.status),
                 Comparator.comparing(c -> c.getContingency().getStatus(), Comparator.nullsLast(Comparator.naturalOrder()))
             ),
             buildArgumentsForChildrenSorting(
@@ -181,7 +201,8 @@ class FindSubjectLimitViolationsTest {
                 Comparator.comparing(subjectLimitViolationDTO -> subjectLimitViolationDTO.getLimitViolation().getLoading(), Comparator.nullsLast(Comparator.naturalOrder()))
             ),
             buildArgumentsForChildrenSorting(
-                Sort.by(Sort.Direction.ASC, SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.acceptableDuration),
+                Sort.by(Sort.Direction.ASC,
+                        SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.acceptableDuration),
                 Comparator.comparing(subjectLimitViolationDTO -> subjectLimitViolationDTO.getLimitViolation().getAcceptableDuration(), Comparator.nullsLast(Comparator.naturalOrder()))
             ),
             buildArgumentsForChildrenSorting(
@@ -210,25 +231,38 @@ class FindSubjectLimitViolationsTest {
 
     private static Stream<Arguments> provideEachColumnFilter() {
         return Stream.of(
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "CO", SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.contingency + SpecificationUtils.FIELD_SEPARATOR + ContingencyEntity.Fields.status)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
-                getResultConstraintsWithNestedFilter(c -> c.getContingency().getStatus().contains("CO")).stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 5),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "ONE", SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
-                getResultConstraintsWithNestedFilter(c -> c.getLimitViolation().getSide() != null && c.getLimitViolation().getSide().equals(ThreeSides.ONE)).stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 5),
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "l6_name", SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitName)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
-                getResultConstraintsWithNestedFilter(c -> c.getLimitViolation().getLimitName().equals("l6_name")).stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 5)
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "CO",
+                    SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + ContingencyLimitViolationEntity.Fields.contingency
+                            + SpecificationUtils.FIELD_SEPARATOR + ContingencyEntity.Fields.status)), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "subjectId")),
+                getResultConstraintsWithNestedFilter(c -> c.getContingency().getStatus().contains("CO")).stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(),
+                        5),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "ONE",
+                    SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side)), PageRequest.of(0, 30,
+                            Sort.by(Sort.Direction.ASC, "subjectId")),
+                getResultConstraintsWithNestedFilter(c -> c.getLimitViolation().getSide() != null
+                        && c.getLimitViolation().getSide().equals(ThreeSides.ONE)).stream().sorted(Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 5),
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, "l6_name",
+                    SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitName)), PageRequest.of(0, 30,
+                            Sort.by(Sort.Direction.ASC, "subjectId")),
+                getResultConstraintsWithNestedFilter(c -> c.getLimitViolation().getLimitName().equals("l6_name")).stream().sorted(
+                        Comparator.comparing(SubjectLimitViolationResultDTO::getSubjectId)).toList(), 5)
         );
     }
 
     private static Stream<Arguments> provideForbiddenSort() {
         return Stream.of(
-            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")), new ComputationException(INVALID_SORT_FORMAT, "Sorting is not accepted on at least one of the columns for this result type")),
-            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "side")), new ComputationException(INVALID_SORT_FORMAT, "Sorting is not accepted on at least one of the columns for this result type"))
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.ASC, "contingencyId")), new ComputationException(INVALID_SORT_FORMAT,
+                    "Sorting is not accepted on at least one of the columns for this result type")),
+            Arguments.of(List.of(), PageRequest.of(0, 30, Sort.by(Sort.Direction.DESC, "side")), new ComputationException(INVALID_SORT_FORMAT,
+                    "Sorting is not accepted on at least one of the columns for this result type"))
         );
     }
 
     private static Stream<Arguments> provideForbiddenFilter() {
         return Stream.of(
-            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.CONTAINS, 3, SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limit)), PageRequest.of(0, 30), new IllegalArgumentException("The filter type CONTAINS is not supported with the data type NUMBER"))
+            Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.CONTAINS, 3,
+                    SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limit)), PageRequest.of(0, 30),
+                            new IllegalArgumentException("The filter type CONTAINS is not supported with the data type NUMBER"))
         );
     }
 
