@@ -39,6 +39,8 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.gridsuite.computation.error.ComputationBusinessErrorCode.INVALID_SORT_FORMAT;
 import static org.gridsuite.computation.error.ComputationBusinessErrorCode.RESULT_NOT_FOUND;
@@ -483,7 +485,8 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
 
         List<UUID> orderedUuids = uuidPage.map(ContingencyRepository.EntityUuid::getUuid).toList();
         List<ContingencyEntity> contingencies = contingencyRepository.findAllByUuidIn(orderedUuids);
-        contingencies.sort(Comparator.comparing(c -> orderedUuids.indexOf(c.getUuid())));
+        Map<UUID, Integer> positionByUuid = IntStream.range(0, orderedUuids.size()).boxed().collect(Collectors.toMap(orderedUuids::get, Function.identity()));
+        contingencies.sort(Comparator.comparingInt(c -> positionByUuid.get(c.getUuid())));
         return new PageImpl<>(contingencies, pageable, uuidPage.getTotalElements());
     }
 
