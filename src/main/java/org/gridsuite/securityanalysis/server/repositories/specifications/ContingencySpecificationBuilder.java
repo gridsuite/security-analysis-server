@@ -12,12 +12,15 @@ import jakarta.persistence.criteria.Root;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
 import org.gridsuite.computation.specification.AbstractCommonSpecificationBuilder;
 import org.gridsuite.computation.utils.SpecificationUtils;
+import org.gridsuite.securityanalysis.server.entities.ContingencyElementEmbeddable;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.UUID;
+
+import static org.gridsuite.computation.utils.SpecificationUtils.FIELD_SEPARATOR;
 
 /**
  * @author Kevin LE SAULNIER <kevin.lesaulnier at rte-france.com>
@@ -26,7 +29,7 @@ import java.util.UUID;
 public class ContingencySpecificationBuilder extends AbstractCommonSpecificationBuilder<ContingencyEntity> {
     @Override
     public boolean isNotParentFilter(ResourceFilterDTO filter) {
-        return !List.of(ContingencyEntity.Fields.contingencyId, ContingencyEntity.Fields.status).contains(filter.column());
+        return !List.of(ContingencyEntity.Fields.contingencyId, ContingencyEntity.Fields.status, ContingencyEntity.Fields.contingencyElements + FIELD_SEPARATOR + ContingencyElementEmbeddable.Fields.elementId).contains(filter.column());
     }
 
     @Override

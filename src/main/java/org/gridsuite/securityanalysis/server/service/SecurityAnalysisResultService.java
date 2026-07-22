@@ -559,17 +559,6 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
             // we fetch contingencyElements here to prevent N+1 query
             contingencyRepository.findAllWithContingencyElementsByUuidIn(contingencyUuids);
 
-            // Removing the duplicated elements in the contingencyLimitViolations list of each contingency,
-            // preserving the order
-            contingencies.forEach(contingency -> {
-                List<ContingencyLimitViolationEntity> limitViolations = contingency.getContingencyLimitViolations();
-                if (!CollectionUtils.isEmpty(limitViolations)) {
-                    List<ContingencyLimitViolationEntity> uniqueLimitViolations = new ArrayList<>(new LinkedHashSet<>(limitViolations));
-                    limitViolations.clear();
-                    limitViolations.addAll(uniqueLimitViolations);
-                }
-            });
-
             sortLimitViolationsInContingencies(contingencies);
         }
     }
