@@ -29,7 +29,8 @@ import static org.gridsuite.computation.utils.SpecificationUtils.FIELD_SEPARATOR
 public class ContingencySpecificationBuilder extends AbstractCommonSpecificationBuilder<ContingencyEntity> {
     @Override
     public boolean isNotParentFilter(ResourceFilterDTO filter) {
-        return !List.of(ContingencyEntity.Fields.contingencyId, ContingencyEntity.Fields.status, ContingencyEntity.Fields.contingencyElements + FIELD_SEPARATOR + ContingencyElementEmbeddable.Fields.elementId).contains(filter.column());
+        return !List.of(ContingencyEntity.Fields.contingencyId, ContingencyEntity.Fields.status,
+            ContingencyEntity.Fields.contingencyElements + FIELD_SEPARATOR + ContingencyElementEmbeddable.Fields.elementId).contains(filter.column());
     }
 
     @Override
