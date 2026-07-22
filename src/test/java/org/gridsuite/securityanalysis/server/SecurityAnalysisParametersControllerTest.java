@@ -333,7 +333,7 @@ class SecurityAnalysisParametersControllerTest {
         assertSecurityAnalysisParametersEntityAreEquals(createdParametersUuid, 10, 11, 12, 13, 14);
 
         //duplicate
-        mvcResult = mockMvc.perform(post("/" + VERSION + "/parameters").queryParam("duplicateFrom", createdParametersUuid.toString()))
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/parameters/{uuid}/duplicate", createdParametersUuid))
                 .andExpectAll(
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON)
@@ -345,8 +345,7 @@ class SecurityAnalysisParametersControllerTest {
         assertSecurityAnalysisParametersEntityAreEquals(duplicatedParametersUuid, 10, 11, 12, 13, 14);
 
         //duplicate not existing parameters and expect a 404
-        mockMvc.perform(post("/" + VERSION + "/parameters")
-                        .queryParam("duplicateFrom", UUID.randomUUID().toString()))
+        mockMvc.perform(post("/" + VERSION + "/parameters/{uuid}/duplicate", UUID.randomUUID()))
                 .andExpectAll(
                         status().isNotFound()
                 ).andReturn();
