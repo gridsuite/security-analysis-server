@@ -465,6 +465,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
                         cb.notEqual(root.get(ContingencyEntity.Fields.connectivityResult)
                                 .get(ConnectivityResultEmbeddable.Fields.disconnectedGenerationActivePower), 0.0)
                 ));
+        specification = specification.and(SpecificationUtils.distinct());
         specification = SpecificationUtils.appendFiltersToSpecification(specification, resourceFilters);
         // Determine which properties to project based on sort fields
         // When using DISTINCT, all ORDER BY columns must be in the SELECT list
@@ -479,7 +480,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
                         .page(modifiedPageable)
         );
         if (!uuidPage.hasContent()) {
-            return Page.empty(pageable);
+            return (Page<ContingencyEntity>) emptyPage(pageable);
         }
 
         List<UUID> orderedUuids = uuidPage.map(ContingencyRepository.EntityUuid::getUuid).toList();
