@@ -6,11 +6,23 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.powsybl.contingency.BranchContingency;
+import com.powsybl.contingency.Contingency;
+import com.powsybl.contingency.ContingencyElement;
+import com.powsybl.contingency.violations.LimitViolation;
 import com.powsybl.contingency.violations.LimitViolationType;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
+import com.powsybl.iidm.network.TwoSides;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
+import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
+import com.powsybl.security.LimitViolationsResult;
+import com.powsybl.security.PostContingencyComputationStatus;
+import com.powsybl.security.SecurityAnalysisResult;
+import com.powsybl.security.results.ConnectivityResult;
+import com.powsybl.security.results.NetworkResult;
+import com.powsybl.security.results.PostContingencyResult;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
 import org.gridsuite.computation.error.ComputationException;
 import org.gridsuite.computation.utils.SpecificationUtils;
@@ -18,6 +30,7 @@ import org.gridsuite.securityanalysis.server.dto.ContingencyResultDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationDTO;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.entities.ContingencyElementEmbeddable;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
@@ -25,6 +38,7 @@ import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResult
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -36,6 +50,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -114,6 +129,56 @@ class FindContingenciesTest {
     void testSortAndFilterErrors(List<ResourceFilterDTO> filters, Pageable pageable, Exception expectedException) {
         Exception exception = assertThrows(expectedException.getClass(), () -> securityAnalysisResultService.findContingenciesPage(resultEntity.getId(), filters, pageable));
         assertEquals(expectedException.getMessage(), exception.getMessage());
+    }
+
+    @Test
+    void findFilteredContingencyResultsDoNotDuplicateLimitViolations() {
+        UUID resultUuid = UUID.randomUUID();
+        String contingencyId1 = "contingency-1";
+        String contingencyId2 = "contingency-2";
+        SecurityAnalysisResult securityAnalysisResult = new SecurityAnalysisResult(
+            new LimitViolationsResult(List.of()),
+            LoadFlowResult.ComponentResult.Status.CONVERGED,
+            List.of(
+                createPostContingencyResult(contingencyId1, "element-1", "element-2"),
+                createPostContingencyResult(contingencyId2, "element-3", "element-4")
+            )
+        );
+        securityAnalysisResultService.insert(null, resultUuid, securityAnalysisResult, SecurityAnalysisStatus.CONVERGED);
+
+        ResourceFilterDTO globalFilter = new ResourceFilterDTO(
+            ResourceFilterDTO.DataType.TEXT,
+            ResourceFilterDTO.Type.CONTAINS,
+            "element",
+            ContingencyEntity.Fields.contingencyElements + SpecificationUtils.FIELD_SEPARATOR + ContingencyElementEmbeddable.Fields.elementId
+        );
+
+        Page<ContingencyEntity> contingenciesPage = securityAnalysisResultService.findContingenciesPage(
+            resultUuid,
+            List.of(globalFilter),
+            PageRequest.of(0, 5, Sort.by(Sort.Direction.ASC, ContingencyEntity.Fields.contingencyId))
+        );
+
+        assertThat(contingenciesPage.getContent())
+            .hasSize(2)
+                .extracting(ContingencyEntity::getContingencyLimitViolations)
+                .allSatisfy(limitViolations ->
+                        assertThat(limitViolations).hasSize(1)
+                );
+    }
+
+    private static PostContingencyResult createPostContingencyResult(String contingencyId, String... elementIds) {
+        return new PostContingencyResult(
+            new Contingency(contingencyId, Arrays.stream(elementIds)
+                .map(elementId -> (ContingencyElement) new BranchContingency(elementId))
+                .toList()),
+            PostContingencyComputationStatus.CONVERGED,
+            new LimitViolationsResult(List.of(new LimitViolation(
+                    "subject", LimitViolationType.CURRENT, "limit", 60, 100, 1, 110, TwoSides.ONE))),
+            NetworkResult.empty(),
+            ConnectivityResult.empty(),
+            1.0
+        );
     }
 
     private static Stream<Arguments> providePageableAndSortOnly() {
