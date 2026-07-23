@@ -9,7 +9,6 @@ package org.gridsuite.securityanalysis.server.entities;
 import com.powsybl.contingency.violations.LimitViolation;
 import com.powsybl.contingency.violations.LimitViolationType;
 import com.powsybl.iidm.network.*;
-import com.powsybl.iidm.network.util.LimitViolationUtils;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -117,7 +116,7 @@ public abstract class AbstractLimitViolationEntity {
         }
 
         Collection<LoadingLimits.TemporaryLimit> temporaryLimits = currentLimits.get().getTemporaryLimits();
-        if (limitName.equals(LimitViolationUtils.PERMANENT_LIMIT_NAME)) {
+        if (limitName.equals(LoadingLimits.DEFAULT_PERMANENT_LIMIT_NAME)) {
             return temporaryLimits.stream().findFirst().orElse(null);
         }
 
