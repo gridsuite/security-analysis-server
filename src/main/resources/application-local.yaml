@@ -22,3 +22,5 @@ gridsuite:
       base-uri: http://localhost:5028
     loadflow-server:
       base-uri: http://localhost:5008
+    filter-server:
+      base-uri: http://localhost:5027
