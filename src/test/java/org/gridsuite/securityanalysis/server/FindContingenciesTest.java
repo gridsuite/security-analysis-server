@@ -181,6 +181,55 @@ class FindContingenciesTest {
         );
     }
 
+    @Test
+    void findFilteredContingencyResultsWithFailedStatus() {
+        UUID resultUuid = UUID.randomUUID();
+        String contingencyId1 = "contingency-1";
+        String contingencyId2 = "contingency-2";
+        SecurityAnalysisResult securityAnalysisResult = new SecurityAnalysisResult(
+            new LimitViolationsResult(List.of()),
+            LoadFlowResult.ComponentResult.Status.CONVERGED,
+            List.of(
+                createPostContingencyResultWithFailedStatus(contingencyId1, "element-1", "element-2"),
+                createPostContingencyResultWithFailedStatus(contingencyId2, "element-3", "element-4")
+            )
+        );
+        securityAnalysisResultService.insert(null, resultUuid, securityAnalysisResult, SecurityAnalysisStatus.CONVERGED);
+
+        ResourceFilterDTO globalFilter = new ResourceFilterDTO(
+            ResourceFilterDTO.DataType.TEXT,
+            ResourceFilterDTO.Type.CONTAINS,
+            "element",
+            ContingencyEntity.Fields.contingencyElements + SpecificationUtils.FIELD_SEPARATOR + ContingencyElementEmbeddable.Fields.elementId
+        );
+
+        Page<ContingencyEntity> contingenciesPage = securityAnalysisResultService.findContingenciesPage(
+            resultUuid,
+            List.of(globalFilter),
+            PageRequest.of(0, 5, Sort.by(Sort.Direction.ASC, ContingencyEntity.Fields.contingencyId))
+        );
+
+        assertThat(contingenciesPage.getContent())
+            .hasSize(2)  // 2 failed contingencies in the result
+            .extracting(ContingencyEntity::getContingencyLimitViolations)
+            .allSatisfy(limitViolations ->
+                assertThat(limitViolations).hasSize(0)  // no limit violations for failed contingencies
+            );
+    }
+
+    private static PostContingencyResult createPostContingencyResultWithFailedStatus(String contingencyId, String... elementIds) {
+        return new PostContingencyResult(
+            new Contingency(contingencyId, Arrays.stream(elementIds)
+                .map(elementId -> (ContingencyElement) new BranchContingency(elementId))
+                .toList()),
+            PostContingencyComputationStatus.FAILED,
+            new LimitViolationsResult(List.of()),
+            NetworkResult.empty(),
+            ConnectivityResult.empty(),
+            1.0
+        );
+    }
+
     private static Stream<Arguments> providePageableAndSortOnly() {
         return Stream.of(
             Arguments.of(List.of(), PageRequest.of(0, 5, Sort.by(Sort.Direction.ASC, ContingencyEntity.Fields.contingencyId)),
