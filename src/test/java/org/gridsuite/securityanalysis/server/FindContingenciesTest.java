@@ -213,7 +213,7 @@ class FindContingenciesTest {
             .hasSize(2)  // 2 failed contingencies in the result
             .extracting(ContingencyEntity::getContingencyLimitViolations)
             .allSatisfy(limitViolations ->
-                assertThat(limitViolations).hasSize(0)  // no limit violations for failed contingencies
+                assertThat(limitViolations).isEmpty()  // no limit violations for failed contingencies
             );
     }
 
