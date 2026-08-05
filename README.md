@@ -111,4 +111,4 @@ The security-analysis-server itself focuses on security-analysis-specific logic 
 
 ## Useful Links
 
-You can find [information on OpenLoadFlow here](https://powsybl.readthedocs.io/projects/powsybl-open-loadflow/en/latest/)
+You can find [information on OpenLoadFlow here](https://powsybl.readthedocs.io/projects/powsybl-open-loadflow/en/latest/) and [on DynaFlow here](https://dynawo.github.io/about/dynaflow.html)```
