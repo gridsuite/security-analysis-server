@@ -26,6 +26,7 @@ import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerServi
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -151,17 +152,21 @@ public class SecurityAnalysisController {
                                                       @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
                                                       @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations,
                                                       @Parameter(description = "Sort parameters") Sort sort) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(APPLICATION_OCTET_STREAM);
+        httpHeaders.setContentDispositionFormData("attachment", "N_results.zip");
+        byte[] csv = securityAnalysisResultService.findNResultZippedCsv(
+                resultUuid,
+                networkUuid,
+                variantId,
+                filters,
+                globalFilters,
+                sort,
+                csvTranslations
+        );
         return ResponseEntity.ok()
-            .contentType(APPLICATION_OCTET_STREAM)
-            .body(securityAnalysisResultService.findNResultZippedCsv(
-                    resultUuid,
-                    networkUuid,
-                    variantId,
-                    filters,
-                    globalFilters,
-                    sort,
-                    csvTranslations
-            ));
+            .headers(httpHeaders)
+            .body(csv);
     }
 
     @GetMapping(value = "/results/{resultUuid}/nmk-contingencies-result/paged", produces = APPLICATION_JSON_VALUE)
