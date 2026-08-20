@@ -210,17 +210,13 @@ public class SecurityAnalysisController {
                                                                      @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
                                                                      @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations,
                                                                      @Parameter(description = "Sort parameters") Sort sort) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(APPLICATION_OCTET_STREAM);
+        httpHeaders.setContentDispositionFormData("attachment", "NMK_CONTINGENCIES_results.zip");
+        byte[] csv = securityAnalysisResultService.findNmKContingenciesResultZippedCsv(resultUuid, networkUuid, variantId, filters, globalFilters, sort, csvTranslations);
         return ResponseEntity.ok()
-            .contentType(MediaType.APPLICATION_OCTET_STREAM)
-            .body(securityAnalysisResultService.findNmKContingenciesResultZippedCsv(
-                    resultUuid,
-                    networkUuid,
-                    variantId,
-                    filters,
-                    globalFilters,
-                    sort,
-                    csvTranslations
-            ));
+            .headers(httpHeaders)
+            .body(csv);
     }
 
     @GetMapping(value = "/results/{resultUuid}/nmk-constraints-result/paged", produces = APPLICATION_JSON_VALUE)
@@ -269,17 +265,14 @@ public class SecurityAnalysisController {
                                                                    @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
                                                                    @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations,
                                                                    @Parameter(description = "Sort parameters") Sort sort) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(APPLICATION_OCTET_STREAM);
+        httpHeaders.setContentDispositionFormData("attachment", "NMK_CUT_OFF_POWER_results.zip");
+        byte[] csv = securityAnalysisResultService.findNmKConnectivityResultResultZippedCsv(resultUuid, networkUuid, variantId, filters, globalFilters, sort, csvTranslations);
         return ResponseEntity.ok()
+                .headers(httpHeaders)
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(securityAnalysisResultService.findNmKConnectivityResultResultZippedCsv(
-                        resultUuid,
-                        networkUuid,
-                        variantId,
-                        filters,
-                        globalFilters,
-                        sort,
-                        csvTranslations
-                ));
+                .body(csv);
     }
 
     @PostMapping(value = "/results/{resultUuid}/nmk-constraints-result/csv", produces = APPLICATION_OCTET_STREAM_VALUE, consumes = APPLICATION_JSON_VALUE)
@@ -293,18 +286,15 @@ public class SecurityAnalysisController {
                                                                   @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
                                                                   @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations,
                                                                   @Parameter(description = "Sort parameters") Sort sort) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(APPLICATION_OCTET_STREAM);
+        httpHeaders.setContentDispositionFormData("attachment", "NMK_LIMIT_VIOLATIONS_results.zip");
+        byte[] csv = securityAnalysisResultService.findNmKConstraintsResultZippedCsv(resultUuid, networkUuid, variantId, filters, globalFilters, sort, csvTranslations);
 
         return ResponseEntity.ok()
+                .headers(httpHeaders)
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(securityAnalysisResultService.findNmKConstraintsResultZippedCsv(
-                        resultUuid,
-                        networkUuid,
-                        variantId,
-                        filters,
-                        globalFilters,
-                        sort,
-                        csvTranslations
-                ));
+                .body(csv);
     }
 
     @DeleteMapping(value = "/results", produces = APPLICATION_JSON_VALUE)
