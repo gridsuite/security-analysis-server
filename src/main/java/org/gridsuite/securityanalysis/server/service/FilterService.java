@@ -16,8 +16,8 @@ import org.gridsuite.securityanalysis.server.entities.ContingencyElementEmbeddab
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,10 +38,10 @@ public class FilterService extends AbstractFilterService {
 
     private static final String COLUMN = ContingencyEntity.Fields.contingencyElements + FIELD_SEPARATOR + ContingencyElementEmbeddable.Fields.elementId;
 
-    public FilterService(RestTemplateBuilder restTemplateBuilder,
+    public FilterService(RestClient.Builder restClientBuilder,
                          NetworkStoreService networkStoreService,
                          @Value("${gridsuite.services.filter-server.base-uri:http://filter-server/}") String filterServerBaseUri) {
-        super(restTemplateBuilder, networkStoreService, filterServerBaseUri);
+        super(restClientBuilder, networkStoreService, filterServerBaseUri);
     }
 
     public Optional<ResourceFilterDTO> getResourceFilterN(@NonNull UUID networkUuid, @NonNull String variantId, @NonNull GlobalFilter globalFilter) {

@@ -10,9 +10,8 @@ import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.error.AllContingencyListMissingException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
@@ -33,7 +32,7 @@ public class ActionsService {
 
     private String baseUri;
 
-    private RestTemplate restTemplate;
+    private RestClient restClient;
 
     public void setActionServiceBaseUri(String baseUri) {
         this.baseUri = baseUri;
@@ -41,9 +40,9 @@ public class ActionsService {
 
     public ActionsService(
             @Value("${gridsuite.services.actions-server.base-uri:http://actions-server/}") String baseUri,
-            RestTemplate restTemplate) {
+            RestClient restClient) {
         this.baseUri = baseUri;
-        this.restTemplate = restTemplate;
+        this.restClient = restClient;
     }
 
     public List<ContingencyInfos> getContingencyList(List<UUID> ids, UUID networkUuid, String variantId) {
@@ -59,6 +58,6 @@ public class ActionsService {
                 .queryParam("ids", ids)
                 .build().toUri();
 
-        return restTemplate.exchange(baseUri + path, HttpMethod.GET, null, new ParameterizedTypeReference<List<ContingencyInfos>>() { }).getBody();
+        return restClient.get().uri(baseUri + path).retrieve().body(new ParameterizedTypeReference<>() { });
     }
 }
