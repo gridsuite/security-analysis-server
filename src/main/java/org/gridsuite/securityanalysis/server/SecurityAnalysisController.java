@@ -45,6 +45,7 @@ import static org.springframework.http.MediaType.*;
 @RequestMapping(value = "/" + SecurityAnalysisApi.API_VERSION)
 @Tag(name = "Security analysis server")
 public class SecurityAnalysisController {
+    public static final String ATTACHMENT = "attachment";
     private final SecurityAnalysisService securityAnalysisService;
 
     private final SecurityAnalysisParametersService securityAnalysisParametersService;
@@ -154,7 +155,7 @@ public class SecurityAnalysisController {
                                                       @Parameter(description = "Sort parameters") Sort sort) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(APPLICATION_OCTET_STREAM);
-        httpHeaders.setContentDispositionFormData("attachment", "N-results.zip");
+        httpHeaders.setContentDispositionFormData(ATTACHMENT, "N-results.zip");
         byte[] csv = securityAnalysisResultService.findNResultZippedCsv(
                 resultUuid,
                 networkUuid,
@@ -212,7 +213,7 @@ public class SecurityAnalysisController {
                                                                      @Parameter(description = "Sort parameters") Sort sort) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(APPLICATION_OCTET_STREAM);
-        httpHeaders.setContentDispositionFormData("attachment", "NMK_CONTINGENCIES-results.zip");
+        httpHeaders.setContentDispositionFormData(ATTACHMENT, "NMK_CONTINGENCIES-results.zip");
         byte[] csv = securityAnalysisResultService.findNmKContingenciesResultZippedCsv(resultUuid, networkUuid, variantId, filters, globalFilters, sort, csvTranslations);
         return ResponseEntity.ok()
             .headers(httpHeaders)
@@ -267,7 +268,7 @@ public class SecurityAnalysisController {
                                                                    @Parameter(description = "Sort parameters") Sort sort) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(APPLICATION_OCTET_STREAM);
-        httpHeaders.setContentDispositionFormData("attachment", "NMK_CUT_OFF_POWER-results.zip");
+        httpHeaders.setContentDispositionFormData(ATTACHMENT, "NMK_CUT_OFF_POWER-results.zip");
         byte[] csv = securityAnalysisResultService.findNmKConnectivityResultResultZippedCsv(resultUuid, networkUuid, variantId, filters, globalFilters, sort, csvTranslations);
         return ResponseEntity.ok()
                 .headers(httpHeaders)
@@ -288,7 +289,7 @@ public class SecurityAnalysisController {
                                                                   @Parameter(description = "Sort parameters") Sort sort) {
         HttpHeaders httpHeaders = new HttpHeaders();
         httpHeaders.setContentType(APPLICATION_OCTET_STREAM);
-        httpHeaders.setContentDispositionFormData("attachment", "NMK_LIMIT_VIOLATIONS-results.zip");
+        httpHeaders.setContentDispositionFormData(ATTACHMENT, "NMK_LIMIT_VIOLATIONS-results.zip");
         byte[] csv = securityAnalysisResultService.findNmKConstraintsResultZippedCsv(resultUuid, networkUuid, variantId, filters, globalFilters, sort, csvTranslations);
 
         return ResponseEntity.ok()
