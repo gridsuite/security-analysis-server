@@ -76,6 +76,14 @@ public class SecurityAnalysisParametersController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping(value = "/{uuid}/contingency-list-uuids", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get contingency list uuids referenced by the given parameters")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The contingency list uuids")})
+    public ResponseEntity<List<UUID>> getContingencyListUuids(
+            @Parameter(description = "parameters UUID") @PathVariable(value = "uuid") UUID parametersUuid) {
+        return ResponseEntity.ok().body(parametersService.getContingencyListUuids(parametersUuid));
+    }
+
     @PutMapping(value = "/{uuid}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Update parameters or reset them to default if no parameters are given")
     @ApiResponses(value = {

@@ -163,6 +163,13 @@ public class SecurityAnalysisParametersService {
                 .map(this::toSecurityAnalysisParametersValues);
     }
 
+    @Transactional(readOnly = true)
+    public List<UUID> getContingencyListUuids(UUID parametersUuid) {
+        return securityAnalysisParametersRepository.findById(parametersUuid)
+                .map(SecurityAnalysisParametersEntity::getContingencyListUuids)
+                .orElse(List.of());
+    }
+
     public UUID createParameters(SecurityAnalysisParametersValues securityAnalysisParametersValues) {
         return securityAnalysisParametersRepository.save(securityAnalysisParametersValues.toEntity()).getId();
     }
