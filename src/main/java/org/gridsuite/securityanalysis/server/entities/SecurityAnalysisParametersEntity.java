@@ -75,6 +75,16 @@ public class SecurityAnalysisParametersEntity {
                 .toList();
     }
 
+    public List<UUID> getContingencyListUuids() {
+        if (contingencyLists == null) {
+            return List.of();
+        }
+        return this.contingencyLists.stream()
+                .flatMap(contingencyList -> contingencyList.getContingencyListIds().stream())
+                .distinct()
+                .toList();
+    }
+
     public List<List<Double>> toLimitReductionsValues() {
         return this.limitReductions.stream().map(LimitReductionEntity::getReductions).map(ArrayList::new).collect(Collectors.toList());
     }
