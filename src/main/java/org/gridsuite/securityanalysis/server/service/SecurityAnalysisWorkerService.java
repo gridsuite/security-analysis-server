@@ -170,6 +170,11 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     }
 
     @Override
+    protected void setRunningStatus(UUID resultUuid) {
+        resultService.insertStatus(List.of(resultUuid), SecurityAnalysisStatus.RUNNING);
+    }
+
+    @Override
     protected void preRun(SecurityAnalysisRunContext runContext) {
         if (runContext.getParameters().contingencyListUuids() != null) {
             LOGGER.info("Run security analysis on contingency lists: {}", runContext.getParameters().contingencyListUuids());
