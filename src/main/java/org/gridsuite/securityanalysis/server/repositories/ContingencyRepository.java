@@ -54,5 +54,8 @@ public interface ContingencyRepository extends JpaRepository<ContingencyEntity, 
 
     interface EntityUuid {
         UUID getUuid();
+
+        // To prioritize non-converged contingencies before pagination is applied.
+        String getStatus();
     }
 }

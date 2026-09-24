@@ -234,10 +234,13 @@ class FindContingenciesTest {
         return Stream.of(
             Arguments.of(List.of(), PageRequest.of(0, 5, Sort.by(Sort.Direction.ASC, ContingencyEntity.Fields.contingencyId)),
                     RESULT_CONTINGENCIES_WITH_LIMIT_VIOLATIONS_ON_BOTH_SIDES.stream()
-                        .sorted(Comparator.comparing(FindContingenciesTest::getContingencyResultDTOId)).toList().subList(0, 5), 5),
+                        .sorted(Comparator.comparing(FindContingenciesTest::getContingencyResultDTOId)).toList().subList(0, 5), 4),
             Arguments.of(List.of(), PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, ContingencyEntity.Fields.contingencyId)),
                     RESULT_CONTINGENCIES_WITH_LIMIT_VIOLATIONS_ON_BOTH_SIDES.stream()
-                        .sorted(Comparator.comparing(FindContingenciesTest::getContingencyResultDTOId).reversed()).toList().subList(0, 5), 5)
+                        // non converging contingencies are now retieved first : so we must now add this filter
+                        .filter(c -> c.getContingency().getContingencyId().startsWith("f") ||
+                                                        c.getContingency().getContingencyId().startsWith("cl"))
+                        .sorted(Comparator.comparing(FindContingenciesTest::getContingencyResultDTOId).reversed()).toList().subList(0, 5), 4)
         );
     }
 
@@ -269,13 +272,13 @@ class FindContingenciesTest {
                                     ContingencyEntity.Fields.contingencyId)),
                 getResultContingenciesWithNestedFilter(lm -> lm.getSubjectId().equals("l6"))
                     .stream().sorted(Comparator.comparing(FindContingenciesTest::getContingencyResultDTOId)).toList()
-                    .subList(0, 2), 5), // find 1st page of size 2 of contingencies, filtered by SubjectId
+                    .subList(0, 2), 4), // find 1st page of size 2 of contingencies, filtered by SubjectId
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "CURRENT",
                     ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitType)), PageRequest.of(0, 2,
                             Sort.by(Sort.Direction.ASC, ContingencyEntity.Fields.contingencyId)),
                 getResultContingenciesWithNestedFilter(lm -> lm.getLimitViolation().getLimitType().equals(LimitViolationType.CURRENT))
                     .stream().sorted(Comparator.comparing(FindContingenciesTest::getContingencyResultDTOId)).toList()
-                    .subList(0, 2), 5),
+                    .subList(0, 2), 4),
             Arguments.of(List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.CONTAINS, "not_found",
                     ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.subjectLimitViolation
                             + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId)), PageRequest.of(0, 2, Sort.by(Sort.Direction.ASC,
@@ -337,7 +340,7 @@ class FindContingenciesTest {
             getResultContingenciesSorted(
                 childrenComparator,
                 Comparator.comparing(FindContingenciesTest::getContingencyResultDTOId))
-                .subList(0, 5), 5);
+                .subList(0, 5), 4);
     }
 
     private static Stream<Arguments> provideEachColumnFilter() {
