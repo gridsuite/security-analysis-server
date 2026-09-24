@@ -237,7 +237,10 @@ class FindContingenciesTest {
                         .sorted(Comparator.comparing(FindContingenciesTest::getContingencyResultDTOId)).toList().subList(0, 5), 5),
             Arguments.of(List.of(), PageRequest.of(0, 5, Sort.by(Sort.Direction.DESC, ContingencyEntity.Fields.contingencyId)),
                     RESULT_CONTINGENCIES_WITH_LIMIT_VIOLATIONS_ON_BOTH_SIDES.stream()
-                        .sorted(Comparator.comparing(FindContingenciesTest::getContingencyResultDTOId).reversed()).toList().subList(0, 5), 5)
+        .sorted(Comparator
+          .comparing((ContingencyResultDTO c) -> PostContingencyComputationStatus.CONVERGED.name().equals(c.getContingency().getStatus()))
+                            .thenComparing(Comparator.comparing(FindContingenciesTest::getContingencyResultDTOId).reversed()))
+                    .toList().subList(0, 5), 5)
         );
     }
 
