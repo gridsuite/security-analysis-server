@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import org.gridsuite.securityanalysis.server.util.ContingencyLimitViolationWorstSideUtils;
+import org.hibernate.annotations.Formula;
 import org.springframework.lang.Nullable;
 
 import java.util.List;
@@ -67,6 +68,9 @@ public class ContingencyEntity {
      * We keep a String as it could model LoadFlowResult.ComponentResult.Status or PostContingencyComputationStatus.
      */
     private String status;
+
+    @Formula("case when status = 'CONVERGED' then 1 else 0 end")
+    private int convergenceOrder;
 
     private void setContingencyLimitViolations(List<ContingencyLimitViolationEntity> contingencyLimitViolations) {
         if (contingencyLimitViolations != null) {
