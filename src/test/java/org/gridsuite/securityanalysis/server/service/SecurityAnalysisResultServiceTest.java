@@ -207,7 +207,7 @@ class SecurityAnalysisResultServiceTest {
     }
 
     private List<List<ResourceFilterDTO>> captureContingencyFilters(UUID resultUuid) {
-        verify(contingencySpecificationBuilder).buildSpecification(eq(resultUuid), filtersCaptor.capture());
+        verify(contingencySpecificationBuilder).resultUuidEquals(resultUuid);
         verify(contingencySpecificationBuilder).buildLimitViolationsSpecification(anyList(), filtersCaptor.capture());
 
         return filtersCaptor.getAllValues();

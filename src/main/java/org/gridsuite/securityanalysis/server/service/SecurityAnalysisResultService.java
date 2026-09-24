@@ -350,56 +350,92 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         return new PageImpl<>(List.of(), pageable, 0);
     }
 
+    // Retrieve all matching contingency uuids and statuses before applying pagination
+    // This ensures that all non converging contingencies will be put in the first pages
+    private Page<ContingencyEntity> findPrioritizedContingenciesPage(Specification<ContingencyEntity> specification, Pageable pageable, Pageable modifiedPageable) {
+        Set<String> projectionProperties = new LinkedHashSet<>();
+        projectionProperties.add(ContingencyEntity.Fields.uuid);
+        projectionProperties.add(ContingencyEntity.Fields.status);
+
+        // With DISTINCT queries, properties used for sorting must also be included in the projection
+        modifiedPageable.getSort().forEach(order -> projectionProperties.add(order.getProperty()));
+
+        List<ContingencyRepository.EntityUuid> orderedProjections =
+                contingencyRepository.findBy(specification, q ->
+                        q.as(ContingencyRepository.EntityUuid.class)
+                                .sortBy(modifiedPageable.getSort())
+                                .project(projectionProperties.toArray(String[]::new))
+                                .all()
+                );
+
+        // Removing possibly duplicated values in orderedProjections, keeping the order
+        orderedProjections = new ArrayList<>(
+                orderedProjections.stream()
+                        .collect(Collectors.toMap(
+                                ContingencyRepository.EntityUuid::getUuid,
+                                Function.identity(),
+                                (first, duplicate) -> first,
+                                LinkedHashMap::new
+                        ))
+                        .values()
+        );
+
+        // Sort to put all contingencies whose status is not CONVERGED first
+        orderedProjections.sort(Comparator.comparing(projection -> "CONVERGED".equals(projection.getStatus())));
+
+        if (orderedProjections.isEmpty()) {
+            // Since springboot 3.2, the return value of Page.empty() is not serializable
+            // See https://github.com/spring-projects/spring-data-commons/issues/2987
+            return (Page<ContingencyEntity>) emptyPage(pageable);
+        }
+        List<UUID> orderedUuids = orderedProjections.stream().map(ContingencyRepository.EntityUuid::getUuid).toList();
+
+        // We apply now the pagination
+        int fromIndex;
+        int toIndex;
+        if (pageable.isUnpaged()) {
+            // No pagination : we returns every contingency in priority order
+            fromIndex = 0;
+            toIndex = orderedUuids.size();
+        } else {
+            // Pagination : we selects its content from the globally prioritized uuid list
+            fromIndex = (int) Math.min(pageable.getOffset(), orderedUuids.size());
+            toIndex = (int) Math.min((long) fromIndex + pageable.getPageSize(), orderedUuids.size());
+        }
+
+        List<UUID> pageUuids = orderedUuids.subList(fromIndex, toIndex);
+
+        // Then we fetch the main entities data for each uuid
+        List<ContingencyEntity> contingencies = contingencyRepository.findAllByUuidIn(pageUuids);
+
+        // findAllByUuidIn does not guarantee the order of the input uuids
+        // --> Restore the order calculated above before creating the Page
+        Map<UUID, Integer> positionByUuid = IntStream.range(0, pageUuids.size()).boxed().collect(Collectors.toMap(pageUuids::get, Function.identity()));
+        contingencies.sort(Comparator.comparingInt(c -> positionByUuid.get(c.getUuid())));
+
+        return new PageImpl<>(contingencies, pageable, orderedUuids.size());
+    }
+
     @Transactional(readOnly = true)
     public Page<ContingencyEntity> findContingenciesPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
         assertNmKContingenciesSortAllowed(pageable.getSort());
         Pageable modifiedPageable = addDefaultSortAndRemoveChildrenSorting(pageable, ContingencyEntity.Fields.uuid);
-        Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildSpecification(resultUuid, resourceFilters);
-        // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
-        // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
-        // cf. https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/
-        // We must separate in two requests, one with pagination the other one with Join Fetch
 
-        // Determine which properties to project based on sort fields
-        // When using DISTINCT, all ORDER BY columns must be in the SELECT list
-        List<String> projectionProperties = new ArrayList<>();
-        projectionProperties.add("uuid");
+        Specification<ContingencyEntity> specification = contingencySpecificationBuilder.resultUuidEquals(resultUuid);
+        specification = SpecificationUtils.appendFiltersToSpecification(specification, resourceFilters);
 
-        // Add sort properties to projection to satisfy DISTINCT + ORDER BY requirement
-        for (Sort.Order order : modifiedPageable.getSort()) {
-            String property = order.getProperty();
-            if (!"uuid".equals(property) && !projectionProperties.contains(property)) {
-                projectionProperties.add(property);
-            }
-        }
+        // The findPrioritizedContingenciesPage method applies the non-converged-first contingencies ordering before pagination
+        Page<ContingencyEntity> contingenciesPage = findPrioritizedContingenciesPage(specification, pageable, modifiedPageable);
 
-        Page<ContingencyRepository.EntityUuid> uuidPage = contingencyRepository.findBy(specification, q -> {
-            var query = q.as(ContingencyRepository.EntityUuid.class)
-                    .sortBy(modifiedPageable.getSort());
-            if (projectionProperties.size() == 1) {
-                query = query.project("uuid");
-            } else {
-                query = query.project(projectionProperties.toArray(new String[0]));
-            }
-            return query.page(modifiedPageable);
-        });
-
-        if (!uuidPage.hasContent()) {
-            // Since springboot 3.2, the return value of Page.empty() is not serializable. See https://github.com/spring-projects/spring-data-commons/issues/2987
-            return (Page<ContingencyEntity>) emptyPage(pageable);
-        } else {
-            List<UUID> uuids = uuidPage.map(ContingencyRepository.EntityUuid::getUuid).toList();
-            // Then we fetch the main entities data for each UUID
-            List<ContingencyEntity> contingencies = contingencyRepository.findAllByUuidIn(uuids);
-            contingencies.sort(Comparator.comparing(c -> uuids.indexOf(c.getUuid())));
-            Page<ContingencyEntity> contingenciesPage = new PageImpl<>(contingencies, pageable, uuidPage.getTotalElements());
-
-            // then we append the missing data, and filter some of the Lazy Loaded collections
-            appendLimitViolationsAndElementsToContingenciesResult(contingenciesPage, resourceFilters);
-
+        if (contingenciesPage.isEmpty()) {
             return contingenciesPage;
         }
+
+        // Then we append the missing data, and filter some of the Lazy Loaded collections
+        appendLimitViolationsAndElementsToContingenciesResult(contingenciesPage, resourceFilters);
+
+        return contingenciesPage;
     }
 
     private Page<SubjectLimitViolationEntity> findSubjectLimitViolationsPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
@@ -457,37 +493,29 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     public Page<ContingencyEntity> findCutOffPowerContingenciesPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
         assertNmKCutOffPowerSortAllowed(pageable.getSort());
+
         Pageable modifiedPageable = withDefaultSort(pageable);
-        Specification<ContingencyEntity> specification = contingencySpecificationBuilder.resultUuidEquals(resultUuid)
+
+        Specification<ContingencyEntity> specification =
+            contingencySpecificationBuilder.resultUuidEquals(resultUuid)
                 .and((root, cq, cb) -> cb.or(
-                        cb.notEqual(root.get(ContingencyEntity.Fields.connectivityResult)
-                                .get(ConnectivityResultEmbeddable.Fields.disconnectedLoadActivePower), 0.0),
-                        cb.notEqual(root.get(ContingencyEntity.Fields.connectivityResult)
-                                .get(ConnectivityResultEmbeddable.Fields.disconnectedGenerationActivePower), 0.0)
+                    cb.notEqual(
+                        root.get(ContingencyEntity.Fields.connectivityResult)
+                            .get(ConnectivityResultEmbeddable.Fields.disconnectedLoadActivePower),
+                        0.0
+                    ),
+                    cb.notEqual(
+                        root.get(ContingencyEntity.Fields.connectivityResult)
+                            .get(ConnectivityResultEmbeddable.Fields.disconnectedGenerationActivePower),
+                        0.0
+                    )
                 ));
+
         specification = specification.and(SpecificationUtils.distinct());
         specification = SpecificationUtils.appendFiltersToSpecification(specification, resourceFilters);
-        // Determine which properties to project based on sort fields
-        // When using DISTINCT, all ORDER BY columns must be in the SELECT list
-        Set<String> projectionProperties = new LinkedHashSet<>();
-        projectionProperties.add(ContingencyEntity.Fields.uuid);
-        modifiedPageable.getSort().forEach(order -> projectionProperties.add(order.getProperty()));
 
-        Page<ContingencyRepository.EntityUuid> uuidPage = contingencyRepository.findBy(specification, q ->
-                q.as(ContingencyRepository.EntityUuid.class)
-                        .sortBy(modifiedPageable.getSort())
-                        .project(projectionProperties.toArray(String[]::new))
-                        .page(modifiedPageable)
-        );
-        if (!uuidPage.hasContent()) {
-            return (Page<ContingencyEntity>) emptyPage(pageable);
-        }
-
-        List<UUID> orderedUuids = uuidPage.map(ContingencyRepository.EntityUuid::getUuid).toList();
-        List<ContingencyEntity> contingencies = contingencyRepository.findAllByUuidIn(orderedUuids);
-        Map<UUID, Integer> positionByUuid = IntStream.range(0, orderedUuids.size()).boxed().collect(Collectors.toMap(orderedUuids::get, Function.identity()));
-        contingencies.sort(Comparator.comparingInt(c -> positionByUuid.get(c.getUuid())));
-        return new PageImpl<>(contingencies, pageable, uuidPage.getTotalElements());
+        // The findPrioritizedContingenciesPage method applies the non-converged-first contingencies ordering before pagination
+        return findPrioritizedContingenciesPage(specification, pageable, modifiedPageable);
     }
 
     private static Pageable withDefaultSort(Pageable pageable) {

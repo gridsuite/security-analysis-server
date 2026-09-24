@@ -8,6 +8,9 @@ f2;Echec;l6;Intensité;;l6_name;110;;1200;;;10;;11;Côté 1
 f2;Echec;vl7;Tension haute;vl7;vl7_name;;;0;;;400;;410;
 f3;Echec;l6;Intensité;;l6_name;110;;1200;;;10;;11;Côté 1
 f3;Echec;vl7;Tension haute;vl7;vl7_name;;;0;;;400;;410;
+cl1;Convergence;;;;;;;;;;;;;
+cl2;Convergence;;;;;;;;;;;;;
+cl3;Convergence;;;;;;;;;;;;;
 l1;Convergence;l3;Intensité;;l3_name;110;;;;;10;;11;Côté 1
 l1;Convergence;vl1;Tension haute;vl1 (VLGEN_0, VLLOAD_0);IST;;;0;;;400;;410;
 l2;Convergence;l3;Intensité;;l3_name;110;;;;;10;;11;Côté 1
