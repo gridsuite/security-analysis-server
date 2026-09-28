@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.contingency.violations.LimitViolationType;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
+import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.security.SecurityAnalysisResult;
 import lombok.Getter;
 import org.gridsuite.computation.dto.GlobalFilter;
@@ -381,7 +382,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         );
 
         // Sort to put all contingencies whose status is not CONVERGED first
-        orderedProjections.sort(Comparator.comparing(projection -> "CONVERGED".equals(projection.getStatus())));
+        orderedProjections.sort(Comparator.comparing(projection -> LoadFlowResult.ComponentResult.Status.CONVERGED.name().equals(projection.getStatus())));
 
         if (orderedProjections.isEmpty()) {
             // Since springboot 3.2, the return value of Page.empty() is not serializable
@@ -422,7 +423,14 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         assertNmKContingenciesSortAllowed(pageable.getSort());
         Pageable modifiedPageable = addDefaultSortAndRemoveChildrenSorting(pageable, ContingencyEntity.Fields.uuid);
 
-        Specification<ContingencyEntity> specification = contingencySpecificationBuilder.resultUuidEquals(resultUuid);
+        Specification<ContingencyEntity> specification = contingencySpecificationBuilder.resultUuidEquals(resultUuid)
+            .and((root, query, criteriaBuilder) -> criteriaBuilder.or(
+                criteriaBuilder.isNotEmpty(root.get(ContingencyEntity.Fields.contingencyLimitViolations)),
+                criteriaBuilder.notEqual(
+                    root.get(ContingencyEntity.Fields.status),
+                    LoadFlowResult.ComponentResult.Status.CONVERGED.name()
+                )
+            ));
         specification = SpecificationUtils.appendFiltersToSpecification(specification, resourceFilters);
 
         // The findPrioritizedContingenciesPage method applies the non-converged-first contingencies ordering before pagination
