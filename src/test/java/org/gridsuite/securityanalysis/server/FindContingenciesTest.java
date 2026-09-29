@@ -217,6 +217,34 @@ class FindContingenciesTest {
             );
     }
 
+    @Test
+    void findFilteredContingencyResultsWithEmptySideFilterIncludesFailedContingencies() {
+        UUID resultUuid = UUID.randomUUID();
+        SecurityAnalysisResult securityAnalysisResult = new SecurityAnalysisResult(
+            new LimitViolationsResult(List.of()),
+            LoadFlowResult.ComponentResult.Status.CONVERGED,
+            List.of(createPostContingencyResultWithFailedStatus("not-converged"))
+        );
+        securityAnalysisResultService.insert(null, resultUuid, securityAnalysisResult, SecurityAnalysisStatus.CONVERGED);
+
+        ResourceFilterDTO emptySideFilter = new ResourceFilterDTO(
+            ResourceFilterDTO.DataType.TEXT,
+            ResourceFilterDTO.Type.EQUALS,
+            List.of(),
+            ContingencyEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.side
+        );
+
+        Page<ContingencyEntity> contingenciesPage = securityAnalysisResultService.findContingenciesPage(
+            resultUuid,
+            List.of(emptySideFilter),
+            PageRequest.of(0, 5, Sort.by(Sort.Direction.ASC, ContingencyEntity.Fields.contingencyId))
+        );
+
+        assertThat(contingenciesPage.getContent())
+            .extracting(ContingencyEntity::getContingencyId)
+            .containsExactly("not-converged");
+    }
+
     private static PostContingencyResult createPostContingencyResultWithFailedStatus(String contingencyId, String... elementIds) {
         return new PostContingencyResult(
             new Contingency(contingencyId, Arrays.stream(elementIds)
