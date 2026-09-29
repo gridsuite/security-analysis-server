@@ -258,10 +258,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     }
 
     @Override
-    protected void canBeCancelled(UUID resultUuid) {
-        if (resultService.findStatus(resultUuid) != SecurityAnalysisStatus.RUNNING) {
-            throw new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.CANNOT_BE_CANCELED, "Security analysis cannot be cancelled because it is not running");
-        }
+    protected boolean canBeCancelled(UUID resultUuid) {
+        return resultService.findStatus(resultUuid) == SecurityAnalysisStatus.RUNNING;
     }
 
     private static void logContingencyEquipmentsNotFound(SecurityAnalysisRunContext runContext) {
