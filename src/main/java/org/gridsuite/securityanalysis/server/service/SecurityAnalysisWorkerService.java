@@ -257,6 +257,13 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
         return super.consumeCancel();
     }
 
+    @Override
+    protected void canBeCancelled(UUID resultUuid) {
+        if (resultService.findStatus(resultUuid) != SecurityAnalysisStatus.RUNNING) {
+            throw new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.CANNOT_BE_CANCELED, "Security analysis cannot be cancelled because it is not running");
+        }
+    }
+
     private static void logContingencyEquipmentsNotFound(SecurityAnalysisRunContext runContext) {
         List<ContingencyInfos> contingencyInfosList = runContext.getContingencies().stream()
                 .filter(contingencyInfos -> !CollectionUtils.isEmpty(contingencyInfos.getNotFoundElements())).toList();

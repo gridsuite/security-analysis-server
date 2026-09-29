@@ -13,7 +13,8 @@ import com.powsybl.ws.commons.error.BusinessErrorCode;
  */
 public enum SecurityAnalysisBusinessErrorCode implements BusinessErrorCode {
     CONTINGENCY_LIST_CONFIG_EMPTY("securityAnalysis.contingencyListConfigEmpty"),
-    MISSING_CONTINGENCY_LIST("securityAnalysis.missingContingencyList");
+    MISSING_CONTINGENCY_LIST("securityAnalysis.missingContingencyList"),
+    CANNOT_BE_CANCELED("securityAnalysis.cannotBeCanceled");
 
     private final String code;
 
