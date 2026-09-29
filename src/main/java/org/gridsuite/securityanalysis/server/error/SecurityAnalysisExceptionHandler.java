@@ -36,7 +36,7 @@ public class SecurityAnalysisExceptionHandler
     @Override
     protected HttpStatus mapStatus(SecurityAnalysisBusinessErrorCode errorCode) {
         return switch (errorCode) {
-            case CONTINGENCY_LIST_CONFIG_EMPTY, CANNOT_BE_CANCELED -> HttpStatus.BAD_REQUEST;
+            case CONTINGENCY_LIST_CONFIG_EMPTY -> HttpStatus.BAD_REQUEST;
             case MISSING_CONTINGENCY_LIST -> HttpStatus.NOT_FOUND;
         };
     }
