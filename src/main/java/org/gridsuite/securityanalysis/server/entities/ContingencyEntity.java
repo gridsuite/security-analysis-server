@@ -69,6 +69,7 @@ public class ContingencyEntity {
      */
     private String status;
 
+    // Used for default sort to put non-converged contingencies before converged ones
     @Formula("case when status = 'CONVERGED' then 1 else 0 end")
     private int convergenceOrder;
 
