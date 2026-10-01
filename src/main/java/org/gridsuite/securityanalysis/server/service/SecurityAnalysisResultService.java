@@ -354,7 +354,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     public Page<ContingencyEntity> findContingenciesPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
         assertNmKContingenciesSortAllowed(pageable.getSort());
-        Pageable modifiedPageable = addDefaultSortAndRemoveChildrenSorting(pageable, ContingencyEntity.Fields.uuid);
+        Pageable modifiedPageable = withNonConvergedFirst(addDefaultSortAndRemoveChildrenSorting(pageable, ContingencyEntity.Fields.uuid));
         Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildSpecification(resultUuid, resourceFilters);
         // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
@@ -457,7 +457,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     public Page<ContingencyEntity> findCutOffPowerContingenciesPage(UUID resultUuid, List<ResourceFilterDTO> resourceFilters, Pageable pageable) {
         Objects.requireNonNull(resultUuid);
         assertNmKCutOffPowerSortAllowed(pageable.getSort());
-        Pageable modifiedPageable = withDefaultSort(pageable);
+        Pageable modifiedPageable = withNonConvergedFirst(withDefaultSort(pageable));
         Specification<ContingencyEntity> specification = contingencySpecificationBuilder.resultUuidEquals(resultUuid)
                 .and((root, cq, cb) -> cb.or(
                         cb.notEqual(root.get(ContingencyEntity.Fields.connectivityResult)
@@ -488,6 +488,13 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         Map<UUID, Integer> positionByUuid = IntStream.range(0, orderedUuids.size()).boxed().collect(Collectors.toMap(orderedUuids::get, Function.identity()));
         contingencies.sort(Comparator.comparingInt(c -> positionByUuid.get(c.getUuid())));
         return new PageImpl<>(contingencies, pageable, uuidPage.getTotalElements());
+    }
+
+    private static Pageable withNonConvergedFirst(Pageable pageable) {
+        Sort sort = Sort.by(ContingencyEntity.Fields.convergenceOrder).and(pageable.getSort());
+        return pageable.isPaged()
+                ? PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort)
+                : Pageable.unpaged(sort);
     }
 
     private static Pageable withDefaultSort(Pageable pageable) {
