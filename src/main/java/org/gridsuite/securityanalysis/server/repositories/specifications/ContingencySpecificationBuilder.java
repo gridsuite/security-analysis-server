@@ -45,11 +45,15 @@ public class ContingencySpecificationBuilder extends AbstractCommonSpecification
 
     @Override
     public Specification<ContingencyEntity> addSpecificFilterWhenNoChildrenFilter() {
-        return this.addSpecificFilterWhenChildrenFilters().or(SpecificationUtils.notEqual(ContingencyEntity.Fields.status, LoadFlowResult.ComponentResult.Status.CONVERGED.name()));
+        return addSpecificFilterWhenChildrenFilters();
     }
 
     @Override
     public Specification<ContingencyEntity> addSpecificFilterWhenChildrenFilters() {
-        return SpecificationUtils.isNotEmpty(ContingencyEntity.Fields.contingencyLimitViolations);
+        return SpecificationUtils.<ContingencyEntity>isNotEmpty(ContingencyEntity.Fields.contingencyLimitViolations)
+            .or(SpecificationUtils.notEqual(
+                ContingencyEntity.Fields.status,
+                LoadFlowResult.ComponentResult.Status.CONVERGED.name()
+            ));
     }
 }
