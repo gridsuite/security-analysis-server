@@ -76,6 +76,16 @@ public class SecurityAnalysisParametersController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping(value = "/{uuid}/provider", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get provider of parameters with the given id")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "parameters provider was returned"),
+        @ApiResponse(responseCode = "404", description = "parameters were not found")})
+    public ResponseEntity<String> getParametersProvider(
+        @Parameter(description = "parameters UUID") @PathVariable(value = "uuid") UUID parametersUuid) {
+        return ResponseEntity.ok().body(parametersService.getProvider(parametersUuid));
+    }
+
     @PutMapping(value = "/{uuid}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Update parameters or reset them to default if no parameters are given")
     @ApiResponses(value = {

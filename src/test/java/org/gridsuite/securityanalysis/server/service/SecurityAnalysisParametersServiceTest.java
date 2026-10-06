@@ -7,6 +7,7 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersDTO;
+import org.gridsuite.securityanalysis.server.dto.parameters.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.entities.ParametersContingencyListEntity;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
 import org.junit.jupiter.api.Test;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,6 +31,23 @@ class SecurityAnalysisParametersServiceTest {
 
     private static final UUID CONTINGENCY_LIST_ID = UUID.fromString("3f7c9e2a-8b41-4d6a-a1f3-9c5b72e8d4af");
     private static final UUID DEACTIVATED_CONTINGENCY_LIST_ID = UUID.fromString("b8a4f2c1-6d3e-4a9b-92f7-1e5c8d7a3b60");
+
+    @Test
+    void getProviderTest() {
+        String provider = "provider";
+        UUID parametersUuid = securityAnalysisParametersService.createParameters(SecurityAnalysisParametersValues.builder()
+                .provider(provider)
+                .build());
+
+        assertEquals(provider, securityAnalysisParametersService.getProvider(parametersUuid));
+    }
+
+    @Test
+    void getProviderNotFoundTest() {
+        UUID parametersUuid = UUID.randomUUID();
+
+        assertThrows(NoSuchElementException.class, () -> securityAnalysisParametersService.getProvider(parametersUuid));
+    }
 
     @Test
     void toSecurityAnalysisParametersWithContingencyListsTest() {

@@ -229,6 +229,33 @@ class SecurityAnalysisParametersControllerTest {
     }
 
     @Test
+    void testGetParametersProvider() throws Exception {
+        String provider = "provider";
+        SecurityAnalysisParametersValues parameters = SecurityAnalysisParametersValues.builder()
+                .provider(provider)
+                .build();
+
+        // Create parameters
+        MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/parameters")
+                        .content(objectMapper.writeValueAsString(parameters))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON)
+                ).andReturn();
+
+        UUID parametersUuid = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), UUID.class);
+
+        // Get parameters provider
+        mockMvc.perform(get("/" + VERSION + "/parameters/{uuid}/provider", parametersUuid))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON),
+                        content().string(provider)
+            );
+    }
+
+    @Test
     void securityAnalysisParametersUpdateTest() throws Exception {
         MvcResult mvcResult;
         String resultAsString;
