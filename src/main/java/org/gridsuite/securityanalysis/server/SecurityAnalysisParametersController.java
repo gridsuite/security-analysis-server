@@ -77,14 +77,24 @@ public class SecurityAnalysisParametersController {
     }
 
     @PutMapping(value = "/{uuid}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    @Operation(summary = "Update parameters or reset them to default if no parameters are given")
+    @Operation(summary = "Update parameters")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "parameters were updated"),
         @ApiResponse(responseCode = "404", description = "parameters were not found")})
     public ResponseEntity<UUID> updateParameters(
             @Parameter(description = "parameters UUID") @PathVariable(value = "uuid") UUID parametersUuid,
-            @Parameter(description = "parameters values") @RequestBody(required = false) SecurityAnalysisParametersValues securityAnalysisParametersValues) {
+            @Parameter(description = "parameters values") @RequestBody SecurityAnalysisParametersValues securityAnalysisParametersValues) {
         return ResponseEntity.ok().body(parametersService.updateParameters(parametersUuid, securityAnalysisParametersValues));
+    }
+
+    @PutMapping(value = "/{uuid}/reset", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "reset parameters to default values")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "parameters were reset"),
+        @ApiResponse(responseCode = "404", description = "parameters were not found")})
+    public ResponseEntity<UUID> resetParameters(
+            @Parameter(description = "parameters UUID") @PathVariable(value = "uuid") UUID parametersUuid) {
+        return ResponseEntity.ok().body(parametersService.resetParameters(parametersUuid));
     }
 
     @DeleteMapping(value = "/{uuid}", produces = MediaType.APPLICATION_JSON_VALUE)
