@@ -235,7 +235,14 @@ class SecurityAnalysisParametersControllerTest {
 
         //update parameters with not existing ID and expect a 404
         mockMvc.perform(put("/" + VERSION + "/parameters/" + UUID.randomUUID())
-                        .contentType(MediaType.APPLICATION_JSON))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(securityAnalysisParametersService.getDefaultSecurityAnalysisParametersValues())))
+                .andExpectAll(
+                        status().isNotFound(),
+                        result -> assertTrue(result.getResponse().getContentAsString().contains(PARAMETERS_NOT_FOUND.value())));
+
+        //reset parameters with not existing ID and expect a 404
+        mockMvc.perform(put("/" + VERSION + "/parameters/" + UUID.randomUUID() + "/reset"))
                 .andExpectAll(
                         status().isNotFound(),
                         result -> assertTrue(result.getResponse().getContentAsString().contains(PARAMETERS_NOT_FOUND.value())));
@@ -284,10 +291,11 @@ class SecurityAnalysisParametersControllerTest {
         assertEquals(createdParametersUuid, updatedParametersUuid);
         assertSecurityAnalysisParametersEntityAreEquals(updatedParametersUuid, 10, 11, 12, 13, 14);
 
-        //update previous parameters again but without giving the parameters values -> reset the parameters to default values
-        mvcResult = mockMvc.perform(put("/" + VERSION + "/parameters/" + updatedParametersUuid))
+        //reset previous parameters to default values
+        mvcResult = mockMvc.perform(put("/" + VERSION + "/parameters/" + updatedParametersUuid + "/reset"))
                 .andExpectAll(
-                        status().isOk()
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON)
                 ).andReturn();
 
         resultAsString = mvcResult.getResponse().getContentAsString();
