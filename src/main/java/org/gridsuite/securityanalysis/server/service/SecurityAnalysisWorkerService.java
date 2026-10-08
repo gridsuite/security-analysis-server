@@ -170,6 +170,11 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     }
 
     @Override
+    protected void setRunningStatus(UUID resultUuid) {
+        resultService.insertStatus(List.of(resultUuid), SecurityAnalysisStatus.RUNNING);
+    }
+
+    @Override
     protected void preRun(SecurityAnalysisRunContext runContext) {
         if (runContext.getParameters().contingencyListUuids() != null) {
             LOGGER.info("Run security analysis on contingency lists: {}", runContext.getParameters().contingencyListUuids());
@@ -250,6 +255,11 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     @Override
     public Consumer<Message<String>> consumeCancel() {
         return super.consumeCancel();
+    }
+
+    @Override
+    protected boolean canBeCancelled(UUID resultUuid) {
+        return resultService.findStatus(resultUuid) == SecurityAnalysisStatus.RUNNING;
     }
 
     private static void logContingencyEquipmentsNotFound(SecurityAnalysisRunContext runContext) {

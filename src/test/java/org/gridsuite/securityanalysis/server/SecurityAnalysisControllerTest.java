@@ -729,7 +729,7 @@ class SecurityAnalysisControllerTest {
     @SuppressWarnings("checkstyle:LambdaBodyLength")
     void stopTest() throws Exception {
         countDownLatch = new CountDownLatch(1);
-
+        when(securityAnalysisResultService.findStatus(RESULT_UUID)).thenReturn(SecurityAnalysisStatus.RUNNING);
         new Thread(() -> {
             try {
                 MvcResult mvcResult;
@@ -768,6 +768,7 @@ class SecurityAnalysisControllerTest {
     @Test
     void testStopAndFail() throws Exception {
         UUID randomUuid = UUID.randomUUID();
+        when(securityAnalysisResultService.findStatus(randomUuid)).thenReturn(SecurityAnalysisStatus.RUNNING);
         mockMvc.perform(put("/" + VERSION + "/results/" + randomUuid + "/stop" + "?receiver=me")
                         .header(HEADER_USER_ID, USER_ID))
                 .andExpect(status().isOk());
