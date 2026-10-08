@@ -198,4 +198,9 @@ public class SecurityAnalysisParametersService {
     public List<LimitReductionsByVoltageLevel> getDefaultLimitReductions() {
         return limitReductionService.createDefaultLimitReductions();
     }
+
+    @Transactional(readOnly = true)
+    public String getProvider(final UUID parametersUuid) {
+        return securityAnalysisParametersRepository.findById(parametersUuid).map(SecurityAnalysisParametersEntity::getProvider).orElseThrow();
+    }
 }
