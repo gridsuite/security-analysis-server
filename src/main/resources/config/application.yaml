@@ -1,6 +1,9 @@
 spring:
   application:
     name: security-analysis-server
+  http:
+    converters:
+      preferred-json-mapper: jackson2
 
   jpa:
     properties:

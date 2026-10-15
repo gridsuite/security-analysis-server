@@ -355,7 +355,10 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         Objects.requireNonNull(resultUuid);
         assertNmKContingenciesSortAllowed(pageable.getSort());
         Pageable modifiedPageable = withNonConvergedFirst(addDefaultSortAndRemoveChildrenSorting(pageable, ContingencyEntity.Fields.uuid));
-        Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildSpecification(resultUuid, resourceFilters);
+        List<ResourceFilterDTO> nonEmptyFilters = resourceFilters == null ? null : resourceFilters.stream()
+            .filter(filter -> !(filter.value() instanceof Collection<?> values && values.isEmpty()))
+            .toList();
+        Specification<ContingencyEntity> specification = contingencySpecificationBuilder.buildSpecification(resultUuid, nonEmptyFilters);
         // WARN org.hibernate.hql.internal.ast.QueryTranslatorImpl -
         // HHH000104: firstResult/maxResults specified with collection fetch; applying in memory!
         // cf. https://vladmihalcea.com/fix-hibernate-hhh000104-entity-fetch-pagination-warning-message/
@@ -396,7 +399,7 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
             Page<ContingencyEntity> contingenciesPage = new PageImpl<>(contingencies, pageable, uuidPage.getTotalElements());
 
             // then we append the missing data, and filter some of the Lazy Loaded collections
-            appendLimitViolationsAndElementsToContingenciesResult(contingenciesPage, resourceFilters);
+            appendLimitViolationsAndElementsToContingenciesResult(contingenciesPage, nonEmptyFilters);
 
             return contingenciesPage;
         }

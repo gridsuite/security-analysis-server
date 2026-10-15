@@ -32,8 +32,10 @@ import org.gridsuite.securityanalysis.server.repositories.specifications.Conting
 import org.gridsuite.securityanalysis.server.repositories.specifications.SubjectLimitViolationSpecificationBuilder;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
@@ -55,6 +57,7 @@ import static org.mockito.Mockito.verify;
  * @author Florent MILLOT <florent.millot at rte-france.com>
  */
 @SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class SecurityAnalysisResultServiceTest {
     @Autowired
     private SecurityAnalysisResultService securityAnalysisResultService;
