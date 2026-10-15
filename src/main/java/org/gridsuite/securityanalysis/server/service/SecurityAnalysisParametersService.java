@@ -198,4 +198,10 @@ public class SecurityAnalysisParametersService {
     public List<LimitReductionsByVoltageLevel> getDefaultLimitReductions() {
         return limitReductionService.createDefaultLimitReductions();
     }
+
+    @Transactional(readOnly = true)
+    public String getProvider(final UUID parametersUuid) {
+        return securityAnalysisParametersRepository.findById(parametersUuid).map(SecurityAnalysisParametersEntity::getProvider)
+            .orElseThrow(() -> new ComputationException(PARAMETERS_NOT_FOUND, "Parameters uuid not found: " + parametersUuid));
+    }
 }
