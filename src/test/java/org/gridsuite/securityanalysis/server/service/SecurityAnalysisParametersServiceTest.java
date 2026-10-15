@@ -6,6 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
+import org.gridsuite.computation.error.ComputationException;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersDTO;
 import org.gridsuite.securityanalysis.server.dto.parameters.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.entities.ParametersContingencyListEntity;
@@ -15,9 +16,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
+import static org.gridsuite.computation.error.ComputationBusinessErrorCode.PARAMETERS_NOT_FOUND;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -46,7 +47,8 @@ class SecurityAnalysisParametersServiceTest {
     void getProviderNotFoundTest() {
         UUID parametersUuid = UUID.randomUUID();
 
-        assertThrows(NoSuchElementException.class, () -> securityAnalysisParametersService.getProvider(parametersUuid));
+        ComputationException exception = assertThrows(ComputationException.class, () -> securityAnalysisParametersService.getProvider(parametersUuid));
+        assertEquals(PARAMETERS_NOT_FOUND, exception.getBusinessErrorCode());
     }
 
     @Test
