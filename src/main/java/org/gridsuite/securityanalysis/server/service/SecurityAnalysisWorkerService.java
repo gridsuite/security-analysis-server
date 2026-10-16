@@ -128,6 +128,11 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 .setLimitReductions(limitReductions)
                 .setReportNode(runContext.getReportNode());
 
+        if (!contingencies.isEmpty()) {
+            runParameters.addInterceptor(new SecurityAnalysisProgressInterceptor(
+                    notificationService, resultUuid, runContext.getReceiver(), runContext.getUserId(), contingencies.size()));
+        }
+
         Network network = "OpenLoadFlow".equals(runContext.getProvider()) ? runContext.getInMemoryNetwork() : runContext.getNetwork();
 
         return securityAnalysisRunner.runAsync(
