@@ -42,6 +42,7 @@
     </developers>
 
     <properties>
+        <powsybl-open-loadflow.version>2.3.1-SNAPSHOT</powsybl-open-loadflow.version>
         <!-- FIXME to remove when powsybl-parent supports JDK25 -->
         <java.version>25</java.version>
         <maven.jacoco.version>0.8.15</maven.jacoco.version>
@@ -56,7 +57,7 @@
         <sonar.organization>gridsuite</sonar.organization>
         <sonar.projectKey>org.gridsuite:security-analysis-server</sonar.projectKey>
         <!-- FIXME: to be removed at next gridsuite-dependencies upgrade  -->
-        <gridsuite-computation.version>2.7.0</gridsuite-computation.version>
+        <gridsuite-computation.version>2.8.0-SNAPSHOT</gridsuite-computation.version>
     </properties>
 
     <build>
@@ -96,6 +97,16 @@
     <dependencyManagement>
         <dependencies>
             <!-- overrides of imports -->
+            <dependency>
+                <groupId>com.powsybl</groupId>
+                <artifactId>powsybl-open-loadflow</artifactId>
+                <version>${powsybl-open-loadflow.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.gridsuite</groupId>
+                <artifactId>gridsuite-computation</artifactId>
+                <version>${gridsuite-computation.version}</version>
+            </dependency>
 
             <dependency><!-- To remove when integrate in next release of gridsuite-dependencies or powsybl-ws-dependencies -->
                 <groupId>com.squareup.okhttp3</groupId>
