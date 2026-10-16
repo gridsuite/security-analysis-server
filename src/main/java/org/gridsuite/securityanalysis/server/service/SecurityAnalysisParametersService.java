@@ -7,12 +7,11 @@
 package org.gridsuite.securityanalysis.server.service;
 
 import com.powsybl.security.SecurityAnalysisParameters;
-import org.gridsuite.computation.error.ComputationException;
-import org.gridsuite.computation.dto.ReportInfos;
 import lombok.NonNull;
+import org.gridsuite.computation.dto.ReportInfos;
+import org.gridsuite.computation.error.ComputationException;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.dto.parameters.ContingencyListsInfos;
-import org.gridsuite.securityanalysis.server.dto.parameters.IdNameInfos;
 import org.gridsuite.securityanalysis.server.dto.parameters.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.parameters.SecurityAnalysisParametersValues;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisParametersEntity;
@@ -20,14 +19,11 @@ import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisParame
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.util.*;
-
 import static org.gridsuite.computation.error.ComputationBusinessErrorCode.PARAMETERS_NOT_FOUND;
 
-
 /**
- * @author Abdelsalem HEDHILI <abdelsalem.hedhili@rte-france.com>
+ * @author Abdelsalem HEDHILI <abdelsalem.hedhili at rte-france.com>
  */
 @Service
 public class SecurityAnalysisParametersService {
@@ -40,8 +36,6 @@ public class SecurityAnalysisParametersService {
 
     private final LimitReductionService limitReductionService;
 
-    private final DirectoryService directoryService;
-
     private static final double DEFAULT_FLOW_PROPORTIONAL_THRESHOLD = 0.1; // meaning 10.0 %
     private static final double DEFAULT_LOW_VOLTAGE_PROPORTIONAL_THRESHOLD = 0.01; // meaning 1.0 %
     private static final double DEFAULT_HIGH_VOLTAGE_PROPORTIONAL_THRESHOLD = 0.01; // meaning 1.0 %
@@ -50,12 +44,11 @@ public class SecurityAnalysisParametersService {
     private static final List<ContingencyListsInfos> DEFAULT_CONTINGENCY_LISTS_INFOS = new ArrayList<>();
 
     public SecurityAnalysisParametersService(@NonNull SecurityAnalysisParametersRepository securityAnalysisParametersRepository, @NonNull LoadFlowService loadFlowService,
-                                             @Value("${security-analysis.default-provider}") String defaultProvider, @NonNull LimitReductionService limitReductionService, @NonNull DirectoryService directoryService) {
+                                             @Value("${security-analysis.default-provider}") String defaultProvider, @NonNull LimitReductionService limitReductionService) {
         this.securityAnalysisParametersRepository = Objects.requireNonNull(securityAnalysisParametersRepository);
         this.loadFlowService = loadFlowService;
         this.defaultProvider = defaultProvider;
         this.limitReductionService = limitReductionService;
-        this.directoryService = directoryService;
     }
 
     @Transactional(readOnly = true)
@@ -91,9 +84,11 @@ public class SecurityAnalysisParametersService {
         List<UUID> activatedContingencyListUuids = new ArrayList<>();
         if (entity == null) {
             // the default values are overloaded
-            securityAnalysisParameters.setIncreasedViolationsParameters(getIncreasedViolationsParameters(DEFAULT_FLOW_PROPORTIONAL_THRESHOLD, DEFAULT_LOW_VOLTAGE_PROPORTIONAL_THRESHOLD, DEFAULT_LOW_VOLTAGE_ABSOLUTE_THRESHOLD, DEFAULT_HIGH_VOLTAGE_PROPORTIONAL_THRESHOLD, DEFAULT_HIGH_VOLTAGE_ABSOLUTE_THRESHOLD));
+            securityAnalysisParameters.setIncreasedViolationsParameters(getIncreasedViolationsParameters(DEFAULT_FLOW_PROPORTIONAL_THRESHOLD, DEFAULT_LOW_VOLTAGE_PROPORTIONAL_THRESHOLD,
+                    DEFAULT_LOW_VOLTAGE_ABSOLUTE_THRESHOLD, DEFAULT_HIGH_VOLTAGE_PROPORTIONAL_THRESHOLD, DEFAULT_HIGH_VOLTAGE_ABSOLUTE_THRESHOLD));
         } else {
-            securityAnalysisParameters.setIncreasedViolationsParameters(getIncreasedViolationsParameters(entity.getFlowProportionalThreshold(), entity.getLowVoltageProportionalThreshold(), entity.getLowVoltageAbsoluteThreshold(), entity.getHighVoltageProportionalThreshold(), entity.getHighVoltageAbsoluteThreshold()));
+            securityAnalysisParameters.setIncreasedViolationsParameters(getIncreasedViolationsParameters(entity.getFlowProportionalThreshold(), entity.getLowVoltageProportionalThreshold(),
+                    entity.getLowVoltageAbsoluteThreshold(), entity.getHighVoltageProportionalThreshold(), entity.getHighVoltageAbsoluteThreshold()));
             limitReductions = entity.toLimitReductionsValues();
             activatedContingencyListUuids = entity.getActivatedContingencyListUuids();
         }
@@ -108,7 +103,7 @@ public class SecurityAnalysisParametersService {
                 .build();
     }
 
-    public SecurityAnalysisParametersValues toSecurityAnalysisParametersValues(SecurityAnalysisParametersEntity entity, String userId) {
+    public SecurityAnalysisParametersValues toSecurityAnalysisParametersValues(SecurityAnalysisParametersEntity entity) {
         return SecurityAnalysisParametersValues.builder()
                 .provider(entity.getProvider())
                 .flowProportionalThreshold(entity.getFlowProportionalThreshold())
@@ -119,7 +114,7 @@ public class SecurityAnalysisParametersService {
                 .contingencyListsInfos(Optional.of(
                         entity.getContingencyLists().stream()
                             .map(c -> new ContingencyListsInfos(
-                                    contingenciesIdsToDTOs(c.getContingencyListIds(), userId),
+                                    new ArrayList<>(c.getContingencyListIds()),
                                     c.getDescription(),
                                     c.isActivated()))
                             .toList())
@@ -127,16 +122,6 @@ public class SecurityAnalysisParametersService {
                         .orElse(null))
                 .limitReductions(getLimitReductionsForProvider(entity).orElse(null))
                 .build();
-    }
-
-    private List<IdNameInfos> contingenciesIdsToDTOs(List<UUID> contingenciesIds, String userId) {
-        if (contingenciesIds == null) {
-            return null;
-        }
-        Map<UUID, String> contingenciesInfos = directoryService.getElementNames(contingenciesIds, userId);
-        return contingenciesIds.stream()
-                .map(id -> new IdNameInfos(id, contingenciesInfos.get(id)))
-                .toList();
     }
 
     private Optional<List<LimitReductionsByVoltageLevel>> getLimitReductionsForProvider(SecurityAnalysisParametersEntity entity) {
@@ -148,7 +133,8 @@ public class SecurityAnalysisParametersService {
         return Optional.of(limitReductionsValues.isEmpty() ? limitReductionService.createDefaultLimitReductions() : limitReductionService.createLimitReductions(limitReductionsValues));
     }
 
-    public static SecurityAnalysisParameters.IncreasedViolationsParameters getIncreasedViolationsParameters(double flowProportionalThreshold, double lowVoltageProportionalThreshold, double lowVoltageAbsoluteThreshold, double highVoltageProportionalThreshold, double highVoltageAbsoluteThreshold) {
+    public static SecurityAnalysisParameters.IncreasedViolationsParameters getIncreasedViolationsParameters(double flowProportionalThreshold, double lowVoltageProportionalThreshold, double
+            lowVoltageAbsoluteThreshold, double highVoltageProportionalThreshold, double highVoltageAbsoluteThreshold) {
         SecurityAnalysisParameters.IncreasedViolationsParameters increasedViolationsParameters = new SecurityAnalysisParameters.IncreasedViolationsParameters();
         increasedViolationsParameters.setFlowProportionalThreshold(flowProportionalThreshold);
         increasedViolationsParameters.setLowVoltageAbsoluteThreshold(lowVoltageAbsoluteThreshold);
@@ -172,9 +158,9 @@ public class SecurityAnalysisParametersService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<SecurityAnalysisParametersValues> getParameters(UUID parametersUuid, String userId) {
+    public Optional<SecurityAnalysisParametersValues> getParameters(UUID parametersUuid) {
         return securityAnalysisParametersRepository.findById(parametersUuid)
-                .map(entity -> toSecurityAnalysisParametersValues(entity, userId));
+                .map(this::toSecurityAnalysisParametersValues);
     }
 
     public UUID createParameters(SecurityAnalysisParametersValues securityAnalysisParametersValues) {
@@ -186,14 +172,16 @@ public class SecurityAnalysisParametersService {
     }
 
     @Transactional
-    public Optional<UUID> duplicateParameters(UUID sourceParametersUuid, String userId) {
-        Optional<SecurityAnalysisParametersValues> securityAnalysisParametersValuesOptional = securityAnalysisParametersRepository.findById(sourceParametersUuid).map(entity -> toSecurityAnalysisParametersValues(entity, userId));
+    public Optional<UUID> duplicateParameters(UUID sourceParametersUuid) {
+        Optional<SecurityAnalysisParametersValues> securityAnalysisParametersValuesOptional = securityAnalysisParametersRepository.findById(sourceParametersUuid).map(
+                this::toSecurityAnalysisParametersValues);
         return securityAnalysisParametersValuesOptional.map(parametersValues -> securityAnalysisParametersRepository.save(new SecurityAnalysisParametersEntity(parametersValues)).getId());
     }
 
     @Transactional
     public UUID updateParameters(UUID parametersUuid, SecurityAnalysisParametersValues parametersInfos) {
-        SecurityAnalysisParametersEntity securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(parametersUuid).orElseThrow(() -> new ComputationException(PARAMETERS_NOT_FOUND, "Could not find provided parameters"));
+        SecurityAnalysisParametersEntity securityAnalysisParametersEntity = securityAnalysisParametersRepository.findById(parametersUuid).orElseThrow(() -> new ComputationException(
+                PARAMETERS_NOT_FOUND, "Could not find provided parameters"));
         //if the parameters is null it means it's a reset to defaultValues
         if (parametersInfos == null) {
             securityAnalysisParametersEntity.update(getDefaultSecurityAnalysisParametersValues());
@@ -209,5 +197,11 @@ public class SecurityAnalysisParametersService {
 
     public List<LimitReductionsByVoltageLevel> getDefaultLimitReductions() {
         return limitReductionService.createDefaultLimitReductions();
+    }
+
+    @Transactional(readOnly = true)
+    public String getProvider(final UUID parametersUuid) {
+        return securityAnalysisParametersRepository.findById(parametersUuid).map(SecurityAnalysisParametersEntity::getProvider)
+            .orElseThrow(() -> new ComputationException(PARAMETERS_NOT_FOUND, "Parameters uuid not found: " + parametersUuid));
     }
 }

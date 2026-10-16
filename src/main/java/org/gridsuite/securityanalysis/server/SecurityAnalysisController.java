@@ -6,9 +6,9 @@
  */
 package org.gridsuite.securityanalysis.server;
 
+import com.powsybl.contingency.violations.LimitViolationType;
 import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.loadflow.LoadFlowResult;
-import com.powsybl.security.LimitViolationType;
 import com.powsybl.security.SecurityAnalysisResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -26,6 +26,7 @@ import org.gridsuite.securityanalysis.server.service.SecurityAnalysisWorkerServi
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -44,6 +45,7 @@ import static org.springframework.http.MediaType.*;
 @RequestMapping(value = "/" + SecurityAnalysisApi.API_VERSION)
 @Tag(name = "Security analysis server")
 public class SecurityAnalysisController {
+    public static final String ATTACHMENT = "attachment";
     private final SecurityAnalysisService securityAnalysisService;
 
     private final SecurityAnalysisParametersService securityAnalysisParametersService;
@@ -52,7 +54,8 @@ public class SecurityAnalysisController {
 
     private final SecurityAnalysisWorkerService workerService;
 
-    public SecurityAnalysisController(SecurityAnalysisService securityAnalysisService, SecurityAnalysisWorkerService workerService, SecurityAnalysisResultService securityAnalysisResultService, SecurityAnalysisParametersService securityAnalysisParametersService) {
+    public SecurityAnalysisController(SecurityAnalysisService securityAnalysisService, SecurityAnalysisWorkerService workerService, SecurityAnalysisResultService securityAnalysisResultService,
+            SecurityAnalysisParametersService securityAnalysisParametersService) {
         this.securityAnalysisService = securityAnalysisService;
         this.workerService = workerService;
         this.securityAnalysisResultService = securityAnalysisResultService;
@@ -70,7 +73,8 @@ public class SecurityAnalysisController {
                                                       @Parameter(description = "Provider") @RequestParam(name = "provider", required = false) String provider,
                                                       @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
                                                       @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
-                                                      @Parameter(description = "The type name for the report") @RequestParam(name = "reportType", required = false, defaultValue = "SecurityAnalysis") String reportType,
+                                                      @Parameter(description = "The type name for the report") @RequestParam(name = "reportType", required = false,
+                                                              defaultValue = "SecurityAnalysis") String reportType,
                                                       @Parameter(description = "parametersUuid") @RequestParam(name = "parametersUuid", required = false) UUID parametersUuid,
                                                       @Parameter(description = "loadFlow parameters uuid") @RequestParam(name = "loadFlowParametersUuid") UUID loadFlowParametersUuid,
                                                       @RequestHeader(HEADER_USER_ID) String userId) {
@@ -96,7 +100,8 @@ public class SecurityAnalysisController {
                                            @Parameter(description = "Result receiver") @RequestParam(name = "receiver", required = false) String receiver,
                                            @Parameter(description = "reportUuid") @RequestParam(name = "reportUuid", required = false) UUID reportUuid,
                                            @Parameter(description = "reporterId") @RequestParam(name = "reporterId", required = false) String reporterId,
-                                           @Parameter(description = "The type name for the report") @RequestParam(name = "reportType", required = false, defaultValue = "SecurityAnalysis") String reportType,
+                                           @Parameter(description = "The type name for the report") @RequestParam(name = "reportType", required = false,
+                                                   defaultValue = "SecurityAnalysis") String reportType,
                                            @Parameter(description = "parametersUuid") @RequestParam(name = "parametersUuid", required = false) UUID parametersUuid,
                                            @Parameter(description = "loadFlow parameters uuid") @RequestParam(name = "loadFlowParametersUuid") UUID loadFlowParametersUuid,
                                            @RequestHeader(HEADER_USER_ID) String userId) {
@@ -121,7 +126,8 @@ public class SecurityAnalysisController {
                                                                                   @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
                                                                                   @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
                                                                                   @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
-                                                                                  @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
+                                                                                  @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters",
+                                                                                          required = false) String globalFilters,
                                                                                   @Parameter(description = "Pageable parameters for pagination and sorting") Sort sort) {
         List<PreContingencyLimitViolationResultDTO> result = securityAnalysisResultService.findNResult(
                 resultUuid,
@@ -147,17 +153,21 @@ public class SecurityAnalysisController {
                                                       @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
                                                       @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations,
                                                       @Parameter(description = "Sort parameters") Sort sort) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(APPLICATION_OCTET_STREAM);
+        httpHeaders.setContentDispositionFormData(ATTACHMENT, "N-results.zip");
+        byte[] csv = securityAnalysisResultService.findNResultZippedCsv(
+                resultUuid,
+                networkUuid,
+                variantId,
+                filters,
+                globalFilters,
+                sort,
+                csvTranslations
+        );
         return ResponseEntity.ok()
-            .contentType(APPLICATION_OCTET_STREAM)
-            .body(securityAnalysisResultService.findNResultZippedCsv(
-                    resultUuid,
-                    networkUuid,
-                    variantId,
-                    filters,
-                    globalFilters,
-                    sort,
-                    csvTranslations
-            ));
+            .headers(httpHeaders)
+            .body(csv);
     }
 
     @GetMapping(value = "/results/{resultUuid}/nmk-contingencies-result/paged", produces = APPLICATION_JSON_VALUE)
@@ -168,7 +178,8 @@ public class SecurityAnalysisController {
                                                                                      @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
                                                                                      @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
                                                                                      @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
-                                                                                     @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
+                                                                                     @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters",
+                                                                                             required = false) String globalFilters,
                                                                                      @Parameter(description = "Pagination parameters") Pageable pageable) {
         Page<ContingencyResultDTO> result = securityAnalysisResultService.findNmKContingenciesPaged(resultUuid, networkUuid, variantId, filters, globalFilters, pageable);
 
@@ -200,17 +211,13 @@ public class SecurityAnalysisController {
                                                                      @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
                                                                      @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations,
                                                                      @Parameter(description = "Sort parameters") Sort sort) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(APPLICATION_OCTET_STREAM);
+        httpHeaders.setContentDispositionFormData(ATTACHMENT, "NMK_CONTINGENCIES-results.zip");
+        byte[] csv = securityAnalysisResultService.findNmKContingenciesResultZippedCsv(resultUuid, networkUuid, variantId, filters, globalFilters, sort, csvTranslations);
         return ResponseEntity.ok()
-            .contentType(MediaType.APPLICATION_OCTET_STREAM)
-            .body(securityAnalysisResultService.findNmKContingenciesResultZippedCsv(
-                    resultUuid,
-                    networkUuid,
-                    variantId,
-                    filters,
-                    globalFilters,
-                    sort,
-                    csvTranslations
-            ));
+            .headers(httpHeaders)
+            .body(csv);
     }
 
     @GetMapping(value = "/results/{resultUuid}/nmk-constraints-result/paged", produces = APPLICATION_JSON_VALUE)
@@ -221,12 +228,52 @@ public class SecurityAnalysisController {
                                                                                         @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
                                                                                         @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
                                                                                         @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
-                                                                                        @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
+                                                                                        @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters",
+                                                                                                required = false) String globalFilters,
                                                                                         @Parameter(description = "Pagination parameters") Pageable pageable) {
         Page<SubjectLimitViolationResultDTO> result = securityAnalysisResultService.findNmKConstraintsResultPaged(resultUuid, networkUuid, variantId, filters, globalFilters, pageable);
         return result != null
             ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
             : ResponseEntity.notFound().build();
+    }
+
+    @GetMapping(value = "/results/{resultUuid}/nmk-cut-off-power-result/paged", produces = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get a paged security analysis result from the database - NMK contingencies cut off power result")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result"),
+        @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
+    public ResponseEntity<Page<ContingencyCutOffPowerDTO>> getNmKCutOffPowerResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                                                                   @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
+                                                                                   @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
+                                                                                   @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
+                                                                                   @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false)
+                                                                                       String globalFilters,
+                                                                                   @Parameter(description = "Pagination parameters") Pageable pageable) {
+        Page<ContingencyCutOffPowerDTO> result = securityAnalysisResultService.findNmKConnectivityResult(resultUuid, networkUuid, variantId, filters, globalFilters, pageable);
+
+        return result != null
+                ? ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(result)
+                : ResponseEntity.notFound().build();
+    }
+
+    @PostMapping(value = "/results/{resultUuid}/nmk-cut-off-power-result/csv", produces = APPLICATION_OCTET_STREAM_VALUE, consumes = APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get a security analysis result from the database - NMK cut off power result - CSV export")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis result csv export"),
+        @ApiResponse(responseCode = "404", description = "Security analysis result has not been found")})
+    public ResponseEntity<byte[]> getNmKCutOffPowerResultZippedCsv(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
+                                                                   @Parameter(description = "network Uuid") @RequestParam(name = "networkUuid", required = false) UUID networkUuid,
+                                                                   @Parameter(description = "variant Id") @RequestParam(name = "variantId", required = false) String variantId,
+                                                                   @Parameter(description = "Filters") @RequestParam(name = "filters", required = false) String filters,
+                                                                   @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
+                                                                   @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations,
+                                                                   @Parameter(description = "Sort parameters") Sort sort) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(APPLICATION_OCTET_STREAM);
+        httpHeaders.setContentDispositionFormData(ATTACHMENT, "NMK_CUT_OFF_POWER-results.zip");
+        byte[] csv = securityAnalysisResultService.findNmKConnectivityResultResultZippedCsv(resultUuid, networkUuid, variantId, filters, globalFilters, sort, csvTranslations);
+        return ResponseEntity.ok()
+                .headers(httpHeaders)
+                .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                .body(csv);
     }
 
     @PostMapping(value = "/results/{resultUuid}/nmk-constraints-result/csv", produces = APPLICATION_OCTET_STREAM_VALUE, consumes = APPLICATION_JSON_VALUE)
@@ -240,18 +287,15 @@ public class SecurityAnalysisController {
                                                                   @Parameter(description = "Global Filters") @RequestParam(name = "globalFilters", required = false) String globalFilters,
                                                                   @Parameter(description = "Translation properties") @RequestBody CsvTranslationDTO csvTranslations,
                                                                   @Parameter(description = "Sort parameters") Sort sort) {
+        HttpHeaders httpHeaders = new HttpHeaders();
+        httpHeaders.setContentType(APPLICATION_OCTET_STREAM);
+        httpHeaders.setContentDispositionFormData(ATTACHMENT, "NMK_LIMIT_VIOLATIONS-results.zip");
+        byte[] csv = securityAnalysisResultService.findNmKConstraintsResultZippedCsv(resultUuid, networkUuid, variantId, filters, globalFilters, sort, csvTranslations);
 
         return ResponseEntity.ok()
+                .headers(httpHeaders)
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(securityAnalysisResultService.findNmKConstraintsResultZippedCsv(
-                        resultUuid,
-                        networkUuid,
-                        variantId,
-                        filters,
-                        globalFilters,
-                        sort,
-                        csvTranslations
-                ));
+                .body(csv);
     }
 
     @DeleteMapping(value = "/results", produces = APPLICATION_JSON_VALUE)
@@ -350,7 +394,8 @@ public class SecurityAnalysisController {
     @GetMapping(value = "/results/{resultUuid}/nmk-computation-status", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get the list of computation status values - NmK results")
     @ApiResponses(@ApiResponse(responseCode = "200", description = "List of computation status values by result - NmK results"))
-    public ResponseEntity<List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status>> getNmKResultComputationStatus(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
+    public ResponseEntity<List<com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status>> getNmKResultComputationStatus(
+            @Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid) {
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON).body(securityAnalysisService.getNmKComputationStatus(resultUuid));
     }
 }

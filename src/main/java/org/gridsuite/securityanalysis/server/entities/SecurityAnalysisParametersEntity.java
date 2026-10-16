@@ -8,7 +8,6 @@ package org.gridsuite.securityanalysis.server.entities;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.gridsuite.securityanalysis.server.dto.parameters.IdNameInfos;
 import org.gridsuite.securityanalysis.server.dto.parameters.ContingencyListsInfos;
 import org.gridsuite.securityanalysis.server.dto.parameters.SecurityAnalysisParametersValues;
 import org.springframework.lang.Nullable;
@@ -19,7 +18,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * @author Abdelsalem HEDHILI <abdelsalem.hedhili@rte-france.com>
+ * @author Abdelsalem HEDHILI <abdelsalem.hedhili at rte-france.com>
  */
 @NoArgsConstructor
 @AllArgsConstructor
@@ -102,11 +101,8 @@ public class SecurityAnalysisParametersEntity {
 
         List<ParametersContingencyListEntity> entities = contingencyListsInfos.stream()
                 .map(listsInfos -> {
-                    List<UUID> contingencyListIds = listsInfos.getContingencyLists().stream()
-                            .map(IdNameInfos::getId)
-                            .toList();
                     ParametersContingencyListEntity entity = new ParametersContingencyListEntity(
-                            contingencyListIds,
+                            new ArrayList<>(listsInfos.getContingencyLists()),
                             listsInfos.getDescription(),
                             listsInfos.isActivated()
                     );

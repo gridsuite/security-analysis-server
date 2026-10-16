@@ -14,6 +14,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.FieldNameConstants;
 
 /**
  * @author Laurent GARNIER <laurent.garnier at rte-france.com>
@@ -23,6 +24,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Embeddable
+@FieldNameConstants
 public class ContingencyElementEmbeddable {
 
     @Column

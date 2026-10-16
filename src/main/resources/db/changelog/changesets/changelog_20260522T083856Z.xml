@@ -1,0 +1,26 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+    <changeSet author="lesaulnierkev (generated)" id="1779439156192-1">
+        <addColumn tableName="contingency_limit_violation">
+            <column name="is_worst_side" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+    <changeSet author="lesaulnierkev (generated)" id="1779439156192-2">
+        <sqlFile
+                dbms="postgresql"
+                encoding="UTF-8"
+                path="migrationWorstSideContingencyLimitViolationsPostgres.sql"
+                relativeToChangelogFile="true"
+                splitStatements="true"
+                stripComments="true"/>
+        <sqlFile
+                dbms="h2"
+                encoding="UTF-8"
+                path="migrationWorstSideContingencyLimitViolationsH2.sql"
+                relativeToChangelogFile="true"
+                splitStatements="true"
+                stripComments="true"/>
+    </changeSet>
+</databaseChangeLog>

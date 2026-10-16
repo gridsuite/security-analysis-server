@@ -7,8 +7,8 @@
 
 package org.gridsuite.securityanalysis.server.repositories;
 
+import com.powsybl.contingency.violations.LimitViolationType;
 import com.powsybl.iidm.network.ThreeSides;
-import com.powsybl.security.LimitViolationType;
 import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -20,7 +20,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * @author Florent MILLOT <florent.millot@rte-france.com>
+ * @author Florent MILLOT <florent.millot at rte-france.com>
  */
 @Repository
 public interface ContingencyLimitViolationRepository extends JpaRepository<ContingencyLimitViolationEntity, UUID> {

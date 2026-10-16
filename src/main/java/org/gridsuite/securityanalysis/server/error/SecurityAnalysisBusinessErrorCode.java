@@ -12,7 +12,8 @@ import com.powsybl.ws.commons.error.BusinessErrorCode;
  * @author Caroline Jeandat {@literal <caroline.jeandat at rte-france.com>}
  */
 public enum SecurityAnalysisBusinessErrorCode implements BusinessErrorCode {
-    CONTINGENCY_LIST_CONFIG_EMPTY("securityAnalysis.contingencyListConfigEmpty");
+    CONTINGENCY_LIST_CONFIG_EMPTY("securityAnalysis.contingencyListConfigEmpty"),
+    MISSING_CONTINGENCY_LIST("securityAnalysis.missingContingencyList");
 
     private final String code;
 

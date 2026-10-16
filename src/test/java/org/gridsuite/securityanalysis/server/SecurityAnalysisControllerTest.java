@@ -14,6 +14,8 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.powsybl.commons.report.ReportNode;
+import com.powsybl.contingency.Contingency;
+import com.powsybl.contingency.violations.LimitViolationType;
 import com.powsybl.iidm.network.*;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.loadflow.LoadFlowParameters;
@@ -21,7 +23,10 @@ import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
-import com.powsybl.security.*;
+import com.powsybl.security.SecurityAnalysis;
+import com.powsybl.security.SecurityAnalysisParameters;
+import com.powsybl.security.SecurityAnalysisProvider;
+import com.powsybl.security.SecurityAnalysisResult;
 import com.vladmihalcea.sql.SQLStatementCountValidator;
 import org.assertj.core.api.Assertions;
 import org.gridsuite.computation.dto.GlobalFilter;
@@ -32,6 +37,7 @@ import org.gridsuite.computation.service.UuidGeneratorService;
 import org.gridsuite.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
+import org.gridsuite.securityanalysis.server.entities.ConnectivityResultEmbeddable;
 import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.repositories.SubjectLimitViolationRepository;
@@ -83,7 +89,8 @@ import static org.gridsuite.securityanalysis.server.util.CsvExportUtils.csvRowsT
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.gridsuite.securityanalysis.server.util.TestUtils.readLinesFromFilePath;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -182,6 +189,7 @@ class SecurityAnalysisControllerTest {
         network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, VARIANT_3_ID);
 
         given(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.ALL_COLLECTIONS_NEEDED_FOR_BUS_VIEW)).willReturn(network);
+        given(actionsService.getContingencyList(any(), any(), any())).willReturn(List.of(new ContingencyInfos(new Contingency("contingency"))));
 
         when(networkStoreService.getNetwork(NETWORK_STOP_UUID, PreloadingStrategy.ALL_COLLECTIONS_NEEDED_FOR_BUS_VIEW)).thenAnswer(invocation -> {
             //Needed so the stop call doesn't arrive too late
@@ -237,7 +245,8 @@ class SecurityAnalysisControllerTest {
     }
 
     private void simpleRunRequest(SecurityAnalysisParametersInfos lfParams) throws Exception {
-        MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&variantId=" + VARIANT_3_ID + "&loadFlowParametersUuid=" + UUID.randomUUID())
+        MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&variantId=" + VARIANT_3_ID + "&loadFlowParametersUuid="
+                + UUID.randomUUID())
                 .contentType(MediaType.APPLICATION_JSON)
                 .header(HEADER_USER_ID, USER_ID)
                 .content(mapper.writeValueAsString(lfParams)))
@@ -271,7 +280,8 @@ class SecurityAnalysisControllerTest {
         String resultAsString;
 
         // run with specific variant
-        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&variantId=" + VARIANT_3_ID + "&provider=OpenLoadFlow" + "&loadFlowParametersUuid=" + UUID.randomUUID())
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&variantId=" + VARIANT_3_ID + "&provider=OpenLoadFlow"
+                + "&loadFlowParametersUuid=" + UUID.randomUUID())
                 .header(HEADER_USER_ID, USER_ID)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpectAll(
@@ -303,7 +313,8 @@ class SecurityAnalysisControllerTest {
         String resultAsString;
 
         SQLStatementCountValidator.reset();
-        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow" + "&loadFlowParametersUuid=" + UUID.randomUUID())
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow"
+                + "&loadFlowParametersUuid=" + UUID.randomUUID())
                 .header(HEADER_USER_ID, USER_ID)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpectAll(
@@ -351,6 +362,11 @@ class SecurityAnalysisControllerTest {
                         status().isOk(),
                         content().contentType(MediaType.APPLICATION_JSON));
         assertFiltredResultNmkConstraints();
+        mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-cut-off-power-result/paged"))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON));
+        assertFiltredResultNmkCutOffPowerConstraints();
         checkNmKResultEnumFilters(RESULT_UUID);
 
         // should throw not found if result does not exist
@@ -368,7 +384,8 @@ class SecurityAnalysisControllerTest {
         MvcResult mvcResult;
         String resultAsString;
         SQLStatementCountValidator.reset();
-        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow" + "&loadFlowParametersUuid=" + UUID.randomUUID())
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow"
+                + "&loadFlowParametersUuid=" + UUID.randomUUID())
                         .header(HEADER_USER_ID, USER_ID)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpectAll(
@@ -403,7 +420,8 @@ class SecurityAnalysisControllerTest {
         ObjectReader faultResultsReader = mapper.readerFor(new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
         List<SubjectLimitViolationResultDTO> subjectLimitViolationResultDTOS = faultResultsReader.readValue(resultsPageNode0.get("content"));
         List<String> result = subjectLimitViolationResultDTOS.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList();
-        List<String> expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(o -> o.getId().toString())).map(SubjectLimitViolationEntity::getSubjectId).toList();
+        List<String> expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(o -> o.getId().toString())).map(
+                SubjectLimitViolationEntity::getSubjectId).toList();
         assertEquals(expectedResultInOrder, result);
 
         //test with a sorted paged request
@@ -420,12 +438,29 @@ class SecurityAnalysisControllerTest {
         faultResultsReader = mapper.readerFor(new TypeReference<List<SubjectLimitViolationResultDTO>>() { });
         subjectLimitViolationResultDTOS = faultResultsReader.readValue(resultsPageNode0.get("content"));
         result = subjectLimitViolationResultDTOS.stream().map(SubjectLimitViolationResultDTO::getSubjectId).toList();
-        expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(Comparator.comparing(SubjectLimitViolationEntity::getSubjectId).thenComparing(SubjectLimitViolationEntity::getId)).map(SubjectLimitViolationEntity::getSubjectId).toList();
+        expectedResultInOrder = subjectLimitViolationRepository.findAll().stream().sorted(
+                Comparator.comparing(SubjectLimitViolationEntity::getSubjectId).thenComparing(SubjectLimitViolationEntity::getId)).map(SubjectLimitViolationEntity::getSubjectId).toList();
         assertEquals(expectedResultInOrder, result);
+
+        res = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-cut-off-power-result/paged")
+                        .param("page", "0")
+                        .param("size", "10")
+                        .param("sort", "contingencyId"))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON))
+                .andReturn().getResponse().getContentAsString();
+        assertFiltredResultNmkCutOffPowerConstraints();
+        resultsPageNode0 = mapper.readTree(res);
+        ObjectReader cutOffReader = mapper.readerFor(new TypeReference<List<ContingencyCutOffPowerDTO>>() { });
+        List<ContingencyCutOffPowerDTO> cutOffResults = cutOffReader.readValue(resultsPageNode0.get("content"));
+        List<String> cutOffIds = cutOffResults.stream().map(ContingencyCutOffPowerDTO::contingencyId).toList();
+        assertEquals(cutOffIds.stream().sorted().toList(), cutOffIds);
     }
 
     private static String buildFilterNUrl() throws JsonProcessingException {
-        List<ResourceFilterDTO> filters = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "vl1", AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId),
+        List<ResourceFilterDTO> filters = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.STARTS_WITH, "vl1",
+                AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId),
             new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, new String[]{"HIGH_VOLTAGE"}, AbstractLimitViolationEntity.Fields.limitType),
             new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.GREATER_THAN_OR_EQUAL, "399", AbstractLimitViolationEntity.Fields.limit),
             new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.LESS_THAN_OR_EQUAL, "420", AbstractLimitViolationEntity.Fields.value),
@@ -488,6 +523,21 @@ class SecurityAnalysisControllerTest {
         assertNotNull(resultAsString);
     }
 
+    private void assertFiltredResultNmkCutOffPowerConstraints() throws Exception {
+        Network network = mock(Network.class);
+        VariantManager variantManager = mock(VariantManager.class);
+        when(network.getVariantManager()).thenReturn(variantManager);
+        doNothing().when(variantManager).setWorkingVariant(anyString());
+
+        when(networkStoreService.getNetwork(NETWORK_UUID, PreloadingStrategy.COLLECTION)).thenReturn(network);
+
+        // test - nmk-cut-off-power-result/paged  endpoint
+        MvcResult mvcResult = mockMvc.perform(get("/" + VERSION + "/results/" + RESULT_UUID + "/nmk-cut-off-power-result/paged?" + buildFilterNmkUrl()))
+                .andExpectAll(status().isOk()).andReturn();
+        String resultAsString = mvcResult.getResponse().getContentAsString();
+        assertNotNull(resultAsString);
+    }
+
     private void assertFiltredResultNmkContingencies() throws Exception {
         Network network = mock(Network.class);
         VariantManager variantManager = mock(VariantManager.class);
@@ -531,7 +581,8 @@ class SecurityAnalysisControllerTest {
     }
 
     private void verifynResultsLocationId(List<PreContingencyLimitViolationResultDTO> nResults) {
-        Assertions.assertThat(nResults.stream().map(preContingencyLimitViolationResultDTO -> preContingencyLimitViolationResultDTO.getLimitViolation().getLocationId()).toList()).hasSameElementsAs(Arrays.asList(null, "vl1 (VLGEN_0, VLLOAD_0)", null));
+        Assertions.assertThat(nResults.stream().map(preContingencyLimitViolationResultDTO -> preContingencyLimitViolationResultDTO.getLimitViolation().getLocationId()).toList()).hasSameElementsAs(
+                Arrays.asList(null, "vl1 (VLGEN_0, VLLOAD_0)", null));
     }
 
     private void checkNmKResultEnumFilters(UUID resultUuid) throws Exception {
@@ -545,7 +596,8 @@ class SecurityAnalysisControllerTest {
         ObjectReader resultsObjectReader = mapper.readerFor(new TypeReference<List<ContingencyResultDTO>>() { });
         List<ContingencyResultDTO> nmkResult = resultsObjectReader.readValue(resultsJsonNode.get("content"));
         verifyNmkContingrnciesResultLocationIds(nmkResult);
-        List<LimitViolationType> expectedLimitTypes = nmkResult.stream().map(ContingencyResultDTO::getSubjectLimitViolations).flatMap(subjectLimitViolationDTOS -> subjectLimitViolationDTOS.stream().map(slm -> slm.getLimitViolation().getLimitType())).distinct().toList();
+        List<LimitViolationType> expectedLimitTypes = nmkResult.stream().map(ContingencyResultDTO::getSubjectLimitViolations).flatMap(
+                subjectLimitViolationDTOS -> subjectLimitViolationDTOS.stream().map(slm -> slm.getLimitViolation().getLimitType())).distinct().toList();
         mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/nmk-limit-types", resultUuid))
             .andExpectAll(
                 status().isOk(),
@@ -554,7 +606,8 @@ class SecurityAnalysisControllerTest {
         List<LimitViolationType> limitTypes = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
         Assertions.assertThat(limitTypes).hasSameElementsAs(expectedLimitTypes);
 
-        List<ThreeSides> expectedSides = nmkResult.stream().map(ContingencyResultDTO::getSubjectLimitViolations).flatMap(subjectLimitViolationDTOS -> subjectLimitViolationDTOS.stream().map(slm -> slm.getLimitViolation().getSide())).filter(Objects::nonNull).distinct().toList();
+        List<ThreeSides> expectedSides = nmkResult.stream().map(ContingencyResultDTO::getSubjectLimitViolations).flatMap(
+                subjectLimitViolationDTOS -> subjectLimitViolationDTOS.stream().map(slm -> slm.getLimitViolation().getSide())).filter(Objects::nonNull).distinct().toList();
         mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/nmk-branch-sides", resultUuid))
             .andExpectAll(
                 status().isOk(),
@@ -563,7 +616,8 @@ class SecurityAnalysisControllerTest {
         List<ThreeSides> sides = mapper.readValue(mvcResult.getResponse().getContentAsString(), new TypeReference<>() { });
         Assertions.assertThat(sides).hasSameElementsAs(expectedSides);
 
-        List<LoadFlowResult.ComponentResult.Status> expectedStatus = nmkResult.stream().map(result -> LoadFlowResult.ComponentResult.Status.valueOf(result.getContingency().getStatus())).distinct().toList();
+        List<LoadFlowResult.ComponentResult.Status> expectedStatus = nmkResult.stream().map(result -> LoadFlowResult.ComponentResult.Status.valueOf(result.getContingency().getStatus())).distinct(
+                ).toList();
         mvcResult = mockMvc.perform(get("/" + VERSION + "/results/{resultUuid}/nmk-computation-status", resultUuid))
             .andExpectAll(
                 status().isOk(),
@@ -633,7 +687,8 @@ class SecurityAnalysisControllerTest {
         assertEquals(SecurityAnalysisStatus.NOT_DONE, securityAnalysisStatus);
 
         // running computation to create result
-        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow" + "&loadFlowParametersUuid=" + UUID.randomUUID())
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow"
+                + "&loadFlowParametersUuid=" + UUID.randomUUID())
                 .header(HEADER_USER_ID, USER_ID)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpectAll(
@@ -671,15 +726,17 @@ class SecurityAnalysisControllerTest {
     }
 
     @Test
+    @SuppressWarnings("checkstyle:LambdaBodyLength")
     void stopTest() throws Exception {
         countDownLatch = new CountDownLatch(1);
-
+        when(securityAnalysisResultService.findStatus(RESULT_UUID)).thenReturn(SecurityAnalysisStatus.RUNNING);
         new Thread(() -> {
             try {
                 MvcResult mvcResult;
                 String resultAsString;
 
-                mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_STOP_UUID + "/run-and-save?reportType=SecurityAnalysis&receiver=me&variantId=" + VARIANT_TO_STOP_ID + "&loadFlowParametersUuid=" + UUID.randomUUID())
+                mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_STOP_UUID + "/run-and-save?reportType=SecurityAnalysis&receiver=me&variantId=" + VARIANT_TO_STOP_ID
+                        + "&loadFlowParametersUuid=" + UUID.randomUUID())
                     .header(HEADER_USER_ID, USER_ID)
                         .contentType(MediaType.APPLICATION_JSON))
                     .andExpectAll(
@@ -711,6 +768,7 @@ class SecurityAnalysisControllerTest {
     @Test
     void testStopAndFail() throws Exception {
         UUID randomUuid = UUID.randomUUID();
+        when(securityAnalysisResultService.findStatus(randomUuid)).thenReturn(SecurityAnalysisStatus.RUNNING);
         mockMvc.perform(put("/" + VERSION + "/results/" + randomUuid + "/stop" + "?receiver=me")
                         .header(HEADER_USER_ID, USER_ID))
                 .andExpect(status().isOk());
@@ -726,7 +784,8 @@ class SecurityAnalysisControllerTest {
         MvcResult mvcResult;
         String resultAsString;
 
-        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&provider=testProvider" + "&reportUuid=" + REPORT_UUID + "&reporterId=" + UUID.randomUUID() + "&loadFlowParametersUuid=" + UUID.randomUUID()).contentType(MediaType.APPLICATION_JSON)
+        mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&provider=testProvider" + "&reportUuid=" + REPORT_UUID + "&reporterId="
+                + UUID.randomUUID() + "&loadFlowParametersUuid=" + UUID.randomUUID()).contentType(MediaType.APPLICATION_JSON)
                 .header(HEADER_USER_ID, USER_ID)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpectAll(
@@ -782,6 +841,11 @@ class SecurityAnalysisControllerTest {
             .usingRecursiveComparison()
             // this field is not well serialized/deserialized - since it's deprecated / not used, we ignore it here
             .ignoringFieldsMatchingRegexes(".*\\.limitViolationsResult\\.computationOk")
+            // this field is set by default to empty string in LimitViolation class, it is treated as null when serializing/deserializing
+            // so, we ignore it here
+            .ignoringFieldsMatchingRegexes(".*operationalLimitsGroupId")
+            // NaN values don't serialize/deserialize consistently, so we ignore this field
+            .ignoringFieldsMatchingRegexes(".*\\.distributedActivePower")
             .isEqualTo(securityAnalysisResult);
     }
 
@@ -820,7 +884,8 @@ class SecurityAnalysisControllerTest {
     @Test
     void getZippedCsvResults() throws Exception {
         // running computation to create some results
-        MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&receiver=me&variantId=" + VARIANT_2_ID + "&provider=OpenLoadFlow" + "&loadFlowParametersUuid=" + UUID.randomUUID())
+        MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run-and-save?reportType=SecurityAnalysis&receiver=me&variantId=" + VARIANT_2_ID
+                + "&provider=OpenLoadFlow" + "&loadFlowParametersUuid=" + UUID.randomUUID())
                 .header(HEADER_USER_ID, USER_ID)
                 .contentType(MediaType.APPLICATION_JSON))
             .andExpectAll(
@@ -838,6 +903,23 @@ class SecurityAnalysisControllerTest {
 
         checkAllZippedCsvResults();
         checkFiltersOnZippedCsvResults();
+    }
+
+    @Test
+    void testNoContingency() throws Exception {
+        given(actionsService.getContingencyList(any(), any(), any())).willReturn(List.of());
+        MvcResult mvcResult = mockMvc.perform(post("/" + VERSION + "/networks/" + NETWORK_UUID + "/run?reportType=SecurityAnalysis&variantId=" + VARIANT_3_ID + "&loadFlowParametersUuid="
+                + UUID.randomUUID())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header(HEADER_USER_ID, USER_ID)
+                        .content(mapper.writeValueAsString(SecurityAnalysisParametersInfos.builder().build())))
+                .andExpectAll(
+                        status().isOk(),
+                        content().contentType(MediaType.APPLICATION_JSON)).andReturn();
+        String resultAsString = mvcResult.getResponse().getContentAsString();
+        SecurityAnalysisResult securityAnalysisResult = mapper.readValue(resultAsString, SecurityAnalysisResult.class);
+
+        assertThat(RESULT_NO_CONTINGENCY_VARIANT, new MatcherJson<>(mapper, securityAnalysisResult));
     }
 
     @Test
@@ -883,7 +965,8 @@ class SecurityAnalysisControllerTest {
 
     private void checkAllZippedCsvResults() throws Exception {
         SQLStatementCountValidator.reset();
-        checkZippedCsvResult("n-result", "/results/n-result-en.csv", "en", AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId, null);
+        checkZippedCsvResult("n-result", "/results/n-result-en.csv", "en",
+                AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId, null);
         /*
          * SELECT
          * assert result exists
@@ -892,7 +975,8 @@ class SecurityAnalysisControllerTest {
         assertRequestsCount(2, 0, 0, 0);
 
         SQLStatementCountValidator.reset();
-        checkZippedCsvResult("n-result", "/results/n-result-fr.csv", "fr", AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId, null);
+        checkZippedCsvResult("n-result", "/results/n-result-fr.csv", "fr",
+                AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId, null);
 
         SQLStatementCountValidator.reset();
         checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-en.csv", "en", ContingencyEntity.Fields.contingencyId, null);
@@ -924,15 +1008,31 @@ class SecurityAnalysisControllerTest {
         SQLStatementCountValidator.reset();
         checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-fr.csv", "fr", SubjectLimitViolationEntity.Fields.subjectId, null);
         assertRequestsCount(5, 0, 0, 0);
+
+        SQLStatementCountValidator.reset();
+        checkZippedCsvResult("nmk-cut-off-power-result", "/results/nmk-cut-off-power-result-en.csv", "en", ContingencyEntity.Fields.contingencyId, null);
+
+        assertRequestsCount(3, 0, 0, 0);
+
+        SQLStatementCountValidator.reset();
+        checkZippedCsvResult("nmk-cut-off-power-result", "/results/nmk-cut-off-power-result-fr.csv", "fr", ContingencyEntity.Fields.contingencyId, null);
+        assertRequestsCount(3, 0, 0, 0);
     }
 
     private void checkFiltersOnZippedCsvResults() throws Exception {
-        List<ResourceFilterDTO> filterN = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, new String[]{"CURRENT"}, AbstractLimitViolationEntity.Fields.limitType));
-        List<ResourceFilterDTO> filterNmK = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS, new String[]{"CURRENT"}, SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitType));
+        List<ResourceFilterDTO> filterN = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT,
+                ResourceFilterDTO.Type.EQUALS, new String[]{"CURRENT"}, AbstractLimitViolationEntity.Fields.limitType));
+        List<ResourceFilterDTO> filterNmK = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.TEXT, ResourceFilterDTO.Type.EQUALS,
+                new String[]{"CURRENT"}, SubjectLimitViolationEntity.Fields.contingencyLimitViolations + SpecificationUtils.FIELD_SEPARATOR + AbstractLimitViolationEntity.Fields.limitType));
+        List<ResourceFilterDTO> filterPowerCutOff = List.of(new ResourceFilterDTO(ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.NOT_EQUAL,
+                "0", ContingencyEntity.Fields.connectivityResult + SpecificationUtils.FIELD_SEPARATOR + ConnectivityResultEmbeddable.Fields.disconnectedLoadActivePower));
 
-        checkZippedCsvResult("n-result", "/results/n-result-with-filter-en.csv", "en", AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId, filterN);
+        checkZippedCsvResult("n-result", "/results/n-result-with-filter-en.csv", "en",
+                AbstractLimitViolationEntity.Fields.subjectLimitViolation + SpecificationUtils.FIELD_SEPARATOR + SubjectLimitViolationEntity.Fields.subjectId, filterN);
         checkZippedCsvResult("nmk-contingencies-result", "/results/nmk-contingencies-result-with-filter-en.csv", "en", ContingencyEntity.Fields.contingencyId, filterNmK);
         checkZippedCsvResult("nmk-constraints-result", "/results/nmk-constraints-result-with-filter-en.csv", "en", SubjectLimitViolationEntity.Fields.subjectId, filterNmK);
+
+        checkZippedCsvResult("nmk-cut-off-power-result", "/results/nmk-cut-off-power-result-with-filter-en.csv", "en", ContingencyEntity.Fields.contingencyId, filterPowerCutOff);
     }
 
     private void checkCsvResultFromBytes(String expectedCsvResource, byte[] resultAsByteArray) throws Exception {
@@ -994,5 +1094,8 @@ class SecurityAnalysisControllerTest {
 
         mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-constraints-result/paged"))
             .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/" + VERSION + "/results/" + resultUuid + "/nmk-cut-off-power-result/paged"))
+                .andExpect(status().isNotFound());
     }
 }

@@ -21,8 +21,6 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
-import static org.gridsuite.computation.service.NotificationService.HEADER_USER_ID;
-
 /**
  * @author Abdelsalem Hedhili <abdelsalem.hedhili at rte-france.com>
  */
@@ -53,15 +51,14 @@ public class SecurityAnalysisParametersController {
         return ResponseEntity.ok().body(parametersService.createDefaultParameters());
     }
 
-    @PostMapping(value = "", params = "duplicateFrom", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/{uuid}/duplicate", produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Duplicate parameters")
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "parameters were duplicated"),
         @ApiResponse(responseCode = "404", description = "source parameters were not found")})
     public ResponseEntity<UUID> duplicateParameters(
-            @Parameter(description = "source parameters UUID") @RequestParam(name = "duplicateFrom") UUID sourceParametersUuid,
-            @RequestHeader(HEADER_USER_ID) String userId) {
-        return parametersService.duplicateParameters(sourceParametersUuid, userId).map(duplicatedParametersUuid -> ResponseEntity.ok()
+            @Parameter(description = "source parameters UUID") @PathVariable(name = "uuid") UUID sourceParametersUuid) {
+        return parametersService.duplicateParameters(sourceParametersUuid).map(duplicatedParametersUuid -> ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(duplicatedParametersUuid))
             .orElse(ResponseEntity.notFound().build());
@@ -73,11 +70,20 @@ public class SecurityAnalysisParametersController {
         @ApiResponse(responseCode = "200", description = "parameters were returned"),
         @ApiResponse(responseCode = "404", description = "parameters were not found")})
     public ResponseEntity<SecurityAnalysisParametersValues> getParameters(
-            @Parameter(description = "parameters UUID") @PathVariable(value = "uuid") UUID parametersUuid,
-            @RequestHeader(HEADER_USER_ID) String userId) {
-        return parametersService.getParameters(parametersUuid, userId)
+            @Parameter(description = "parameters UUID") @PathVariable(value = "uuid") UUID parametersUuid) {
+        return parametersService.getParameters(parametersUuid)
                 .map(parametersValues -> ResponseEntity.ok().body(parametersValues))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping(value = "/{uuid}/provider", produces = MediaType.APPLICATION_JSON_VALUE)
+    @Operation(summary = "Get provider of parameters with the given id")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "parameters provider was returned"),
+        @ApiResponse(responseCode = "404", description = "parameters were not found")})
+    public ResponseEntity<String> getParametersProvider(
+        @Parameter(description = "parameters UUID") @PathVariable(value = "uuid") UUID parametersUuid) {
+        return ResponseEntity.ok().body(parametersService.getProvider(parametersUuid));
     }
 
     @PutMapping(value = "/{uuid}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)

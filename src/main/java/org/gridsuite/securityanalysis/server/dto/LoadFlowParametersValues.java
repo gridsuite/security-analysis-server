@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 import java.util.Map;
 
 /**
- * @author Abdelsalem Hedhili <abdelsalem.hedhili@rte-france.com>
+ * @author Abdelsalem Hedhili <abdelsalem.hedhili at rte-france.com>
  */
 @Getter
 @AllArgsConstructor

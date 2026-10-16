@@ -6,19 +6,17 @@
  */
 package org.gridsuite.securityanalysis.server.service;
 
-import org.gridsuite.computation.error.ComputationException;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.Range;
+import org.gridsuite.computation.error.ComputationException;
 import org.gridsuite.securityanalysis.server.dto.parameters.LimitReductionsByVoltageLevel;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import static org.gridsuite.computation.error.ComputationBusinessErrorCode.LIMIT_REDUCTION_CONFIG_ERROR;
 
 @Setter

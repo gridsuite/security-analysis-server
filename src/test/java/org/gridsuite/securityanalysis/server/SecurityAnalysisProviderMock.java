@@ -7,15 +7,24 @@
 package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.contingency.*;
+import com.powsybl.contingency.violations.BusBreakerViolationLocation;
+import com.powsybl.contingency.violations.LimitViolation;
+import com.powsybl.contingency.violations.LimitViolationType;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.TwoSides;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.*;
+import com.powsybl.security.results.ConnectivityResult;
+import com.powsybl.security.results.NetworkResult;
 import com.powsybl.security.results.PostContingencyResult;
+import org.gridsuite.computation.dto.ResourceFilterDTO;
 import org.gridsuite.computation.utils.ComputationResultUtils;
+import org.gridsuite.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.dto.*;
+import org.gridsuite.securityanalysis.server.entities.ConnectivityResultEmbeddable;
+import org.gridsuite.securityanalysis.server.entities.ContingencyEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +58,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         new ContingencyInfos(new Contingency("l4", new LineContingency("l4")), Set.of("wrongId1, wrongId2"), Set.of("notConnectedId1")),
         //new Contingency("l5", new LoadContingency("l5")), //ContingencyElementDeserializer does not handle LOAD
         new ContingencyInfos(new Contingency("l6", new HvdcLineContingency("l6")), Set.of("wrongId1, wrongId2"), Set.of()),
-        new ContingencyInfos(new Contingency("l7", new DanglingLineContingency("l7")), Set.of("wrongId1, wrongId2"), Set.of()),
+        new ContingencyInfos(new Contingency("l7", new BoundaryLineContingency("l7")), Set.of("wrongId1, wrongId2"), Set.of()),
         new ContingencyInfos(new Contingency("l8", new ShuntCompensatorContingency("l8")), Set.of("wrongId1, wrongId2"), Set.of()),
         new ContingencyInfos(new Contingency("l9", new TwoWindingsTransformerContingency("l9")), Set.of("wrongId1, wrongId2"), Set.of()),
         new ContingencyInfos(new Contingency("la", new ThreeWindingsTransformerContingency("l0")), Set.of("wrongId1, wrongId2"), Set.of()), // Contingencies are reordered by id
@@ -79,36 +88,84 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         new Contingency("l4", new LineContingency("l4"))
     );
 
+    static final ConnectivityResult CONNECTIVITY_RESULT = new ConnectivityResult(0, 0, 237.4, -237.4, Set.of());
+
+    static final ConnectivityResult EMPTY_CUT_OFF = new ConnectivityResult(0, 0, 0.0, 0.0, Set.of());
+
+    List<ResourceFilterDTO> filterPowerCutOff = List.of(new ResourceFilterDTO(
+            ResourceFilterDTO.DataType.NUMBER, ResourceFilterDTO.Type.NOT_EQUAL, "0", ContingencyEntity.Fields.connectivityResult
+                    + SpecificationUtils.FIELD_SEPARATOR + ConnectivityResultEmbeddable.Fields.disconnectedLoadActivePower));
+
     //MAX VALUE for acceptable duration here is important to check this value is actually set to null when exporting it
     static final LimitViolation LIMIT_VIOLATION_1 = new LimitViolation("l3", LimitViolationType.CURRENT, "l3_name", Integer.MAX_VALUE, 10, 1, 11, TwoSides.ONE);
-    static final LimitViolation LIMIT_VIOLATION_2 = new LimitViolation("vl1", null, LimitViolationType.HIGH_VOLTAGE, "permanent", 0, 400, 1, 410, null, new BusBreakerViolationLocation(List.of("NGEN", "NLOAD")));
+    static final LimitViolation LIMIT_VIOLATION_1_OTHER_SIDE = new LimitViolation("l3", LimitViolationType.CURRENT, "l3_name", Integer.MAX_VALUE, 10, 1, 11, TwoSides.TWO);
+    static final LimitViolation LIMIT_VIOLATION_2 = new LimitViolation("vl1", null, LimitViolationType.HIGH_VOLTAGE, "permanent", 0, 400, 1, 410, null, new BusBreakerViolationLocation(List.of("NGEN",
+            "NLOAD")));
     static final LimitViolation LIMIT_VIOLATION_3 = new LimitViolation("l6", LimitViolationType.CURRENT, "l6_name", 20 * 60, 10, 1, 11, TwoSides.ONE);
     static final LimitViolation LIMIT_VIOLATION_4 = new LimitViolation("vl7", LimitViolationType.HIGH_VOLTAGE, "vl7_name", 0, 400, 2, 410);
-    static final LimitViolation LIMIT_VIOLATION_5 = new LimitViolation("vl5", null, LimitViolationType.LOW_VOLTAGE, "vl5_name", 0, 400, 1, 410, null, new BusBreakerViolationLocation(List.of("NLOAD")));
+    static final LimitViolation LIMIT_VIOLATION_5 = new LimitViolation("vl5", null, LimitViolationType.LOW_VOLTAGE, "vl5_name", 0, 400, 1, 410, null,
+            new BusBreakerViolationLocation(List.of("NLOAD")));
     static final LimitViolation LIMIT_VIOLATION_6 = new LimitViolation("l7", LimitViolationType.CURRENT, "l7_name", 20 * 60, 10.51242140448186, 1.00001290229799f, 11.024281313654868, TwoSides.ONE);
     static final List<LimitViolation> RESULT_LIMIT_VIOLATIONS = List.of(LIMIT_VIOLATION_1, LIMIT_VIOLATION_2);
+    static final List<LimitViolation> LIMIT_VIOLATIONS_ON_BOTH_SIDES = List.of(LIMIT_VIOLATION_1, LIMIT_VIOLATION_1_OTHER_SIDE, LIMIT_VIOLATION_2);
     static final List<LimitViolation> FAILED_LIMIT_VIOLATIONS = List.of(LIMIT_VIOLATION_3, LIMIT_VIOLATION_4);
-    public static final SecurityAnalysisResult RESULT = new SecurityAnalysisResult(new LimitViolationsResult(List.of(LIMIT_VIOLATION_1, LIMIT_VIOLATION_2, LIMIT_VIOLATION_3)), LoadFlowResult.ComponentResult.Status.CONVERGED,
-            Stream.of(
-                    CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency.getContingency(), PostContingencyComputationStatus.CONVERGED, RESULT_LIMIT_VIOLATIONS)),
-                    FAILED_CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.FAILED, FAILED_LIMIT_VIOLATIONS)),
-                    CONTINGENCIES_WITHOUT_LIMIT_VIOLATION.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, List.of())),
-                    CONTINGENCIES_NOT_CONVERGED_WITHOUT_LIMIT_VIOLATION.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.FAILED, List.of())))
-                .flatMap(Function.identity())
-                .toList());
-    static final List<LimitViolation> RESULT_PRECONTINGENCY_LIMIT_VIOLATIONS = List.of(LIMIT_VIOLATION_1, LIMIT_VIOLATION_2, LIMIT_VIOLATION_5, LIMIT_VIOLATION_6);
-    static final SecurityAnalysisResult PRECONTINGENCY_RESULT = new SecurityAnalysisResult(new LimitViolationsResult(List.of(LIMIT_VIOLATION_1, LIMIT_VIOLATION_2, LIMIT_VIOLATION_5, LIMIT_VIOLATION_6)), LoadFlowResult.ComponentResult.Status.CONVERGED,
-            Stream.of(
-                            CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency.getContingency(), PostContingencyComputationStatus.CONVERGED, RESULT_LIMIT_VIOLATIONS)),
-                            FAILED_CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.FAILED, FAILED_LIMIT_VIOLATIONS)),
-                            CONTINGENCIES_WITHOUT_LIMIT_VIOLATION.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, List.of())),
-                            CONTINGENCIES_NOT_CONVERGED_WITHOUT_LIMIT_VIOLATION.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.FAILED, List.of())))
-                .flatMap(Function.identity())
-                .toList());
 
-    static final SecurityAnalysisResult RESULT_VARIANT = new SecurityAnalysisResult(new LimitViolationsResult(List.of(LIMIT_VIOLATION_3)), LoadFlowResult.ComponentResult.Status.CONVERGED,
-        CONTINGENCIES_VARIANT.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, List.of(LIMIT_VIOLATION_4)))
+    public static final SecurityAnalysisResult RESULT = new SecurityAnalysisResult(new LimitViolationsResult(List.of(LIMIT_VIOLATION_1, LIMIT_VIOLATION_2, LIMIT_VIOLATION_3)),
+            LoadFlowResult.ComponentResult.Status.CONVERGED,
+            Stream.of(
+                    CONTINGENCIES.stream().map(contingencyInfo ->
+                            new PostContingencyResult(contingencyInfo.getContingency(), PostContingencyComputationStatus.CONVERGED,
+                                    new LimitViolationsResult(RESULT_LIMIT_VIOLATIONS), NetworkResult.empty(), CONNECTIVITY_RESULT, 1.0)),
+                            FAILED_CONTINGENCIES.stream().map(contingency ->
+                                    new PostContingencyResult(contingency, PostContingencyComputationStatus.FAILED,
+                                            new LimitViolationsResult(FAILED_LIMIT_VIOLATIONS), NetworkResult.empty(), CONNECTIVITY_RESULT, 1.0)),
+                            CONTINGENCIES_WITHOUT_LIMIT_VIOLATION.stream().map(contingency ->
+                                    new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED,
+                                            new LimitViolationsResult(List.of()), NetworkResult.empty(), EMPTY_CUT_OFF, 1.0)),
+                            CONTINGENCIES_NOT_CONVERGED_WITHOUT_LIMIT_VIOLATION.stream().map(contingency ->
+                                    new PostContingencyResult(contingency, PostContingencyComputationStatus.FAILED,
+                                            new LimitViolationsResult(List.of()), NetworkResult.empty(), EMPTY_CUT_OFF, 1.0)))
+                    .flatMap(Function.identity())
+                    .toList());
+    public static final SecurityAnalysisResult RESULT_WITH_LIMIT_VIOLATIONS_ON_BOTH_SIDES = new SecurityAnalysisResult(new LimitViolationsResult(List.of(
+        LIMIT_VIOLATION_1, LIMIT_VIOLATION_2, LIMIT_VIOLATION_3)),
+        LoadFlowResult.ComponentResult.Status.CONVERGED,
+        Stream.of(
+                CONTINGENCIES.stream().map(contingencyInfo ->
+                    new PostContingencyResult(contingencyInfo.getContingency(), PostContingencyComputationStatus.CONVERGED,
+                        new LimitViolationsResult(LIMIT_VIOLATIONS_ON_BOTH_SIDES), NetworkResult.empty(), CONNECTIVITY_RESULT, 1.0)),
+                FAILED_CONTINGENCIES.stream().map(contingency ->
+                    new PostContingencyResult(contingency, PostContingencyComputationStatus.FAILED,
+                        new LimitViolationsResult(FAILED_LIMIT_VIOLATIONS), NetworkResult.empty(), CONNECTIVITY_RESULT, 1.0)),
+                CONTINGENCIES_WITHOUT_LIMIT_VIOLATION.stream().map(contingency ->
+                    new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED,
+                        new LimitViolationsResult(List.of()), NetworkResult.empty(), EMPTY_CUT_OFF, 1.0)),
+                CONTINGENCIES_NOT_CONVERGED_WITHOUT_LIMIT_VIOLATION.stream().map(contingency ->
+                    new PostContingencyResult(contingency, PostContingencyComputationStatus.FAILED,
+                        new LimitViolationsResult(List.of()), NetworkResult.empty(), EMPTY_CUT_OFF, 1.0)))
+            .flatMap(Function.identity())
             .toList());
+    static final List<LimitViolation> RESULT_PRECONTINGENCY_LIMIT_VIOLATIONS = List.of(LIMIT_VIOLATION_1, LIMIT_VIOLATION_2, LIMIT_VIOLATION_5, LIMIT_VIOLATION_6);
+    static final SecurityAnalysisResult PRECONTINGENCY_RESULT = new SecurityAnalysisResult(new LimitViolationsResult(List.of(LIMIT_VIOLATION_1, LIMIT_VIOLATION_2, LIMIT_VIOLATION_5,
+            LIMIT_VIOLATION_6)), LoadFlowResult.ComponentResult.Status.CONVERGED,
+            Stream.of(
+                            CONTINGENCIES.stream().map(contingencyInfo -> new PostContingencyResult(contingencyInfo.getContingency(), PostContingencyComputationStatus.CONVERGED,
+                                    new LimitViolationsResult(RESULT_LIMIT_VIOLATIONS), NetworkResult.empty(), ConnectivityResult.empty(), 1.0)),
+                            FAILED_CONTINGENCIES.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.FAILED,
+                                    new LimitViolationsResult(FAILED_LIMIT_VIOLATIONS), NetworkResult.empty(), ConnectivityResult.empty(), 1.0)),
+                            CONTINGENCIES_WITHOUT_LIMIT_VIOLATION.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED,
+                                    new LimitViolationsResult(List.of()), NetworkResult.empty(), ConnectivityResult.empty(), 1.0)),
+                            CONTINGENCIES_NOT_CONVERGED_WITHOUT_LIMIT_VIOLATION.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.FAILED,
+                                    new LimitViolationsResult(List.of()), NetworkResult.empty(), ConnectivityResult.empty(), 1.0)))
+                .flatMap(Function.identity())
+                .toList());
+    static final SecurityAnalysisResult RESULT_VARIANT = new SecurityAnalysisResult(new LimitViolationsResult(List.of(LIMIT_VIOLATION_3)), LoadFlowResult.ComponentResult.Status.CONVERGED,
+        CONTINGENCIES_VARIANT.stream().map(contingency -> new PostContingencyResult(contingency, PostContingencyComputationStatus.CONVERGED, new LimitViolationsResult(List.of(LIMIT_VIOLATION_4)),
+                NetworkResult.empty(), ConnectivityResult.empty(), 1.0))
+            .toList());
+
+    static final SecurityAnalysisResult RESULT_NO_CONTINGENCY_VARIANT = new SecurityAnalysisResult(new LimitViolationsResult(List.of()), LoadFlowResult.ComponentResult.Status.NO_CALCULATION,
+            List.of());
 
     // CONTINGENCIES_WITHOUT_LIMIT_VIOLATION should not be contained here since it does not contain any LIMIT_VIOLATION
     // CONTINGENCIES_NOT_CONVERGED_WITHOUT_LIMIT_VIOLATION is here because status is not "CONVERGED"
@@ -117,9 +174,14 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         FAILED_CONTINGENCIES.stream().map(c -> toContingencyResultDTO(c, LoadFlowResult.ComponentResult.Status.FAILED.name(), FAILED_LIMIT_VIOLATIONS)),
         CONTINGENCIES_NOT_CONVERGED_WITHOUT_LIMIT_VIOLATION.stream().map(c -> toContingencyResultDTO(c, LoadFlowResult.ComponentResult.Status.FAILED.name(), List.of())))
             .flatMap(Function.identity()).toList();
+    static final List<ContingencyResultDTO> RESULT_CONTINGENCIES_WITH_LIMIT_VIOLATIONS_ON_BOTH_SIDES = Stream.of(
+            CONTINGENCIES.stream().map(c -> toContingencyResultDTO(c.getContingency(), LoadFlowResult.ComponentResult.Status.CONVERGED.name(), LIMIT_VIOLATIONS_ON_BOTH_SIDES)),
+            FAILED_CONTINGENCIES.stream().map(c -> toContingencyResultDTO(c, LoadFlowResult.ComponentResult.Status.FAILED.name(), FAILED_LIMIT_VIOLATIONS)),
+            CONTINGENCIES_NOT_CONVERGED_WITHOUT_LIMIT_VIOLATION.stream().map(c -> toContingencyResultDTO(c, LoadFlowResult.ComponentResult.Status.FAILED.name(), List.of())))
+        .flatMap(Function.identity()).toList();
 
     static List<ContingencyResultDTO> getResultContingenciesWithNestedFilter(Function<SubjectLimitViolationDTO, Boolean> filterMethod) {
-        return RESULT_CONTINGENCIES.stream().map(r ->
+        return RESULT_CONTINGENCIES_WITH_LIMIT_VIOLATIONS_ON_BOTH_SIDES.stream().map(r ->
             new ContingencyResultDTO(
                 r.getContingency(),
                 r.getSubjectLimitViolations().stream()
@@ -145,7 +207,8 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
 
     static final List<SubjectLimitViolationResultDTO> RESULT_CONSTRAINTS = Stream.concat(
         RESULT_LIMIT_VIOLATIONS.stream()
-            .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, CONTINGENCIES.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()), LoadFlowResult.ComponentResult.Status.CONVERGED)),
+            .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, CONTINGENCIES.stream().map(ContingencyInfos::getContingency).collect(Collectors.toList()),
+                    LoadFlowResult.ComponentResult.Status.CONVERGED)),
         FAILED_LIMIT_VIOLATIONS.stream()
             .map(limitViolation -> toSubjectLimitViolationResultDTO(limitViolation, FAILED_CONTINGENCIES, LoadFlowResult.ComponentResult.Status.FAILED))
     ).toList();
@@ -246,7 +309,8 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         );
     }
 
-    private static SubjectLimitViolationResultDTO toSubjectLimitViolationResultDTO(LimitViolation limitViolation, List<Contingency> convergedContingencies, LoadFlowResult.ComponentResult.Status status) {
+    private static SubjectLimitViolationResultDTO toSubjectLimitViolationResultDTO(LimitViolation limitViolation, List<Contingency> convergedContingencies,
+            LoadFlowResult.ComponentResult.Status status) {
         return new SubjectLimitViolationResultDTO(
             limitViolation.getSubjectId(),
             convergedContingencies.stream().map(c -> toContingencyLimitViolationDTO(c, limitViolation, status.name())).toList());

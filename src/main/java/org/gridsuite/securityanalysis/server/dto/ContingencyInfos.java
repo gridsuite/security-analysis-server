@@ -16,7 +16,7 @@ import lombok.Setter;
 import java.util.Set;
 
 /**
- * @author Seddik Yengui <seddik.yengui@rte-france.com>
+ * @author Seddik Yengui <seddik.yengui at rte-france.com>
  */
 
 @Setter

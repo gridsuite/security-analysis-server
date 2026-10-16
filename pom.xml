@@ -13,13 +13,13 @@
     <parent>
         <groupId>com.powsybl</groupId>
         <artifactId>powsybl-parent-ws</artifactId>
-        <version>22</version>
+        <version>28</version>
         <relativePath/>
     </parent>
 
     <groupId>org.gridsuite</groupId>
     <artifactId>gridsuite-security-analysis-server</artifactId>
-    <version>2.32.0-SNAPSHOT</version>
+    <version>2.43.0-SNAPSHOT</version>
 
     <packaging>jar</packaging>
     <name>Security analysis server</name>
@@ -42,13 +42,21 @@
     </developers>
 
     <properties>
-        <jib.from.image>powsybl/java-dynawo:3.1.0</jib.from.image>
-        <gridsuite-dependencies.version>49.0.0</gridsuite-dependencies.version>
+        <!-- FIXME to remove when powsybl-parent supports JDK25 -->
+        <java.version>25</java.version>
+        <maven.jacoco.version>0.8.15</maven.jacoco.version>
+        <checkstyle.version>13.8.0</checkstyle.version>
+        <maven.jib.version>3.5.1</maven.jib.version>
+        <jib.from.image>powsybl/java-dynawo:4.0.0</jib.from.image>
+        <gridsuite-dependencies.version>51.1.0</gridsuite-dependencies.version>
         <liquibase-hibernate-package>org.gridsuite.securityanalysis.server</liquibase-hibernate-package>
         <db-util.version>1.0.5</db-util.version>
         <mockwebserver3.version>5.0.0-alpha.14</mockwebserver3.version>
+        <univocity-parsers.version>2.9.0</univocity-parsers.version>
         <sonar.organization>gridsuite</sonar.organization>
         <sonar.projectKey>org.gridsuite:security-analysis-server</sonar.projectKey>
+        <!-- FIXME: to be removed at next gridsuite-dependencies upgrade  -->
+        <gridsuite-computation.version>2.7.0</gridsuite-computation.version>
     </properties>
 
     <build>
@@ -108,6 +116,11 @@
 
             <!-- project specific dependencies -->
             <dependency>
+                <groupId>com.univocity</groupId>
+                <artifactId>univocity-parsers</artifactId>
+                <version>${univocity-parsers.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.vladmihalcea</groupId>
                 <artifactId>db-util</artifactId>
                 <version>${db-util.version}</version>
@@ -149,6 +162,10 @@
             <artifactId>powsybl-ws-commons</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.univocity</groupId>
+            <artifactId>univocity-parsers</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-stream</artifactId>
         </dependency>
@@ -175,7 +192,9 @@
         <dependency>
             <groupId>org.gridsuite</groupId>
             <artifactId>gridsuite-computation</artifactId>
-        </dependency>
+            <!-- FIXME: to be removed at next gridsuite-dependencies upgrade  -->
+            <version>${gridsuite-computation.version}</version>
+       </dependency>
 
         <!-- Runtime dependencies -->
         <dependency>

@@ -1,7 +1,7 @@
 package org.gridsuite.securityanalysis.server.dto;
 
+import com.powsybl.contingency.violations.LimitViolationType;
 import com.powsybl.iidm.network.ThreeSides;
-import com.powsybl.security.LimitViolationType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,6 +22,7 @@ import java.util.Map;
 public class LimitViolationDTO {
     private LimitViolationType limitType;
     private String limitName;
+    private String operationalLimitsGroupId;
     private String nextLimitName;
     private ThreeSides side;
     private Integer acceptableDuration;
@@ -38,6 +39,7 @@ public class LimitViolationDTO {
         return LimitViolationDTO.builder()
             .limitType(limitViolation.getLimitType())
             .limitName(limitViolation.getLimitName())
+            .operationalLimitsGroupId(limitViolation.getOperationalLimitsGroupId())
             .nextLimitName(limitViolation.getNextLimitName())
             .side(limitViolation.getSide())
             .acceptableDuration(limitViolation.getAcceptableDuration())
@@ -53,7 +55,7 @@ public class LimitViolationDTO {
     }
 
     private static String convertDoubleToLocale(Double value, String language) {
-        NumberFormat nf = NumberFormat.getInstance(language != null && language.equals("fr") ? Locale.FRENCH : Locale.US);
+        NumberFormat nf = NumberFormat.getInstance(language != null && "fr".equals(language) ? Locale.FRENCH : Locale.US);
         nf.setGroupingUsed(false);
         return nf.format(value);
     }

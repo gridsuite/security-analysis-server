@@ -64,7 +64,8 @@ public class SecurityAnalysisResultEntity {
         List<ContingencyEntity> contingencies = securityAnalysisResult.getPostContingencyResults().stream()
             .map(postContingencyResult -> ContingencyEntity.toEntity(network, postContingencyResult, subjectLimitViolationsBySubjectId)).collect(Collectors.toList());
 
-        List<PreContingencyLimitViolationEntity> preContingencyLimitViolations = PreContingencyLimitViolationEntity.toEntityList(network, securityAnalysisResult.getPreContingencyResult(), subjectLimitViolationsBySubjectId);
+        List<PreContingencyLimitViolationEntity> preContingencyLimitViolations = PreContingencyLimitViolationEntity.toEntityList(network, securityAnalysisResult.getPreContingencyResult(),
+                subjectLimitViolationsBySubjectId);
 
         List<SubjectLimitViolationEntity> subjectLimitViolations = Stream.concat(
                 contingencies.stream().flatMap(c -> c.getContingencyLimitViolations().stream()),
@@ -94,9 +95,14 @@ public class SecurityAnalysisResultEntity {
         return Stream.concat(
                 securityAnalysisResult.getPostContingencyResults().stream().flatMap(pcr -> pcr.getLimitViolationsResult().getLimitViolations().stream()),
                 securityAnalysisResult.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().stream())
-            .map(lm -> new Pair<>(lm.getSubjectId(), lm.getSubjectName()))
+            .map(lm -> new Pair<>(lm.getSubjectId(), normalizeSubjectName(lm.getSubjectName())))
             .distinct()
             .map(pair -> new SubjectLimitViolationEntity(pair.getFirst(), pair.getSecond()))
             .toList();
+    }
+
+    // FIXME: powsybl limit violation detection may expose missing names as "null" instead of null. Method to remove when https://github.com/powsybl/powsybl-core/pull/3922 is merged
+    private static String normalizeSubjectName(String subjectName) {
+        return "null".equals(subjectName) ? null : subjectName;
     }
 }

@@ -1,10 +1,9 @@
 package org.gridsuite.securityanalysis.server.util;
 
 import com.powsybl.commons.report.ReportNode;
-import org.gridsuite.computation.service.ReportService;
 import org.apache.commons.text.StringSubstitutor;
+import org.gridsuite.computation.service.ReportService;
 import org.mockito.ArgumentCaptor;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,7 +16,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeast;

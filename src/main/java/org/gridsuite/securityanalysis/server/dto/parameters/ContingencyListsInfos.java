@@ -8,6 +8,7 @@ package org.gridsuite.securityanalysis.server.dto.parameters;
 import lombok.*;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * @author Caroline Jeandat {@literal <caroline.jeandat at rte-france.com>}
@@ -18,7 +19,7 @@ import java.util.List;
 @Getter
 @Setter
 public class ContingencyListsInfos {
-    private List<IdNameInfos> contingencyLists;
+    private List<UUID> contingencyLists;
     private String description;
     private boolean activated;
 }

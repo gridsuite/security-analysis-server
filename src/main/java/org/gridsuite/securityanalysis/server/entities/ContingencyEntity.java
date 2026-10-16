@@ -13,12 +13,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
+import org.gridsuite.securityanalysis.server.util.ContingencyLimitViolationWorstSideUtils;
+import org.hibernate.annotations.Formula;
 import org.springframework.lang.Nullable;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
@@ -31,10 +32,16 @@ import java.util.stream.Collectors;
 @Table(name = "contingency")
 public class ContingencyEntity {
 
-    public ContingencyEntity(String contingencyId, String status, List<ContingencyElementEmbeddable> contingencyElements, List<ContingencyLimitViolationEntity> contingencyLimitViolations) {
+    public ContingencyEntity(
+            String contingencyId,
+            String status,
+            List<ContingencyElementEmbeddable> contingencyElements,
+            ConnectivityResultEmbeddable connectivityResult,
+            List<ContingencyLimitViolationEntity> contingencyLimitViolations) {
         this.contingencyId = contingencyId;
         this.status = status;
         this.contingencyElements = contingencyElements;
+        this.connectivityResult = connectivityResult;
         setContingencyLimitViolations(contingencyLimitViolations);
     }
 
@@ -54,10 +61,17 @@ public class ContingencyEntity {
     @OneToMany(mappedBy = "contingency", cascade = CascadeType.ALL, orphanRemoval = true)
     List<ContingencyLimitViolationEntity> contingencyLimitViolations;
 
+    @Embedded
+    private ConnectivityResultEmbeddable connectivityResult;
+
     /**
      * We keep a String as it could model LoadFlowResult.ComponentResult.Status or PostContingencyComputationStatus.
      */
     private String status;
+
+    // Used for default sort to put non-converged contingencies before converged ones
+    @Formula("case when status = 'CONVERGED' then 1 else 0 end")
+    private int convergenceOrder;
 
     private void setContingencyLimitViolations(List<ContingencyLimitViolationEntity> contingencyLimitViolations) {
         if (contingencyLimitViolations != null) {
@@ -67,11 +81,14 @@ public class ContingencyEntity {
     }
 
     public static ContingencyEntity toEntity(@Nullable Network network, PostContingencyResult postContingencyResult, Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId) {
-        List<ContingencyElementEmbeddable> contingencyElements = postContingencyResult.getContingency().getElements().stream().map(contingencyElement -> ContingencyElementEmbeddable.toEntity(contingencyElement)).collect(Collectors.toList());
+        List<ContingencyElementEmbeddable> contingencyElements = postContingencyResult.getContingency().getElements().stream().map(ContingencyElementEmbeddable::toEntity).toList();
 
         List<ContingencyLimitViolationEntity> contingencyLimitViolations = postContingencyResult.getLimitViolationsResult().getLimitViolations().stream()
             .map(limitViolation -> ContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId())))
-            .collect(Collectors.toList());
-        return new ContingencyEntity(postContingencyResult.getContingency().getId(), postContingencyResult.getStatus().name(), contingencyElements, contingencyLimitViolations);
+            .toList();
+        ContingencyLimitViolationWorstSideUtils.computeWorstSideBySubjectId(contingencyLimitViolations);
+        ConnectivityResultEmbeddable connectivityResult = ConnectivityResultEmbeddable.toEntity(postContingencyResult.getConnectivityResult());
+
+        return new ContingencyEntity(postContingencyResult.getContingency().getId(), postContingencyResult.getStatus().name(), contingencyElements, connectivityResult, contingencyLimitViolations);
     }
 }

@@ -9,7 +9,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -47,14 +49,14 @@ public final class CsvExportUtils {
     }
 
     private static void writeUTF8Bom(OutputStream outputStream) throws IOException {
-        outputStream.write(0xef);
-        outputStream.write(0xbb);
-        outputStream.write(0xbf);
+        outputStream.write(0xEF);
+        outputStream.write(0xBB);
+        outputStream.write(0xBF);
     }
 
     private static void setFormat(CsvFormat format, String language) {
         format.setLineSeparator(System.lineSeparator());
-        format.setDelimiter(language != null && language.equals("fr") ? CSV_DELIMITER_FR : CSV_DELIMITER_EN);
+        format.setDelimiter(language != null && "fr".equals(language) ? CSV_DELIMITER_FR : CSV_DELIMITER_EN);
         format.setQuoteEscape(CSV_QUOTE_ESCAPE);
     }
 
@@ -69,5 +71,13 @@ public final class CsvExportUtils {
         }
         // if translated value is null, we keep original value (untranslated value)
         return translations.getOrDefault(valueToTranslate, valueToTranslate);
+    }
+
+    public static String convertDoubleToLocale(Double value, String language) {
+        NumberFormat nf = NumberFormat.getInstance("fr".equals(language) ? Locale.FRENCH : Locale.US);
+        nf.setGroupingUsed(false);
+        nf.setMinimumFractionDigits(2);
+        nf.setMaximumFractionDigits(2);
+        return nf.format(value);
     }
 }

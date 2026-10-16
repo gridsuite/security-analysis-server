@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.commons.report.ReportNode;
 import com.powsybl.commons.report.TypedValue;
 import com.powsybl.contingency.Contingency;
+import com.powsybl.contingency.violations.LimitViolationFilter;
 import com.powsybl.iidm.criteria.AtLeastOneNominalVoltageCriterion;
 import com.powsybl.iidm.criteria.IdentifiableCriterion;
 import com.powsybl.iidm.criteria.VoltageInterval;
@@ -29,9 +30,10 @@ import com.powsybl.security.limitreduction.LimitReduction;
 import org.gridsuite.computation.service.*;
 import org.gridsuite.securityanalysis.server.PropertyServerNameProvider;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
-import org.gridsuite.securityanalysis.server.dto.parameters.LimitReductionsByVoltageLevel;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
+import org.gridsuite.securityanalysis.server.dto.parameters.LimitReductionsByVoltageLevel;
+import org.gridsuite.securityanalysis.server.error.AllContingencyListMissingException;
 import org.gridsuite.securityanalysis.server.error.SecurityAnalysisBusinessErrorCode;
 import org.gridsuite.securityanalysis.server.error.SecurityAnalysisException;
 import org.gridsuite.securityanalysis.server.util.SecurityAnalysisRunnerSupplier;
@@ -41,17 +43,16 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.client.HttpClientErrorException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import static com.powsybl.loadflow.LoadFlowResult.ComponentResult.Status.NO_CALCULATION;
 import static org.gridsuite.computation.service.NotificationService.getFailedMessage;
 import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisService.COMPUTATION_TYPE;
 
@@ -63,7 +64,6 @@ import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisServ
 public class SecurityAnalysisWorkerService extends AbstractWorkerService<SecurityAnalysisResult, SecurityAnalysisRunContext, SecurityAnalysisParametersDTO, SecurityAnalysisResultService> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisWorkerService.class);
     private final ActionsService actionsService;
-
     private final LimitReductionService limitReductionService;
 
     private Function<String, SecurityAnalysis.Runner> securityAnalysisFactorySupplier;
@@ -108,6 +108,10 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     @Override
     protected CompletableFuture<SecurityAnalysisResult> getCompletableFuture(SecurityAnalysisRunContext runContext, String provider, UUID resultUuid) {
+        if (runContext.getContingencies().stream().allMatch(contingencyInfos -> contingencyInfos.getContingency() == null)) {
+            return CompletableFuture.completedFuture(
+                    new SecurityAnalysisResult(new LimitViolationsResult(Collections.emptyList()), NO_CALCULATION, Collections.emptyList()));
+        }
         SecurityAnalysis.Runner securityAnalysisRunner = securityAnalysisFactorySupplier.apply(provider);
         String variantId = runContext.getVariantId() != null ? runContext.getVariantId() : VariantManagerConstants.INITIAL_VARIANT_ID;
 
@@ -116,22 +120,6 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 .filter(Objects::nonNull)
                 .toList();
         List<LimitReduction> limitReductions = createLimitReductions(runContext);
-
-        Network network = runContext.getNetwork();
-        // FIXME: Remove this part when multithread variant access is implemented in the network-store
-        if (runContext.getProvider().equals("OpenLoadFlow")) {
-            long startTime = System.nanoTime();
-            Network originalNetwork = runContext.getNetwork();
-            String originalVariant = originalNetwork.getVariantManager().getWorkingVariantId();
-            originalNetwork.getVariantManager().setWorkingVariant(variantId);
-
-            network = NetworkSerDe.copy(originalNetwork, NetworkFactory.find("Default"));
-            if (!variantId.equals(VariantManagerConstants.INITIAL_VARIANT_ID)) {
-                network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, variantId);
-            }
-            LOGGER.info("Network copied to iidm-impl in {} ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
-            originalNetwork.getVariantManager().setWorkingVariant(originalVariant);
-        }
 
         SecurityAnalysisRunParameters runParameters = new SecurityAnalysisRunParameters()
                 .setSecurityAnalysisParameters(runContext.getParameters().securityAnalysisParameters())
@@ -144,6 +132,8 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
             runParameters.addInterceptor(new SecurityAnalysisProgressInterceptor(
                     notificationService, resultUuid, runContext.getReceiver(), runContext.getUserId(), contingencies.size()));
         }
+
+        Network network = "OpenLoadFlow".equals(runContext.getProvider()) ? runContext.getInMemoryNetwork() : runContext.getNetwork();
 
         return securityAnalysisRunner.runAsync(
                         network,
@@ -158,13 +148,15 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
         limitReductionService.createLimitReductions(runContext.getParameters().limitReductions()).forEach(limitReduction -> {
             LimitReductionsByVoltageLevel.VoltageLevel voltageLevel = limitReduction.getVoltageLevel();
-            IdentifiableCriterion voltageLevelCriterion = new IdentifiableCriterion(new AtLeastOneNominalVoltageCriterion(VoltageInterval.between(voltageLevel.getLowBound(), voltageLevel.getHighBound(), false, true)));
+            IdentifiableCriterion voltageLevelCriterion = new IdentifiableCriterion(new AtLeastOneNominalVoltageCriterion(VoltageInterval.between(voltageLevel.getLowBound(),
+                    voltageLevel.getHighBound(), false, true)));
             limitReductions.add(createLimitReduction(voltageLevelCriterion, new PermanentDurationCriterion(), limitReduction.getPermanentLimitReduction()));
             limitReduction.getTemporaryLimitReductions().forEach(temporaryLimitReduction -> {
                 LimitDurationCriterion limitDurationCriterion;
                 LimitReductionsByVoltageLevel.LimitDuration limitDuration = temporaryLimitReduction.getLimitDuration();
                 if (limitDuration.getHighBound() != null) {
-                    limitDurationCriterion = IntervalTemporaryDurationCriterion.between(limitDuration.getLowBound(), limitDuration.getHighBound(), limitDuration.isLowClosed(), limitDuration.isHighClosed());
+                    limitDurationCriterion = IntervalTemporaryDurationCriterion.between(limitDuration.getLowBound(), limitDuration.getHighBound(), limitDuration.isLowClosed(),
+                            limitDuration.isHighClosed());
                 } else {
                     limitDurationCriterion = IntervalTemporaryDurationCriterion.greaterThan(limitDuration.getLowBound(), limitDuration.isLowClosed());
                 }
@@ -183,6 +175,11 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     }
 
     @Override
+    protected void setRunningStatus(UUID resultUuid) {
+        resultService.insertStatus(List.of(resultUuid), SecurityAnalysisStatus.RUNNING);
+    }
+
+    @Override
     protected void preRun(SecurityAnalysisRunContext runContext) {
         if (runContext.getParameters().contingencyListUuids() != null) {
             LOGGER.info("Run security analysis on contingency lists: {}", runContext.getParameters().contingencyListUuids());
@@ -194,9 +191,35 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                             actionsService.getContingencyList(runContext.getParameters().contingencyListUuids(), runContext.getNetworkUuid(), runContext.getVariantId())
             );
             runContext.setContingencies(contingencies);
-        } catch (IllegalArgumentException e) {
+            if (contingencies != null && contingencies.stream().allMatch(contingencyInfos -> contingencyInfos.getContingency() == null)) {
+                logNoContingencies(runContext);
+                return;
+            }
+        } catch (AllContingencyListMissingException e) {
             throw new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.CONTINGENCY_LIST_CONFIG_EMPTY, "The configuration does not contain any contingency.");
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.MISSING_CONTINGENCY_LIST, "The configuration contains one or more contingency lists that have been deleted.");
         }
+
+        // FIXME: Remove this part when multithread variant access is implemented in the network-store
+        if ("OpenLoadFlow".equals(runContext.getProvider())) {
+            copyNetwork(runContext);
+        }
+    }
+
+    private void copyNetwork(SecurityAnalysisRunContext runContext) {
+        String variantId = runContext.getVariantId() != null ? runContext.getVariantId() : VariantManagerConstants.INITIAL_VARIANT_ID;
+        long startTime = System.nanoTime();
+        Network originalNetwork = runContext.getNetwork();
+
+        Network network = NetworkSerDe.copy(originalNetwork, NetworkFactory.find("Default"));
+        // NetworkSerDe.copy stores the copied network in memory with the working variant mapped to INITIAL_VARIANT_ID.
+        // If the expected variant is not the initial one, clone it explicitly so the variant remains consistent between in-memory and persisted networks.
+        if (!variantId.equals(VariantManagerConstants.INITIAL_VARIANT_ID)) {
+            network.getVariantManager().cloneVariant(VariantManagerConstants.INITIAL_VARIANT_ID, variantId);
+        }
+        LOGGER.info("Network copied to iidm-impl in {} ms", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime));
+        runContext.setInMemoryNetwork(network);
     }
 
     @Override
@@ -224,8 +247,12 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     }
 
     @Bean
-    @Override
-    public Consumer<Message<String>> consumeRun() {
+    public Consumer<Message<String>> consumeRun1() {
+        return super.consumeRun();
+    }
+
+    @Bean
+    public Consumer<Message<String>> consumeRun2() {
         return super.consumeRun();
     }
 
@@ -233,6 +260,11 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
     @Override
     public Consumer<Message<String>> consumeCancel() {
         return super.consumeCancel();
+    }
+
+    @Override
+    protected boolean canBeCancelled(UUID resultUuid) {
+        return resultService.findStatus(resultUuid) == SecurityAnalysisStatus.RUNNING;
     }
 
     private static void logContingencyEquipmentsNotFound(SecurityAnalysisRunContext runContext) {
@@ -279,6 +311,13 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                     .withSeverity(TypedValue.WARN_SEVERITY)
                     .add();
         });
+    }
+
+    private void logNoContingencies(SecurityAnalysisRunContext runContext) {
+        runContext.getReportNode().newReportNode()
+                .withMessageTemplate("security.analysis.server.noContingency")
+                .withSeverity(TypedValue.WARN_SEVERITY)
+                .add();
     }
 
 }
