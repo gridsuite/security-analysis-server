@@ -9,11 +9,9 @@ package org.gridsuite.securityanalysis.server;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.contingency.violations.LimitViolationType;
-import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
-import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
-import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
+import org.gridsuite.computation.dto.securityanalysis.SecurityAnalysisEnricher;
 import org.gridsuite.computation.error.ComputationException;
 import org.gridsuite.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.dto.ContingencyLimitViolationDTO;
@@ -68,8 +66,7 @@ class FindSubjectLimitViolationsTest {
     @BeforeAll
     void setUp() {
         // network store service mocking
-        Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
-        resultEntity = SecurityAnalysisResultEntity.toEntity(network, UUID.randomUUID(), RESULT, SecurityAnalysisStatus.CONVERGED);
+        resultEntity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), SecurityAnalysisEnricher.enrich(RESULT, getNetwork()), SecurityAnalysisStatus.CONVERGED);
         securityAnalysisResultRepository.save(resultEntity);
     }
 

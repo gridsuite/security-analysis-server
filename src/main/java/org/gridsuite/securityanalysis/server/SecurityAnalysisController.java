@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.gridsuite.computation.dto.ReportInfos;
+import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisParametersService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
@@ -27,6 +28,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -336,16 +338,15 @@ public class SecurityAnalysisController {
     @Operation(summary = "Save security analysis results")
     @ApiResponses(value = {@ApiResponse(responseCode = "201", description = "The security analysis results have been saved to database")})
     public ResponseEntity<Void> saveResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
-                                           @RequestBody SecurityAnalysisResult result) {
+                                           @RequestBody EnrichedSecurityAnalysisResultDTO result) {
         securityAnalysisResultService.insert(
-            null,
             resultUuid,
             result,
-            result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED
+            result.getResult().getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED
                 ? SecurityAnalysisStatus.CONVERGED
                 : SecurityAnalysisStatus.DIVERGED
         );
-        return ResponseEntity.ok().build();
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping(value = "/providers", produces = APPLICATION_JSON_VALUE)

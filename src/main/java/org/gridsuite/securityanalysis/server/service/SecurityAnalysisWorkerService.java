@@ -27,6 +27,7 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.security.*;
 import com.powsybl.security.limitreduction.LimitReduction;
+import org.gridsuite.computation.dto.securityanalysis.SecurityAnalysisEnricher;
 import org.gridsuite.computation.service.*;
 import org.gridsuite.securityanalysis.server.PropertyServerNameProvider;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
@@ -228,9 +229,9 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     @Override
     protected void saveResult(Network network, AbstractResultContext<SecurityAnalysisRunContext> resultContext, SecurityAnalysisResult result) {
-        resultService.insert(network,
+        resultService.insert(
                 resultContext.getResultUuid(),
-                result,
+                SecurityAnalysisEnricher.enrich(result, network),
                 result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED
                         ? SecurityAnalysisStatus.CONVERGED
                         : SecurityAnalysisStatus.DIVERGED);

@@ -6,14 +6,13 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
-import com.powsybl.iidm.network.Network;
 import com.powsybl.security.SecurityAnalysisResult;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldNameConstants;
+import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.jgrapht.alg.util.Pair;
-import org.springframework.lang.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -21,10 +20,10 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
-
 @NoArgsConstructor
 @Getter
 @Entity
@@ -54,7 +53,10 @@ public class SecurityAnalysisResultEntity {
         this.id = id;
     }
 
-    public static SecurityAnalysisResultEntity toEntity(@Nullable Network network, UUID resultUuid, SecurityAnalysisResult securityAnalysisResult, SecurityAnalysisStatus securityAnalysisStatus) {
+    public static SecurityAnalysisResultEntity toEntity(UUID resultUuid,
+                                                        EnrichedSecurityAnalysisResultDTO enrichedResult,
+                                                        SecurityAnalysisStatus securityAnalysisStatus) {
+        SecurityAnalysisResult securityAnalysisResult = enrichedResult.getResult();
         Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId = getUniqueSubjectLimitViolationsFromResult(securityAnalysisResult)
             .stream().collect(Collectors.toMap(
                 SubjectLimitViolationEntity::getSubjectId,
@@ -62,10 +64,16 @@ public class SecurityAnalysisResultEntity {
             );
 
         List<ContingencyEntity> contingencies = securityAnalysisResult.getPostContingencyResults().stream()
-            .map(postContingencyResult -> ContingencyEntity.toEntity(network, postContingencyResult, subjectLimitViolationsBySubjectId)).collect(Collectors.toList());
+            .map(postContingencyResult -> ContingencyEntity.toEntity(
+                    postContingencyResult,
+                    subjectLimitViolationsBySubjectId,
+                    enrichedResult.getPostContingencyEnrichment() != null ? enrichedResult.getPostContingencyEnrichment().get(postContingencyResult.getContingency().getId()) : null
+            )).toList();
 
-        List<PreContingencyLimitViolationEntity> preContingencyLimitViolations = PreContingencyLimitViolationEntity.toEntityList(network, securityAnalysisResult.getPreContingencyResult(),
-                subjectLimitViolationsBySubjectId);
+        List<PreContingencyLimitViolationEntity> preContingencyLimitViolations = PreContingencyLimitViolationEntity.toEntityList(
+                securityAnalysisResult.getPreContingencyResult(),
+                subjectLimitViolationsBySubjectId,
+                enrichedResult.getPreContingencyEnrichment());
 
         List<SubjectLimitViolationEntity> subjectLimitViolations = Stream.concat(
                 contingencies.stream().flatMap(c -> c.getContingencyLimitViolations().stream()),
@@ -73,7 +81,7 @@ public class SecurityAnalysisResultEntity {
             ).map(AbstractLimitViolationEntity::getSubjectLimitViolation)
             .distinct()
             .filter(Objects::nonNull)
-            .collect(Collectors.toList());
+            .toList();
 
         SecurityAnalysisResultEntity securityAnalysisResultEntity = SecurityAnalysisResultEntity.builder()
             .id(resultUuid)
