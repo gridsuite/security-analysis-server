@@ -8,12 +8,11 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.contingency.violations.LimitViolationType;
-import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
-import com.powsybl.security.SecurityAnalysisResult;
 import lombok.Getter;
 import org.gridsuite.computation.dto.GlobalFilter;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
+import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
 import org.gridsuite.computation.error.ComputationException;
 import org.gridsuite.computation.service.AbstractComputationResultService;
 import org.gridsuite.computation.utils.SpecificationUtils;
@@ -30,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.net.URLDecoder;
@@ -285,11 +283,11 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional
-    public void insert(@Nullable Network network, UUID resultUuid, SecurityAnalysisResult result, SecurityAnalysisStatus status) {
+    public void insert(UUID resultUuid, EnrichedSecurityAnalysisResultDTO enrichedResult, SecurityAnalysisStatus status) {
         Objects.requireNonNull(resultUuid);
-        Objects.requireNonNull(result);
+        Objects.requireNonNull(enrichedResult);
 
-        SecurityAnalysisResultEntity securityAnalysisResult = SecurityAnalysisResultEntity.toEntity(network, resultUuid, result, status);
+        SecurityAnalysisResultEntity securityAnalysisResult = SecurityAnalysisResultEntity.toEntity(resultUuid, enrichedResult, status);
         securityAnalysisResultRepository.save(securityAnalysisResult);
     }
 

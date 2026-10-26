@@ -10,17 +10,15 @@ import com.powsybl.contingency.BranchContingency;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.contingency.violations.LimitViolation;
 import com.powsybl.contingency.violations.LimitViolationType;
-import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.TwoSides;
-import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.loadflow.LoadFlowResult;
-import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.LimitViolationsResult;
 import com.powsybl.security.PostContingencyComputationStatus;
 import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.results.ConnectivityResult;
 import com.powsybl.security.results.NetworkResult;
 import com.powsybl.security.results.PostContingencyResult;
+import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
@@ -39,7 +37,6 @@ class SecurityAnalysisResultEntityTest {
 
     @Test
     void toEntityNormalizesStringNullSubjectNames() {
-        Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
         SecurityAnalysisResult securityAnalysisResult = new SecurityAnalysisResult(
             new LimitViolationsResult(List.of(
                 new LimitViolation(NHV1_NHV2_1, null, LimitViolationType.CURRENT, "10'", 600, 1000, 1, 1100, TwoSides.ONE),
@@ -49,7 +46,8 @@ class SecurityAnalysisResultEntityTest {
             List.of()
         );
 
-        SecurityAnalysisResultEntity entity = SecurityAnalysisResultEntity.toEntity(network, UUID.randomUUID(), securityAnalysisResult, SecurityAnalysisStatus.CONVERGED);
+        EnrichedSecurityAnalysisResultDTO enriched = EnrichedSecurityAnalysisResultDTO.builder().result(securityAnalysisResult).build();
+        SecurityAnalysisResultEntity entity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), enriched, SecurityAnalysisStatus.CONVERGED);
 
         assertThat(entity.getSubjectLimitViolations()).hasSize(1);
     }
@@ -72,7 +70,8 @@ class SecurityAnalysisResultEntityTest {
             ))
         );
 
-        SecurityAnalysisResultEntity entity = SecurityAnalysisResultEntity.toEntity(null, UUID.randomUUID(), securityAnalysisResult, SecurityAnalysisStatus.CONVERGED);
+        EnrichedSecurityAnalysisResultDTO enriched = EnrichedSecurityAnalysisResultDTO.builder().result(securityAnalysisResult).build();
+        SecurityAnalysisResultEntity entity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), enriched, SecurityAnalysisStatus.CONVERGED);
 
         List<ContingencyLimitViolationEntity> contingencyLimitViolations = entity.getContingencies().getFirst().getContingencyLimitViolations();
         assertThat(contingencyLimitViolations).hasSize(2);

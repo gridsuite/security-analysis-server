@@ -11,12 +11,9 @@ import com.powsybl.contingency.Contingency;
 import com.powsybl.contingency.ContingencyElement;
 import com.powsybl.contingency.violations.LimitViolation;
 import com.powsybl.contingency.violations.LimitViolationType;
-import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
 import com.powsybl.iidm.network.TwoSides;
-import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.loadflow.LoadFlowResult;
-import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.LimitViolationsResult;
 import com.powsybl.security.PostContingencyComputationStatus;
 import com.powsybl.security.SecurityAnalysisResult;
@@ -24,6 +21,8 @@ import com.powsybl.security.results.ConnectivityResult;
 import com.powsybl.security.results.NetworkResult;
 import com.powsybl.security.results.PostContingencyResult;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
+import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
+import org.gridsuite.computation.dto.securityanalysis.SecurityAnalysisEnricher;
 import org.gridsuite.computation.error.ComputationException;
 import org.gridsuite.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.dto.ContingencyResultDTO;
@@ -81,8 +80,8 @@ class FindContingenciesTest {
     @BeforeAll
     void setUp() {
         // network store service mocking
-        Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
-        resultEntity = SecurityAnalysisResultEntity.toEntity(network, UUID.randomUUID(), RESULT_WITH_LIMIT_VIOLATIONS_ON_BOTH_SIDES, SecurityAnalysisStatus.CONVERGED);
+        resultEntity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), SecurityAnalysisEnricher.enrich(RESULT_WITH_LIMIT_VIOLATIONS_ON_BOTH_SIDES, getNetwork()),
+            SecurityAnalysisStatus.CONVERGED);
         securityAnalysisResultRepository.save(resultEntity);
     }
 
@@ -144,7 +143,7 @@ class FindContingenciesTest {
                 createPostContingencyResult(contingencyId2, "element-3", "element-4")
             )
         );
-        securityAnalysisResultService.insert(null, resultUuid, securityAnalysisResult, SecurityAnalysisStatus.CONVERGED);
+        securityAnalysisResultService.insert(resultUuid, EnrichedSecurityAnalysisResultDTO.builder().result(securityAnalysisResult).build(), SecurityAnalysisStatus.CONVERGED);
 
         ResourceFilterDTO globalFilter = new ResourceFilterDTO(
             ResourceFilterDTO.DataType.TEXT,
@@ -194,7 +193,7 @@ class FindContingenciesTest {
                 createPostContingencyResultWithFailedStatus(contingencyId2, "element-3", "element-4")
             )
         );
-        securityAnalysisResultService.insert(null, resultUuid, securityAnalysisResult, SecurityAnalysisStatus.CONVERGED);
+        securityAnalysisResultService.insert(resultUuid, EnrichedSecurityAnalysisResultDTO.builder().result(securityAnalysisResult).build(), SecurityAnalysisStatus.CONVERGED);
 
         ResourceFilterDTO globalFilter = new ResourceFilterDTO(
             ResourceFilterDTO.DataType.TEXT,
@@ -225,7 +224,7 @@ class FindContingenciesTest {
             LoadFlowResult.ComponentResult.Status.CONVERGED,
             List.of(createPostContingencyResultWithFailedStatus("not-converged"))
         );
-        securityAnalysisResultService.insert(null, resultUuid, securityAnalysisResult, SecurityAnalysisStatus.CONVERGED);
+        securityAnalysisResultService.insert(resultUuid, EnrichedSecurityAnalysisResultDTO.builder().result(securityAnalysisResult).build(), SecurityAnalysisStatus.CONVERGED);
 
         ResourceFilterDTO emptySideFilter = new ResourceFilterDTO(
             ResourceFilterDTO.DataType.TEXT,

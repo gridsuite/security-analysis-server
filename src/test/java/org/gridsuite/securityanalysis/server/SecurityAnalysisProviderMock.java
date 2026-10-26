@@ -374,7 +374,7 @@ public class SecurityAnalysisProviderMock implements SecurityAnalysisProvider {
         );
     }
 
-    private static Network getNetwork() {
+    static Network getNetwork() {
         return EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
     }
 }
