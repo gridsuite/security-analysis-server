@@ -177,7 +177,8 @@ class FindContingenciesTest {
                     "subject", LimitViolationType.CURRENT, "limit", 60, 100, 1, 110, TwoSides.ONE))),
             NetworkResult.empty(),
             ConnectivityResult.empty(),
-            1.0
+            1.0,
+            List.of()
         );
     }
 
@@ -254,7 +255,8 @@ class FindContingenciesTest {
             new LimitViolationsResult(List.of()),
             NetworkResult.empty(),
             ConnectivityResult.empty(),
-            1.0
+            1.0,
+            List.of()
         );
     }
 

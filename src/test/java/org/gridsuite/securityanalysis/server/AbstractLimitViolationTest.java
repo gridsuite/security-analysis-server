@@ -84,7 +84,7 @@ abstract class AbstractLimitViolationTest<T extends AbstractLimitViolationEntity
             .limitName("10'")
             .duration(60)
             .limit(200)
-            .reduction(0.8)
+            .scaling(0.8)
             .value(180)
             .side(TwoSides.ONE)
             .build();
@@ -104,7 +104,7 @@ abstract class AbstractLimitViolationTest<T extends AbstractLimitViolationEntity
     }
 
     private void testLimitViolationMapping(String limitName, int acceptableDuration, double limit,
-            double limitReduction, double value, TwoSides side, String expectedNextLimitName, long expectedPatlLimit,
+            double limitScaling, double value, TwoSides side, String expectedNextLimitName, long expectedPatlLimit,
             Integer expectedAcceptableDuration, Integer expectedUpcomingAcceptableDuration) {
         Network network = EurostagTutorialExample1Factory.createWithFixedCurrentLimits();
 
@@ -115,7 +115,7 @@ abstract class AbstractLimitViolationTest<T extends AbstractLimitViolationEntity
             .limitName(limitName)
             .duration(acceptableDuration)
             .limit(limit)
-            .reduction(limitReduction)
+            .scaling(limitScaling)
             .value(value)
             .side(side)
             .build();
