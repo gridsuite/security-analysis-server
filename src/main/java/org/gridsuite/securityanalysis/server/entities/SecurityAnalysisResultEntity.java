@@ -20,10 +20,10 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
+
 @NoArgsConstructor
 @Getter
 @Entity
@@ -63,17 +63,11 @@ public class SecurityAnalysisResultEntity {
                 subjectLimitViolation -> subjectLimitViolation)
             );
 
-        List<ContingencyEntity> contingencies = securityAnalysisResult.getPostContingencyResults().stream()
-            .map(postContingencyResult -> ContingencyEntity.toEntity(
-                    postContingencyResult,
-                    subjectLimitViolationsBySubjectId,
-                    enrichedResult.getPostContingencyEnrichment() != null ? enrichedResult.getPostContingencyEnrichment().get(postContingencyResult.getContingency().getId()) : null
-            )).toList();
+        List<ContingencyEntity> contingencies = enrichedResult.getEnrichedPostContingencyResults().stream()
+            .map(postContingencyResult -> ContingencyEntity.toEntity(postContingencyResult, subjectLimitViolationsBySubjectId)).collect(Collectors.toList());
 
         List<PreContingencyLimitViolationEntity> preContingencyLimitViolations = PreContingencyLimitViolationEntity.toEntityList(
-                securityAnalysisResult.getPreContingencyResult(),
-                subjectLimitViolationsBySubjectId,
-                enrichedResult.getPreContingencyEnrichment());
+                enrichedResult.getEnrichedPreContingencyResult(), subjectLimitViolationsBySubjectId);
 
         List<SubjectLimitViolationEntity> subjectLimitViolations = Stream.concat(
                 contingencies.stream().flatMap(c -> c.getContingencyLimitViolations().stream()),
@@ -81,7 +75,7 @@ public class SecurityAnalysisResultEntity {
             ).map(AbstractLimitViolationEntity::getSubjectLimitViolation)
             .distinct()
             .filter(Objects::nonNull)
-            .toList();
+            .collect(Collectors.toList());
 
         SecurityAnalysisResultEntity securityAnalysisResultEntity = SecurityAnalysisResultEntity.builder()
             .id(resultUuid)

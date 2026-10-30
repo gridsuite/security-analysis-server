@@ -848,7 +848,7 @@ class SecurityAnalysisControllerTest {
         mockMvc.perform(post("/" + VERSION + "/results/" + resultUuid)
             .contentType(MediaType.APPLICATION_JSON)
             .content(mapper.writeValueAsString(enrichedResult)))
-            .andExpect(status().isCreated());
+            .andExpect(status().isOk());
 
         ArgumentCaptor<EnrichedSecurityAnalysisResultDTO> captor = ArgumentCaptor.forClass(EnrichedSecurityAnalysisResultDTO.class);
         verify(securityAnalysisResultService, times(1)).insert(eq(resultUuid), captor.capture(), eq(SecurityAnalysisStatus.CONVERGED));

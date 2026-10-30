@@ -18,6 +18,7 @@ import org.springframework.lang.Nullable;
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
  */
+
 @NoArgsConstructor
 @SuperBuilder
 @Getter
@@ -40,7 +41,6 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
      *   <li>Lowest acceptable duration (null is considered greater than any non-null value)</li>
      *   <li>Lowest upcoming acceptable duration (null is considered greater than any non-null value)</li>
      *   <li>Highest loading value (null is considered lower than any non-null value)</li>
-     *   <li>Side alphabetical order</li>
      * </ul>
      *
      * If entities still cannot be distinguished after applying all criteria,

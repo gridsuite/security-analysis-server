@@ -13,10 +13,12 @@ import lombok.*;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import org.gridsuite.computation.dto.securityanalysis.EnrichedLimitViolationDTO;
+import org.gridsuite.computation.dto.securityanalysis.EnrichedPreContingencyResultDTO;
 import org.gridsuite.computation.utils.ComputationResultUtils;
 import org.springframework.lang.Nullable;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
@@ -34,13 +36,12 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
     @Setter
     SecurityAnalysisResultEntity result;
 
-    public static List<PreContingencyLimitViolationEntity> toEntityList(PreContingencyResult preContingencyResult,
-                                                                       Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId,
-                                                                       @Nullable Map<String, EnrichedLimitViolationDTO> preContingencyEnrichment) {
+    public static List<PreContingencyLimitViolationEntity> toEntityList(EnrichedPreContingencyResultDTO enrichedResult, Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId) {
+        PreContingencyResult preContingencyResult = enrichedResult.getResult();
         return preContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation ->
                 toEntity(limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()),
-                        preContingencyEnrichment != null ? preContingencyEnrichment.get(ComputationResultUtils.getViolationId(limitViolation)) : null)
-        ).toList();
+                        enrichedResult.getEnrichment(limitViolation))
+        ).collect(Collectors.toList());
     }
 
     public static PreContingencyLimitViolationEntity toEntity(LimitViolation limitViolation,
