@@ -341,7 +341,7 @@ public class SecurityAnalysisController {
         securityAnalysisResultService.insert(
             resultUuid,
             result,
-            result.getResult().getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED
+            result.getEnrichedPreContingencyResult().getResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED
                 ? SecurityAnalysisStatus.CONVERGED
                 : SecurityAnalysisStatus.DIVERGED
         );

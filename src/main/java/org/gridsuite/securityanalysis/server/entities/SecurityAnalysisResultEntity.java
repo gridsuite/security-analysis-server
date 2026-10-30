@@ -6,7 +6,6 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
-import com.powsybl.security.SecurityAnalysisResult;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldNameConstants;
@@ -56,8 +55,7 @@ public class SecurityAnalysisResultEntity {
     public static SecurityAnalysisResultEntity toEntity(UUID resultUuid,
                                                         EnrichedSecurityAnalysisResultDTO enrichedResult,
                                                         SecurityAnalysisStatus securityAnalysisStatus) {
-        SecurityAnalysisResult securityAnalysisResult = enrichedResult.getResult();
-        Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId = getUniqueSubjectLimitViolationsFromResult(securityAnalysisResult)
+        Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId = getUniqueSubjectLimitViolationsFromResult(enrichedResult)
             .stream().collect(Collectors.toMap(
                 SubjectLimitViolationEntity::getSubjectId,
                 subjectLimitViolation -> subjectLimitViolation)
@@ -80,7 +78,7 @@ public class SecurityAnalysisResultEntity {
         SecurityAnalysisResultEntity securityAnalysisResultEntity = SecurityAnalysisResultEntity.builder()
             .id(resultUuid)
             .status(securityAnalysisStatus)
-            .preContingencyStatus(securityAnalysisResult.getPreContingencyResult().getStatus().name())
+            .preContingencyStatus(enrichedResult.getEnrichedPreContingencyResult().getResult().getStatus().name())
             .contingencies(contingencies)
             .preContingencyLimitViolations(preContingencyLimitViolations)
             .subjectLimitViolations(subjectLimitViolations)
@@ -93,10 +91,10 @@ public class SecurityAnalysisResultEntity {
         return securityAnalysisResultEntity;
     }
 
-    private static List<SubjectLimitViolationEntity> getUniqueSubjectLimitViolationsFromResult(SecurityAnalysisResult securityAnalysisResult) {
+    private static List<SubjectLimitViolationEntity> getUniqueSubjectLimitViolationsFromResult(EnrichedSecurityAnalysisResultDTO securityAnalysisResult) {
         return Stream.concat(
-                securityAnalysisResult.getPostContingencyResults().stream().flatMap(pcr -> pcr.getLimitViolationsResult().getLimitViolations().stream()),
-                securityAnalysisResult.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().stream())
+                securityAnalysisResult.getEnrichedPostContingencyResults().stream().flatMap(pcr -> pcr.getEnrichedLimitViolations().stream()),
+                securityAnalysisResult.getEnrichedPreContingencyResult().getEnrichedLimitViolations().stream())
             .map(lm -> new Pair<>(lm.getSubjectId(), normalizeSubjectName(lm.getSubjectName())))
             .distinct()
             .map(pair -> new SubjectLimitViolationEntity(pair.getFirst(), pair.getSecond()))

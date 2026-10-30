@@ -19,6 +19,7 @@ import com.powsybl.security.results.ConnectivityResult;
 import com.powsybl.security.results.NetworkResult;
 import com.powsybl.security.results.PostContingencyResult;
 import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
+import org.gridsuite.computation.dto.securityanalysis.SecurityAnalysisEnricher;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
@@ -29,6 +30,7 @@ import java.util.UUID;
 
 import static com.powsybl.iidm.network.test.EurostagTutorialExample1Factory.NHV1_NHV2_1;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.getNetwork;
 
 /**
  * @author Antoine Bouhours <antoine.bouhours at rte-france.com>
@@ -46,7 +48,7 @@ class SecurityAnalysisResultEntityTest {
             List.of()
         );
 
-        EnrichedSecurityAnalysisResultDTO enriched = EnrichedSecurityAnalysisResultDTO.builder().result(securityAnalysisResult).build();
+        EnrichedSecurityAnalysisResultDTO enriched = SecurityAnalysisEnricher.enrich(securityAnalysisResult, getNetwork());
         SecurityAnalysisResultEntity entity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), enriched, SecurityAnalysisStatus.CONVERGED);
 
         assertThat(entity.getSubjectLimitViolations()).hasSize(1);
@@ -70,7 +72,7 @@ class SecurityAnalysisResultEntityTest {
             ))
         );
 
-        EnrichedSecurityAnalysisResultDTO enriched = EnrichedSecurityAnalysisResultDTO.builder().result(securityAnalysisResult).build();
+        EnrichedSecurityAnalysisResultDTO enriched = SecurityAnalysisEnricher.enrich(securityAnalysisResult, getNetwork());
         SecurityAnalysisResultEntity entity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), enriched, SecurityAnalysisStatus.CONVERGED);
 
         List<ContingencyLimitViolationEntity> contingencyLimitViolations = entity.getContingencies().getFirst().getContingencyLimitViolations();
