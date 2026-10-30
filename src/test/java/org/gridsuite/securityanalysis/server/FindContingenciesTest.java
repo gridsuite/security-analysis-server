@@ -21,7 +21,6 @@ import com.powsybl.security.results.ConnectivityResult;
 import com.powsybl.security.results.NetworkResult;
 import com.powsybl.security.results.PostContingencyResult;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
-import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
 import org.gridsuite.computation.dto.securityanalysis.SecurityAnalysisEnricher;
 import org.gridsuite.computation.error.ComputationException;
 import org.gridsuite.computation.utils.SpecificationUtils;
@@ -143,7 +142,7 @@ class FindContingenciesTest {
                 createPostContingencyResult(contingencyId2, "element-3", "element-4")
             )
         );
-        securityAnalysisResultService.insert(resultUuid, EnrichedSecurityAnalysisResultDTO.builder().result(securityAnalysisResult).build(), SecurityAnalysisStatus.CONVERGED);
+        securityAnalysisResultService.insert(resultUuid, SecurityAnalysisEnricher.enrich(securityAnalysisResult, getNetwork()), SecurityAnalysisStatus.CONVERGED);
 
         ResourceFilterDTO globalFilter = new ResourceFilterDTO(
             ResourceFilterDTO.DataType.TEXT,
@@ -193,7 +192,7 @@ class FindContingenciesTest {
                 createPostContingencyResultWithFailedStatus(contingencyId2, "element-3", "element-4")
             )
         );
-        securityAnalysisResultService.insert(resultUuid, EnrichedSecurityAnalysisResultDTO.builder().result(securityAnalysisResult).build(), SecurityAnalysisStatus.CONVERGED);
+        securityAnalysisResultService.insert(resultUuid, SecurityAnalysisEnricher.enrich(securityAnalysisResult, getNetwork()), SecurityAnalysisStatus.CONVERGED);
 
         ResourceFilterDTO globalFilter = new ResourceFilterDTO(
             ResourceFilterDTO.DataType.TEXT,
@@ -224,7 +223,7 @@ class FindContingenciesTest {
             LoadFlowResult.ComponentResult.Status.CONVERGED,
             List.of(createPostContingencyResultWithFailedStatus("not-converged"))
         );
-        securityAnalysisResultService.insert(resultUuid, EnrichedSecurityAnalysisResultDTO.builder().result(securityAnalysisResult).build(), SecurityAnalysisStatus.CONVERGED);
+        securityAnalysisResultService.insert(resultUuid, SecurityAnalysisEnricher.enrich(securityAnalysisResult, getNetwork()), SecurityAnalysisStatus.CONVERGED);
 
         ResourceFilterDTO emptySideFilter = new ResourceFilterDTO(
             ResourceFilterDTO.DataType.TEXT,

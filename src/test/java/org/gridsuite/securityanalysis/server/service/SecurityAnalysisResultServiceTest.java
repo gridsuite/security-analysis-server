@@ -21,9 +21,8 @@ import com.powsybl.security.results.NetworkResult;
 import com.powsybl.security.results.PostContingencyResult;
 import com.vladmihalcea.sql.SQLStatementCountValidator;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
-import org.gridsuite.computation.dto.securityanalysis.EnrichedLimitViolationDTO;
 import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
-import org.gridsuite.computation.utils.ComputationResultUtils;
+import org.gridsuite.computation.dto.securityanalysis.SecurityAnalysisEnricher;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.repositories.specifications.ContingencySpecificationBuilder;
 import org.gridsuite.securityanalysis.server.repositories.specifications.SubjectLimitViolationSpecificationBuilder;
@@ -39,7 +38,6 @@ import org.springframework.data.domain.Sort;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -73,7 +71,7 @@ class SecurityAnalysisResultServiceTest {
     @Test
     void deleteResultPerfTest() {
         UUID resultUuid = UUID.randomUUID();
-        securityAnalysisResultService.insert(resultUuid, EnrichedSecurityAnalysisResultDTO.builder().result(RESULT).build(), SecurityAnalysisStatus.CONVERGED);
+        securityAnalysisResultService.insert(resultUuid, SecurityAnalysisEnricher.enrich(RESULT, getNetwork()), SecurityAnalysisStatus.CONVERGED);
         SQLStatementCountValidator.reset();
 
         securityAnalysisResultService.delete(resultUuid);
@@ -84,56 +82,31 @@ class SecurityAnalysisResultServiceTest {
     }
 
     @Test
-    void insertResultWithoutNetworkTest() {
-        UUID resultUuid = UUID.randomUUID();
-        securityAnalysisResultService.insert(resultUuid, EnrichedSecurityAnalysisResultDTO.builder().result(RESULT).build(), SecurityAnalysisStatus.CONVERGED);
-        securityAnalysisResultService.assertResultExists(resultUuid);
-
-        List<ContingencyResultDTO> contingencyResults = securityAnalysisResultService.findNmKContingenciesResult(resultUuid);
-        assertEquals(RESULT.getPostContingencyResults().size(), contingencyResults.size());
-        // check fields based on network are actually nullish
-        contingencyResults.forEach(this::checkFieldBasedOnNetworkAreNullish);
-    }
-
-    @Test
     void insertResultWithEnrichedDataTest() {
         UUID resultUuid = UUID.randomUUID();
-        com.powsybl.contingency.violations.LimitViolation violation = RESULT.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().get(0);
-        String violationId = ComputationResultUtils.getViolationId(violation);
-
-        EnrichedLimitViolationDTO enrichedLimitViolationDTO = EnrichedLimitViolationDTO.builder()
-            .patlLimit(123.45)
-            .patlLoading(80.0)
-            .nextLimitName("TATL")
-            .locationId("LocationEnriched")
-            .acceptableDuration(3600)
-            .build();
-
-        EnrichedSecurityAnalysisResultDTO enrichedResult = EnrichedSecurityAnalysisResultDTO.builder()
-            .result(RESULT)
-            .preContingencyEnrichment(Map.of(violationId, enrichedLimitViolationDTO))
-            .build();
-
+        EnrichedSecurityAnalysisResultDTO enrichedResult = SecurityAnalysisEnricher.enrich(RESULT, getNetwork());
         securityAnalysisResultService.insert(resultUuid, enrichedResult, SecurityAnalysisStatus.CONVERGED);
         securityAnalysisResultService.assertResultExists(resultUuid);
 
         List<PreContingencyLimitViolationResultDTO> nResults = securityAnalysisResultService.findNResult(resultUuid, null, null, null, null, Sort.unsorted());
-        PreContingencyLimitViolationResultDTO resultDTO = nResults.stream()
-            .filter(r -> r.getSubjectId().equals(violation.getSubjectId()))
-            .findFirst()
-            .orElseThrow();
-
-        assertEquals(123.45, resultDTO.getLimitViolation().getPatlLimit());
-        assertEquals(80.0, resultDTO.getLimitViolation().getPatlLoading());
-        assertEquals("TATL", resultDTO.getLimitViolation().getNextLimitName());
-        assertEquals("LocationEnriched", resultDTO.getLimitViolation().getLocationId());
-        assertEquals(3600, resultDTO.getLimitViolation().getAcceptableDuration());
+        assertEquals(enrichedResult.getEnrichedPreContingencyResult().getEnrichedLimitViolations().size(), nResults.size());
+        enrichedResult.getEnrichedPreContingencyResult().getEnrichedLimitViolations().forEach(violation -> {
+            PreContingencyLimitViolationResultDTO resultDTO = nResults.stream()
+                .filter(r -> r.getSubjectId().equals(violation.getSubjectId()))
+                .findFirst()
+                .orElseThrow();
+            assertEquals(violation.getPatlLimit(), resultDTO.getLimitViolation().getPatlLimit());
+            assertEquals(violation.getPatlLoading(), resultDTO.getLimitViolation().getPatlLoading());
+            assertEquals(violation.getNextLimitName(), resultDTO.getLimitViolation().getNextLimitName());
+            assertEquals(violation.getLocationId(), resultDTO.getLimitViolation().getLocationId());
+            assertEquals(violation.getAcceptableDuration(), resultDTO.getLimitViolation().getAcceptableDuration());
+        });
     }
 
     @Test
     void findNmKContingenciesPagedNormalizesWorstSideFilter() throws Exception {
         UUID resultUuid = UUID.randomUUID();
-        securityAnalysisResultService.insert(resultUuid, EnrichedSecurityAnalysisResultDTO.builder().result(createSecurityAnalysisResultWithTwoSides()).build(),
+        securityAnalysisResultService.insert(resultUuid, SecurityAnalysisEnricher.enrich(createSecurityAnalysisResultWithTwoSides(), getNetwork()),
             SecurityAnalysisStatus.CONVERGED);
 
         Page<ContingencyResultDTO> page = securityAnalysisResultService.findNmKContingenciesPaged(
@@ -161,7 +134,7 @@ class SecurityAnalysisResultServiceTest {
     @Test
     void findNmKConstraintsResultPagedNormalizesWorstSideFilter() throws Exception {
         UUID resultUuid = UUID.randomUUID();
-        securityAnalysisResultService.insert(resultUuid, EnrichedSecurityAnalysisResultDTO.builder().result(createSecurityAnalysisResultWithTwoSides()).build(),
+        securityAnalysisResultService.insert(resultUuid, SecurityAnalysisEnricher.enrich(createSecurityAnalysisResultWithTwoSides(), getNetwork()),
             SecurityAnalysisStatus.CONVERGED);
 
         Page<SubjectLimitViolationResultDTO> page = securityAnalysisResultService.findNmKConstraintsResultPaged(
@@ -184,20 +157,6 @@ class SecurityAnalysisResultServiceTest {
                 assertThat(contingency.getLimitViolation().getValue()).isEqualTo(130.);
                 assertThat(contingency.getLimitViolation().getSide()).isEqualTo(TwoSides.TWO.toThreeSides());
             });
-    }
-
-    @SuppressWarnings("java:S5841") // some limitViolation could be empty, which will make allSatisfy pass automatically - this behaviour is intended
-    private void checkFieldBasedOnNetworkAreNullish(ContingencyResultDTO contingencyResult) {
-        assertThat(contingencyResult.getSubjectLimitViolations())
-            .extracting(SubjectLimitViolationDTO::getLimitViolation)
-            .allSatisfy(lv ->
-                assertThat(lv)
-                    .satisfies(v -> assertThat(v.getPatlLimit()).isNull())
-                    .satisfies(v -> assertThat(v.getPatlLoading()).isNull())
-                    .satisfies(v -> assertThat(v.getNextLimitName()).isNull())
-                    .satisfies(v -> assertThat(v.getLocationId()).isNull())
-                    .satisfies(v -> assertThat(v.getAcceptableDuration()).isNull())
-            );
     }
 
     private SecurityAnalysisResult createSecurityAnalysisResultWithTwoSides() {

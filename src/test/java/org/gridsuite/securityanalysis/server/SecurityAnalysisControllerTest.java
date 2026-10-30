@@ -31,12 +31,11 @@ import com.vladmihalcea.sql.SQLStatementCountValidator;
 import org.assertj.core.api.Assertions;
 import org.gridsuite.computation.dto.GlobalFilter;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
-import org.gridsuite.computation.dto.securityanalysis.EnrichedLimitViolationDTO;
 import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
+import org.gridsuite.computation.dto.securityanalysis.SecurityAnalysisEnricher;
 import org.gridsuite.computation.service.AbstractFilterService;
 import org.gridsuite.computation.service.ReportService;
 import org.gridsuite.computation.service.UuidGeneratorService;
-import org.gridsuite.computation.utils.ComputationResultUtils;
 import org.gridsuite.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
@@ -831,41 +830,22 @@ class SecurityAnalysisControllerTest {
     void saveResultTest() throws Exception {
         UUID resultUuid = UUID.randomUUID();
         SecurityAnalysisResult securityAnalysisResult = SecurityAnalysisProviderMock.RESULT;
-        EnrichedLimitViolationDTO enrichedLimitViolationDTO = EnrichedLimitViolationDTO.builder()
-            .patlLimit(123.45)
-            .patlLoading(80.0)
-            .nextLimitName("TATL")
-            .locationId("LocationEnriched")
-            .acceptableDuration(3600)
-            .build();
-        String violationId = ComputationResultUtils.getViolationId(securityAnalysisResult.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().get(0));
-        EnrichedSecurityAnalysisResultDTO enrichedResult = EnrichedSecurityAnalysisResultDTO.builder()
-            .result(securityAnalysisResult)
-            .preContingencyEnrichment(Map.of(violationId, enrichedLimitViolationDTO))
-            .build();
+        EnrichedSecurityAnalysisResultDTO enrichedResult = SecurityAnalysisEnricher.enrich(securityAnalysisResult, SecurityAnalysisProviderMock.getNetwork());
         doNothing().when(securityAnalysisResultService).insert(resultUuid, enrichedResult, SecurityAnalysisStatus.CONVERGED);
 
         mockMvc.perform(post("/" + VERSION + "/results/" + resultUuid)
             .contentType(MediaType.APPLICATION_JSON)
             .content(mapper.writeValueAsString(enrichedResult)))
-            .andExpect(status().isCreated());
+            .andExpect(status().isOk());
 
         ArgumentCaptor<EnrichedSecurityAnalysisResultDTO> captor = ArgumentCaptor.forClass(EnrichedSecurityAnalysisResultDTO.class);
         verify(securityAnalysisResultService, times(1)).insert(eq(resultUuid), captor.capture(), eq(SecurityAnalysisStatus.CONVERGED));
-        Assertions.assertThat(captor.getValue().getResult())
+        Assertions.assertThat(captor.getValue())
             .usingRecursiveComparison()
-            // this field is not well serialized/deserialized - since it's deprecated / not used, we ignore it here
-            .ignoringFieldsMatchingRegexes(".*\\.limitViolationsResult\\.computationOk")
-            // this field is set by default to empty string in LimitViolation class, it is treated as null when serializing/deserializing
-            // so, we ignore it here
-            .ignoringFieldsMatchingRegexes(".*operationalLimitsGroupId")
-            // NaN values don't serialize/deserialize consistently, so we ignore this field
-            .ignoringFieldsMatchingRegexes(".*\\.distributedActivePower")
-            .isEqualTo(securityAnalysisResult);
-
-        Assertions.assertThat(captor.getValue().getPreContingencyEnrichment().get(violationId))
-            .usingRecursiveComparison()
-            .isEqualTo(enrichedLimitViolationDTO);
+            // PowSyBl JSON normalizes optional strings and does not preserve deprecated computationOk or NaN.
+            .ignoringFieldsMatchingRegexes(".*\\.result\\.limitViolationsResult\\.computationOk",
+                ".*\\.result\\..*operationalLimitsGroupId", ".*\\.result\\.distributedActivePower")
+            .isEqualTo(enrichedResult);
     }
 
     @Test
