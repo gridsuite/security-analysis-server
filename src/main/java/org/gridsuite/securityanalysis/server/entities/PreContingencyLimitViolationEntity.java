@@ -6,16 +6,12 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
-import com.powsybl.contingency.violations.LimitViolation;
-import com.powsybl.security.results.PreContingencyResult;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import org.gridsuite.computation.dto.securityanalysis.EnrichedLimitViolationDTO;
 import org.gridsuite.computation.dto.securityanalysis.EnrichedPreContingencyResultDTO;
-import org.gridsuite.computation.utils.ComputationResultUtils;
-import org.springframework.lang.Nullable;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -37,37 +33,27 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
     SecurityAnalysisResultEntity result;
 
     public static List<PreContingencyLimitViolationEntity> toEntityList(EnrichedPreContingencyResultDTO enrichedResult, Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId) {
-        PreContingencyResult preContingencyResult = enrichedResult.getResult();
-        return preContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation ->
-                toEntity(limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()),
-                        enrichedResult.getEnrichment(limitViolation))
-        ).collect(Collectors.toList());
+        return enrichedResult.getEnrichedLimitViolations().stream().map(limitViolation ->
+                toEntity(limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()))).collect(Collectors.toList());
     }
 
-    public static PreContingencyLimitViolationEntity toEntity(LimitViolation limitViolation,
-                                                              SubjectLimitViolationEntity subjectLimitViolation,
-                                                              @Nullable EnrichedLimitViolationDTO enrichment) {
-        PreContingencyLimitViolationEntityBuilder<?, ?> preContingencyLimitViolationEntityBuilder = PreContingencyLimitViolationEntity.builder()
+    public static PreContingencyLimitViolationEntity toEntity(EnrichedLimitViolationDTO limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
+        return PreContingencyLimitViolationEntity.builder()
             .subjectLimitViolation(subjectLimitViolation)
             .limit(limitViolation.getLimit())
             .limitName(limitViolation.getLimitName())
             .operationalLimitsGroupId(limitViolation.getOperationalLimitsGroupId())
             .limitType(limitViolation.getLimitType())
-            .upcomingAcceptableDuration(ComputationResultUtils.calculateUpcomingOverloadDuration(limitViolation))
+            .upcomingAcceptableDuration(limitViolation.getUpcomingAcceptableDuration())
             .limitReduction(limitViolation.getLimitReduction())
             .value(limitViolation.getValue())
             .side(limitViolation.getSide())
-            .loading(ComputationResultUtils.computeLoading(limitViolation, limitViolation.getLimit()));
-
-        if (enrichment != null) {
-            preContingencyLimitViolationEntityBuilder
-                .acceptableDuration(enrichment.getAcceptableDuration())
-                .patlLimit(enrichment.getPatlLimit())
-                .patlLoading(enrichment.getPatlLoading())
-                .locationId(enrichment.getLocationId())
-                .nextLimitName(enrichment.getNextLimitName());
-        }
-
-        return preContingencyLimitViolationEntityBuilder.build();
+            .loading(limitViolation.getLoading())
+            .acceptableDuration(limitViolation.getAcceptableDuration())
+            .patlLimit(limitViolation.getPatlLimit())
+            .patlLoading(limitViolation.getPatlLoading())
+            .locationId(limitViolation.getLocationId())
+            .nextLimitName(limitViolation.getNextLimitName())
+            .build();
     }
 }

@@ -83,11 +83,10 @@ public class ContingencyEntity {
         PostContingencyResult postContingencyResult = enrichedResult.getResult();
         List<ContingencyElementEmbeddable> contingencyElements = postContingencyResult.getContingency().getElements().stream().map(ContingencyElementEmbeddable::toEntity).toList();
 
-        List<ContingencyLimitViolationEntity> contingencyLimitViolations = postContingencyResult.getLimitViolationsResult().getLimitViolations().stream()
+        List<ContingencyLimitViolationEntity> contingencyLimitViolations = enrichedResult.getEnrichedLimitViolations().stream()
             .map(limitViolation -> ContingencyLimitViolationEntity.toEntity(
                     limitViolation,
-                    subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()),
-                    enrichedResult.getEnrichment(limitViolation)
+                    subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId())
             ))
             .toList();
         ContingencyLimitViolationWorstSideUtils.computeWorstSideBySubjectId(contingencyLimitViolations);

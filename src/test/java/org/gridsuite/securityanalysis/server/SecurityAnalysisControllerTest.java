@@ -31,8 +31,8 @@ import com.vladmihalcea.sql.SQLStatementCountValidator;
 import org.assertj.core.api.Assertions;
 import org.gridsuite.computation.dto.GlobalFilter;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
-import org.gridsuite.computation.dto.securityanalysis.EnrichedLimitViolationDTO;
 import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
+import org.gridsuite.computation.dto.securityanalysis.LimitViolationEnrichmentDTO;
 import org.gridsuite.computation.service.AbstractFilterService;
 import org.gridsuite.computation.service.ReportService;
 import org.gridsuite.computation.service.UuidGeneratorService;
@@ -831,7 +831,7 @@ class SecurityAnalysisControllerTest {
     void saveResultTest() throws Exception {
         UUID resultUuid = UUID.randomUUID();
         SecurityAnalysisResult securityAnalysisResult = SecurityAnalysisProviderMock.RESULT;
-        EnrichedLimitViolationDTO enrichedLimitViolationDTO = EnrichedLimitViolationDTO.builder()
+        LimitViolationEnrichmentDTO enrichedLimitViolationDTO = LimitViolationEnrichmentDTO.builder()
             .patlLimit(123.45)
             .patlLoading(80.0)
             .nextLimitName("TATL")

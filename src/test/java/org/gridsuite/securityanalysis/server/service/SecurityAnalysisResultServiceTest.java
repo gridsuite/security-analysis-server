@@ -21,8 +21,8 @@ import com.powsybl.security.results.NetworkResult;
 import com.powsybl.security.results.PostContingencyResult;
 import com.vladmihalcea.sql.SQLStatementCountValidator;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
-import org.gridsuite.computation.dto.securityanalysis.EnrichedLimitViolationDTO;
 import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
+import org.gridsuite.computation.dto.securityanalysis.LimitViolationEnrichmentDTO;
 import org.gridsuite.computation.utils.ComputationResultUtils;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.repositories.specifications.ContingencySpecificationBuilder;
@@ -101,7 +101,7 @@ class SecurityAnalysisResultServiceTest {
         com.powsybl.contingency.violations.LimitViolation violation = RESULT.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().get(0);
         String violationId = ComputationResultUtils.getViolationId(violation);
 
-        EnrichedLimitViolationDTO enrichedLimitViolationDTO = EnrichedLimitViolationDTO.builder()
+        LimitViolationEnrichmentDTO enrichedLimitViolationDTO = LimitViolationEnrichmentDTO.builder()
             .patlLimit(123.45)
             .patlLoading(80.0)
             .nextLimitName("TATL")

@@ -6,14 +6,11 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
-import com.powsybl.contingency.violations.LimitViolation;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import org.gridsuite.computation.dto.securityanalysis.EnrichedLimitViolationDTO;
-import org.gridsuite.computation.utils.ComputationResultUtils;
-import org.springframework.lang.Nullable;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
@@ -49,10 +46,8 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
     @Setter
     private boolean isWorstSide;
 
-    public static ContingencyLimitViolationEntity toEntity(LimitViolation limitViolation,
-                                                           SubjectLimitViolationEntity subjectLimitViolation,
-                                                           @Nullable EnrichedLimitViolationDTO enrichment) {
-        ContingencyLimitViolationEntityBuilder<?, ?> contingencyLimitViolationEntityBuilder = ContingencyLimitViolationEntity.builder()
+    public static ContingencyLimitViolationEntity toEntity(EnrichedLimitViolationDTO limitViolation, SubjectLimitViolationEntity subjectLimitViolation) {
+        ContingencyLimitViolationEntity contingencyLimitViolationEntity = ContingencyLimitViolationEntity.builder()
             .limit(limitViolation.getLimit())
             .limitName(limitViolation.getLimitName())
             .operationalLimitsGroupId(limitViolation.getOperationalLimitsGroupId())
@@ -60,20 +55,15 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
             .limitReduction(limitViolation.getLimitReduction())
             .value(limitViolation.getValue())
             .side(limitViolation.getSide())
-            .loading(ComputationResultUtils.computeLoading(limitViolation, limitViolation.getLimit()))
+            .loading(limitViolation.getLoading())
             .subjectLimitViolation(subjectLimitViolation)
-            .upcomingAcceptableDuration(ComputationResultUtils.calculateUpcomingOverloadDuration(limitViolation));
-
-        if (enrichment != null) {
-            contingencyLimitViolationEntityBuilder
-                .patlLimit(enrichment.getPatlLimit())
-                .patlLoading(enrichment.getPatlLoading())
-                .nextLimitName(enrichment.getNextLimitName())
-                .locationId(enrichment.getLocationId())
-                .acceptableDuration(enrichment.getAcceptableDuration());
-        }
-
-        ContingencyLimitViolationEntity contingencyLimitViolationEntity = contingencyLimitViolationEntityBuilder.build();
+            .upcomingAcceptableDuration(limitViolation.getUpcomingAcceptableDuration())
+            .patlLimit(limitViolation.getPatlLimit())
+            .patlLoading(limitViolation.getPatlLoading())
+            .nextLimitName(limitViolation.getNextLimitName())
+            .locationId(limitViolation.getLocationId())
+            .acceptableDuration(limitViolation.getAcceptableDuration())
+            .build();
 
         subjectLimitViolation.addContingencyLimitViolation(contingencyLimitViolationEntity);
 
