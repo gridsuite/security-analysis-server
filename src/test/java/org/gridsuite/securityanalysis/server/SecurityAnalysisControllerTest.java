@@ -31,12 +31,13 @@ import com.vladmihalcea.sql.SQLStatementCountValidator;
 import org.assertj.core.api.Assertions;
 import org.gridsuite.computation.dto.GlobalFilter;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
-import org.gridsuite.computation.dto.securityanalysis.EnrichedLimitViolationDTO;
 import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
+import org.gridsuite.computation.dto.securityanalysis.LimitViolationEnrichmentDTO;
 import org.gridsuite.computation.service.AbstractFilterService;
 import org.gridsuite.computation.service.ReportService;
 import org.gridsuite.computation.service.UuidGeneratorService;
 import org.gridsuite.computation.utils.ComputationResultUtils;
+import org.gridsuite.computation.utils.SecurityAnalysisEnricher;
 import org.gridsuite.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
@@ -831,24 +832,31 @@ class SecurityAnalysisControllerTest {
     void saveResultTest() throws Exception {
         UUID resultUuid = UUID.randomUUID();
         SecurityAnalysisResult securityAnalysisResult = SecurityAnalysisProviderMock.RESULT;
-        EnrichedLimitViolationDTO enrichedLimitViolationDTO = EnrichedLimitViolationDTO.builder()
+        var violation = securityAnalysisResult.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().get(0);
+        LimitViolationEnrichmentDTO enrichedLimitViolationDTO = LimitViolationEnrichmentDTO.builder()
+            .loading(ComputationResultUtils.computeLoading(violation, violation.getLimit()))
             .patlLimit(123.45)
             .patlLoading(80.0)
             .nextLimitName("TATL")
             .locationId("LocationEnriched")
             .acceptableDuration(3600)
+            .upcomingAcceptableDuration(ComputationResultUtils.calculateUpcomingOverloadDuration(violation))
             .build();
-        String violationId = ComputationResultUtils.getViolationId(securityAnalysisResult.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().get(0));
+        String violationId = ComputationResultUtils.getViolationId(violation);
+        EnrichedSecurityAnalysisResultDTO defaultEnrichment = SecurityAnalysisEnricher.enrich(securityAnalysisResult, SecurityAnalysisProviderMock.getNetwork());
+        Map<String, LimitViolationEnrichmentDTO> preContingencyEnrichment = new HashMap<>(defaultEnrichment.getPreContingencyEnrichment());
+        preContingencyEnrichment.put(violationId, enrichedLimitViolationDTO);
         EnrichedSecurityAnalysisResultDTO enrichedResult = EnrichedSecurityAnalysisResultDTO.builder()
             .result(securityAnalysisResult)
-            .preContingencyEnrichment(Map.of(violationId, enrichedLimitViolationDTO))
+            .preContingencyEnrichment(preContingencyEnrichment)
+            .postContingencyEnrichment(defaultEnrichment.getPostContingencyEnrichment())
             .build();
-        doNothing().when(securityAnalysisResultService).insert(resultUuid, enrichedResult, SecurityAnalysisStatus.CONVERGED);
+        doNothing().when(securityAnalysisResultService).insert(eq(resultUuid), any(EnrichedSecurityAnalysisResultDTO.class), eq(SecurityAnalysisStatus.CONVERGED));
 
         mockMvc.perform(post("/" + VERSION + "/results/" + resultUuid)
             .contentType(MediaType.APPLICATION_JSON)
             .content(mapper.writeValueAsString(enrichedResult)))
-            .andExpect(status().isCreated());
+            .andExpect(status().isOk());
 
         ArgumentCaptor<EnrichedSecurityAnalysisResultDTO> captor = ArgumentCaptor.forClass(EnrichedSecurityAnalysisResultDTO.class);
         verify(securityAnalysisResultService, times(1)).insert(eq(resultUuid), captor.capture(), eq(SecurityAnalysisStatus.CONVERGED));

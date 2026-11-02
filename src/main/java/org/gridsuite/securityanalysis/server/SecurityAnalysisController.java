@@ -28,7 +28,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -336,7 +335,7 @@ public class SecurityAnalysisController {
 
     @PostMapping(value = "/results/{resultUuid}", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     @Operation(summary = "Save security analysis results")
-    @ApiResponses(value = {@ApiResponse(responseCode = "201", description = "The security analysis results have been saved to database")})
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis results have been saved to database")})
     public ResponseEntity<Void> saveResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                            @RequestBody EnrichedSecurityAnalysisResultDTO result) {
         securityAnalysisResultService.insert(
@@ -346,7 +345,7 @@ public class SecurityAnalysisController {
                 ? SecurityAnalysisStatus.CONVERGED
                 : SecurityAnalysisStatus.DIVERGED
         );
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping(value = "/providers", produces = APPLICATION_JSON_VALUE)

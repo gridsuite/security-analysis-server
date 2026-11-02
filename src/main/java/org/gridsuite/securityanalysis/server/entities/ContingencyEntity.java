@@ -12,11 +12,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
-import org.gridsuite.computation.dto.securityanalysis.EnrichedLimitViolationDTO;
+import org.gridsuite.computation.dto.securityanalysis.LimitViolationEnrichmentDTO;
 import org.gridsuite.computation.utils.ComputationResultUtils;
 import org.gridsuite.securityanalysis.server.util.ContingencyLimitViolationWorstSideUtils;
 import org.hibernate.annotations.Formula;
-import org.springframework.lang.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -82,16 +81,18 @@ public class ContingencyEntity {
 
     public static ContingencyEntity toEntity(PostContingencyResult postContingencyResult,
                                              Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId,
-                                             @Nullable Map<String, EnrichedLimitViolationDTO> contingencyEnrichment) {
+                                             Map<String, LimitViolationEnrichmentDTO> contingencyEnrichment) {
         List<ContingencyElementEmbeddable> contingencyElements = postContingencyResult.getContingency().getElements().stream().map(ContingencyElementEmbeddable::toEntity).toList();
 
-        List<ContingencyLimitViolationEntity> contingencyLimitViolations = postContingencyResult.getLimitViolationsResult().getLimitViolations().stream()
-            .map(limitViolation -> ContingencyLimitViolationEntity.toEntity(
-                    limitViolation,
-                    subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()),
-                    contingencyEnrichment != null ? contingencyEnrichment.get(ComputationResultUtils.getViolationId(limitViolation)) : null
-            ))
-            .toList();
+        List<ContingencyLimitViolationEntity> contingencyLimitViolations = postContingencyResult.getLimitViolationsResult() == null
+            ? List.of()
+            : postContingencyResult.getLimitViolationsResult().getLimitViolations().stream()
+                .map(limitViolation -> ContingencyLimitViolationEntity.toEntity(
+                        limitViolation,
+                        subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()),
+                        contingencyEnrichment.get(ComputationResultUtils.getViolationId(limitViolation))
+                ))
+                .toList();
         ContingencyLimitViolationWorstSideUtils.computeWorstSideBySubjectId(contingencyLimitViolations);
         ConnectivityResultEmbeddable connectivityResult = ConnectivityResultEmbeddable.toEntity(postContingencyResult.getConnectivityResult());
 

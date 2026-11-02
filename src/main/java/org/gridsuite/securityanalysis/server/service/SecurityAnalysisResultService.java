@@ -9,15 +9,21 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.contingency.violations.LimitViolationType;
 import com.powsybl.iidm.network.ThreeSides;
+import com.powsybl.security.LimitViolationsResult;
+import com.powsybl.security.results.PostContingencyResult;
 import lombok.Getter;
 import org.gridsuite.computation.dto.GlobalFilter;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
 import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
+import org.gridsuite.computation.dto.securityanalysis.LimitViolationEnrichmentDTO;
 import org.gridsuite.computation.error.ComputationException;
 import org.gridsuite.computation.service.AbstractComputationResultService;
+import org.gridsuite.computation.utils.ComputationResultUtils;
 import org.gridsuite.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.*;
+import org.gridsuite.securityanalysis.server.error.SecurityAnalysisBusinessErrorCode;
+import org.gridsuite.securityanalysis.server.error.SecurityAnalysisException;
 import org.gridsuite.securityanalysis.server.repositories.*;
 import org.gridsuite.securityanalysis.server.repositories.specifications.ContingencySpecificationBuilder;
 import org.gridsuite.securityanalysis.server.repositories.specifications.PreContingencyLimitViolationSpecificationBuilder;
@@ -286,9 +292,51 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     public void insert(UUID resultUuid, EnrichedSecurityAnalysisResultDTO enrichedResult, SecurityAnalysisStatus status) {
         Objects.requireNonNull(resultUuid);
         Objects.requireNonNull(enrichedResult);
+        validateEnrichment(enrichedResult);
 
         SecurityAnalysisResultEntity securityAnalysisResult = SecurityAnalysisResultEntity.toEntity(resultUuid, enrichedResult, status);
         securityAnalysisResultRepository.save(securityAnalysisResult);
+    }
+
+    private static void validateEnrichment(EnrichedSecurityAnalysisResultDTO enrichedResult) {
+        if (enrichedResult.getResult() == null
+                || enrichedResult.getPreContingencyEnrichment() == null
+                || enrichedResult.getPostContingencyEnrichment() == null
+                || enrichedResult.getResult().getPreContingencyResult() == null
+                || !containsEnrichmentForAllViolations(
+                        enrichedResult.getResult().getPreContingencyResult().getLimitViolationsResult(),
+                        enrichedResult.getPreContingencyEnrichment())) {
+            throw invalidResultEnrichment();
+        }
+
+        if (enrichedResult.getResult().getPostContingencyResults() != null) {
+            for (PostContingencyResult postContingencyResult : enrichedResult.getResult().getPostContingencyResults()) {
+                if (postContingencyResult == null || postContingencyResult.getContingency() == null
+                        || postContingencyResult.getContingency().getId() == null) {
+                    throw invalidResultEnrichment();
+                }
+                Map<String, LimitViolationEnrichmentDTO> contingencyEnrichment = enrichedResult.getPostContingencyEnrichment()
+                    .get(postContingencyResult.getContingency().getId());
+                if (contingencyEnrichment == null || !containsEnrichmentForAllViolations(
+                        postContingencyResult.getLimitViolationsResult(), contingencyEnrichment)) {
+                    throw invalidResultEnrichment();
+                }
+            }
+        }
+    }
+
+    private static boolean containsEnrichmentForAllViolations(LimitViolationsResult violationsResult,
+                                                                Map<String, LimitViolationEnrichmentDTO> enrichment) {
+        return violationsResult == null || violationsResult.getLimitViolations().stream()
+            .map(ComputationResultUtils::getViolationId)
+            .allMatch(violationId -> enrichment.get(violationId) != null);
+    }
+
+    private static SecurityAnalysisException invalidResultEnrichment() {
+        return new SecurityAnalysisException(
+            SecurityAnalysisBusinessErrorCode.INVALID_RESULT_ENRICHMENT,
+            "Security analysis result is missing enrichment data for one or more limit violations."
+        );
     }
 
     @Override

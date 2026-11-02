@@ -6,6 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
+import com.powsybl.contingency.violations.LimitViolation;
 import com.powsybl.security.SecurityAnalysisResult;
 import jakarta.persistence.*;
 import lombok.*;
@@ -63,11 +64,11 @@ public class SecurityAnalysisResultEntity {
                 subjectLimitViolation -> subjectLimitViolation)
             );
 
-        List<ContingencyEntity> contingencies = securityAnalysisResult.getPostContingencyResults().stream()
+        List<ContingencyEntity> contingencies = securityAnalysisResult.getPostContingencyResults() == null ? List.of() : securityAnalysisResult.getPostContingencyResults().stream()
             .map(postContingencyResult -> ContingencyEntity.toEntity(
                     postContingencyResult,
                     subjectLimitViolationsBySubjectId,
-                    enrichedResult.getPostContingencyEnrichment() != null ? enrichedResult.getPostContingencyEnrichment().get(postContingencyResult.getContingency().getId()) : null
+                    enrichedResult.getPostContingencyEnrichment().get(postContingencyResult.getContingency().getId())
             )).toList();
 
         List<PreContingencyLimitViolationEntity> preContingencyLimitViolations = PreContingencyLimitViolationEntity.toEntityList(
@@ -100,9 +101,19 @@ public class SecurityAnalysisResultEntity {
     }
 
     private static List<SubjectLimitViolationEntity> getUniqueSubjectLimitViolationsFromResult(SecurityAnalysisResult securityAnalysisResult) {
+        Stream<LimitViolation> postContingencyViolations = securityAnalysisResult.getPostContingencyResults() == null
+            ? Stream.empty()
+            : securityAnalysisResult.getPostContingencyResults().stream()
+                .filter(postContingencyResult -> postContingencyResult.getLimitViolationsResult() != null)
+                .flatMap(postContingencyResult -> postContingencyResult.getLimitViolationsResult().getLimitViolations().stream());
+        Stream<LimitViolation> preContingencyViolations = securityAnalysisResult.getPreContingencyResult() == null
+            || securityAnalysisResult.getPreContingencyResult().getLimitViolationsResult() == null
+                ? Stream.empty()
+                : securityAnalysisResult.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().stream();
+
         return Stream.concat(
-                securityAnalysisResult.getPostContingencyResults().stream().flatMap(pcr -> pcr.getLimitViolationsResult().getLimitViolations().stream()),
-                securityAnalysisResult.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().stream())
+                postContingencyViolations,
+                preContingencyViolations)
             .map(lm -> new Pair<>(lm.getSubjectId(), normalizeSubjectName(lm.getSubjectName())))
             .distinct()
             .map(pair -> new SubjectLimitViolationEntity(pair.getFirst(), pair.getSecond()))

@@ -18,7 +18,7 @@ import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.results.ConnectivityResult;
 import com.powsybl.security.results.NetworkResult;
 import com.powsybl.security.results.PostContingencyResult;
-import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
+import org.gridsuite.computation.utils.SecurityAnalysisEnricher;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEntity;
@@ -46,7 +46,7 @@ class SecurityAnalysisResultEntityTest {
             List.of()
         );
 
-        EnrichedSecurityAnalysisResultDTO enriched = EnrichedSecurityAnalysisResultDTO.builder().result(securityAnalysisResult).build();
+        var enriched = SecurityAnalysisEnricher.enrich(securityAnalysisResult, SecurityAnalysisProviderMock.getNetwork());
         SecurityAnalysisResultEntity entity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), enriched, SecurityAnalysisStatus.CONVERGED);
 
         assertThat(entity.getSubjectLimitViolations()).hasSize(1);
@@ -70,7 +70,7 @@ class SecurityAnalysisResultEntityTest {
             ))
         );
 
-        EnrichedSecurityAnalysisResultDTO enriched = EnrichedSecurityAnalysisResultDTO.builder().result(securityAnalysisResult).build();
+        var enriched = SecurityAnalysisEnricher.enrich(securityAnalysisResult, SecurityAnalysisProviderMock.getNetwork());
         SecurityAnalysisResultEntity entity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), enriched, SecurityAnalysisStatus.CONVERGED);
 
         List<ContingencyLimitViolationEntity> contingencyLimitViolations = entity.getContingencies().getFirst().getContingencyLimitViolations();
@@ -83,5 +83,27 @@ class SecurityAnalysisResultEntityTest {
             .filteredOn(contingencyLimitViolation -> contingencyLimitViolation.getValue() == 130)
             .singleElement()
             .matches(ContingencyLimitViolationEntity::isWorstSide);
+    }
+
+    @Test
+    void toEntityTreatsMissingContingencyViolationResultAsEmpty() {
+        SecurityAnalysisResult securityAnalysisResult = new SecurityAnalysisResult(
+            null,
+            LoadFlowResult.ComponentResult.Status.CONVERGED,
+            List.of(new PostContingencyResult(
+                new Contingency("contingencyId", new BranchContingency(NHV1_NHV2_1)),
+                PostContingencyComputationStatus.CONVERGED,
+                null,
+                NetworkResult.empty(),
+                ConnectivityResult.empty(),
+                1.0
+            ))
+        );
+
+        var enriched = SecurityAnalysisEnricher.enrich(securityAnalysisResult, SecurityAnalysisProviderMock.getNetwork());
+        SecurityAnalysisResultEntity entity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), enriched, SecurityAnalysisStatus.CONVERGED);
+
+        assertThat(entity.getContingencies().getFirst().getContingencyLimitViolations()).isEmpty();
+        assertThat(entity.getPreContingencyLimitViolations()).isEmpty();
     }
 }

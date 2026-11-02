@@ -11,9 +11,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
-import org.gridsuite.computation.dto.securityanalysis.EnrichedLimitViolationDTO;
-import org.gridsuite.computation.utils.ComputationResultUtils;
-import org.springframework.lang.Nullable;
+import org.gridsuite.computation.dto.securityanalysis.LimitViolationEnrichmentDTO;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
@@ -51,7 +49,7 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
 
     public static ContingencyLimitViolationEntity toEntity(LimitViolation limitViolation,
                                                            SubjectLimitViolationEntity subjectLimitViolation,
-                                                           @Nullable EnrichedLimitViolationDTO enrichment) {
+                                                           LimitViolationEnrichmentDTO enrichment) {
         ContingencyLimitViolationEntityBuilder<?, ?> contingencyLimitViolationEntityBuilder = ContingencyLimitViolationEntity.builder()
             .limit(limitViolation.getLimit())
             .limitName(limitViolation.getLimitName())
@@ -60,18 +58,14 @@ public class ContingencyLimitViolationEntity extends AbstractLimitViolationEntit
             .limitReduction(limitViolation.getLimitReduction())
             .value(limitViolation.getValue())
             .side(limitViolation.getSide())
-            .loading(ComputationResultUtils.computeLoading(limitViolation, limitViolation.getLimit()))
             .subjectLimitViolation(subjectLimitViolation)
-            .upcomingAcceptableDuration(ComputationResultUtils.calculateUpcomingOverloadDuration(limitViolation));
-
-        if (enrichment != null) {
-            contingencyLimitViolationEntityBuilder
-                .patlLimit(enrichment.getPatlLimit())
-                .patlLoading(enrichment.getPatlLoading())
-                .nextLimitName(enrichment.getNextLimitName())
-                .locationId(enrichment.getLocationId())
-                .acceptableDuration(enrichment.getAcceptableDuration());
-        }
+            .loading(enrichment.getLoading())
+            .patlLimit(enrichment.getPatlLimit())
+            .patlLoading(enrichment.getPatlLoading())
+            .nextLimitName(enrichment.getNextLimitName())
+            .locationId(enrichment.getLocationId())
+            .acceptableDuration(enrichment.getAcceptableDuration())
+            .upcomingAcceptableDuration(enrichment.getUpcomingAcceptableDuration());
 
         ContingencyLimitViolationEntity contingencyLimitViolationEntity = contingencyLimitViolationEntityBuilder.build();
 
