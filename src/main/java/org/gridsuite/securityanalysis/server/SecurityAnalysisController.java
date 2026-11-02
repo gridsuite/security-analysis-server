@@ -335,7 +335,7 @@ public class SecurityAnalysisController {
 
     @PostMapping(value = "/results/{resultUuid}", produces = APPLICATION_JSON_VALUE, consumes = APPLICATION_JSON_VALUE)
     @Operation(summary = "Save security analysis results")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The security analysis results have been saved to database")})
+    @ApiResponses(value = {@ApiResponse(responseCode = "201", description = "The security analysis results have been saved to database")})
     public ResponseEntity<Void> saveResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
                                            @RequestBody EnrichedSecurityAnalysisResultDTO result) {
         securityAnalysisResultService.insert(
@@ -350,7 +350,7 @@ public class SecurityAnalysisController {
 
     @GetMapping(value = "/providers", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get all security analysis providers")
-    @ApiResponses(value = {@ApiResponse(responseCode = "201", description = "Security analysis providers have been found")})
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Security analysis providers have been found")})
     public ResponseEntity<List<String>> getProviders() {
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
                 .body(securityAnalysisService.getProviders());
