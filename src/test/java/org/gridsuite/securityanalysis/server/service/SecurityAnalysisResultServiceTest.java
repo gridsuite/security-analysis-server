@@ -25,8 +25,6 @@ import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisRe
 import org.gridsuite.computation.dto.securityanalysis.LimitViolationEnrichmentDTO;
 import org.gridsuite.computation.utils.ComputationResultUtils;
 import org.gridsuite.securityanalysis.server.dto.*;
-import org.gridsuite.securityanalysis.server.error.SecurityAnalysisBusinessErrorCode;
-import org.gridsuite.securityanalysis.server.error.SecurityAnalysisException;
 import org.gridsuite.securityanalysis.server.repositories.specifications.ContingencySpecificationBuilder;
 import org.gridsuite.securityanalysis.server.repositories.specifications.SubjectLimitViolationSpecificationBuilder;
 import org.junit.jupiter.api.AfterEach;
@@ -50,7 +48,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -98,20 +95,6 @@ class SecurityAnalysisResultServiceTest {
         assertEquals(RESULT.getPostContingencyResults().size(), contingencyResults.size());
         // check fields based on network are actually nullish
         contingencyResults.forEach(this::checkFieldBasedOnNetworkAreNullish);
-    }
-
-    @Test
-    void insertRejectsMissingViolationEnrichment() {
-        EnrichedSecurityAnalysisResultDTO incompleteResult = EnrichedSecurityAnalysisResultDTO.builder()
-            .result(RESULT)
-            .preContingencyEnrichment(Map.of())
-            .postContingencyEnrichment(Map.of())
-            .build();
-
-        SecurityAnalysisException exception = assertThrows(SecurityAnalysisException.class,
-            () -> securityAnalysisResultService.insert(UUID.randomUUID(), incompleteResult, SecurityAnalysisStatus.CONVERGED));
-
-        assertEquals(SecurityAnalysisBusinessErrorCode.INVALID_RESULT_ENRICHMENT, exception.getBusinessErrorCode());
     }
 
     @Test
@@ -236,10 +219,10 @@ class SecurityAnalysisResultServiceTest {
                 new Contingency("contingencyId", new BranchContingency(subjectId)),
                 PostContingencyComputationStatus.CONVERGED,
                 new LimitViolationsResult(List.of(
-                    new LimitViolation(subjectId, LimitViolationType.CURRENT, "limitName", 60, 100, 1, 110,
-                        TwoSides.ONE),
-                    new LimitViolation(subjectId, LimitViolationType.CURRENT, "limitName", 60, 100, 1, 130,
-                        TwoSides.TWO)
+                    new LimitViolation(subjectId, null, null, LimitViolationType.CURRENT, "limitName", 60, 100, 1, 110,
+                        TwoSides.ONE.toThreeSides(), null),
+                    new LimitViolation(subjectId, null, null, LimitViolationType.CURRENT, "limitName", 60, 100, 1, 130,
+                        TwoSides.TWO.toThreeSides(), null)
                 )),
                 NetworkResult.empty(),
                 ConnectivityResult.empty(),

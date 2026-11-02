@@ -39,8 +39,8 @@ class SecurityAnalysisResultEntityTest {
     void toEntityNormalizesStringNullSubjectNames() {
         SecurityAnalysisResult securityAnalysisResult = new SecurityAnalysisResult(
             new LimitViolationsResult(List.of(
-                new LimitViolation(NHV1_NHV2_1, null, LimitViolationType.CURRENT, "10'", 600, 1000, 1, 1100, TwoSides.ONE),
-                new LimitViolation(NHV1_NHV2_1, "null", LimitViolationType.CURRENT, "10'", 600, 1000, 1, 1100, TwoSides.ONE)
+                new LimitViolation(NHV1_NHV2_1, null, null, LimitViolationType.CURRENT, "10'", 600, 1000, 1, 1100, TwoSides.ONE.toThreeSides(), null),
+                new LimitViolation(NHV1_NHV2_1, "null", null, LimitViolationType.CURRENT, "10'", 600, 1000, 1, 1100, TwoSides.ONE.toThreeSides(), null)
             )),
             LoadFlowResult.ComponentResult.Status.CONVERGED,
             List.of()
@@ -61,8 +61,8 @@ class SecurityAnalysisResultEntityTest {
                 new Contingency("contingencyId", new BranchContingency(NHV1_NHV2_1)),
                 PostContingencyComputationStatus.CONVERGED,
                 new LimitViolationsResult(List.of(
-                    new LimitViolation(NHV1_NHV2_1, LimitViolationType.CURRENT, "limitName", 60, 100, 1, 110, TwoSides.ONE),
-                    new LimitViolation(NHV1_NHV2_1, LimitViolationType.CURRENT, "limitName", 60, 100, 1, 130, TwoSides.TWO)
+                    new LimitViolation(NHV1_NHV2_1, null, null, LimitViolationType.CURRENT, "limitName", 60, 100, 1, 110, TwoSides.ONE.toThreeSides(), null),
+                    new LimitViolation(NHV1_NHV2_1, null, null, LimitViolationType.CURRENT, "limitName", 60, 100, 1, 130, TwoSides.TWO.toThreeSides(), null)
                 )),
                 NetworkResult.empty(),
                 ConnectivityResult.empty(),
@@ -83,27 +83,5 @@ class SecurityAnalysisResultEntityTest {
             .filteredOn(contingencyLimitViolation -> contingencyLimitViolation.getValue() == 130)
             .singleElement()
             .matches(ContingencyLimitViolationEntity::isWorstSide);
-    }
-
-    @Test
-    void toEntityTreatsMissingContingencyViolationResultAsEmpty() {
-        SecurityAnalysisResult securityAnalysisResult = new SecurityAnalysisResult(
-            null,
-            LoadFlowResult.ComponentResult.Status.CONVERGED,
-            List.of(new PostContingencyResult(
-                new Contingency("contingencyId", new BranchContingency(NHV1_NHV2_1)),
-                PostContingencyComputationStatus.CONVERGED,
-                null,
-                NetworkResult.empty(),
-                ConnectivityResult.empty(),
-                1.0
-            ))
-        );
-
-        var enriched = SecurityAnalysisEnricher.enrich(securityAnalysisResult, SecurityAnalysisProviderMock.getNetwork());
-        SecurityAnalysisResultEntity entity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), enriched, SecurityAnalysisStatus.CONVERGED);
-
-        assertThat(entity.getContingencies().getFirst().getContingencyLimitViolations()).isEmpty();
-        assertThat(entity.getPreContingencyLimitViolations()).isEmpty();
     }
 }

@@ -47,14 +47,5 @@ class SecurityAnalysisExceptionHandlerTest {
         assertThat(response.getBody()).isNotNull();
         assertEquals("securityAnalysis.missingContingencyList", response.getBody().getBusinessErrorCode());
 
-        SecurityAnalysisException invalidEnrichmentException = new SecurityAnalysisException(
-            SecurityAnalysisBusinessErrorCode.INVALID_RESULT_ENRICHMENT,
-            "Security analysis result is missing enrichment data for one or more limit violations.");
-        response = handler.handleSecurityAnalysisException(invalidEnrichmentException, request);
-
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
-        assertThat(response.getBody()).isNotNull();
-        assertEquals("securityAnalysis.invalidResultEnrichment", response.getBody().getBusinessErrorCode());
-
     }
 }

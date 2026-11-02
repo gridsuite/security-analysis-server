@@ -350,7 +350,7 @@ public class SecurityAnalysisController {
 
     @GetMapping(value = "/providers", produces = APPLICATION_JSON_VALUE)
     @Operation(summary = "Get all security analysis providers")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "Security analysis providers have been found")})
+    @ApiResponses(value = {@ApiResponse(responseCode = "201", description = "Security analysis providers have been found")})
     public ResponseEntity<List<String>> getProviders() {
         return ResponseEntity.ok().contentType(MediaType.APPLICATION_JSON)
                 .body(securityAnalysisService.getProviders());
