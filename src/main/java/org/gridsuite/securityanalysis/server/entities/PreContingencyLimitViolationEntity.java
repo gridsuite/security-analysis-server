@@ -49,7 +49,7 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
             .operationalLimitsGroupId(limitViolation.getOperationalLimitsGroupId())
             .limitType(limitViolation.getLimitType())
             .upcomingAcceptableDuration(calculateUpcomingOverloadDuration(limitViolation))
-            .limitReduction(limitViolation.getLimitReduction())
+            .limitReduction(limitViolation.getLimitScaling())
             .value(limitViolation.getValue())
             .side(limitViolation.getSide())
             .loading(computeLoading(limitViolation, limitViolation.getLimit()));

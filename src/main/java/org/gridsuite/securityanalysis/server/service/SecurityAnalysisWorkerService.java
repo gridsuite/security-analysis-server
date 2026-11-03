@@ -26,7 +26,7 @@ import com.powsybl.loadflow.LoadFlowResult;
 import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.security.*;
-import com.powsybl.security.limitreduction.LimitReduction;
+import com.powsybl.security.limitscaling.LimitScaling;
 import org.gridsuite.computation.service.*;
 import org.gridsuite.securityanalysis.server.PropertyServerNameProvider;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
@@ -119,13 +119,13 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 .map(ContingencyInfos::getContingency)
                 .filter(Objects::nonNull)
                 .toList();
-        List<LimitReduction> limitReductions = createLimitReductions(runContext);
+        List<LimitScaling> limitScalings = createLimitScalings(runContext);
 
         SecurityAnalysisRunParameters runParameters = new SecurityAnalysisRunParameters()
                 .setSecurityAnalysisParameters(runContext.getParameters().securityAnalysisParameters())
                 .setComputationManager(executionService.getComputationManager())
                 .setFilter(LimitViolationFilter.load())
-                .setLimitReductions(limitReductions)
+                .setLimitScalings(limitScalings)
                 .setReportNode(runContext.getReportNode());
 
         Network network = "OpenLoadFlow".equals(runContext.getProvider()) ? runContext.getInMemoryNetwork() : runContext.getNetwork();
@@ -138,14 +138,14 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 .thenApply(SecurityAnalysisReport::getResult);
     }
 
-    private List<LimitReduction> createLimitReductions(SecurityAnalysisRunContext runContext) {
-        List<LimitReduction> limitReductions = new ArrayList<>(limitReductionService.getVoltageLevels().size() * limitReductionService.getLimitDurations().size());
+    private List<LimitScaling> createLimitScalings(SecurityAnalysisRunContext runContext) {
+        List<LimitScaling> limitScalings = new ArrayList<>(limitReductionService.getVoltageLevels().size() * limitReductionService.getLimitDurations().size());
 
         limitReductionService.createLimitReductions(runContext.getParameters().limitReductions()).forEach(limitReduction -> {
             LimitReductionsByVoltageLevel.VoltageLevel voltageLevel = limitReduction.getVoltageLevel();
             IdentifiableCriterion voltageLevelCriterion = new IdentifiableCriterion(new AtLeastOneNominalVoltageCriterion(VoltageInterval.between(voltageLevel.getLowBound(),
                     voltageLevel.getHighBound(), false, true)));
-            limitReductions.add(createLimitReduction(voltageLevelCriterion, new PermanentDurationCriterion(), limitReduction.getPermanentLimitReduction()));
+            limitScalings.add(createLimitScaling(voltageLevelCriterion, new PermanentDurationCriterion(), limitReduction.getPermanentLimitReduction()));
             limitReduction.getTemporaryLimitReductions().forEach(temporaryLimitReduction -> {
                 LimitDurationCriterion limitDurationCriterion;
                 LimitReductionsByVoltageLevel.LimitDuration limitDuration = temporaryLimitReduction.getLimitDuration();
@@ -155,15 +155,15 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 } else {
                     limitDurationCriterion = IntervalTemporaryDurationCriterion.greaterThan(limitDuration.getLowBound(), limitDuration.isLowClosed());
                 }
-                limitReductions.add(createLimitReduction(voltageLevelCriterion, limitDurationCriterion, temporaryLimitReduction.getReduction()));
+                limitScalings.add(createLimitScaling(voltageLevelCriterion, limitDurationCriterion, temporaryLimitReduction.getReduction()));
             });
         });
 
-        return limitReductions;
+        return limitScalings;
     }
 
-    private LimitReduction createLimitReduction(IdentifiableCriterion voltageLevelCriterion, LimitDurationCriterion limitDurationCriterion, double value) {
-        return LimitReduction.builder(LimitType.CURRENT, value)
+    private LimitScaling createLimitScaling(IdentifiableCriterion voltageLevelCriterion, LimitDurationCriterion limitDurationCriterion, double value) {
+        return LimitScaling.builder(LimitType.CURRENT, value)
                 .withNetworkElementCriteria(voltageLevelCriterion)
                 .withLimitDurationCriteria(limitDurationCriterion)
                 .build();
