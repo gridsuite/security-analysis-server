@@ -8,6 +8,7 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.contingency.violations.LimitViolationType;
+import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
 import lombok.Getter;
 import org.gridsuite.computation.dto.GlobalFilter;
@@ -285,10 +286,15 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
 
     @Transactional
     public void insert(UUID resultUuid, EnrichedSecurityAnalysisResultDTO enrichedResult, SecurityAnalysisStatus status) {
+        insert(null, resultUuid, enrichedResult, status);
+    }
+
+    @Transactional
+    public void insert(Network network, UUID resultUuid, EnrichedSecurityAnalysisResultDTO enrichedResult, SecurityAnalysisStatus status) {
         Objects.requireNonNull(resultUuid);
         Objects.requireNonNull(enrichedResult);
 
-        SecurityAnalysisResultEntity securityAnalysisResult = SecurityAnalysisResultEntity.toEntity(resultUuid, enrichedResult, status);
+        SecurityAnalysisResultEntity securityAnalysisResult = SecurityAnalysisResultEntity.toEntity(network, resultUuid, enrichedResult, status);
         securityAnalysisResultRepository.save(securityAnalysisResult);
     }
 

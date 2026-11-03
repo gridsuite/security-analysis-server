@@ -6,6 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
+import com.powsybl.iidm.network.Network;
 import com.powsybl.security.results.PostContingencyResult;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -19,7 +20,13 @@ import org.hibernate.annotations.Formula;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+
+import static com.powsybl.contingency.violations.LimitViolationType.HIGH_VOLTAGE;
+import static com.powsybl.contingency.violations.LimitViolationType.HIGH_VOLTAGE_ANGLE;
+import static com.powsybl.contingency.violations.LimitViolationType.LOW_VOLTAGE;
+import static com.powsybl.contingency.violations.LimitViolationType.LOW_VOLTAGE_ANGLE;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
@@ -79,7 +86,8 @@ public class ContingencyEntity {
         }
     }
 
-    public static ContingencyEntity toEntity(PostContingencyResult postContingencyResult,
+    public static ContingencyEntity toEntity(Network network,
+                                             PostContingencyResult postContingencyResult,
                                              Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId,
                                              Map<String, LimitViolationEnrichmentDTO> contingencyEnrichment) {
         List<ContingencyElementEmbeddable> contingencyElements = postContingencyResult.getContingency().getElements().stream().map(ContingencyElementEmbeddable::toEntity).toList();
@@ -88,7 +96,9 @@ public class ContingencyEntity {
                 .map(limitViolation -> ContingencyLimitViolationEntity.toEntity(
                         limitViolation,
                         subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()),
-                        contingencyEnrichment.get(ComputationResultUtils.getViolationId(limitViolation))
+                        contingencyEnrichment.get(network == null || !Set.of(LOW_VOLTAGE, HIGH_VOLTAGE, LOW_VOLTAGE_ANGLE, HIGH_VOLTAGE_ANGLE).contains(limitViolation.getLimitType())
+                            ? ComputationResultUtils.getViolationId(limitViolation)
+                            : ComputationResultUtils.getViolationLocationId(limitViolation, network))
                 ))
                 .toList();
         ContingencyLimitViolationWorstSideUtils.computeWorstSideBySubjectId(contingencyLimitViolations);
