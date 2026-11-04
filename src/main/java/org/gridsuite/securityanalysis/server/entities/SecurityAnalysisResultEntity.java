@@ -7,7 +7,6 @@
 package org.gridsuite.securityanalysis.server.entities;
 
 import com.powsybl.contingency.violations.LimitViolation;
-import com.powsybl.iidm.network.Network;
 import com.powsybl.security.SecurityAnalysisResult;
 import jakarta.persistence.*;
 import lombok.*;
@@ -58,13 +57,6 @@ public class SecurityAnalysisResultEntity {
     public static SecurityAnalysisResultEntity toEntity(UUID resultUuid,
                                                         EnrichedSecurityAnalysisResultDTO enrichedResult,
                                                         SecurityAnalysisStatus securityAnalysisStatus) {
-        return toEntity(null, resultUuid, enrichedResult, securityAnalysisStatus);
-    }
-
-    public static SecurityAnalysisResultEntity toEntity(Network network,
-                                                        UUID resultUuid,
-                                                        EnrichedSecurityAnalysisResultDTO enrichedResult,
-                                                        SecurityAnalysisStatus securityAnalysisStatus) {
         SecurityAnalysisResult securityAnalysisResult = enrichedResult.getResult();
         Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId = getUniqueSubjectLimitViolationsFromResult(securityAnalysisResult)
             .stream().collect(Collectors.toMap(
@@ -74,7 +66,6 @@ public class SecurityAnalysisResultEntity {
 
         List<ContingencyEntity> contingencies = securityAnalysisResult.getPostContingencyResults() == null ? List.of() : securityAnalysisResult.getPostContingencyResults().stream()
             .map(postContingencyResult -> ContingencyEntity.toEntity(
-                    network,
                     postContingencyResult,
                     subjectLimitViolationsBySubjectId,
                     enrichedResult.getPostContingencyEnrichment().get(postContingencyResult.getContingency().getId())

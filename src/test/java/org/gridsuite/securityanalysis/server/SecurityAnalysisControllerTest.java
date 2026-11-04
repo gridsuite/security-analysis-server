@@ -842,10 +842,9 @@ class SecurityAnalysisControllerTest {
             .acceptableDuration(3600)
             .upcomingAcceptableDuration(ComputationResultUtils.calculateUpcomingOverloadDuration(violation))
             .build();
-        String violationId = ComputationResultUtils.getViolationId(violation);
         EnrichedSecurityAnalysisResultDTO defaultEnrichment = SecurityAnalysisEnricher.enrich(securityAnalysisResult, SecurityAnalysisProviderMock.getNetwork());
-        Map<String, LimitViolationEnrichmentDTO> preContingencyEnrichment = new HashMap<>(defaultEnrichment.getPreContingencyEnrichment());
-        preContingencyEnrichment.put(violationId, enrichedLimitViolationDTO);
+        List<LimitViolationEnrichmentDTO> preContingencyEnrichment = new ArrayList<>(defaultEnrichment.getPreContingencyEnrichment());
+        preContingencyEnrichment.set(0, enrichedLimitViolationDTO);
         EnrichedSecurityAnalysisResultDTO enrichedResult = EnrichedSecurityAnalysisResultDTO.builder()
             .result(securityAnalysisResult)
             .preContingencyEnrichment(preContingencyEnrichment)
@@ -871,7 +870,7 @@ class SecurityAnalysisControllerTest {
             .ignoringFieldsMatchingRegexes(".*\\.distributedActivePower")
             .isEqualTo(securityAnalysisResult);
 
-        Assertions.assertThat(captor.getValue().getPreContingencyEnrichment().get(violationId))
+        Assertions.assertThat(captor.getValue().getPreContingencyEnrichment().getFirst())
             .usingRecursiveComparison()
             .isEqualTo(enrichedLimitViolationDTO);
     }

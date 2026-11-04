@@ -79,7 +79,7 @@ class FindContingenciesTest {
     @BeforeAll
     void setUp() {
         // network store service mocking
-        resultEntity = SecurityAnalysisResultEntity.toEntity(getNetwork(), UUID.randomUUID(), SecurityAnalysisEnricher.enrich(RESULT_WITH_LIMIT_VIOLATIONS_ON_BOTH_SIDES, getNetwork()),
+        resultEntity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), SecurityAnalysisEnricher.enrich(RESULT_WITH_LIMIT_VIOLATIONS_ON_BOTH_SIDES, getNetwork()),
             SecurityAnalysisStatus.CONVERGED);
         securityAnalysisResultRepository.save(resultEntity);
     }

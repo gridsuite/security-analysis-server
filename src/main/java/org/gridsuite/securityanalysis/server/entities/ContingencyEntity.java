@@ -6,7 +6,7 @@
  */
 package org.gridsuite.securityanalysis.server.entities;
 
-import com.powsybl.iidm.network.Network;
+import com.powsybl.contingency.violations.LimitViolation;
 import com.powsybl.security.results.PostContingencyResult;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -14,19 +14,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.FieldNameConstants;
 import org.gridsuite.computation.dto.securityanalysis.LimitViolationEnrichmentDTO;
-import org.gridsuite.computation.utils.ComputationResultUtils;
 import org.gridsuite.securityanalysis.server.util.ContingencyLimitViolationWorstSideUtils;
 import org.hibernate.annotations.Formula;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
-
-import static com.powsybl.contingency.violations.LimitViolationType.HIGH_VOLTAGE;
-import static com.powsybl.contingency.violations.LimitViolationType.HIGH_VOLTAGE_ANGLE;
-import static com.powsybl.contingency.violations.LimitViolationType.LOW_VOLTAGE;
-import static com.powsybl.contingency.violations.LimitViolationType.LOW_VOLTAGE_ANGLE;
+import java.util.stream.IntStream;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
@@ -86,21 +80,23 @@ public class ContingencyEntity {
         }
     }
 
-    public static ContingencyEntity toEntity(Network network,
-                                             PostContingencyResult postContingencyResult,
+    public static ContingencyEntity toEntity(PostContingencyResult postContingencyResult,
                                              Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId,
-                                             Map<String, LimitViolationEnrichmentDTO> contingencyEnrichment) {
+                                             List<LimitViolationEnrichmentDTO> contingencyEnrichment) {
         List<ContingencyElementEmbeddable> contingencyElements = postContingencyResult.getContingency().getElements().stream().map(ContingencyElementEmbeddable::toEntity).toList();
 
-        List<ContingencyLimitViolationEntity> contingencyLimitViolations = postContingencyResult.getLimitViolationsResult().getLimitViolations().stream()
-                .map(limitViolation -> ContingencyLimitViolationEntity.toEntity(
-                        limitViolation,
-                        subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()),
-                        contingencyEnrichment.get(network == null || !Set.of(LOW_VOLTAGE, HIGH_VOLTAGE, LOW_VOLTAGE_ANGLE, HIGH_VOLTAGE_ANGLE).contains(limitViolation.getLimitType())
-                            ? ComputationResultUtils.getViolationId(limitViolation)
-                            : ComputationResultUtils.getViolationLocationId(limitViolation, network))
-                ))
-                .toList();
+        List<LimitViolation> limitViolations = postContingencyResult.getLimitViolationsResult() == null
+            ? List.of()
+            : postContingencyResult.getLimitViolationsResult().getLimitViolations();
+        List<ContingencyLimitViolationEntity> contingencyLimitViolations = IntStream.range(0, limitViolations.size())
+            .mapToObj(index -> {
+                LimitViolation limitViolation = limitViolations.get(index);
+                return ContingencyLimitViolationEntity.toEntity(
+                    limitViolation,
+                    subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()),
+                    contingencyEnrichment.get(index));
+            })
+            .toList();
         ContingencyLimitViolationWorstSideUtils.computeWorstSideBySubjectId(contingencyLimitViolations);
         ConnectivityResultEmbeddable connectivityResult = ConnectivityResultEmbeddable.toEntity(postContingencyResult.getConnectivityResult());
 

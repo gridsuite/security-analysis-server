@@ -13,9 +13,10 @@ import lombok.*;
 import lombok.experimental.FieldNameConstants;
 import lombok.experimental.SuperBuilder;
 import org.gridsuite.computation.dto.securityanalysis.LimitViolationEnrichmentDTO;
-import org.gridsuite.computation.utils.ComputationResultUtils;
+
 import java.util.List;
 import java.util.Map;
+import java.util.stream.IntStream;
 
 /**
  * @author Kevin Le Saulnier <kevin.lesaulnier at rte-france.com>
@@ -35,13 +36,18 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
 
     public static List<PreContingencyLimitViolationEntity> toEntityList(PreContingencyResult preContingencyResult,
                                                                        Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId,
-                                                                       Map<String, LimitViolationEnrichmentDTO> preContingencyEnrichment) {
-        return preContingencyResult.getLimitViolationsResult() == null
+                                                                       List<LimitViolationEnrichmentDTO> preContingencyEnrichment) {
+        List<LimitViolation> limitViolations = preContingencyResult.getLimitViolationsResult() == null
             ? List.of()
-            : preContingencyResult.getLimitViolationsResult().getLimitViolations().stream().map(limitViolation ->
-                    toEntity(limitViolation, subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()),
-                            preContingencyEnrichment.get(ComputationResultUtils.getViolationId(limitViolation)))
-            ).toList();
+            : preContingencyResult.getLimitViolationsResult().getLimitViolations();
+        return IntStream.range(0, limitViolations.size())
+            .mapToObj(index -> {
+                LimitViolation limitViolation = limitViolations.get(index);
+                return toEntity(limitViolation,
+                    subjectLimitViolationsBySubjectId.get(limitViolation.getSubjectId()),
+                    preContingencyEnrichment.get(index));
+            })
+            .toList();
     }
 
     public static PreContingencyLimitViolationEntity toEntity(LimitViolation limitViolation,

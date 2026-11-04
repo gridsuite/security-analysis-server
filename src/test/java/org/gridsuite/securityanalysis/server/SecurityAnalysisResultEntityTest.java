@@ -18,6 +18,9 @@ import com.powsybl.security.SecurityAnalysisResult;
 import com.powsybl.security.results.ConnectivityResult;
 import com.powsybl.security.results.NetworkResult;
 import com.powsybl.security.results.PostContingencyResult;
+import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
+import org.gridsuite.computation.dto.securityanalysis.LimitViolationEnrichmentDTO;
+import org.gridsuite.computation.utils.ComputationResultUtils;
 import org.gridsuite.computation.utils.SecurityAnalysisEnricher;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
 import org.gridsuite.securityanalysis.server.entities.ContingencyLimitViolationEntity;
@@ -25,6 +28,7 @@ import org.gridsuite.securityanalysis.server.entities.SecurityAnalysisResultEnti
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.powsybl.iidm.network.test.EurostagTutorialExample1Factory.NHV1_NHV2_1;
@@ -83,5 +87,42 @@ class SecurityAnalysisResultEntityTest {
             .filteredOn(contingencyLimitViolation -> contingencyLimitViolation.getValue() == 130)
             .singleElement()
             .matches(ContingencyLimitViolationEntity::isWorstSide);
+    }
+
+    @Test
+    void toEntityKeepsEnrichmentForViolationsWithSameId() {
+        LimitViolation firstViolation = new LimitViolation(
+            NHV1_NHV2_1, null, null, LimitViolationType.HIGH_VOLTAGE, "limit", 60, 1.05, 1, 1.1, TwoSides.ONE.toThreeSides(), null);
+        LimitViolation secondViolation = new LimitViolation(
+            NHV1_NHV2_1, null, null, LimitViolationType.HIGH_VOLTAGE, "limit", 60, 1.05, 1, 1.2, TwoSides.ONE.toThreeSides(), null);
+        assertThat(ComputationResultUtils.getViolationId(firstViolation)).isEqualTo(ComputationResultUtils.getViolationId(secondViolation));
+
+        SecurityAnalysisResult securityAnalysisResult = new SecurityAnalysisResult(
+            new LimitViolationsResult(List.of()),
+            LoadFlowResult.ComponentResult.Status.CONVERGED,
+            List.of(new PostContingencyResult(
+                new Contingency("contingencyId", new BranchContingency(NHV1_NHV2_1)),
+                PostContingencyComputationStatus.CONVERGED,
+                new LimitViolationsResult(List.of(firstViolation, secondViolation)),
+                NetworkResult.empty(),
+                ConnectivityResult.empty(),
+                1.0
+            ))
+        );
+        List<LimitViolationEnrichmentDTO> enrichment = List.of(
+            LimitViolationEnrichmentDTO.builder().locationId("bus-1").build(),
+            LimitViolationEnrichmentDTO.builder().locationId("bus-2").build()
+        );
+        EnrichedSecurityAnalysisResultDTO enrichedResult = EnrichedSecurityAnalysisResultDTO.builder()
+            .result(securityAnalysisResult)
+            .preContingencyEnrichment(List.of())
+            .postContingencyEnrichment(Map.of("contingencyId", enrichment))
+            .build();
+
+        SecurityAnalysisResultEntity entity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), enrichedResult, SecurityAnalysisStatus.CONVERGED);
+
+        assertThat(entity.getContingencies().getFirst().getContingencyLimitViolations())
+            .extracting(ContingencyLimitViolationEntity::getLocationId)
+            .containsExactly("bus-1", "bus-2");
     }
 }

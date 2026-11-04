@@ -36,9 +36,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
+import org.springframework.web.server.ResponseStatusException;
 
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -48,6 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -98,10 +101,24 @@ class SecurityAnalysisResultServiceTest {
     }
 
     @Test
+    void insertRejectsMisalignedEnrichmentLists() {
+        EnrichedSecurityAnalysisResultDTO completeEnrichment = enrichDerivedFields(RESULT);
+        EnrichedSecurityAnalysisResultDTO incompleteEnrichment = EnrichedSecurityAnalysisResultDTO.builder()
+            .result(RESULT)
+            .preContingencyEnrichment(List.of())
+            .postContingencyEnrichment(completeEnrichment.getPostContingencyEnrichment())
+            .build();
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+            () -> securityAnalysisResultService.insert(UUID.randomUUID(), incompleteEnrichment, SecurityAnalysisStatus.CONVERGED));
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+    }
+
+    @Test
     void insertResultWithEnrichedDataTest() {
         UUID resultUuid = UUID.randomUUID();
         com.powsybl.contingency.violations.LimitViolation violation = RESULT.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().get(0);
-        String violationId = ComputationResultUtils.getViolationId(violation);
 
         LimitViolationEnrichmentDTO enrichedLimitViolationDTO = LimitViolationEnrichmentDTO.builder()
             .patlLimit(123.45)
@@ -114,8 +131,8 @@ class SecurityAnalysisResultServiceTest {
             .build();
 
         EnrichedSecurityAnalysisResultDTO defaultEnrichment = enrichDerivedFields(RESULT);
-        Map<String, LimitViolationEnrichmentDTO> preContingencyEnrichment = new HashMap<>(defaultEnrichment.getPreContingencyEnrichment());
-        preContingencyEnrichment.put(violationId, enrichedLimitViolationDTO);
+        List<LimitViolationEnrichmentDTO> preContingencyEnrichment = new ArrayList<>(defaultEnrichment.getPreContingencyEnrichment());
+        preContingencyEnrichment.set(0, enrichedLimitViolationDTO);
         EnrichedSecurityAnalysisResultDTO enrichedResult = EnrichedSecurityAnalysisResultDTO.builder()
             .result(RESULT)
             .preContingencyEnrichment(preContingencyEnrichment)
@@ -232,7 +249,7 @@ class SecurityAnalysisResultServiceTest {
     }
 
     private static EnrichedSecurityAnalysisResultDTO enrichDerivedFields(SecurityAnalysisResult result) {
-        Map<String, Map<String, LimitViolationEnrichmentDTO>> postContingencyEnrichment = result.getPostContingencyResults().stream()
+        Map<String, List<LimitViolationEnrichmentDTO>> postContingencyEnrichment = result.getPostContingencyResults().stream()
             .collect(Collectors.toMap(
                 postContingencyResult -> postContingencyResult.getContingency().getId(),
                 postContingencyResult -> enrichDerivedFields(postContingencyResult.getLimitViolationsResult())
@@ -245,18 +262,16 @@ class SecurityAnalysisResultServiceTest {
             .build();
     }
 
-    private static Map<String, LimitViolationEnrichmentDTO> enrichDerivedFields(LimitViolationsResult limitViolationsResult) {
+    private static List<LimitViolationEnrichmentDTO> enrichDerivedFields(LimitViolationsResult limitViolationsResult) {
         if (limitViolationsResult == null) {
-            return Map.of();
+            return List.of();
         }
-        return limitViolationsResult.getLimitViolations().stream().collect(Collectors.toMap(
-            ComputationResultUtils::getViolationId,
-            violation -> LimitViolationEnrichmentDTO.builder()
+        return limitViolationsResult.getLimitViolations().stream()
+            .map(violation -> LimitViolationEnrichmentDTO.builder()
                 .loading(ComputationResultUtils.computeLoading(violation, violation.getLimit()))
                 .upcomingAcceptableDuration(ComputationResultUtils.calculateUpcomingOverloadDuration(violation))
-                .build(),
-            (first, last) -> last
-        ));
+                .build())
+            .toList();
     }
 
     private String createWorstSideFilterAsString() throws Exception {

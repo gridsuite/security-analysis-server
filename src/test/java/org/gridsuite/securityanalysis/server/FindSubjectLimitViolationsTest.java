@@ -66,7 +66,7 @@ class FindSubjectLimitViolationsTest {
     @BeforeAll
     void setUp() {
         // network store service mocking
-        resultEntity = SecurityAnalysisResultEntity.toEntity(getNetwork(), UUID.randomUUID(), SecurityAnalysisEnricher.enrich(RESULT, getNetwork()), SecurityAnalysisStatus.CONVERGED);
+        resultEntity = SecurityAnalysisResultEntity.toEntity(UUID.randomUUID(), SecurityAnalysisEnricher.enrich(RESULT, getNetwork()), SecurityAnalysisStatus.CONVERGED);
         securityAnalysisResultRepository.save(resultEntity);
     }
 
