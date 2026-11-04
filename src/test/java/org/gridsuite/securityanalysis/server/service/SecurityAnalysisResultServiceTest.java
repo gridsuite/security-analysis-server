@@ -36,9 +36,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.http.HttpStatus;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -47,10 +45,9 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
+import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.RESULT;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -98,21 +95,6 @@ class SecurityAnalysisResultServiceTest {
         assertEquals(RESULT.getPostContingencyResults().size(), contingencyResults.size());
         // check fields based on network are actually nullish
         contingencyResults.forEach(this::checkFieldBasedOnNetworkAreNullish);
-    }
-
-    @Test
-    void insertRejectsMisalignedEnrichmentLists() {
-        EnrichedSecurityAnalysisResultDTO completeEnrichment = enrichDerivedFields(RESULT);
-        EnrichedSecurityAnalysisResultDTO incompleteEnrichment = EnrichedSecurityAnalysisResultDTO.builder()
-            .result(RESULT)
-            .preContingencyEnrichment(List.of())
-            .postContingencyEnrichment(completeEnrichment.getPostContingencyEnrichment())
-            .build();
-
-        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-            () -> securityAnalysisResultService.insert(UUID.randomUUID(), incompleteEnrichment, SecurityAnalysisStatus.CONVERGED));
-
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
     }
 
     @Test

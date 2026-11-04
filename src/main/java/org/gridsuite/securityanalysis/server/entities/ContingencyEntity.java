@@ -85,9 +85,7 @@ public class ContingencyEntity {
                                              List<LimitViolationEnrichmentDTO> contingencyEnrichment) {
         List<ContingencyElementEmbeddable> contingencyElements = postContingencyResult.getContingency().getElements().stream().map(ContingencyElementEmbeddable::toEntity).toList();
 
-        List<LimitViolation> limitViolations = postContingencyResult.getLimitViolationsResult() == null
-            ? List.of()
-            : postContingencyResult.getLimitViolationsResult().getLimitViolations();
+        List<LimitViolation> limitViolations = postContingencyResult.getLimitViolationsResult().getLimitViolations();
         List<ContingencyLimitViolationEntity> contingencyLimitViolations = IntStream.range(0, limitViolations.size())
             .mapToObj(index -> {
                 LimitViolation limitViolation = limitViolations.get(index);

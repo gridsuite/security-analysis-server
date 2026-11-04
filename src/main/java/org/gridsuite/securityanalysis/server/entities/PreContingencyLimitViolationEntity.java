@@ -37,9 +37,7 @@ public class PreContingencyLimitViolationEntity extends AbstractLimitViolationEn
     public static List<PreContingencyLimitViolationEntity> toEntityList(PreContingencyResult preContingencyResult,
                                                                        Map<String, SubjectLimitViolationEntity> subjectLimitViolationsBySubjectId,
                                                                        List<LimitViolationEnrichmentDTO> preContingencyEnrichment) {
-        List<LimitViolation> limitViolations = preContingencyResult.getLimitViolationsResult() == null
-            ? List.of()
-            : preContingencyResult.getLimitViolationsResult().getLimitViolations();
+        List<LimitViolation> limitViolations = preContingencyResult.getLimitViolationsResult().getLimitViolations();
         return IntStream.range(0, limitViolations.size())
             .mapToObj(index -> {
                 LimitViolation limitViolation = limitViolations.get(index);

@@ -9,13 +9,10 @@ package org.gridsuite.securityanalysis.server.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.contingency.violations.LimitViolationType;
 import com.powsybl.iidm.network.ThreeSides;
-import com.powsybl.security.LimitViolationsResult;
-import com.powsybl.security.results.PostContingencyResult;
 import lombok.Getter;
 import org.gridsuite.computation.dto.GlobalFilter;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
 import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
-import org.gridsuite.computation.dto.securityanalysis.LimitViolationEnrichmentDTO;
 import org.gridsuite.computation.error.ComputationException;
 import org.gridsuite.computation.service.AbstractComputationResultService;
 import org.gridsuite.computation.utils.SpecificationUtils;
@@ -32,10 +29,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -292,47 +287,9 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     public void insert(UUID resultUuid, EnrichedSecurityAnalysisResultDTO enrichedResult, SecurityAnalysisStatus status) {
         Objects.requireNonNull(resultUuid);
         Objects.requireNonNull(enrichedResult);
-        validateEnrichment(enrichedResult);
 
         SecurityAnalysisResultEntity securityAnalysisResult = SecurityAnalysisResultEntity.toEntity(resultUuid, enrichedResult, status);
         securityAnalysisResultRepository.save(securityAnalysisResult);
-    }
-
-    private static void validateEnrichment(EnrichedSecurityAnalysisResultDTO enrichedResult) {
-        if (enrichedResult.getResult() == null || enrichedResult.getResult().getPreContingencyResult() == null
-                || !enrichmentMatches(enrichedResult.getPreContingencyEnrichment(),
-                    enrichedResult.getResult().getPreContingencyResult().getLimitViolationsResult())
-                || enrichedResult.getPostContingencyEnrichment() == null) {
-            throw invalidEnrichment();
-        }
-
-        List<PostContingencyResult> postContingencyResults = enrichedResult.getResult().getPostContingencyResults();
-        if (postContingencyResults == null) {
-            if (!enrichedResult.getPostContingencyEnrichment().isEmpty()) {
-                throw invalidEnrichment();
-            }
-            return;
-        }
-        if (enrichedResult.getPostContingencyEnrichment().size() != postContingencyResults.size()) {
-            throw invalidEnrichment();
-        }
-        for (PostContingencyResult postContingencyResult : postContingencyResults) {
-            if (postContingencyResult == null || postContingencyResult.getContingency() == null
-                    || postContingencyResult.getContingency().getId() == null
-                    || !enrichmentMatches(enrichedResult.getPostContingencyEnrichment().get(postContingencyResult.getContingency().getId()),
-                        postContingencyResult.getLimitViolationsResult())) {
-                throw invalidEnrichment();
-            }
-        }
-    }
-
-    private static boolean enrichmentMatches(List<LimitViolationEnrichmentDTO> enrichment, LimitViolationsResult violationsResult) {
-        int violationCount = violationsResult == null ? 0 : violationsResult.getLimitViolations().size();
-        return enrichment != null && enrichment.size() == violationCount && enrichment.stream().allMatch(Objects::nonNull);
-    }
-
-    private static ResponseStatusException invalidEnrichment() {
-        return new ResponseStatusException(HttpStatus.BAD_REQUEST, "Enrichment entries must match the violation lists.");
     }
 
     @Override
