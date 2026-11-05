@@ -56,9 +56,9 @@
         <sonar.organization>gridsuite</sonar.organization>
         <sonar.projectKey>org.gridsuite:security-analysis-server</sonar.projectKey>
         <!-- FIXME: to be removed at next gridsuite-dependencies upgrade  -->
-        <gridsuite-computation.version>2.7.0</gridsuite-computation.version>
+        <gridsuite-computation.version>2.8.0</gridsuite-computation.version>
         <!-- FIXME: to be removed at next gridsuite-dependencies upgrade  -->
-        <powsybl-network-store.version>1.52.0</powsybl-network-store.version>
+        <powsybl-network-store.version>1.52.0</powsybl-network-store.version>v
     </properties>
 
     <build>
