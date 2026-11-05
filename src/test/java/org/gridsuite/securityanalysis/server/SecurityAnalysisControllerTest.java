@@ -94,6 +94,7 @@ import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.asse
 import static org.gridsuite.securityanalysis.server.util.TestUtils.readLinesFromFilePath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -244,7 +245,7 @@ class SecurityAnalysisControllerTest {
     // added for testStatus can return null, after runTest
     @AfterEach
     void tearDown() throws Exception {
-        mockMvc.perform(delete("/" + VERSION + "/results"))
+        mockMvc.perform(delete("/" + VERSION + "/supervision/results"))
                 .andExpect(status().isOk());
     }
 
@@ -375,6 +376,12 @@ class SecurityAnalysisControllerTest {
 
         // should throw not found if result does not exist
         assertResultNotFound(OTHER_RESULT_UUID);
+
+        String resultsCount = mockMvc.perform(get("/" + VERSION + "/supervision/results-count")).andReturn().getResponse().getContentAsString();
+        assertNotEquals("0", resultsCount);
+        mockMvc.perform(delete("/" + VERSION + "/results")).andExpect(status().isBadRequest());
+        mockMvc.perform(delete("/" + VERSION + "/results").queryParam("resultsUuids", "")).andExpect(status().isOk());
+        mockMvc.perform(get("/" + VERSION + "/supervision/results-count")).andExpect(content().string(resultsCount));
 
         // test one result deletion
         mockMvc.perform(delete("/" + VERSION + "/results").queryParam("resultsUuids", RESULT_UUID.toString()))
@@ -660,7 +667,7 @@ class SecurityAnalysisControllerTest {
 
         output.receive(TIMEOUT, "sa.result");
 
-        mockMvc.perform(delete("/" + VERSION + "/results"))
+        mockMvc.perform(delete("/" + VERSION + "/supervision/results"))
                 .andExpect(status().isOk());
 
         assertResultNotFound(RESULT_UUID);
