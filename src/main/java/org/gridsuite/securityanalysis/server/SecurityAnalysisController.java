@@ -299,9 +299,9 @@ public class SecurityAnalysisController {
     }
 
     @DeleteMapping(value = "/results", produces = APPLICATION_JSON_VALUE)
-    @Operation(summary = "Delete all security analysis results from the database")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "All security analysis results have been deleted")})
-    public ResponseEntity<Void> deleteResults(@Parameter(description = "Results UUID") @RequestParam(value = "resultsUuids", required = false) List<UUID> resultsUuids) {
+    @Operation(summary = "Delete the given security analysis results from the database")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The given security analysis results have been deleted")})
+    public ResponseEntity<Void> deleteResults(@Parameter(description = "Results UUID") @RequestParam(value = "resultsUuids") List<UUID> resultsUuids) {
         securityAnalysisService.deleteResults(resultsUuids);
         return ResponseEntity.ok().build();
     }
