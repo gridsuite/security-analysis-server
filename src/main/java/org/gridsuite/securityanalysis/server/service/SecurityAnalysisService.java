@@ -44,7 +44,7 @@ public class SecurityAnalysisService extends AbstractComputationService<Security
         Objects.requireNonNull(runContext);
         var resultUuid = uuidGeneratorService.generate();
         // update status to running status
-        setStatus(List.of(resultUuid), SecurityAnalysisStatus.RUNNING);
+        setStatus(List.of(resultUuid), SecurityAnalysisStatus.PRELOADING);
         notificationService.sendRunMessage(new SecurityAnalysisResultContext(resultUuid, runContext).toMessage(objectMapper));
 
         return resultUuid;
