@@ -8,6 +8,7 @@ package org.gridsuite.securityanalysis.server.service;
 
 import org.gridsuite.securityanalysis.server.repositories.SecurityAnalysisResultRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * @author Hugo Marcellin <hugo.marcelin at rte-france.com>
@@ -22,5 +23,10 @@ public class SupervisionService {
 
     public Integer getResultsCount() {
         return (int) securityAnalysisResultRepository.count();
+    }
+
+    @Transactional
+    public void deleteAllResults() {
+        securityAnalysisResultRepository.deleteAll();
     }
 }
