@@ -28,6 +28,7 @@ import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.security.*;
 import com.powsybl.security.limitreduction.LimitReduction;
 import org.gridsuite.computation.service.*;
+import org.gridsuite.computation.utils.SecurityAnalysisEnricher;
 import org.gridsuite.securityanalysis.server.PropertyServerNameProvider;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
 import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisParametersDTO;
@@ -190,9 +191,9 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
                 logNoContingencies(runContext);
                 return;
             }
-        } catch (AllContingencyListMissingException e) {
+        } catch (AllContingencyListMissingException _) {
             throw new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.CONTINGENCY_LIST_CONFIG_EMPTY, "The configuration does not contain any contingency.");
-        } catch (HttpClientErrorException.NotFound e) {
+        } catch (HttpClientErrorException.NotFound _) {
             throw new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.MISSING_CONTINGENCY_LIST, "The configuration contains one or more contingency lists that have been deleted.");
         }
 
@@ -228,9 +229,9 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
 
     @Override
     protected void saveResult(Network network, AbstractResultContext<SecurityAnalysisRunContext> resultContext, SecurityAnalysisResult result) {
-        resultService.insert(network,
+        resultService.insert(
                 resultContext.getResultUuid(),
-                result,
+                SecurityAnalysisEnricher.enrich(result, network),
                 result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED
                         ? SecurityAnalysisStatus.CONVERGED
                         : SecurityAnalysisStatus.DIVERGED);

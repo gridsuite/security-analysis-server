@@ -11,11 +11,8 @@ import com.powsybl.contingency.BranchContingency;
 import com.powsybl.contingency.Contingency;
 import com.powsybl.contingency.violations.LimitViolation;
 import com.powsybl.contingency.violations.LimitViolationType;
-import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.TwoSides;
-import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
 import com.powsybl.loadflow.LoadFlowResult;
-import com.powsybl.network.store.iidm.impl.NetworkFactoryImpl;
 import com.powsybl.security.LimitViolationsResult;
 import com.powsybl.security.PostContingencyComputationStatus;
 import com.powsybl.security.SecurityAnalysisResult;
@@ -24,10 +21,10 @@ import com.powsybl.security.results.NetworkResult;
 import com.powsybl.security.results.PostContingencyResult;
 import com.vladmihalcea.sql.SQLStatementCountValidator;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
-import org.gridsuite.securityanalysis.server.dto.ContingencyResultDTO;
-import org.gridsuite.securityanalysis.server.dto.SecurityAnalysisStatus;
-import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationDTO;
-import org.gridsuite.securityanalysis.server.dto.SubjectLimitViolationResultDTO;
+import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
+import org.gridsuite.computation.dto.securityanalysis.LimitViolationEnrichmentDTO;
+import org.gridsuite.computation.utils.ComputationResultUtils;
+import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.repositories.specifications.ContingencySpecificationBuilder;
 import org.gridsuite.securityanalysis.server.repositories.specifications.SubjectLimitViolationSpecificationBuilder;
 import org.junit.jupiter.api.AfterEach;
@@ -38,13 +35,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.*;
+import static org.gridsuite.securityanalysis.server.SecurityAnalysisProviderMock.RESULT;
 import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.assertRequestsCount;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -76,9 +77,8 @@ class SecurityAnalysisResultServiceTest {
 
     @Test
     void deleteResultPerfTest() {
-        Network network = EurostagTutorialExample1Factory.create(new NetworkFactoryImpl());
         UUID resultUuid = UUID.randomUUID();
-        securityAnalysisResultService.insert(network, resultUuid, RESULT, SecurityAnalysisStatus.CONVERGED);
+        securityAnalysisResultService.insert(resultUuid, enrichDerivedFields(RESULT), SecurityAnalysisStatus.CONVERGED);
         SQLStatementCountValidator.reset();
 
         securityAnalysisResultService.delete(resultUuid);
@@ -91,7 +91,7 @@ class SecurityAnalysisResultServiceTest {
     @Test
     void insertResultWithoutNetworkTest() {
         UUID resultUuid = UUID.randomUUID();
-        securityAnalysisResultService.insert(null, resultUuid, RESULT, SecurityAnalysisStatus.CONVERGED);
+        securityAnalysisResultService.insert(resultUuid, enrichDerivedFields(RESULT), SecurityAnalysisStatus.CONVERGED);
         securityAnalysisResultService.assertResultExists(resultUuid);
 
         List<ContingencyResultDTO> contingencyResults = securityAnalysisResultService.findNmKContingenciesResult(resultUuid);
@@ -101,9 +101,51 @@ class SecurityAnalysisResultServiceTest {
     }
 
     @Test
+    void insertResultWithEnrichedDataTest() {
+        UUID resultUuid = UUID.randomUUID();
+        com.powsybl.contingency.violations.LimitViolation violation = RESULT.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().get(0);
+
+        LimitViolationEnrichmentDTO enrichedLimitViolationDTO = LimitViolationEnrichmentDTO.builder()
+            .patlLimit(123.45)
+            .patlLoading(80.0)
+            .nextLimitName("TATL")
+            .locationId("LocationEnriched")
+            .acceptableDuration(3600)
+            .loading(ComputationResultUtils.computeLoading(violation, violation.getLimit()))
+            .upcomingAcceptableDuration(ComputationResultUtils.calculateUpcomingOverloadDuration(violation))
+            .build();
+
+        EnrichedSecurityAnalysisResultDTO defaultEnrichment = enrichDerivedFields(RESULT);
+        List<LimitViolationEnrichmentDTO> preContingencyEnrichment = new ArrayList<>(defaultEnrichment.getPreContingencyEnrichment());
+        preContingencyEnrichment.set(0, enrichedLimitViolationDTO);
+        EnrichedSecurityAnalysisResultDTO enrichedResult = EnrichedSecurityAnalysisResultDTO.builder()
+            .result(RESULT)
+            .preContingencyEnrichment(preContingencyEnrichment)
+            .postContingencyEnrichment(defaultEnrichment.getPostContingencyEnrichment())
+            .build();
+
+        securityAnalysisResultService.insert(resultUuid, enrichedResult, SecurityAnalysisStatus.CONVERGED);
+        securityAnalysisResultService.assertResultExists(resultUuid);
+
+        List<PreContingencyLimitViolationResultDTO> nResults = securityAnalysisResultService.findNResult(resultUuid, null, null, null, null, Sort.unsorted());
+        PreContingencyLimitViolationResultDTO resultDTO = nResults.stream()
+            .filter(r -> r.getSubjectId().equals(violation.getSubjectId()))
+            .findFirst()
+            .orElseThrow();
+
+        assertEquals(123.45, resultDTO.getLimitViolation().getPatlLimit());
+        assertEquals(80.0, resultDTO.getLimitViolation().getPatlLoading());
+        assertEquals("TATL", resultDTO.getLimitViolation().getNextLimitName());
+        assertEquals("LocationEnriched", resultDTO.getLimitViolation().getLocationId());
+        assertEquals(3600, resultDTO.getLimitViolation().getAcceptableDuration());
+        assertEquals(enrichedLimitViolationDTO.getLoading(), resultDTO.getLimitViolation().getLoading());
+        assertEquals(enrichedLimitViolationDTO.getUpcomingAcceptableDuration(), resultDTO.getLimitViolation().getUpcomingAcceptableDuration());
+    }
+
+    @Test
     void findNmKContingenciesPagedNormalizesWorstSideFilter() throws Exception {
         UUID resultUuid = UUID.randomUUID();
-        securityAnalysisResultService.insert(null, resultUuid, createSecurityAnalysisResultWithTwoSides(),
+        securityAnalysisResultService.insert(resultUuid, enrichDerivedFields(createSecurityAnalysisResultWithTwoSides()),
             SecurityAnalysisStatus.CONVERGED);
 
         Page<ContingencyResultDTO> page = securityAnalysisResultService.findNmKContingenciesPaged(
@@ -131,7 +173,7 @@ class SecurityAnalysisResultServiceTest {
     @Test
     void findNmKConstraintsResultPagedNormalizesWorstSideFilter() throws Exception {
         UUID resultUuid = UUID.randomUUID();
-        securityAnalysisResultService.insert(null, resultUuid, createSecurityAnalysisResultWithTwoSides(),
+        securityAnalysisResultService.insert(resultUuid, enrichDerivedFields(createSecurityAnalysisResultWithTwoSides()),
             SecurityAnalysisStatus.CONVERGED);
 
         Page<SubjectLimitViolationResultDTO> page = securityAnalysisResultService.findNmKConstraintsResultPaged(
@@ -179,16 +221,42 @@ class SecurityAnalysisResultServiceTest {
                 new Contingency("contingencyId", new BranchContingency(subjectId)),
                 PostContingencyComputationStatus.CONVERGED,
                 new LimitViolationsResult(List.of(
-                    new LimitViolation(subjectId, LimitViolationType.CURRENT, "limitName", 60, 100, 1, 110,
-                        TwoSides.ONE),
-                    new LimitViolation(subjectId, LimitViolationType.CURRENT, "limitName", 60, 100, 1, 130,
-                        TwoSides.TWO)
+                    new LimitViolation(subjectId, null, null, LimitViolationType.CURRENT, "limitName", 60, 100, 1, 110,
+                        TwoSides.ONE.toThreeSides(), null),
+                    new LimitViolation(subjectId, null, null, LimitViolationType.CURRENT, "limitName", 60, 100, 1, 130,
+                        TwoSides.TWO.toThreeSides(), null)
                 )),
                 NetworkResult.empty(),
                 ConnectivityResult.empty(),
                 1.0
             ))
         );
+    }
+
+    private static EnrichedSecurityAnalysisResultDTO enrichDerivedFields(SecurityAnalysisResult result) {
+        Map<String, List<LimitViolationEnrichmentDTO>> postContingencyEnrichment = result.getPostContingencyResults().stream()
+            .collect(Collectors.toMap(
+                postContingencyResult -> postContingencyResult.getContingency().getId(),
+                postContingencyResult -> enrichDerivedFields(postContingencyResult.getLimitViolationsResult())
+            ));
+
+        return EnrichedSecurityAnalysisResultDTO.builder()
+            .result(result)
+            .preContingencyEnrichment(enrichDerivedFields(result.getPreContingencyResult().getLimitViolationsResult()))
+            .postContingencyEnrichment(postContingencyEnrichment)
+            .build();
+    }
+
+    private static List<LimitViolationEnrichmentDTO> enrichDerivedFields(LimitViolationsResult limitViolationsResult) {
+        if (limitViolationsResult == null) {
+            return List.of();
+        }
+        return limitViolationsResult.getLimitViolations().stream()
+            .map(violation -> LimitViolationEnrichmentDTO.builder()
+                .loading(ComputationResultUtils.computeLoading(violation, violation.getLimit()))
+                .upcomingAcceptableDuration(ComputationResultUtils.calculateUpcomingOverloadDuration(violation))
+                .build())
+            .toList();
     }
 
     private String createWorstSideFilterAsString() throws Exception {
