@@ -498,11 +498,13 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     private static Pageable withDefaultSort(Pageable pageable) {
-        if (pageable.isUnpaged() || pageable.getSort().getOrderFor(ContingencyEntity.Fields.uuid) != null) {
+        if (pageable.getSort().getOrderFor(ContingencyEntity.Fields.uuid) != null) {
             return pageable;
         }
         Sort stableSort = pageable.getSort().and(Sort.by(DEFAULT_SORT_DIRECTION, ContingencyEntity.Fields.uuid));
-        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), stableSort);
+        return pageable.isPaged()
+                ? PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), stableSort)
+                : Pageable.unpaged(stableSort);
     }
 
     @Transactional(readOnly = true)
