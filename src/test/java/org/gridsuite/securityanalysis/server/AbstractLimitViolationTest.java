@@ -12,6 +12,7 @@ import com.powsybl.iidm.network.LoadingLimits;
 import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.TwoSides;
 import com.powsybl.iidm.network.test.EurostagTutorialExample1Factory;
+import org.gridsuite.computation.utils.ComputationResultUtils;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 import org.junit.jupiter.api.Test;
@@ -130,6 +131,7 @@ abstract class AbstractLimitViolationTest<T extends AbstractLimitViolationEntity
         assertEquals(expectedPatlLimit, limitViolationEntity.getPatlLimit());
         assertEquals(expectedAcceptableDuration, limitViolationEntity.getAcceptableDuration());
         assertEquals(expectedUpcomingAcceptableDuration, limitViolationEntity.getUpcomingAcceptableDuration());
+        assertEquals(ComputationResultUtils.computeLoading(limitViolation, limitViolation.getLimit()), limitViolationEntity.getLoading());
         assertEquals(100 * limitViolation.getValue() / limitViolationEntity.getPatlLimit(),
                 limitViolationEntity.getPatlLoading());
     }

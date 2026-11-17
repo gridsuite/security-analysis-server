@@ -8,6 +8,8 @@ package org.gridsuite.securityanalysis.server;
 
 import com.powsybl.contingency.violations.LimitViolation;
 import com.powsybl.iidm.network.Network;
+import org.gridsuite.computation.dto.securityanalysis.LimitViolationEnrichmentDTO;
+import org.gridsuite.computation.utils.ComputationResultUtils;
 import org.gridsuite.securityanalysis.server.entities.PreContingencyLimitViolationEntity;
 import org.gridsuite.securityanalysis.server.entities.SubjectLimitViolationEntity;
 
@@ -18,6 +20,15 @@ class PreContingencyLimitViolationTest extends AbstractLimitViolationTest<PreCon
 
     @Override
     protected PreContingencyLimitViolationEntity createLimitViolationEntity(Network network, LimitViolation limitViolation, SubjectLimitViolationEntity subjectLimitViolationEntity) {
-        return PreContingencyLimitViolationEntity.toEntity(network, limitViolation, subjectLimitViolationEntity);
+        LimitViolationEnrichmentDTO enrichment = LimitViolationEnrichmentDTO.builder()
+            .loading(ComputationResultUtils.computeLoading(limitViolation, limitViolation.getLimit()))
+            .patlLimit(ComputationResultUtils.getPatlLimit(limitViolation, network))
+            .patlLoading(ComputationResultUtils.computeLoading(limitViolation, ComputationResultUtils.getPatlLimit(limitViolation, network)))
+            .nextLimitName(ComputationResultUtils.getNextLimitName(limitViolation, network))
+            .locationId(ComputationResultUtils.getViolationLocationId(limitViolation, network))
+            .acceptableDuration(ComputationResultUtils.calculateActualOverloadDuration(limitViolation, network))
+            .upcomingAcceptableDuration(ComputationResultUtils.calculateUpcomingOverloadDuration(limitViolation))
+            .build();
+        return PreContingencyLimitViolationEntity.toEntity(limitViolation, subjectLimitViolationEntity, enrichment);
     }
 }
