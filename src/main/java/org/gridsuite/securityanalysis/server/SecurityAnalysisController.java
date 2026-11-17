@@ -302,7 +302,11 @@ public class SecurityAnalysisController {
     @Operation(summary = "Delete all security analysis results from the database")
     @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "All security analysis results have been deleted")})
     public ResponseEntity<Void> deleteResults(@Parameter(description = "Results UUID") @RequestParam(value = "resultsUuids", required = false) List<UUID> resultsUuids) {
-        securityAnalysisService.deleteResults(resultsUuids);
+        if (resultsUuids == null) {
+            securityAnalysisResultService.deleteAll();
+        } else {
+            securityAnalysisService.deleteResults(resultsUuids);
+        }
         return ResponseEntity.ok().build();
     }
 

@@ -328,7 +328,6 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         securityAnalysisResultRepository.deleteById(resultId);
     }
 
-    @Override
     @Transactional
     public void deleteAll() {
         securityAnalysisResultRepository.deleteAll();
