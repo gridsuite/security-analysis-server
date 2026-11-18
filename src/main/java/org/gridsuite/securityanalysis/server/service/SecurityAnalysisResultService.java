@@ -328,12 +328,6 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Override
-    @Transactional
-    public void deleteAll() {
-        securityAnalysisResultRepository.deleteAll();
-    }
-
-    @Override
     @Transactional(readOnly = true)
     public SecurityAnalysisStatus findStatus(UUID resultUuid) {
         Objects.requireNonNull(resultUuid);
