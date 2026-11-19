@@ -58,6 +58,9 @@ import static org.mockito.Mockito.verify;
 @SpringBootTest
 class SecurityAnalysisResultServiceTest {
     @Autowired
+    private SupervisionService supervisionService;
+
+    @Autowired
     private SecurityAnalysisResultService securityAnalysisResultService;
 
     @Autowired
@@ -295,6 +298,6 @@ class SecurityAnalysisResultServiceTest {
 
     @AfterEach
     void tearDown() {
-        securityAnalysisResultService.deleteAll();
+        supervisionService.deleteAllResults();
     }
 }

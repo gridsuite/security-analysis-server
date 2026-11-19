@@ -327,11 +327,6 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         securityAnalysisResultRepository.deleteById(resultId);
     }
 
-    @Transactional
-    public void deleteAll() {
-        securityAnalysisResultRepository.deleteAll();
-    }
-
     @Override
     @Transactional(readOnly = true)
     public SecurityAnalysisStatus findStatus(UUID resultUuid) {
