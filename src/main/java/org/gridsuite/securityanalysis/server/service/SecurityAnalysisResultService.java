@@ -496,12 +496,12 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
 
     private static Pageable withDefaultSort(Pageable pageable, Sort sort, String defaultSortColumn) {
         //if it's already sorted by our defaultColumn we don't add another sort by the same column
-        if (sort.getOrderFor(defaultSortColumn) == null) {
-            sort = sort.and(Sort.by(DEFAULT_SORT_DIRECTION, defaultSortColumn));
-        }
+        Sort finalSort = sort.getOrderFor(defaultSortColumn) == null
+                ? sort.and(Sort.by(DEFAULT_SORT_DIRECTION, defaultSortColumn))
+                : sort;
         return pageable.isPaged()
-                ? PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort)
-                : Pageable.unpaged(sort);
+                ? PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), finalSort)
+                : Pageable.unpaged(finalSort);
     }
 
     @Transactional(readOnly = true)
