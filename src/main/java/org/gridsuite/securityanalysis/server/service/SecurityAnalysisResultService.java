@@ -491,11 +491,17 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     private static Pageable withDefaultSort(Pageable pageable) {
-        if (pageable.isUnpaged() || pageable.getSort().getOrderFor(ContingencyEntity.Fields.uuid) != null) {
-            return pageable;
-        }
-        Sort stableSort = pageable.getSort().and(Sort.by(DEFAULT_SORT_DIRECTION, ContingencyEntity.Fields.uuid));
-        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), stableSort);
+        return withDefaultSort(pageable, pageable.getSort(), ContingencyEntity.Fields.uuid);
+    }
+
+    private static Pageable withDefaultSort(Pageable pageable, Sort sort, String defaultSortColumn) {
+        //if it's already sorted by our defaultColumn we don't add another sort by the same column
+        Sort finalSort = sort.getOrderFor(defaultSortColumn) == null
+                ? sort.and(Sort.by(DEFAULT_SORT_DIRECTION, defaultSortColumn))
+                : sort;
+        return pageable.isPaged()
+                ? PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), finalSort)
+                : Pageable.unpaged(finalSort);
     }
 
     @Transactional(readOnly = true)
@@ -680,18 +686,10 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         };
     }
 
-    private Pageable addDefaultSortAndRemoveChildrenSorting(Pageable pageable, String defaultSortColumn) {
+    private static Pageable addDefaultSortAndRemoveChildrenSorting(Pageable pageable, String defaultSortColumn) {
         // Can't use both distinct and sort on nested field here, so we have to remove "children" sorting. Maybe there is a way to do it ?
         // https://github.com/querydsl/querydsl/issues/2443
-        Sort finalSort = Sort.by(pageable.getSort().filter(sortOrder -> !sortOrder.getProperty().startsWith("contingencyLimitViolations")).toList());
-        //if it's already sorted by our defaultColumn we don't add another sort by the same column
-        if (finalSort.getOrderFor(defaultSortColumn) == null) {
-            finalSort = finalSort.and(Sort.by(DEFAULT_SORT_DIRECTION, defaultSortColumn));
-        }
-        if (pageable.isPaged()) {
-            return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), finalSort);
-        } else {
-            return Pageable.unpaged(finalSort);
-        }
+        Sort sort = Sort.by(pageable.getSort().filter(sortOrder -> !sortOrder.getProperty().startsWith("contingencyLimitViolations")).toList());
+        return withDefaultSort(pageable, sort, defaultSortColumn);
     }
 }
