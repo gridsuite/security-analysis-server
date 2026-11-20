@@ -494,6 +494,16 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         return withDefaultSort(pageable, pageable.getSort(), ContingencyEntity.Fields.uuid);
     }
 
+    private static Pageable withDefaultSort(Pageable pageable, Sort sort, String defaultSortColumn) {
+        //if it's already sorted by our defaultColumn we don't add another sort by the same column
+        if (sort.getOrderFor(defaultSortColumn) == null) {
+            sort = sort.and(Sort.by(DEFAULT_SORT_DIRECTION, defaultSortColumn));
+        }
+        return pageable.isPaged()
+                ? PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort)
+                : Pageable.unpaged(sort);
+    }
+
     @Transactional(readOnly = true)
     public List<LimitViolationType> findNResultLimitTypes(UUID resultUuid) {
         Objects.requireNonNull(resultUuid);
@@ -681,15 +691,5 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         // https://github.com/querydsl/querydsl/issues/2443
         Sort sort = Sort.by(pageable.getSort().filter(sortOrder -> !sortOrder.getProperty().startsWith("contingencyLimitViolations")).toList());
         return withDefaultSort(pageable, sort, defaultSortColumn);
-    }
-
-    private static Pageable withDefaultSort(Pageable pageable, Sort sort, String defaultSortColumn) {
-        //if it's already sorted by our defaultColumn we don't add another sort by the same column
-        if (sort.getOrderFor(defaultSortColumn) == null) {
-            sort = sort.and(Sort.by(DEFAULT_SORT_DIRECTION, defaultSortColumn));
-        }
-        return pageable.isPaged()
-                ? PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), sort)
-                : Pageable.unpaged(sort);
     }
 }
