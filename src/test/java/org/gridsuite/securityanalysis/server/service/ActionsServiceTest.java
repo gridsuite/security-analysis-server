@@ -13,7 +13,7 @@ import mockwebserver3.Dispatcher;
 import mockwebserver3.MockResponse;
 import mockwebserver3.MockWebServer;
 import mockwebserver3.RecordedRequest;
-import mockwebserver3.junit5.internal.MockWebServerExtension;
+import mockwebserver3.junit5.StartStop;
 import okhttp3.Headers;
 import okhttp3.HttpUrl;
 import org.gridsuite.securityanalysis.server.dto.ContingencyInfos;
@@ -22,7 +22,6 @@ import org.gridsuite.securityanalysis.server.util.ContextConfigurationWithTestCh
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
@@ -41,7 +40,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Geoffroy Jamgotchian <geoffroy.jamgotchian at rte-france.com>
  * @author Slimane Amar <slimane.amar at rte-france.com>
  */
-@ExtendWith(MockWebServerExtension.class)
 @SpringBootTest
 @ContextConfigurationWithTestChannel
 class ActionsServiceTest {
@@ -68,8 +66,11 @@ class ActionsServiceTest {
     @Autowired
     private ActionsService actionsService;
 
+    @StartStop
+    final MockWebServer mockWebServer = new MockWebServer();
+
     @BeforeEach
-    void setUp(final MockWebServer mockWebServer) throws Exception {
+    void setUp() throws Exception {
         final String mockServerUri = initMockWebServer(mockWebServer);
         actionsService.setActionServiceBaseUri(mockServerUri);
     }
@@ -84,7 +85,7 @@ class ActionsServiceTest {
             @NotNull
             @Override
             public MockResponse dispatch(RecordedRequest request) {
-                String requestPath = Objects.requireNonNull(request.getPath());
+                String requestPath = Objects.requireNonNull(request.getTarget());
                 if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&variantId=%s&ids=%s", NETWORK_UUID, VARIANT_ID, LIST_UUID))) {
                     return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE), jsonVariantExpected);
                 } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s", NETWORK_UUID, LIST_UUID))) {
@@ -95,7 +96,7 @@ class ActionsServiceTest {
                 } else if (requestPath.equals(String.format("/v1/contingency-lists/contingency-infos/export?networkUuid=%s&ids=%s&ids=%s", NETWORK_UUID, LIST_UUID, LIST_UUID_VARIANT))) {
                     return new MockResponse(HttpStatus.OK.value(), Headers.of(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE), jsonExpectedForList);
                 } else {
-                    return new MockResponse.Builder().code(HttpStatus.NOT_FOUND.value()).body("Path not supported: " + request.getPath()).build();
+                    return new MockResponse.Builder().code(HttpStatus.NOT_FOUND.value()).body("Path not supported: " + request.getTarget()).build();
                 }
             }
         };
