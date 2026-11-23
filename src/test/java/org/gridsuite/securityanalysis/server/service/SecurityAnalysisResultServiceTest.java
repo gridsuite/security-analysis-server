@@ -228,7 +228,8 @@ class SecurityAnalysisResultServiceTest {
                 )),
                 NetworkResult.empty(),
                 ConnectivityResult.empty(),
-                1.0
+                1.0,
+                List.of()
             ))
         );
     }

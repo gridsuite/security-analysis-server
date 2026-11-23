@@ -70,7 +70,8 @@ class SecurityAnalysisResultEntityTest {
                 )),
                 NetworkResult.empty(),
                 ConnectivityResult.empty(),
-                1.0
+                1.0,
+                List.of()
             ))
         );
 
@@ -106,7 +107,8 @@ class SecurityAnalysisResultEntityTest {
                 new LimitViolationsResult(List.of(firstViolation, secondViolation)),
                 NetworkResult.empty(),
                 ConnectivityResult.empty(),
-                1.0
+                1.0,
+                List.of()
             ))
         );
         List<LimitViolationEnrichmentDTO> enrichment = List.of(
