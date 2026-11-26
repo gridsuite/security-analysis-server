@@ -27,6 +27,7 @@ import com.powsybl.network.store.client.NetworkStoreService;
 import com.powsybl.network.store.client.PreloadingStrategy;
 import com.powsybl.security.*;
 import com.powsybl.security.limitreduction.LimitReduction;
+import com.powsybl.ws.commons.error.PowsyblWsProblemDetail;
 import org.gridsuite.computation.service.*;
 import org.gridsuite.computation.utils.SecurityAnalysisEnricher;
 import org.gridsuite.securityanalysis.server.PropertyServerNameProvider;
@@ -64,6 +65,8 @@ import static org.gridsuite.securityanalysis.server.service.SecurityAnalysisServ
 @Service
 public class SecurityAnalysisWorkerService extends AbstractWorkerService<SecurityAnalysisResult, SecurityAnalysisRunContext, SecurityAnalysisParametersDTO, SecurityAnalysisResultService> {
     private static final Logger LOGGER = LoggerFactory.getLogger(SecurityAnalysisWorkerService.class);
+    // value of org.gridsuite.actions.server.error.ActionsBusinessErrorCode.CONTINGENCY_LIST_NOT_FOUND
+    private static final String CONTINGENCY_LIST_NOT_FOUND_ERROR_CODE = "actions.contingencyListNotFound";
     private final ActionsService actionsService;
     private final LimitReductionService limitReductionService;
 
@@ -193,13 +196,29 @@ public class SecurityAnalysisWorkerService extends AbstractWorkerService<Securit
             }
         } catch (AllContingencyListMissingException _) {
             throw new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.CONTINGENCY_LIST_CONFIG_EMPTY, "The configuration does not contain any contingency.");
-        } catch (HttpClientErrorException.NotFound _) {
-            throw new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.MISSING_CONTINGENCY_LIST, "The configuration contains one or more contingency lists that have been deleted.");
+        } catch (HttpClientErrorException.NotFound e) {
+
+            //  actions-server returns 404 both when a contingency list is not found and when the network is not found
+            // (see ActionsBusinessErrorCode). We must not confuse the two, so we inspect the businessErrorCode carried
+            // by the PowsyblWsProblemDetail body instead of relying on the HTTP status alone.
+            if (CONTINGENCY_LIST_NOT_FOUND_ERROR_CODE.equals(getBusinessErrorCode(e))) {
+                throw new SecurityAnalysisException(SecurityAnalysisBusinessErrorCode.MISSING_CONTINGENCY_LIST, "The configuration contains one or more contingency lists that have been deleted.");
+            }
+            throw e;
         }
 
         // FIXME: Remove this part when multithread variant access is implemented in the network-store
         if ("OpenLoadFlow".equals(runContext.getProvider())) {
             copyNetwork(runContext);
+        }
+    }
+
+    private String getBusinessErrorCode(HttpClientErrorException.NotFound e) {
+        try {
+            return PowsyblWsProblemDetail.fromBytes(e.getResponseBodyAsByteArray()).getBusinessErrorCode();
+        } catch (Exception parsingException) {
+            LOGGER.warn("Could not parse actions-server error body", parsingException);
+            throw e;
         }
     }
 
