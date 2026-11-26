@@ -8,12 +8,11 @@ package org.gridsuite.securityanalysis.server.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.powsybl.contingency.violations.LimitViolationType;
-import com.powsybl.iidm.network.Network;
 import com.powsybl.iidm.network.ThreeSides;
-import com.powsybl.security.SecurityAnalysisResult;
 import lombok.Getter;
 import org.gridsuite.computation.dto.GlobalFilter;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
+import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
 import org.gridsuite.computation.error.ComputationException;
 import org.gridsuite.computation.service.AbstractComputationResultService;
 import org.gridsuite.computation.utils.SpecificationUtils;
@@ -30,9 +29,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.*;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -285,11 +284,11 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     @Transactional
-    public void insert(@Nullable Network network, UUID resultUuid, SecurityAnalysisResult result, SecurityAnalysisStatus status) {
+    public void insert(UUID resultUuid, EnrichedSecurityAnalysisResultDTO enrichedResult, SecurityAnalysisStatus status) {
         Objects.requireNonNull(resultUuid);
-        Objects.requireNonNull(result);
+        Objects.requireNonNull(enrichedResult);
 
-        SecurityAnalysisResultEntity securityAnalysisResult = SecurityAnalysisResultEntity.toEntity(network, resultUuid, result, status);
+        SecurityAnalysisResultEntity securityAnalysisResult = SecurityAnalysisResultEntity.toEntity(resultUuid, enrichedResult, status);
         securityAnalysisResultRepository.save(securityAnalysisResult);
     }
 
@@ -326,12 +325,6 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         preContingencyLimitViolationRepository.deleteAllByResultId(resultId);
         subjectLimitViolationRepository.deleteAllByResultId(resultId);
         securityAnalysisResultRepository.deleteById(resultId);
-    }
-
-    @Override
-    @Transactional
-    public void deleteAll() {
-        securityAnalysisResultRepository.deleteAll();
     }
 
     @Override
@@ -501,11 +494,17 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
     }
 
     private static Pageable withDefaultSort(Pageable pageable) {
-        if (pageable.isUnpaged() || pageable.getSort().getOrderFor(ContingencyEntity.Fields.uuid) != null) {
-            return pageable;
-        }
-        Sort stableSort = pageable.getSort().and(Sort.by(DEFAULT_SORT_DIRECTION, ContingencyEntity.Fields.uuid));
-        return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), stableSort);
+        return withDefaultSort(pageable, pageable.getSort(), ContingencyEntity.Fields.uuid);
+    }
+
+    private static Pageable withDefaultSort(Pageable pageable, Sort sort, String defaultSortColumn) {
+        //if it's already sorted by our defaultColumn we don't add another sort by the same column
+        Sort finalSort = sort.getOrderFor(defaultSortColumn) == null
+                ? sort.and(Sort.by(DEFAULT_SORT_DIRECTION, defaultSortColumn))
+                : sort;
+        return pageable.isPaged()
+                ? PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), finalSort)
+                : Pageable.unpaged(finalSort);
     }
 
     @Transactional(readOnly = true)
@@ -690,18 +689,10 @@ public class SecurityAnalysisResultService extends AbstractComputationResultServ
         };
     }
 
-    private Pageable addDefaultSortAndRemoveChildrenSorting(Pageable pageable, String defaultSortColumn) {
+    private static Pageable addDefaultSortAndRemoveChildrenSorting(Pageable pageable, String defaultSortColumn) {
         // Can't use both distinct and sort on nested field here, so we have to remove "children" sorting. Maybe there is a way to do it ?
         // https://github.com/querydsl/querydsl/issues/2443
-        Sort finalSort = Sort.by(pageable.getSort().filter(sortOrder -> !sortOrder.getProperty().startsWith("contingencyLimitViolations")).toList());
-        //if it's already sorted by our defaultColumn we don't add another sort by the same column
-        if (finalSort.getOrderFor(defaultSortColumn) == null) {
-            finalSort = finalSort.and(Sort.by(DEFAULT_SORT_DIRECTION, defaultSortColumn));
-        }
-        if (pageable.isPaged()) {
-            return PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), finalSort);
-        } else {
-            return Pageable.unpaged(finalSort);
-        }
+        Sort sort = Sort.by(pageable.getSort().filter(sortOrder -> !sortOrder.getProperty().startsWith("contingencyLimitViolations")).toList());
+        return withDefaultSort(pageable, sort, defaultSortColumn);
     }
 }

@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.gridsuite.computation.dto.ReportInfos;
+import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisParametersService;
 import org.gridsuite.securityanalysis.server.service.SecurityAnalysisResultService;
@@ -299,9 +300,9 @@ public class SecurityAnalysisController {
     }
 
     @DeleteMapping(value = "/results", produces = APPLICATION_JSON_VALUE)
-    @Operation(summary = "Delete all security analysis results from the database")
-    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "All security analysis results have been deleted")})
-    public ResponseEntity<Void> deleteResults(@Parameter(description = "Results UUID") @RequestParam(value = "resultsUuids", required = false) List<UUID> resultsUuids) {
+    @Operation(summary = "Delete the given security analysis results from the database")
+    @ApiResponses(value = {@ApiResponse(responseCode = "200", description = "The given security analysis results have been deleted")})
+    public ResponseEntity<Void> deleteResults(@Parameter(description = "Results UUID") @RequestParam(value = "resultsUuids") List<UUID> resultsUuids) {
         securityAnalysisService.deleteResults(resultsUuids);
         return ResponseEntity.ok().build();
     }
@@ -336,12 +337,11 @@ public class SecurityAnalysisController {
     @Operation(summary = "Save security analysis results")
     @ApiResponses(value = {@ApiResponse(responseCode = "201", description = "The security analysis results have been saved to database")})
     public ResponseEntity<Void> saveResult(@Parameter(description = "Result UUID") @PathVariable("resultUuid") UUID resultUuid,
-                                           @RequestBody SecurityAnalysisResult result) {
+                                           @RequestBody EnrichedSecurityAnalysisResultDTO result) {
         securityAnalysisResultService.insert(
-            null,
             resultUuid,
             result,
-            result.getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED
+            result.getResult().getPreContingencyResult().getStatus() == LoadFlowResult.ComponentResult.Status.CONVERGED
                 ? SecurityAnalysisStatus.CONVERGED
                 : SecurityAnalysisStatus.DIVERGED
         );

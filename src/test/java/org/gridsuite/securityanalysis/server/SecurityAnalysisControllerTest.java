@@ -31,9 +31,13 @@ import com.vladmihalcea.sql.SQLStatementCountValidator;
 import org.assertj.core.api.Assertions;
 import org.gridsuite.computation.dto.GlobalFilter;
 import org.gridsuite.computation.dto.ResourceFilterDTO;
+import org.gridsuite.computation.dto.securityanalysis.EnrichedSecurityAnalysisResultDTO;
+import org.gridsuite.computation.dto.securityanalysis.LimitViolationEnrichmentDTO;
 import org.gridsuite.computation.service.AbstractFilterService;
 import org.gridsuite.computation.service.ReportService;
 import org.gridsuite.computation.service.UuidGeneratorService;
+import org.gridsuite.computation.utils.ComputationResultUtils;
+import org.gridsuite.computation.utils.SecurityAnalysisEnricher;
 import org.gridsuite.computation.utils.SpecificationUtils;
 import org.gridsuite.securityanalysis.server.dto.*;
 import org.gridsuite.securityanalysis.server.entities.AbstractLimitViolationEntity;
@@ -90,6 +94,7 @@ import static org.gridsuite.securityanalysis.server.util.DatabaseQueryUtils.asse
 import static org.gridsuite.securityanalysis.server.util.TestUtils.readLinesFromFilePath;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -240,7 +245,7 @@ class SecurityAnalysisControllerTest {
     // added for testStatus can return null, after runTest
     @AfterEach
     void tearDown() throws Exception {
-        mockMvc.perform(delete("/" + VERSION + "/results"))
+        mockMvc.perform(delete("/" + VERSION + "/supervision/results"))
                 .andExpect(status().isOk());
     }
 
@@ -371,6 +376,12 @@ class SecurityAnalysisControllerTest {
 
         // should throw not found if result does not exist
         assertResultNotFound(OTHER_RESULT_UUID);
+
+        String resultsCount = mockMvc.perform(get("/" + VERSION + "/supervision/results-count")).andReturn().getResponse().getContentAsString();
+        assertNotEquals("0", resultsCount);
+        mockMvc.perform(delete("/" + VERSION + "/results")).andExpect(status().isBadRequest());
+        mockMvc.perform(delete("/" + VERSION + "/results").queryParam("resultsUuids", "")).andExpect(status().isOk());
+        mockMvc.perform(get("/" + VERSION + "/supervision/results-count")).andExpect(content().string(resultsCount));
 
         // test one result deletion
         mockMvc.perform(delete("/" + VERSION + "/results").queryParam("resultsUuids", RESULT_UUID.toString()))
@@ -656,7 +667,7 @@ class SecurityAnalysisControllerTest {
 
         output.receive(TIMEOUT, "sa.result");
 
-        mockMvc.perform(delete("/" + VERSION + "/results"))
+        mockMvc.perform(delete("/" + VERSION + "/supervision/results"))
                 .andExpect(status().isOk());
 
         assertResultNotFound(RESULT_UUID);
@@ -828,16 +839,34 @@ class SecurityAnalysisControllerTest {
     void saveResultTest() throws Exception {
         UUID resultUuid = UUID.randomUUID();
         SecurityAnalysisResult securityAnalysisResult = SecurityAnalysisProviderMock.RESULT;
-        doNothing().when(securityAnalysisResultService).insert(null, resultUuid, securityAnalysisResult, SecurityAnalysisStatus.CONVERGED);
+        var violation = securityAnalysisResult.getPreContingencyResult().getLimitViolationsResult().getLimitViolations().get(0);
+        LimitViolationEnrichmentDTO enrichedLimitViolationDTO = LimitViolationEnrichmentDTO.builder()
+            .loading(ComputationResultUtils.computeLoading(violation, violation.getLimit()))
+            .patlLimit(123.45)
+            .patlLoading(80.0)
+            .nextLimitName("TATL")
+            .locationId("LocationEnriched")
+            .acceptableDuration(3600)
+            .upcomingAcceptableDuration(ComputationResultUtils.calculateUpcomingOverloadDuration(violation))
+            .build();
+        EnrichedSecurityAnalysisResultDTO defaultEnrichment = SecurityAnalysisEnricher.enrich(securityAnalysisResult, SecurityAnalysisProviderMock.getNetwork());
+        List<LimitViolationEnrichmentDTO> preContingencyEnrichment = new ArrayList<>(defaultEnrichment.getPreContingencyEnrichment());
+        preContingencyEnrichment.set(0, enrichedLimitViolationDTO);
+        EnrichedSecurityAnalysisResultDTO enrichedResult = EnrichedSecurityAnalysisResultDTO.builder()
+            .result(securityAnalysisResult)
+            .preContingencyEnrichment(preContingencyEnrichment)
+            .postContingencyEnrichment(defaultEnrichment.getPostContingencyEnrichment())
+            .build();
+        doNothing().when(securityAnalysisResultService).insert(eq(resultUuid), any(EnrichedSecurityAnalysisResultDTO.class), eq(SecurityAnalysisStatus.CONVERGED));
 
         mockMvc.perform(post("/" + VERSION + "/results/" + resultUuid)
             .contentType(MediaType.APPLICATION_JSON)
-            .content(mapper.writeValueAsString(securityAnalysisResult)))
+            .content(mapper.writeValueAsString(enrichedResult)))
             .andExpect(status().isOk());
 
-        ArgumentCaptor<SecurityAnalysisResult> captor = ArgumentCaptor.forClass(SecurityAnalysisResult.class);
-        verify(securityAnalysisResultService, times(1)).insert(eq(null), eq(resultUuid), captor.capture(), eq(SecurityAnalysisStatus.CONVERGED));
-        Assertions.assertThat(captor.getValue())
+        ArgumentCaptor<EnrichedSecurityAnalysisResultDTO> captor = ArgumentCaptor.forClass(EnrichedSecurityAnalysisResultDTO.class);
+        verify(securityAnalysisResultService, times(1)).insert(eq(resultUuid), captor.capture(), eq(SecurityAnalysisStatus.CONVERGED));
+        Assertions.assertThat(captor.getValue().getResult())
             .usingRecursiveComparison()
             // this field is not well serialized/deserialized - since it's deprecated / not used, we ignore it here
             .ignoringFieldsMatchingRegexes(".*\\.limitViolationsResult\\.computationOk")
@@ -847,6 +876,10 @@ class SecurityAnalysisControllerTest {
             // NaN values don't serialize/deserialize consistently, so we ignore this field
             .ignoringFieldsMatchingRegexes(".*\\.distributedActivePower")
             .isEqualTo(securityAnalysisResult);
+
+        Assertions.assertThat(captor.getValue().getPreContingencyEnrichment().getFirst())
+            .usingRecursiveComparison()
+            .isEqualTo(enrichedLimitViolationDTO);
     }
 
     @Test
